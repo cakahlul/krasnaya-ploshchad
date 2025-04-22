@@ -14,9 +14,14 @@
     "@fontsource/roboto": "^5.2.5",
     "@mui/icons-material": "^6.4.6",
     "@mui/material": "^6.4.6",
+    "@tanstack/react-query": "^5.74.4",
+    "antd": "^5.24.8",
+    "autoprefixer": "^10.4.21",
     "next": "15.2.1",
+    "postcss": "^8.5.3",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.1.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
