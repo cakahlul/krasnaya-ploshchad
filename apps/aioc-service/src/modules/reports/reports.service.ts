@@ -80,15 +80,16 @@ export class ReportsService {
     // Complexity weighting configuration
     const complexityWeights: { [key: string]: number } = {
       /**
-       * TODO: Ada rumus baru yaitu
-       * Low: 1.5
-       * Medium: 2
-       * High: 4
-       * Very High: 8
+       * Value per category
+       * Very Low: 1.5
+       * Low: 2
+       * Medium: 4
+       * High: 8
        */
-      '10382': 1, // Low complexity
-      '10383': 2, // Medium complexity
-      '10384': 3, // High complexity
+      '10650': 1.5, // Very Low complexity
+      '10651': 2, // Low Complexity
+      '10652': 4, // Medium complexity
+      '10653': 8, // High complexity
     };
 
     const complexityMap = new Map<
@@ -119,9 +120,9 @@ export class ReportsService {
             : 'techDebtPoint';
 
         const report = reports.get(memberName);
-        // Complexity calculation
+        // Weight of Complexity calculation
         const complexityId =
-          issue.fields.customfield_10865?.id?.toString() ?? '10382';
+          issue.fields.customfield_11015?.id?.toString() ?? '10650';
         const complexityWeight = complexityWeights[complexityId] ?? 1;
         if (report) {
           // Update points

@@ -17,6 +17,7 @@ export interface JiraFieldEntity {
   customfield_10865: JiraCustomFieldEntity; //complexity
   assignee: JiraAssigneeEntity;
   customfield_10796: JiraCustomFieldEntity; //story point type
+  customfield_11015: JiraCustomFieldEntity; //Weight of complexity
   issuetype: JiraIssueTypeEntity;
 }
 

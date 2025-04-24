@@ -49,6 +49,7 @@ export class ReportJiraRepository {
               'customfield_10005', // Story Points
               'customfield_10796', // Story point type
               'customfield_10865', // Complexity (low/medium/high)
+              'customfield_11015', // Weight of Complexity
               'assignee',
               'issuetype',
             ].join(','),
@@ -66,7 +67,6 @@ export class ReportJiraRepository {
         await new Promise(resolve => setTimeout(resolve, 1000));
       } while (startAt < totalIssues);
 
-      //console.log(JSON.stringify(allIssues));
       return allIssues;
     } catch (error) {
       console.error('Error fetching data from Jira:', error);
