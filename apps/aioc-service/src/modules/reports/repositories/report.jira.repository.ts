@@ -74,16 +74,6 @@ export class ReportJiraRepository {
     }
   }
 
-  async fetchJiraProject(): Promise<JiraProjectEntity[]> {
-    const response = await axios.get<JiraProjectEntity[]>(
-      `${this.url}/rest/api/2/project`,
-      {
-        auth: this.auth,
-      },
-    );
-    return response.data;
-  }
-
   private transformIssues(issues: JiraIssueDto[]): JiraIssueEntity[] {
     return issues.map((issue: JiraIssueDto) => ({
       id: issue.id,

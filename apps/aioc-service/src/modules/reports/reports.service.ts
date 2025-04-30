@@ -4,7 +4,6 @@ import {
   JiraIssueReportResponseDto,
   GetReportResponseDto,
   JiraSearchRequestDto,
-  GetAllProjectResponseDto,
 } from './interfaces/report.dto';
 import { JiraIssueEntity, JiraProjectEntity } from './interfaces/report.entity';
 import { TeamMember } from 'src/shared/interfaces/team-member.interface';
@@ -21,15 +20,6 @@ export class ReportsService {
     const rawData = await this.fetchRawData(sprint, project);
     const teamReport = this.processRawData(rawData, project);
     return this.summarizeTeamReport(teamReport);
-  }
-
-  async fetchAllProject(): Promise<GetAllProjectResponseDto[]> {
-    const response = await this.jiraReportRepository.fetchJiraProject();
-    return response.map((project: JiraProjectEntity) => ({
-      id: project.id,
-      key: project.key,
-      name: project.name,
-    }));
   }
 
   private async fetchRawData(

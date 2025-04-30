@@ -1,7 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import {
-  GetAllProjectResponseDto,
   GetReportResponseDto,
 } from './interfaces/report.dto';
 
@@ -15,10 +14,5 @@ export class ReportsController {
     @Query('project') project: string,
   ): Promise<GetReportResponseDto> {
     return this.reportsService.generateReport(sprint, project);
-  }
-
-  @Get('project')
-  async getAllProject(): Promise<GetAllProjectResponseDto[]> {
-    return await this.reportsService.fetchAllProject();
   }
 }

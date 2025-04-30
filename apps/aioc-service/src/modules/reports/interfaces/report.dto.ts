@@ -43,8 +43,4 @@ export interface JiraIssueDto {
   fields: JiraFieldEntity;
 }
 
-export interface GetAllProjectResponseDto {
-  id: string;
-  key: string;
-  name: string;
-}
+
