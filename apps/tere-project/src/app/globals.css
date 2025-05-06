@@ -8,6 +8,10 @@
   --color-darkBrown: #63372c;
 }
 
+.ant-drawer-body {
+  background-color: #034078 !important;
+}
+
 .ant-menu-light {
   background-color: #034078 !important; /* secondary */
   color: white !important;

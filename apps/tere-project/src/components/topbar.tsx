@@ -3,7 +3,6 @@
 import {
   LockOutlined,
   LogoutOutlined,
-  SettingOutlined,
   UserOutlined,
   MenuOutlined,
 } from '@ant-design/icons';
@@ -22,7 +21,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   );
 
   return (
-    <header className="flex justify-between items-center px-4 py-4 shadow-sm bg-white border-b">
+    <header className="flex justify-between items-center px-4 py-4 shadow-sm bg-stone-100">
       {/* Mobile menu icon */}
       <div className="lg:hidden">
         <MenuOutlined
@@ -32,11 +31,9 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
       </div>
       <div className="hidden lg:block" /> {/* Left spacer on desktop */}
       <Space size="large">
-        <SettingOutlined className="text-xl text-[#1282A2] cursor-pointer" />
         <Dropdown overlay={items} trigger={['click']}>
           <Avatar
-            size="large"
-            className="bg-[#63372C] cursor-pointer"
+            style={{ backgroundColor: '#63372c', cursor: 'pointer' }}
             icon={<UserOutlined />}
           />
         </Dropdown>
