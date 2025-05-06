@@ -1,15 +1,39 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Sidebar from './sidebar';
 import Topbar from './topbar';
+import { getCurrentUser } from '@src/lib/auth';
+import SignIn from './signIn';
+import LoadingScreen from './loadingScreen';
 
 export default function LayoutShell({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [user, setUser] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getCurrentUser().then(currentUser => {
+      if (!currentUser) {
+        setUser(null);
+      } else {
+        setUser(currentUser.email);
+      }
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (!user) {
+    return <SignIn />;
+  }
 
   return (
     <div className="flex min-h-screen bg-white text-gray-800">

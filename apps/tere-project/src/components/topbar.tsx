@@ -6,15 +6,30 @@ import {
   UserOutlined,
   MenuOutlined,
 } from '@ant-design/icons';
+import { logout } from '@src/lib/auth';
 import { Avatar, Dropdown, Menu, Space } from 'antd';
 
 export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
+  const handleLogout = async () => {
+    try {
+      await logout();
+      window.location.href = '/';
+    } catch (error: any) {
+      alert(error.message);
+    }
+  };
+
   const items = (
     <Menu>
       <Menu.Item key="password" icon={<LockOutlined />}>
         Change Password
       </Menu.Item>
-      <Menu.Item key="logout" danger icon={<LogoutOutlined />}>
+      <Menu.Item
+        key="logout"
+        onClick={handleLogout}
+        danger
+        icon={<LogoutOutlined />}
+      >
         Logout
       </Menu.Item>
     </Menu>
