@@ -1,8 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  JiraIssueEntity,
-  JiraProjectEntity,
-} from '../interfaces/report.entity';
+import { JiraIssueEntity } from '../interfaces/report.entity';
 import axios from 'axios';
 import {
   JiraIssueDto,

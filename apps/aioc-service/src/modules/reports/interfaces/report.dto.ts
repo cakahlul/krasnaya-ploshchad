@@ -1,3 +1,4 @@
+import { Level } from 'src/shared/enums/level.enum';
 import { JiraFieldEntity } from './report.entity';
 
 export interface JiraSearchRequestDto {
@@ -16,6 +17,7 @@ export interface JiraIssueReportResponseDto {
   devDefect: number;
   devDefectRate: string;
   totalWeightPoints: number;
+  level: Level;
 }
 
 export interface GetReportResponseDto {
@@ -42,5 +44,3 @@ export interface JiraIssueDto {
   key: string;
   fields: JiraFieldEntity;
 }
-
-

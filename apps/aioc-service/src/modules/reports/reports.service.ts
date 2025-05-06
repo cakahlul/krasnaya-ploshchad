@@ -5,7 +5,7 @@ import {
   GetReportResponseDto,
   JiraSearchRequestDto,
 } from './interfaces/report.dto';
-import { JiraIssueEntity, JiraProjectEntity } from './interfaces/report.entity';
+import { JiraIssueEntity } from './interfaces/report.entity';
 import { TeamMember } from 'src/shared/interfaces/team-member.interface';
 import { teamMembers } from 'src/shared/constants/team-member.const';
 
@@ -63,6 +63,7 @@ export class ReportsService {
             totalWeightPoints: 0,
             devDefect: 0,
             devDefectRate: '',
+            level: member.level,
           },
         ]),
     );
@@ -80,6 +81,13 @@ export class ReportsService {
       '10651': 2, // Low Complexity
       '10652': 4, // Medium complexity
       '10653': 8, // High complexity
+    };
+
+    const minimumComplexityByLevels: { [key: string]: number } = {
+      junior: 32,
+      medior: 48,
+      senior: 80,
+      'individual contributor': 80,
     };
 
     const complexityMap = new Map<
@@ -147,7 +155,8 @@ export class ReportsService {
         // Calculate average complexity
         const complexityData = complexityMap.get(report.member);
         const average = complexityData?.count
-          ? complexityData.totalComplexity / complexityData.count
+          ? complexityData.totalComplexity /
+            minimumComplexityByLevels[report.level]
           : 0;
         report.averageComplexity = average.toFixed(2);
         report.totalWeightPoints = complexityData?.totalComplexity ?? 0;
