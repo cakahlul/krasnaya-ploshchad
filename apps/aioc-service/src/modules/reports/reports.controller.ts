@@ -1,8 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ReportsService } from './reports.service';
-import {
-  GetReportResponseDto,
-} from './interfaces/report.dto';
+import { GetReportResponseDto } from './interfaces/report.dto';
 
 @Controller('report')
 export class ReportsController {

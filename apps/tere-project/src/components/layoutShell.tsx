@@ -41,6 +41,9 @@ export default function LayoutShell({
       <div className="flex flex-col flex-1">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 p-6 bg-white">{children}</main>
+        <footer className="bg-muted text-center text-sm py-1.5">
+          Created by <strong>Esasjana</strong> © 2025
+        </footer>
       </div>
     </div>
   );

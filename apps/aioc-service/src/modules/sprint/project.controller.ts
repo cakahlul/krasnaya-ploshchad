@@ -12,7 +12,7 @@ export class ProjectController {
   }
 
   @Get('sprint')
-  async getAllSprint( @Query('boardId') boardId: number): Promise<SprintDto[]> {
+  async getAllSprint(@Query('boardId') boardId: number): Promise<SprintDto[]> {
     return await this.projectService.fetchAllSprint(boardId);
   }
 }

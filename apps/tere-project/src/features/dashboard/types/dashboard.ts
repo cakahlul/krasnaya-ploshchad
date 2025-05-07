@@ -32,3 +32,16 @@ export interface DashboardFilter {
   sprint: string;
   project: string;
 }
+
+export interface SprintDto {
+  id: number;
+  self: string;
+  state: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  completeDate: string;
+  createdDate: string;
+  originBoardId: number;
+  goal: string;
+}

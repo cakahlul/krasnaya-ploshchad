@@ -1,6 +1,6 @@
-import { Injectable } from "@nestjs/common";
-import { ProjectEntity, Sprint, SprintEntity } from "../interfaces/project.entity";
-import axios from "axios";
+import { Injectable } from '@nestjs/common';
+import { ProjectEntity, SprintEntity } from '../interfaces/project.entity';
+import axios from 'axios';
 
 @Injectable()
 export class ProjectRepository {
@@ -13,14 +13,15 @@ export class ProjectRepository {
   async fetchJiraSprint(boardId: number): Promise<SprintEntity> {
     //hardcoded logic startAt to exclude old sprint
     let startAt = 55;
-    if (boardId == 143){
+    if (boardId == 143) {
       startAt = 32;
     }
 
-    const response = await axios.get<SprintEntity>(`${this.url}/rest/agile/1.0/board/${boardId}/sprint?maxResults=100&startAt=${startAt}`,
+    const response = await axios.get<SprintEntity>(
+      `${this.url}/rest/agile/1.0/board/${boardId}/sprint?maxResults=100&startAt=${startAt}`,
       {
         auth: this.auth,
-      }
+      },
     );
     return response.data;
   }

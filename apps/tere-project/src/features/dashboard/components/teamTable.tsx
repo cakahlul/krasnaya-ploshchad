@@ -2,9 +2,13 @@
 import { WorkItem } from '../types/dashboard';
 import { Table, TableColumnsType } from 'antd';
 import { useTeamReportTransform } from '../hooks/useTeamReportTransform';
+import TeamPerformance from './teamPerformance';
+import { useState } from 'react';
+import LoadingBar from '@src/components/loadingBar';
 
 export default function TeamTable() {
   const { data, isLoading } = useTeamReportTransform();
+  const [pageSize, setPageSize] = useState(5);
 
   const columns: TableColumnsType<WorkItem> = [
     { title: 'Member', dataIndex: 'member', key: 'member' },
@@ -37,22 +41,41 @@ export default function TeamTable() {
       key: 'devDefectRate',
     },
   ];
-
-  if (isLoading) {
-    return <div>Loading item...</div>;
-  }
-
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Issue Productivity Table</h1>
-      <Table
-        columns={columns}
-        dataSource={data?.workItems.map((item, index) => ({
-          ...item,
-          key: index,
-        }))}
-        pagination={false}
-      />
-    </div>
+    <>
+      <div className="p-4">
+        {!!data && <TeamPerformance />}
+        <Table
+          columns={columns}
+          dataSource={data?.workItems.map((item, index) => ({
+            ...item,
+            key: index,
+          }))}
+          pagination={{
+            pageSize,
+            showSizeChanger: true,
+            pageSizeOptions: ['5', '10', '20', '50'],
+          }}
+          onChange={pagination => {
+            setPageSize(pagination.pageSize || 5);
+          }}
+          title={() => (
+            <h2>
+              <strong>Team Performance Metrics</strong>
+            </h2>
+          )} // Added header
+        />
+      </div>
+      {!!data && (
+        <div>
+          <p className="text-red-500 text-xs">
+            **The shown data is collected based on the assumption that each team
+            member works 10 days per sprint. This data may vary based on actual
+            workdays and team dynamics.
+          </p>
+        </div>
+      )}
+      {isLoading && <LoadingBar />}
+    </>
   );
 }
