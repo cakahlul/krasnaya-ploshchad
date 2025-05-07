@@ -10,10 +10,19 @@ export interface WorkItem {
   totalWeightPoints: number;
 }
 
-export interface Dashboard {
+export interface DashboardDto {
   issues: WorkItem[];
   totalIssueProduct: number;
   totalIssueTechDebt: number;
+  productPercentage: string;
+  techDebtPercentage: string;
+  averageProductivity: string;
+}
+
+export interface DashhboardEntity {
+  workItems: WorkItem[];
+  productTask: number;
+  techDebtTask: number;
   productPercentage: string;
   techDebtPercentage: string;
   averageProductivity: string;

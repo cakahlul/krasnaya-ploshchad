@@ -14,8 +14,8 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
     try {
       await logout();
       window.location.href = '/';
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error) {
+      alert(error);
     }
   };
 
@@ -44,7 +44,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           onClick={onMenuClick}
         />
       </div>
-      <div className="hidden lg:block" /> {/* Left spacer on desktop */}
+      <div className="hidden lg:block" />
       <Space size="large">
         <Dropdown overlay={items} trigger={['click']}>
           <Avatar

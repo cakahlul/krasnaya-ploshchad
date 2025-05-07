@@ -1,10 +1,10 @@
 'use client';
 import { WorkItem } from '../types/dashboard';
-import { useTeamReportFetch } from '../hooks/useTeamReportFetch';
 import { Table, TableColumnsType } from 'antd';
+import { useTeamReportTransform } from '../hooks/useTeamReportTransform';
 
 export default function TeamTable() {
-  const { data, isLoading } = useTeamReportFetch();
+  const { data, isLoading } = useTeamReportTransform();
 
   const columns: TableColumnsType<WorkItem> = [
     { title: 'Member', dataIndex: 'member', key: 'member' },
@@ -47,7 +47,7 @@ export default function TeamTable() {
       <h1>Issue Productivity Table</h1>
       <Table
         columns={columns}
-        dataSource={data?.issues.map((item, index) => ({
+        dataSource={data?.workItems.map((item, index) => ({
           ...item,
           key: index,
         }))}

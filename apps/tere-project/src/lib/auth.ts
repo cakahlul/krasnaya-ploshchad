@@ -1,4 +1,3 @@
-// lib/auth.ts
 import { auth } from './firebase';
 import {
   createUserWithEmailAndPassword,

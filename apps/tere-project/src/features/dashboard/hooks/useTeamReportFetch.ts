@@ -1,7 +1,7 @@
 'use client';
 import { useTeamReportFilterStore } from '@src/features/dashboard/store/useTeamReportFilterStore';
 import { useQuery } from '@tanstack/react-query';
-import { jiraRepository } from '@src/features/dashboard/services/jiraRepository';
+import { jiraRepository } from '@src/features/dashboard/repositories/jiraRepository';
 import { useEffect } from 'react';
 
 export function useTeamReportFetch() {
