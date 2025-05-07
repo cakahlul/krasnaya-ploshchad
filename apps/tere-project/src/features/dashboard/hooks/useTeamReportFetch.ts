@@ -1,5 +1,5 @@
 'use client';
-import { useTeamReportFilterStore } from '@src/features/dashboard/store/useTeamReportFilterStore';
+import { useTeamReportFilterStore } from '@src/features/dashboard/store/teamReportFilterStore';
 import { useQuery } from '@tanstack/react-query';
 import { jiraRepository } from '@src/features/dashboard/repositories/jiraRepository';
 

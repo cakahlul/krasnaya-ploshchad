@@ -1,7 +1,7 @@
 import { Select } from 'antd';
 import { useSprintDataTransform } from '../hooks/useSprintDataTransform';
-import { useSprintFilterStore } from '../store/useSprintFilterStore';
-import { useTeamReportFilterStore } from '../store/useTeamReportFilterStore';
+import { useSprintFilterStore } from '../store/sprintFilterStore';
+import { useTeamReportFilterStore } from '../store/teamReportFilterStore';
 
 export function FilterReport() {
   const { sprints, isLoading } = useSprintDataTransform();

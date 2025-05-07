@@ -1,7 +1,7 @@
 'use client';
 import { jiraRepository } from '../repositories/jiraRepository';
 import { useQuery } from '@tanstack/react-query';
-import { useSprintFilterStore } from '../store/useSprintFilterStore';
+import { useSprintFilterStore } from '../store/sprintFilterStore';
 
 export function useSprintFetch() {
   const { board } = useSprintFilterStore(state => state);

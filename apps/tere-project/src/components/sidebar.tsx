@@ -7,12 +7,12 @@ import { usePathname, useRouter } from 'next/navigation';
 
 const items = [
   {
-    key: '/reports',
+    key: '/dashboard/reports',
     icon: <TeamOutlined />,
     label: 'Team Reporting',
   },
   {
-    key: '/monitoring',
+    key: '/dashboard/monitoring',
     icon: <AppstoreOutlined />,
     label: 'Application Monitoring',
   },

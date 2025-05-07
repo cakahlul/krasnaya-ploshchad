@@ -7,37 +7,52 @@ import {
   MenuOutlined,
 } from '@ant-design/icons';
 import { logout } from '@src/lib/auth';
-import { Avatar, Dropdown, Menu, Space } from 'antd';
+import { Avatar, Dropdown, Space, Typography, message } from 'antd';
+import type { MenuProps } from 'antd';
+import useUser from '../hooks/useUser';
+
+const { Text } = Typography;
 
 export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
+  const { getUserEmail, setLoginPageMessage } = useUser();
   const handleLogout = async () => {
     try {
       await logout();
-      window.location.href = '/';
+      setLoginPageMessage('✌️ Logged out! The keyboard misses you already.');
     } catch (error) {
-      alert(error);
+      message.error('Logout failed');
+      console.error(error);
     }
   };
 
-  const items = (
-    <Menu>
-      <Menu.Item key="password" icon={<LockOutlined />}>
-        Change Password
-      </Menu.Item>
-      <Menu.Item
-        key="logout"
-        onClick={handleLogout}
-        danger
-        icon={<LogoutOutlined />}
-      >
-        Logout
-      </Menu.Item>
-    </Menu>
-  );
+  const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
+    if (key === 'logout') {
+      handleLogout();
+    } else if (key === 'password') {
+      message.info('Change password clicked');
+    }
+  };
+
+  const menuItems: MenuProps['items'] = [
+    {
+      key: 'password',
+      icon: <LockOutlined />,
+      label: 'Change Password',
+    },
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: 'Logout',
+      danger: true,
+    },
+  ];
+
+  const getGreeting = () => {
+    return `Hey, ${getUserEmail()}! 👋`;
+  };
 
   return (
     <header className="flex justify-between items-center px-4 py-4 shadow-sm bg-stone-100">
-      {/* Mobile menu icon */}
       <div className="lg:hidden">
         <MenuOutlined
           className="text-xl cursor-pointer"
@@ -45,8 +60,14 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
         />
       </div>
       <div className="hidden lg:block" />
-      <Space size="large">
-        <Dropdown overlay={items} trigger={['click']}>
+      <Space size="middle">
+        <Text className="font-medium text-base text-gray-800">
+          {getGreeting()}
+        </Text>
+        <Dropdown
+          menu={{ items: menuItems, onClick: handleMenuClick }}
+          trigger={['click']}
+        >
           <Avatar
             style={{ backgroundColor: '#63372c', cursor: 'pointer' }}
             icon={<UserOutlined />}

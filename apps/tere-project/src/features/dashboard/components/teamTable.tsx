@@ -42,7 +42,8 @@ export default function TeamTable() {
     },
   ];
   return (
-    <>
+    <div className="relative flex-1">
+      {isLoading && <LoadingBar />}
       <div className="p-4">
         {!!data && <TeamPerformance />}
         <Table
@@ -75,7 +76,6 @@ export default function TeamTable() {
           </p>
         </div>
       )}
-      {isLoading && <LoadingBar />}
-    </>
+    </div>
   );
 }

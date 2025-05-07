@@ -55,8 +55,6 @@ export default function LoadingBar() {
   }, [isFetching]);
 
   useEffect(() => {
-    if (!visible) return;
-
     const iconInterval = setInterval(() => {
       const indexToChange = Math.floor(Math.random() * 3);
       let newIcon;
@@ -77,10 +75,10 @@ export default function LoadingBar() {
 
     const progressInterval = setInterval(() => {
       setProgress(prev => {
-        if (isFetching > 0 && prev < 99) {
+        if (isFetching > 0 && prev < 100) {
           return prev + Math.floor(Math.random() * 25);
         } else if (isFetching === 0 && prev < 100) {
-          return prev + 25;
+          return prev + (100 - prev);
         } else {
           return prev;
         }
@@ -88,11 +86,11 @@ export default function LoadingBar() {
     }, 500);
 
     if (isFetching === 0 && progress >= 100) {
-      // Hide after short delay
+      // Hide after short delay when fetching is done
       const hideTimeout = setTimeout(() => {
+        setProgress(99);
         setVisible(false);
-        setProgress(0);
-      }, 2000);
+      }, 1000);
       return () => clearTimeout(hideTimeout);
     }
 
@@ -106,7 +104,7 @@ export default function LoadingBar() {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-white/20">
+    <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-white/20">
       <div className="text-center space-y-4 w-[300px]">
         <div className="flex justify-center gap-4">
           {currentIcons.map((icon, idx) => {
