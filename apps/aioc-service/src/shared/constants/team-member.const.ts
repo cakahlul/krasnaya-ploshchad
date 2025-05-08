@@ -104,4 +104,18 @@ export const teamMembers: TeamMember[] = [
     team: [TEAM_FUNDING],
     level: Level[LEVEL_JUNIOR],
   },
+  {
+    name: 'Tara',
+    id: '5ed5fc5c8063980c18eee63c',
+    email: 'tara.desyafriben@amarbank.co.id',
+    team: [TEAM_FUNDING],
+    level: Level[LEVEL_SENIOR],
+  },
+  {
+    name: 'Tommy',
+    id: '5ba1c3290b4e302eb612ec62',
+    email: 'tommy.putranto@amarbank.co.id',
+    team: [TEAM_FUNDING],
+    level: Level[LEVEL_SENIOR],
+  },
 ];
