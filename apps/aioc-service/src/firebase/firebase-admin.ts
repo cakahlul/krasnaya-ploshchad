@@ -1,18 +1,32 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-require-imports */
 import * as admin from 'firebase-admin';
 import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 
-// Write the base64-decoded service account JSON to disk
-const serviceAccountPath = '/tmp/serviceAccountKey.json';
-const base64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+let credentials: admin.ServiceAccount;
 
-if (!base64) {
-  throw new Error('Missing FIREBASE_SERVICE_ACCOUNT_BASE64 env variable');
+if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+  // For Railway or production
+  const serviceAccountPath = path.join(os.tmpdir(), 'serviceAccountKey.json');
+  fs.writeFileSync(
+    serviceAccountPath,
+    Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64'),
+  );
+  credentials = require(serviceAccountPath);
+} else {
+  // ✅ For LOCAL development using actual JSON file
+  credentials = require(
+    path.resolve(
+      __dirname,
+      './../../tere-project-5billion-firebase-admin.json',
+    ),
+  );
 }
 
-fs.writeFileSync(serviceAccountPath, Buffer.from(base64, 'base64'));
-
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccountPath),
+  credential: admin.credential.cert(credentials),
 });
 
 export default admin;
