@@ -4,10 +4,9 @@ import { Table, TableColumnsType } from 'antd';
 import { useTeamReportTransform } from '../hooks/useTeamReportTransform';
 import TeamPerformance from './teamPerformance';
 import { useState } from 'react';
-import LoadingBar from '@src/components/loadingBar';
 
 export default function TeamTable() {
-  const { data, isLoading } = useTeamReportTransform();
+  const { data } = useTeamReportTransform();
   const [pageSize, setPageSize] = useState(5);
 
   const columns: TableColumnsType<WorkItem> = [
@@ -43,7 +42,6 @@ export default function TeamTable() {
   ];
   return (
     <div className="relative flex-1">
-      {isLoading && <LoadingBar />}
       <div className="p-4">
         {!!data && <TeamPerformance />}
         <Table

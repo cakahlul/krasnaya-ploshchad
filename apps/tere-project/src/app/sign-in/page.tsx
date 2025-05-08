@@ -27,15 +27,15 @@ export default function SignIn() {
   return (
     <div className="relative flex items-center justify-center min-h-screen bg-gradient-to-br from-accent via-muted to-white">
       {loginPageMessage && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white shadow-lg rounded-full px-6 py-2 text-accent font-semibold text-sm animate-in fade-in duration-700 z-10">
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white shadow-lg rounded-full px-6 py-2 text-accent font-semibold text-sm animate-slot-in">
           {loginPageMessage}
         </div>
       )}
-      <div className="w-full max-w-md bg-white/80 shadow-xl backdrop-blur-md rounded-3xl px-8 py-10 animate-in fade-in duration-700">
-        <h2 className="text-3xl font-extrabold text-primary text-center mb-2 animate-in slide-in-from-bottom duration-700">
+      <div className="w-full max-w-md bg-white/80 shadow-xl backdrop-blur-md rounded-3xl px-8 py-10 animate-slot-in">
+        <h2 className="text-3xl font-extrabold text-primary text-center mb-2 animate-bounce-up-down hover:animate-bounce-up-down">
           👋 Welcome Back!
         </h2>
-        <p className="text-secondary text-center mb-6 animate-in fade-in delay-300 duration-700">
+        <p className="text-secondary text-center mb-6 animate-slot-in">
           Login to continue your journey
         </p>
 
@@ -75,6 +75,10 @@ export default function SignIn() {
           </p>
         </form>
       </div>
+      <footer className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-secondary text-center animate-slot-in">
+        Made with ✨ and 0 bugs (hopefully) by{' '}
+        <strong className="text-accent">Esasjana</strong> 🚀
+      </footer>
     </div>
   );
 }

@@ -25,11 +25,11 @@ export default function SignUp() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-white via-muted to-accent">
-      <div className="w-full max-w-md bg-white/80 shadow-xl backdrop-blur-md rounded-3xl px-8 py-10 animate-in fade-in duration-700">
-        <h2 className="text-3xl font-extrabold text-primary text-center mb-2 animate-in slide-in-from-bottom duration-700">
+      <div className="w-full max-w-md bg-white/80 shadow-xl backdrop-blur-md rounded-3xl px-8 py-10 animate-bounce-up-down">
+        <h2 className="text-3xl font-extrabold text-primary text-center mb-2 animate-bounce-up-down hover:animate-bounce-up-down transition-all">
           🎉 Create Your Account
         </h2>
-        <p className="text-secondary text-center mb-6 animate-in fade-in delay-300 duration-700">
+        <p className="text-secondary text-center mb-6 animate-slot-in">
           Let&apos;s start something great together
         </p>
 
@@ -69,6 +69,10 @@ export default function SignUp() {
           </p>
         </form>
       </div>
+      <footer className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-secondary text-center animate-slot-in">
+        Made with ✨ and 0 bugs (hopefully) by{' '}
+        <strong className="text-accent">Esasjana</strong> 🚀
+      </footer>
     </div>
   );
 }

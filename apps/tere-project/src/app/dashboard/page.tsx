@@ -5,7 +5,7 @@ export default function Dashboard() {
   const { getUserEmail } = useUser();
 
   return (
-    <div className="flex flex-col items-center justify-center h-full text-center space-y-6 px-4">
+    <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-accent via-muted text-center space-y-6 px-4">
       <h1 className="text-5xl font-extrabold text-primary transition-transform duration-500 hover:scale-110 hover:rotate-1">
         👋 Yo {getUserEmail()}!
       </h1>

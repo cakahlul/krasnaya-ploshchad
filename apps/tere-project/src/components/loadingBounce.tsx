@@ -31,12 +31,13 @@ const icons = [
 ];
 
 export default function LoadingBounce() {
-  const [messageIndex, setMessageIndex] = useState(() =>
-    Math.floor(Math.random() * messages.length),
-  );
-  const [iconIndex, setIconIndex] = useState(() =>
-    Math.floor(Math.random() * icons.length),
-  );
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [iconIndex, setIconIndex] = useState(0);
+
+  useEffect(() => {
+    setMessageIndex(Math.floor(Math.random() * messages.length));
+    setIconIndex(Math.floor(Math.random() * icons.length));
+  }, []);
 
   useEffect(() => {
     const messageInterval = setInterval(() => {

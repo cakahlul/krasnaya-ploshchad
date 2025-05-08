@@ -33,10 +33,11 @@ export default function DashboardLayout({
           <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
           <div className="flex flex-col flex-1">
             <Topbar onMenuClick={() => setSidebarOpen(true)} />
-            <main className="flex-1 p-6 bg-white">{children}</main>
-            <footer className="bg-muted text-center text-sm py-1.5">
-              Made with ☕, code, and probably too many semicolons by{' '}
-              <strong>Esasjana</strong> © 2025
+            <main className="flex-1 bg-white">{children}</main>
+            <footer className="shadow-sm bg-white/60 backdrop-blur-sm text-center text-xs py-1.5">
+              Built with ⚒️ by{' '}
+              <strong className="text-primary">Esasjana</strong> – still cooler
+              than your average dev 😎
             </footer>
           </div>
         </div>

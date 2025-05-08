@@ -1,5 +1,5 @@
-import DashboardLayout from './dashboard/layout';
+import { redirect } from 'next/navigation';
 
-export default function Home({ children }: { children: React.ReactNode }) {
-  return <DashboardLayout>{children}</DashboardLayout>;
+export default function Home() {
+  redirect('/dashboard');
 }
