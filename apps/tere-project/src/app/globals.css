@@ -64,6 +64,35 @@
   .animate-floatDrop {
     animation: floatDrop 1.2s ease-out forwards;
   }
+
+  @keyframes bounce-left-right {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(6px);
+    }
+  }
+
+  .animate-bounce-left-right {
+    animation: bounce-left-right 1s infinite;
+  }
+
+  @keyframes fade-in {
+    0% {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.4s ease-in-out;
+  }
 }
 
 .ant-drawer-body {

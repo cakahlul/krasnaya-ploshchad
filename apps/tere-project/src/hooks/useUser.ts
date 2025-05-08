@@ -31,6 +31,8 @@ export default function useUser() {
       setUser(null);
     },
     getUserEmail: () => (user ? user.email : ''),
+    getDisplayName: () => (user ? user.displayName : ''),
+    getUserPhoto: () => (user ? user.photoURL : ''),
     loading,
     setLoading,
     setLoginPageMessage,

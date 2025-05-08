@@ -8,11 +8,12 @@ import useUser from '../hooks/useUser';
 import { UserRound } from 'lucide-react';
 import { useIsFetching } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 const { Text } = Typography;
 
 export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
-  const { getUserEmail, setLoginPageMessage } = useUser();
+  const { getDisplayName, setLoginPageMessage, getUserPhoto } = useUser();
   const handleLogout = async () => {
     try {
       await logout();
@@ -26,12 +27,12 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const [greetings, setGreetings] = useState('Hey, you! 👋');
 
   useEffect(() => {
-    if (isFetching) {
-      setGreetings(`Be patient, ${getUserEmail()}.. ⏳`);
+    if (isFetching > 0) {
+      setGreetings(`Be patient, ${getDisplayName()}.. ⏳`);
     } else {
-      setGreetings(`Hey, ${getUserEmail() ?? 'User'}! 👋`);
+      setGreetings(`Hey, ${getDisplayName() ?? 'User'}! 👋`);
     }
-  }, [isFetching, getUserEmail]);
+  }, [isFetching, getDisplayName]);
 
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
     if (key === 'logout') {
@@ -73,10 +74,20 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           trigger={['click']}
         >
           <button
-            className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-white hover:animate-bounce-up-down shadow-md cursor-pointer transition-transform"
+            className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-white hover:animate-bounce-up-down shadow-md cursor-pointer transition-transform overflow-hidden"
             title="Account options"
           >
-            <UserRound className="w-5 h-5" />
+            {getUserPhoto() ? (
+              <Image
+                src={getUserPhoto() || ''}
+                alt="User avatar"
+                width={40}
+                height={40}
+                className="object-cover w-full h-full"
+              />
+            ) : (
+              <UserRound className="w-5 h-5" />
+            )}
           </button>
         </Dropdown>
       </Space>

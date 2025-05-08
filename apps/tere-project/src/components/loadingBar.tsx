@@ -104,8 +104,8 @@ export default function LoadingBar() {
   if (!visible) return null;
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-white/20">
-      <div className="text-center space-y-4 w-[300px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-white/20">
+      <div className="flex flex-col items-center justify-center text-center space-y-4 w-[300px]">
         <div className="flex justify-center gap-4">
           {currentIcons.map((icon, idx) => {
             const isAnimating = animatedIndex === idx;

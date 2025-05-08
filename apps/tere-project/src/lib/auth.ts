@@ -1,12 +1,19 @@
-import { auth } from './firebase';
+import { auth, googleProvider } from './firebase';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   User,
 } from 'firebase/auth';
 
 export const signup = (email: string, password: string) => {
+  const allowedDomain = '@amarbank.co.id';
+
+  if (!email.endsWith(allowedDomain)) {
+    throw new Error('Email domain is not allowed. Should be amarbank.co.id');
+  }
+
   return createUserWithEmailAndPassword(auth, email, password);
 };
 
@@ -25,3 +32,22 @@ export const getCurrentUser = (): Promise<User | null> => {
     });
   });
 };
+
+export async function signInWithGoogle() {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    const user = result.user;
+
+    // Optional: check domain here
+    const email = user.email || '';
+    const allowedDomain = 'amarbank.co.id'; // ✅ replace with your domain
+    if (!email.endsWith(`@${allowedDomain}`)) {
+      throw new Error('Only specific domain users allowed');
+    }
+
+    return user;
+  } catch (error) {
+    console.error('Error during Google sign-in:', error);
+    throw error;
+  }
+}

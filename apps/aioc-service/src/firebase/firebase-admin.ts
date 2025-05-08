@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-require-imports */
 import * as admin from 'firebase-admin';
@@ -15,6 +17,7 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
     Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64'),
   );
   credentials = require(serviceAccountPath);
+  console.log('✅ Firebase initialized');
 } else {
   // ✅ For LOCAL development using actual JSON file
   credentials = require(
