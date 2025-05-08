@@ -35,7 +35,7 @@ export default function Sidebar({
   };
 
   const SidebarContent = () => (
-    <div className="h-screen w-64 bg-gradient-to-b from-primary to-accent text-white p-4 space-y-8 shadow-lg">
+    <div className="min-h-screen w-64 bg-gradient-to-b from-primary to-accent text-white p-4 space-y-8 shadow-lg">
       <h1 className="text-2xl font-bold mb-4">📊 Team Reporting</h1>
       <nav className="flex flex-col space-y-2">
         {menuItems.map(item => (
