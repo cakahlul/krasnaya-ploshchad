@@ -40,7 +40,8 @@ export async function signInWithGoogle() {
 
     // Optional: check domain here
     const email = user.email || '';
-    const allowedDomain = 'amarbank.co.id'; // ✅ replace with your domain
+    const allowedDomain =
+      process.env.NEXT_PUBLIC_ALLOWED_DOMAIN || 'secret.co.id'; // fallback to default domain if env var is not set
     if (!email.endsWith(`@${allowedDomain}`)) {
       throw new Error('Only specific domain users allowed');
     }
