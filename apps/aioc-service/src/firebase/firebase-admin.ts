@@ -9,27 +9,38 @@ import * as path from 'path';
 
 let credentials: admin.ServiceAccount;
 
-if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
-  // For Railway or production
-  const serviceAccountPath = path.join(os.tmpdir(), 'serviceAccountKey.json');
-  fs.writeFileSync(
-    serviceAccountPath,
-    Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64'),
-  );
-  credentials = require(serviceAccountPath);
-  console.log('✅ Firebase initialized');
-} else {
-  // ✅ For LOCAL development using actual JSON file
-  credentials = require(
-    path.resolve(
+try {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+    // For Vercel or production
+    const serviceAccountPath = path.join(os.tmpdir(), 'serviceAccountKey.json');
+    fs.writeFileSync(
+      serviceAccountPath,
+      Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64'),
+    );
+    credentials = require(serviceAccountPath);
+    console.log('✅ Firebase initialized with environment variable');
+  } else {
+    // For local development
+    const serviceAccountPath = path.resolve(
       __dirname,
       './../../tere-project-5billion-firebase-admin.json',
-    ),
-  );
-}
+    );
+    if (fs.existsSync(serviceAccountPath)) {
+      credentials = require(serviceAccountPath);
+      console.log('✅ Firebase initialized with local file');
+    } else {
+      throw new Error('Firebase credentials not found');
+    }
+  }
 
-admin.initializeApp({
-  credential: admin.credential.cert(credentials),
-});
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      credential: admin.credential.cert(credentials),
+    });
+  }
+} catch (error) {
+  console.error('❌ Firebase initialization error:', error);
+  throw error;
+}
 
 export default admin;
