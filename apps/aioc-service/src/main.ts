@@ -35,12 +35,20 @@ async function bootstrap() {
 
 // For Vercel serverless deployment
 const handler = async (req: Request, res: Response): Promise<void> => {
+  // Normalize the request path
+  const originalUrl = req.originalUrl || req.url;
+  const path = originalUrl.split('?')[0];
+
   console.log('Incoming request:', {
     method: req.method,
-    url: req.url,
-    path: req.path,
+    originalUrl,
+    path,
     query: req.query,
-    headers: req.headers,
+    headers: {
+      host: req.headers.host,
+      'x-forwarded-host': req.headers['x-forwarded-host'],
+      'x-forwarded-proto': req.headers['x-forwarded-proto'],
+    },
   });
 
   if (!app) {
@@ -53,12 +61,27 @@ const handler = async (req: Request, res: Response): Promise<void> => {
 
   // Add error handling
   try {
+    // Handle OPTIONS requests for CORS
+    if (req.method === 'OPTIONS') {
+      res.status(200).end();
+      return;
+    }
+
+    // Handle health check
+    if (path === '/health') {
+      res.status(200).json({ status: 'ok' });
+      return;
+    }
+
     expressApp(req, res);
   } catch (error) {
     console.error('Error handling request:', error);
-    res
-      .status(500)
-      .json({ error: 'Internal Server Error', details: error.message });
+    res.status(500).json({
+      error: 'Internal Server Error',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      path,
+      originalUrl,
+    });
   }
 };
 
