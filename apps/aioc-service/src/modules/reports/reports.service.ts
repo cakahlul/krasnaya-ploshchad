@@ -6,8 +6,8 @@ import {
   JiraSearchRequestDto,
 } from './interfaces/report.dto';
 import { JiraIssueEntity } from './interfaces/report.entity';
-import { TeamMember } from 'src/shared/interfaces/team-member.interface';
-import { teamMembers } from 'src/shared/constants/team-member.const';
+import { TeamMember } from '../../shared/interfaces/team-member.interface';
+import { teamMembers } from '../../shared/constants/team-member.const';
 
 @Injectable()
 export class ReportsService {
