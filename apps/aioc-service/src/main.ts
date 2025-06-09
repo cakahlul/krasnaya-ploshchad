@@ -11,15 +11,15 @@ async function bootstrap() {
   const allowedOrigins = process.env.ALLOWED_ORIGINS;
   app = await NestFactory.create(AppModule);
 
-  // Set global prefix for all routes
-  app.setGlobalPrefix('api', {
-    exclude: ['/health'],
-  });
+  // Remove global prefix since Vercel handles it
+  // app.setGlobalPrefix('api', {
+  //   exclude: ['/health'],
+  // });
 
   app.enableCors({
-    origin: allowedOrigins ? allowedOrigins.split(',') : '*', // Allow all origins if ALLOWED_ORIGINS is not set
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // Allowed HTTP methods
-    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+    origin: allowedOrigins ? allowedOrigins.split(',') : '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
     allowedHeaders:
       'Origin, X-Requested-With, Content-Type, Accept, Authorization',
   });
@@ -39,10 +39,14 @@ const handler = async (req: Request, res: Response): Promise<void> => {
   const originalUrl = req.originalUrl || req.url;
   const path = originalUrl.split('?')[0];
 
+  // Remove /api prefix from the path for NestJS routing
+  const nestPath = path.startsWith('/api') ? path.substring(4) : path;
+
   console.log('Incoming request:', {
     method: req.method,
     originalUrl,
     path,
+    nestPath,
     query: req.query,
     headers: {
       host: req.headers.host,
@@ -73,6 +77,10 @@ const handler = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Modify the request path for NestJS
+    req.url = nestPath;
+    req.originalUrl = nestPath;
+
     expressApp(req, res);
   } catch (error) {
     console.error('Error handling request:', error);
@@ -80,6 +88,7 @@ const handler = async (req: Request, res: Response): Promise<void> => {
       error: 'Internal Server Error',
       details: error instanceof Error ? error.message : 'Unknown error',
       path,
+      nestPath,
       originalUrl,
     });
   }
