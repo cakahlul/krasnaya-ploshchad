@@ -4,24 +4,6 @@ import { FirebaseAuthGuard } from './auth/firebase-auth.guard';
 import { INestApplication } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { Express } from 'express';
-import { Server } from 'http';
-
-interface RouteLayer {
-  route?: {
-    path: string;
-    methods: Record<string, boolean>;
-  };
-}
-
-interface ExpressServer extends Server {
-  _events?: {
-    request?: {
-      _router?: {
-        stack?: RouteLayer[];
-      };
-    };
-  };
-}
 
 let app: INestApplication;
 
@@ -95,27 +77,24 @@ const handler = async (req: Request, res: Response): Promise<void> => {
     },
   });
 
-  if (!app) {
-    console.log('Initializing app...');
-    app = await bootstrap();
-    console.log('App initialized');
+  // Handle OPTIONS requests for CORS
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
   }
 
-  const expressApp = app.getHttpAdapter().getInstance() as Express;
+  // Handle health check
+  if (path === '/health') {
+    res.status(200).json({ status: 'ok' });
+    return;
+  }
 
-  // Add error handling
   try {
-    // Handle OPTIONS requests for CORS
-    if (req.method === 'OPTIONS') {
-      res.status(200).end();
-      return;
+    if (!app) {
+      app = await bootstrap();
     }
 
-    // Handle health check
-    if (path === '/health') {
-      res.status(200).json({ status: 'ok' });
-      return;
-    }
+    const expressApp = app.getHttpAdapter().getInstance() as Express;
 
     // Create a new request object
     const modifiedReq = {
@@ -126,24 +105,26 @@ const handler = async (req: Request, res: Response): Promise<void> => {
       path: path,
     } as Request;
 
-    // Handle the request
-    const handleRequest = () => {
-      return new Promise<void>((resolve, reject) => {
-        expressApp(modifiedReq, res, ((err: unknown) => {
-          if (err) {
-            console.error('Error handling request:', err);
-            res.status(500).json({
-              error: 'Internal Server Error',
-              details: err instanceof Error ? err.message : String(err),
-              path,
-            });
-          }
-          resolve();
-        }) as NextFunction);
-      });
-    };
+    // Handle the request with timeout
+    const timeout = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout')), 10000);
+    });
 
-    await handleRequest();
+    const handleRequest = new Promise<void>(resolve => {
+      expressApp(modifiedReq, res, ((err: unknown) => {
+        if (err) {
+          console.error('Error handling request:', err);
+          res.status(500).json({
+            error: 'Internal Server Error',
+            details: err instanceof Error ? err.message : String(err),
+            path,
+          });
+        }
+        resolve();
+      }) as NextFunction);
+    });
+
+    await Promise.race([handleRequest, timeout]);
   } catch (error) {
     console.error('Error handling request:', error);
     res.status(500).json({
