@@ -14,10 +14,10 @@ interface RouteLayer {
 }
 
 interface ExpressServer extends Server {
-  _events: {
-    request: {
-      _router: {
-        stack: RouteLayer[];
+  _events?: {
+    request?: {
+      _router?: {
+        stack?: RouteLayer[];
       };
     };
   };
@@ -44,20 +44,26 @@ async function bootstrap() {
   app.useGlobalGuards(new FirebaseAuthGuard());
 
   // Log all registered routes
-  const server = app.getHttpServer() as ExpressServer;
-  const router = server._events.request._router;
-  const availableRoutes = router.stack
-    .map(layer => {
-      if (layer.route) {
-        const path = layer.route.path;
-        const method = Object.keys(layer.route.methods)[0].toUpperCase();
-        return `${method} ${path}`;
-      }
-      return undefined;
-    })
-    .filter((item): item is string => item !== undefined);
+  try {
+    const server = app.getHttpServer() as ExpressServer;
+    const router = server._events?.request?._router;
+    if (router?.stack) {
+      const availableRoutes = router.stack
+        .map(layer => {
+          if (layer.route) {
+            const path = layer.route.path;
+            const method = Object.keys(layer.route.methods)[0].toUpperCase();
+            return `${method} ${path}`;
+          }
+          return undefined;
+        })
+        .filter((item): item is string => item !== undefined);
 
-  console.log('Registered routes:', availableRoutes);
+      console.log('Registered routes:', availableRoutes);
+    }
+  } catch (error) {
+    console.warn('Could not log registered routes:', error);
+  }
 
   if (process.env.NODE_ENV !== 'production') {
     await app.listen(process.env.PORT ?? 3001);
