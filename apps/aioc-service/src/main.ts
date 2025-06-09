@@ -26,7 +26,7 @@ async function bootstrap() {
 }
 
 // For Vercel serverless deployment
-export const handler = async (req: Request, res: Response): Promise<void> => {
+const handler = async (req: Request, res: Response): Promise<void> => {
   if (!app) {
     app = await bootstrap();
   }
@@ -38,3 +38,6 @@ export const handler = async (req: Request, res: Response): Promise<void> => {
 if (process.env.NODE_ENV !== 'production') {
   bootstrap();
 }
+
+// Export the handler as default for Vercel
+export default handler;
