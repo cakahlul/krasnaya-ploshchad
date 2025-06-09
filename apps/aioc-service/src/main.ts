@@ -10,6 +10,10 @@ let app: INestApplication;
 async function bootstrap() {
   const allowedOrigins = process.env.ALLOWED_ORIGINS;
   app = await NestFactory.create(AppModule);
+
+  // Set global prefix for all routes
+  app.setGlobalPrefix('api');
+
   app.enableCors({
     origin: allowedOrigins ? allowedOrigins.split(',') : '*', // Allow all origins if ALLOWED_ORIGINS is not set
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allowed HTTP methods
