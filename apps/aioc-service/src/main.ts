@@ -12,12 +12,16 @@ async function bootstrap() {
   app = await NestFactory.create(AppModule);
 
   // Set global prefix for all routes
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', {
+    exclude: ['/health'],
+  });
 
   app.enableCors({
     origin: allowedOrigins ? allowedOrigins.split(',') : '*', // Allow all origins if ALLOWED_ORIGINS is not set
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allowed HTTP methods
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // Allowed HTTP methods
     credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+    allowedHeaders:
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization',
   });
   app.useGlobalGuards(new FirebaseAuthGuard());
 

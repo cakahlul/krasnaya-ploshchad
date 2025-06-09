@@ -12,13 +12,31 @@ let credentials: admin.ServiceAccount;
 try {
   if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
     // For Vercel or production
-    const serviceAccountPath = path.join(os.tmpdir(), 'serviceAccountKey.json');
-    fs.writeFileSync(
-      serviceAccountPath,
-      Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64'),
-    );
-    credentials = require(serviceAccountPath);
-    console.log('✅ Firebase initialized with environment variable');
+    try {
+      const serviceAccountPath = path.join(
+        os.tmpdir(),
+        'serviceAccountKey.json',
+      );
+      const decodedCredentials = Buffer.from(
+        process.env.FIREBASE_SERVICE_ACCOUNT_BASE64,
+        'base64',
+      ).toString();
+      fs.writeFileSync(serviceAccountPath, decodedCredentials);
+      credentials = JSON.parse(decodedCredentials);
+      console.log('✅ Firebase initialized with environment variable');
+    } catch (error) {
+      console.error('Error parsing Firebase credentials:', error);
+      throw new Error('Invalid Firebase credentials format');
+    }
+  } else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    // Alternative: Direct JSON string in environment variable
+    try {
+      credentials = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+      console.log('✅ Firebase initialized with direct JSON');
+    } catch (error) {
+      console.error('Error parsing Firebase credentials:', error);
+      throw new Error('Invalid Firebase credentials format');
+    }
   } else {
     // For local development
     const serviceAccountPath = path.resolve(
