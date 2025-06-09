@@ -35,11 +35,31 @@ async function bootstrap() {
 
 // For Vercel serverless deployment
 const handler = async (req: Request, res: Response): Promise<void> => {
+  console.log('Incoming request:', {
+    method: req.method,
+    url: req.url,
+    path: req.path,
+    query: req.query,
+    headers: req.headers,
+  });
+
   if (!app) {
+    console.log('Initializing app...');
     app = await bootstrap();
+    console.log('App initialized');
   }
+
   const expressApp = app.getHttpAdapter().getInstance() as Express;
-  expressApp(req, res);
+
+  // Add error handling
+  try {
+    expressApp(req, res);
+  } catch (error) {
+    console.error('Error handling request:', error);
+    res
+      .status(500)
+      .json({ error: 'Internal Server Error', details: error.message });
+  }
 };
 
 // For local development
