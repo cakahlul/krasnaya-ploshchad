@@ -8,13 +8,15 @@ import { Express } from 'express';
 let app: INestApplication;
 
 async function bootstrap() {
-  const allowedOrigins = process.env.ALLOWED_ORIGINS;
-  app = await NestFactory.create(AppModule);
+  if (app) {
+    return app;
+  }
 
-  // Remove global prefix since Vercel handles it
-  // app.setGlobalPrefix('api', {
-  //   exclude: ['/health'],
-  // });
+  const allowedOrigins = process.env.ALLOWED_ORIGINS;
+  app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn'],
+    bodyParser: true,
+  });
 
   app.enableCors({
     origin: allowedOrigins ? allowedOrigins.split(',') : '*',
@@ -57,26 +59,6 @@ async function bootstrap() {
 
 // For Vercel serverless deployment
 const handler = async (req: Request, res: Response): Promise<void> => {
-  // Normalize the request path
-  const originalUrl = req.originalUrl || req.url;
-  const path = originalUrl.split('?')[0];
-
-  // Remove /api prefix from the path for NestJS routing
-  const nestPath = path.startsWith('/api') ? path.substring(4) : path;
-
-  console.log('Incoming request:', {
-    method: req.method,
-    originalUrl,
-    path,
-    nestPath,
-    query: req.query,
-    headers: {
-      host: req.headers.host,
-      'x-forwarded-host': req.headers['x-forwarded-host'],
-      'x-forwarded-proto': req.headers['x-forwarded-proto'],
-    },
-  });
-
   // Handle OPTIONS requests for CORS
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -84,30 +66,27 @@ const handler = async (req: Request, res: Response): Promise<void> => {
   }
 
   // Handle health check
-  if (path === '/health') {
+  if (req.url === '/health') {
     res.status(200).json({ status: 'ok' });
     return;
   }
 
   try {
-    if (!app) {
-      app = await bootstrap();
-    }
-
+    const app = await bootstrap();
     const expressApp = app.getHttpAdapter().getInstance() as Express;
 
     // Create a new request object
     const modifiedReq = {
       ...req,
-      url: path,
-      originalUrl: path,
+      url: req.url.replace(/^\/api/, ''),
+      originalUrl: req.originalUrl.replace(/^\/api/, ''),
       baseUrl: '',
-      path: path,
+      path: req.path.replace(/^\/api/, ''),
     } as Request;
 
     // Handle the request with timeout
     const timeout = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Request timeout')), 10000);
+      setTimeout(() => reject(new Error('Request timeout')), 50000);
     });
 
     const handleRequest = new Promise<void>(resolve => {
@@ -117,7 +96,6 @@ const handler = async (req: Request, res: Response): Promise<void> => {
           res.status(500).json({
             error: 'Internal Server Error',
             details: err instanceof Error ? err.message : String(err),
-            path,
           });
         }
         resolve();
@@ -130,7 +108,6 @@ const handler = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({
       error: 'Internal Server Error',
       details: error instanceof Error ? error.message : 'Unknown error',
-      path,
     });
   }
 };

@@ -5,7 +5,8 @@
       "src": "src/main.ts",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["src/**/*"]
+        "includeFiles": ["src/**/*"],
+        "maxLambdaSize": "50mb"
       }
     }
   ],
@@ -25,5 +26,11 @@
       },
       "continue": true
     }
-  ]
+  ],
+  "functions": {
+    "src/main.ts": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  }
 }
