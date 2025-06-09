@@ -2,8 +2,26 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { FirebaseAuthGuard } from './auth/firebase-auth.guard';
 import { INestApplication } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { Express } from 'express';
+import { Server } from 'http';
+
+interface RouteLayer {
+  route?: {
+    path: string;
+    methods: Record<string, boolean>;
+  };
+}
+
+interface ExpressServer extends Server {
+  _events: {
+    request: {
+      _router: {
+        stack: RouteLayer[];
+      };
+    };
+  };
+}
 
 let app: INestApplication;
 
@@ -24,6 +42,22 @@ async function bootstrap() {
       'Origin, X-Requested-With, Content-Type, Accept, Authorization',
   });
   app.useGlobalGuards(new FirebaseAuthGuard());
+
+  // Log all registered routes
+  const server = app.getHttpServer() as ExpressServer;
+  const router = server._events.request._router;
+  const availableRoutes = router.stack
+    .map(layer => {
+      if (layer.route) {
+        const path = layer.route.path;
+        const method = Object.keys(layer.route.methods)[0].toUpperCase();
+        return `${method} ${path}`;
+      }
+      return undefined;
+    })
+    .filter((item): item is string => item !== undefined);
+
+  console.log('Registered routes:', availableRoutes);
 
   if (process.env.NODE_ENV !== 'production') {
     await app.listen(process.env.PORT ?? 3001);
@@ -77,19 +111,39 @@ const handler = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Modify the request path for NestJS
-    req.url = nestPath;
-    req.originalUrl = nestPath;
+    // Create a new request object
+    const modifiedReq = {
+      ...req,
+      url: path,
+      originalUrl: path,
+      baseUrl: '',
+      path: path,
+    } as Request;
 
-    expressApp(req, res);
+    // Handle the request
+    const handleRequest = () => {
+      return new Promise<void>((resolve, reject) => {
+        expressApp(modifiedReq, res, ((err: unknown) => {
+          if (err) {
+            console.error('Error handling request:', err);
+            res.status(500).json({
+              error: 'Internal Server Error',
+              details: err instanceof Error ? err.message : String(err),
+              path,
+            });
+          }
+          resolve();
+        }) as NextFunction);
+      });
+    };
+
+    await handleRequest();
   } catch (error) {
     console.error('Error handling request:', error);
     res.status(500).json({
       error: 'Internal Server Error',
       details: error instanceof Error ? error.message : 'Unknown error',
       path,
-      nestPath,
-      originalUrl,
     });
   }
 };
