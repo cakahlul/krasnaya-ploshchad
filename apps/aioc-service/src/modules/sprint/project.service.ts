@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ProjectEntity, SprintEntity } from './interfaces/project.entity';
+import {
+  ProjectEntity,
+  SprintEntity,
+  Sprint,
+} from './interfaces/project.entity';
 import { ProjectRepository } from './repositories/project.repository';
 import { ProjectDto, SprintDto } from './interfaces/project.dto';
 
@@ -68,7 +72,7 @@ export class ProjectService {
 
   async fetchAllSprint(boardId: number): Promise<SprintDto[]> {
     const response = await this.projectRepository.fetchJiraSprint(boardId);
-    return response.values.map((sprint: SprintEntity) => ({
+    return response.values.map((sprint: Sprint) => ({
       id: sprint.id,
       state: sprint.state,
       name: sprint.name,

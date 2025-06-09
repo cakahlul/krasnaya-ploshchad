@@ -12,6 +12,12 @@ export default function useUser() {
   const loginPageMessage = useUserStore(state => state.loginPageMessage);
 
   useEffect(() => {
+    // Only set up auth listener if auth is available
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, user => {
       if (user) {
         setUser(user);

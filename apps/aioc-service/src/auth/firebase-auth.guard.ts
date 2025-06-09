@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Injectable,
   CanActivate,
@@ -8,10 +5,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
-import admin from '../firebase/firebase-admin';
+import { FirebaseAdmin } from '../firebase/firebase-admin';
 
 @Injectable()
 export class FirebaseAuthGuard implements CanActivate {
+  private firebaseAdmin = new FirebaseAdmin();
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
     const authHeader = request.headers.authorization;
@@ -23,7 +22,7 @@ export class FirebaseAuthGuard implements CanActivate {
     const token = authHeader.split('Bearer ')[1];
 
     try {
-      const decodedToken = await admin.auth().verifyIdToken(token);
+      const decodedToken = await this.firebaseAdmin.verifyToken(token);
       request['user'] = decodedToken;
       return true;
     } catch {

@@ -14,19 +14,36 @@ export const signup = (email: string, password: string) => {
     throw new Error('Email domain is not allowed. Should be amarbank.co.id');
   }
 
+  if (!auth) {
+    throw new Error('Firebase auth is not initialized');
+  }
+
   return createUserWithEmailAndPassword(auth, email, password);
 };
 
 export const login = (email: string, password: string) => {
+  if (!auth) {
+    throw new Error('Firebase auth is not initialized');
+  }
+  
   return signInWithEmailAndPassword(auth, email, password);
 };
 
 export const logout = () => {
+  if (!auth) {
+    throw new Error('Firebase auth is not initialized');
+  }
+  
   return signOut(auth);
 };
 
 export const getCurrentUser = (): Promise<User | null> => {
   return new Promise(resolve => {
+    if (!auth) {
+      resolve(null);
+      return;
+    }
+    
     auth.onAuthStateChanged(user => {
       resolve(user);
     });
@@ -35,6 +52,10 @@ export const getCurrentUser = (): Promise<User | null> => {
 
 export async function signInWithGoogle() {
   try {
+    if (!auth || !googleProvider) {
+      throw new Error('Firebase auth or Google provider is not initialized');
+    }
+    
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
 
