@@ -22,7 +22,7 @@ export default function Dashboard() {
       </div>
 
       <p className="text-sm text-gray-500 italic animate-pulse">
-        Psst... hover around, we made this dashboard with love ❤️
+        Try hovering over elements for some fun surprises! 🎉
       </p>
     </div>
   );
