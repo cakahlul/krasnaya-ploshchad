@@ -29,7 +29,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY apps/aioc-service/package*.json ./apps/aioc-service/
 
-# Install only production dependencies
+# Install dependencies in the correct workspace
+WORKDIR /app/apps/aioc-service
 RUN npm install --omit=dev && npm cache clean --force
 
 # Copy built application
