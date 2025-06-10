@@ -34,7 +34,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
     }
   }, [isFetching, getDisplayName]);
 
-  const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
+  const handleMenuClick: MenuProps['onClick'] = ({ key }: { key: string }) => {
     if (key === 'logout') {
       handleLogout();
     } else if (key === 'password') {
