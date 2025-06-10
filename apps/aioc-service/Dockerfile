@@ -9,7 +9,7 @@ COPY package*.json ./
 COPY apps/aioc-service/package*.json ./apps/aioc-service/
 
 # Install dependencies including dev dependencies for build
-RUN npm ci && npm cache clean --force
+RUN npm install && npm cache clean --force
 
 # Copy source code
 COPY apps/aioc-service ./apps/aioc-service
@@ -25,11 +25,12 @@ FROM node:20-alpine AS production
 # Create app directory
 WORKDIR /app
 
-# Copy package files
-COPY apps/aioc-service/package*.json ./
+# Copy package files from both root and service
+COPY package*.json ./
+COPY apps/aioc-service/package*.json ./apps/aioc-service/
 
 # Install only production dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 
 # Copy built application
 COPY --from=builder /app/apps/aioc-service/dist ./dist
