@@ -1,11 +1,41 @@
-@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-  --color-primary: #011d4d;
-  --color-secondary: #034078;
-  --color-accent: #1282a2;
-  --color-muted: #e4dfda;
-  --color-darkBrown: #63372c;
+@layer base {
+  :root {
+    --color-primary: #011d4d;
+    --color-secondary: #034078;
+    --color-accent: #1282a2;
+    --color-muted: #e4dfda;
+    --color-darkBrown: #63372c;
+  }
+
+  body {
+    @apply antialiased;
+  }
+}
+
+@layer components {
+  .ant-drawer-body {
+    @apply bg-secondary;
+  }
+
+  .ant-menu-light {
+    @apply bg-secondary text-white;
+  }
+
+  .custom-menu .ant-menu-item {
+    @apply bg-secondary text-white;
+  }
+
+  .custom-menu .ant-menu-item-selected {
+    @apply bg-primary;
+  }
+
+  .custom-menu .ant-menu-item:hover {
+    @apply bg-primary;
+  }
 }
 
 @layer utilities {
@@ -93,26 +123,4 @@
   .animate-fade-in {
     animation: fade-in 0.4s ease-in-out;
   }
-}
-
-.ant-drawer-body {
-  background-color: #034078 !important;
-}
-
-.ant-menu-light {
-  background-color: #034078 !important; /* secondary */
-  color: white !important;
-}
-
-.custom-menu .ant-menu-item {
-  background-color: #034078 !important;
-  color: white !important;
-}
-
-.custom-menu .ant-menu-item-selected {
-  background-color: #011d4d !important; /* secondary */
-}
-
-.custom-menu .ant-menu-item:hover {
-  background-color: #011d4d !important; /* accent */
 }
