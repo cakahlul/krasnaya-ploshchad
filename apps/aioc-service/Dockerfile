@@ -25,10 +25,14 @@ FROM node:20-alpine AS production
 # Create app directory
 WORKDIR /app
 
-# Copy built application and dependencies
+# Copy package files
+COPY apps/aioc-service/package*.json ./
+
+# Install only production dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy built application
 COPY --from=builder /app/apps/aioc-service/dist ./dist
-COPY --from=builder /app/apps/aioc-service/package*.json ./
-COPY --from=builder /app/node_modules ./node_modules
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
