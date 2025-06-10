@@ -1,5 +1,5 @@
 # Multi-stage build for production
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -8,8 +8,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY apps/aioc-service/package*.json ./apps/aioc-service/
 
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install dependencies including dev dependencies for build
+RUN npm ci && npm cache clean --force
 
 # Copy source code
 COPY apps/aioc-service ./apps/aioc-service
@@ -20,7 +20,7 @@ WORKDIR /app/apps/aioc-service
 RUN npm run build
 
 # Production stage
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 
 # Create app directory
 WORKDIR /app
