@@ -64,6 +64,8 @@ export class ReportsService {
             devDefect: 0,
             devDefectRate: '',
             level: member.level,
+            weightPointsProduct: 0,
+            weightPointsTechDebt: 0,
           },
         ]),
     );
@@ -117,15 +119,23 @@ export class ReportsService {
             ? 'productPoint'
             : 'techDebtPoint';
 
+        const weightPoints =
+          issue.fields.customfield_10796?.value === 'SP Product'
+            ? 'weightPointsProduct'
+            : 'weightPointsTechDebt';
+
         const report = reports.get(memberName);
         // Weight of Complexity calculation
         const complexityId =
           issue.fields.customfield_11015?.id?.toString() ?? '10650';
-        const complexityWeight = complexityWeights[complexityId] ?? 1;
+        const complexityWeight = complexityWeights[complexityId] ?? 1.5;
         if (report) {
           // Update points
           report[category] += points;
           report.totalPoint += points;
+
+          // Populate weight points based on task type (product or tech debt)
+          report[weightPoints] += complexityWeight;
 
           // Count bugs
           if (issue.fields.issuetype?.name === 'Bug') {
@@ -160,6 +170,11 @@ export class ReportsService {
           : 0;
         report.averageComplexity = average.toFixed(2);
         report.totalWeightPoints = complexityData?.totalComplexity ?? 0;
+
+        // Reset metrics for members with no points (not working on any tasks)
+        if (report.totalPoint === 0) {
+          this.resetMemberMetrics(report);
+        }
       },
     );
 
@@ -176,11 +191,16 @@ export class ReportsService {
   private summarizeTeamReport(
     issues: JiraIssueReportResponseDto[],
   ): GetReportResponseDto {
-    const totalIssueProduct = issues.reduce(
+    // Filter out members with no points (not working on any tasks)
+    const activeMembers = issues.filter(
+      (issue: JiraIssueReportResponseDto) => issue.totalPoint > 0,
+    );
+
+    const totalIssueProduct = activeMembers.reduce(
       (sum, issue) => sum + issue.productPoint,
       0,
     );
-    const totalIssueTechDebt = issues.reduce(
+    const totalIssueTechDebt = activeMembers.reduce(
       (sum, issue) => sum + issue.techDebtPoint,
       0,
     );
@@ -189,8 +209,9 @@ export class ReportsService {
     const productPercentage = (totalIssueProduct / totalIssues) * 100 || 0;
     const techDebtPercentage = (totalIssueTechDebt / totalIssues) * 100 || 0;
 
-    const productivityRates = issues.map((issue: JiraIssueReportResponseDto) =>
-      parseFloat(issue.productivityRate.replace('%', '')),
+    const productivityRates = activeMembers.map(
+      (issue: JiraIssueReportResponseDto) =>
+        parseFloat(issue.productivityRate.replace('%', '')),
     );
     const averageProductivity =
       productivityRates.reduce((sum, rate) => sum + rate, 0) /
@@ -204,5 +225,15 @@ export class ReportsService {
       techDebtPercentage: `${techDebtPercentage.toFixed(2)}%`,
       averageProductivity: `${averageProductivity.toFixed(2)}%`,
     };
+  }
+
+  private resetMemberMetrics(report: JiraIssueReportResponseDto) {
+    report.totalWeightPoints = 0;
+    report.weightPointsProduct = 0;
+    report.weightPointsTechDebt = 0;
+    report.devDefect = 0;
+    report.devDefectRate = '0%';
+    report.averageComplexity = '0';
+    report.productivityRate = '0%';
   }
 }

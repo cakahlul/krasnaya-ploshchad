@@ -29,6 +29,16 @@ export default function TeamTable() {
       key: 'averageComplexity',
     },
     {
+      title: 'Weight Points Product',
+      dataIndex: 'weightPointsProduct',
+      key: 'weightPointsProduct',
+    },
+    {
+      title: 'Weight Points Tech Debt',
+      dataIndex: 'weightPointsTechDebt',
+      key: 'weightPointsTechDebt',
+    },
+    {
       title: 'Total Weight Points',
       dataIndex: 'totalWeightPoints',
       key: 'totalWeightPoints',

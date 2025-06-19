@@ -8,6 +8,8 @@ export interface WorkItem {
   devDefect: number;
   devDefectRate: string;
   totalWeightPoints: number;
+  weightPointsProduct: number;
+  weightPointsTechDebt: number;
 }
 
 export interface DashboardDto {
