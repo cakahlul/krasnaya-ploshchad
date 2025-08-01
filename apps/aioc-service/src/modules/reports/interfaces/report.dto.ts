@@ -18,6 +18,8 @@ export interface JiraIssueReportResponseDto {
   devDefectRate: string;
   totalWeightPoints: number;
   level: Level;
+  weightPointsProduct: number;
+  weightPointsTechDebt: number;
 }
 
 export interface GetReportResponseDto {
