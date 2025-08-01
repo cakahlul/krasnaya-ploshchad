@@ -5,7 +5,7 @@ import { IIssueCategorizer } from './issue-categorizer.strategy';
 @Injectable()
 export class NewIssueCategorizer implements IIssueCategorizer {
   categorize(issue: JiraIssueEntity): 'productPoint' | 'techDebtPoint' {
-    const storyPointType = issue.fields.customfield_11312.value || '';
+    const storyPointType = issue.fields.customfield_11312?.value || '';
     return storyPointType === 'Product' ? 'productPoint' : 'techDebtPoint';
   }
 

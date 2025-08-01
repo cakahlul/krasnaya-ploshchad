@@ -10,7 +10,7 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allowed HTTP methods
     credentials: true, // Allow credentials (cookies, authorization headers, etc.)
   });
-  //app.useGlobalGuards(new FirebaseAuthGuard());
+  app.useGlobalGuards(new FirebaseAuthGuard());
   await app.listen(process.env.PORT ?? 3001);
   console.log(`Application is running on: ${await app.getUrl()}`);
 }

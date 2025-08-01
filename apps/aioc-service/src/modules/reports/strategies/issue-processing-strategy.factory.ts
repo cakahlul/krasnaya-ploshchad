@@ -22,19 +22,25 @@ export class IssueProcessingStrategyFactory {
   ) {}
 
   createStrategies(issue: JiraIssueEntity): IssueProcessingStrategies {
-    const isUsingNewBehavior = this.isUsingNewBehavior(issue);
-
     return {
-      complexityWeightStrategy: isUsingNewBehavior
+      complexityWeightStrategy: this.shouldUseNewComplexityWeightStrategy(issue)
         ? this.newComplexityWeightStrategy
         : this.legacyComplexityWeightStrategy,
-      issueCategorizer: isUsingNewBehavior
+      issueCategorizer: this.shouldUseNewIssueCategorizer(issue)
         ? this.newIssueCategorizer
         : this.legacyIssueCategorizer,
     };
   }
 
-  private isUsingNewBehavior(issue: JiraIssueEntity): boolean {
-    return !!(issue.fields.customfield_11444 && issue.fields.customfield_11312);
+  private shouldUseNewComplexityWeightStrategy(
+    issue: JiraIssueEntity,
+  ): boolean {
+    // Use new strategy if appendix weight point field is present
+    return !!issue.fields.customfield_11444;
+  }
+
+  private shouldUseNewIssueCategorizer(issue: JiraIssueEntity): boolean {
+    // Use new strategy if story point v2 field is present
+    return !!issue.fields.customfield_11312;
   }
 }
