@@ -8,10 +8,21 @@ import {
 import { JiraIssueEntity } from './interfaces/report.entity';
 import { TeamMember } from 'src/shared/interfaces/team-member.interface';
 import { teamMembers } from 'src/shared/constants/team-member.const';
+import { IssueProcessingStrategyFactory } from './strategies/issue-processing-strategy.factory';
 
 @Injectable()
 export class ReportsService {
-  constructor(private jiraReportRepository: ReportJiraRepository) {}
+  private readonly minimumComplexityByLevels: { [key: string]: number } = {
+    junior: 32,
+    medior: 48,
+    senior: 80,
+    'individual contributor': 80,
+  };
+
+  constructor(
+    private readonly jiraReportRepository: ReportJiraRepository,
+    private readonly strategyFactory: IssueProcessingStrategyFactory,
+  ) {}
 
   async generateReport(
     sprint: string,
@@ -70,28 +81,6 @@ export class ReportsService {
         ]),
     );
 
-    // Complexity weighting configuration
-    const complexityWeights: { [key: string]: number } = {
-      /**
-       * Value per category
-       * Very Low: 1.5
-       * Low: 2
-       * Medium: 4
-       * High: 8
-       */
-      '10650': 1.5, // Very Low complexity
-      '10651': 2, // Low Complexity
-      '10652': 4, // Medium complexity
-      '10653': 8, // High complexity
-    };
-
-    const minimumComplexityByLevels: { [key: string]: number } = {
-      junior: 32,
-      medior: 48,
-      senior: 80,
-      'individual contributor': 80,
-    };
-
     const complexityMap = new Map<
       string,
       {
@@ -107,48 +96,12 @@ export class ReportsService {
 
     rawData.forEach((issue: JiraIssueEntity) => {
       try {
-        const accountId = issue.fields.assignee?.accountId?.toLowerCase();
-        if (!accountId) return;
-
-        const memberName = accountIdMap.get(accountId);
-        if (!memberName) return;
-
-        const points = issue.fields.customfield_10005 ?? 0;
-        const category =
-          issue.fields.customfield_10796?.value === 'SP Product'
-            ? 'productPoint'
-            : 'techDebtPoint';
-
-        const weightPoints =
-          issue.fields.customfield_10796?.value === 'SP Product'
-            ? 'weightPointsProduct'
-            : 'weightPointsTechDebt';
-
-        const report = reports.get(memberName);
-        // Weight of Complexity calculation
-        const complexityId =
-          issue.fields.customfield_11015?.id?.toString() ?? '10650';
-        const complexityWeight = complexityWeights[complexityId] ?? 1.5;
-        if (report) {
-          // Update points
-          report[category] += points;
-          report.totalPoint += points;
-
-          // Populate weight points based on task type (product or tech debt)
-          report[weightPoints] += complexityWeight;
-
-          // Count bugs
-          if (issue.fields.issuetype?.name === 'Bug') {
-            report.devDefect++;
-          }
-
-          // Update complexity metrics
-          const complexityData = complexityMap.get(memberName);
-          if (complexityData) {
-            complexityData.totalComplexity += complexityWeight;
-            complexityData.count++;
-          }
-        }
+        this.processIndividualIssue(
+          issue,
+          accountIdMap,
+          reports,
+          complexityMap,
+        );
       } catch (error) {
         console.error('Error processing issue:', error);
       }
@@ -166,7 +119,7 @@ export class ReportsService {
         const complexityData = complexityMap.get(report.member);
         const average = complexityData?.count
           ? complexityData.totalComplexity /
-            minimumComplexityByLevels[report.level]
+            this.minimumComplexityByLevels[report.level]
           : 0;
         report.averageComplexity = average.toFixed(2);
         report.totalWeightPoints = complexityData?.totalComplexity ?? 0;
@@ -235,5 +188,72 @@ export class ReportsService {
     report.devDefectRate = '0%';
     report.averageComplexity = '0';
     report.productivityRate = '0%';
+  }
+
+  private processIndividualIssue(
+    issue: JiraIssueEntity,
+    accountIdMap: Map<string, string>,
+    reports: Map<string, JiraIssueReportResponseDto>,
+    complexityMap: Map<string, { totalComplexity: number; count: number }>,
+  ): void {
+    const accountId = issue.fields.assignee?.accountId?.toLowerCase();
+    if (!accountId) return;
+
+    const memberName = accountIdMap.get(accountId);
+    if (!memberName) return;
+
+    const strategies = this.strategyFactory.createStrategies(issue);
+    const points = issue.fields.customfield_10005 ?? 0;
+    const category = strategies.issueCategorizer.categorize(issue);
+    const weightPoints =
+      strategies.issueCategorizer.getWeightPointsCategory(issue);
+    const complexityWeight =
+      strategies.complexityWeightStrategy.calculateWeight(issue);
+
+    const report = reports.get(memberName);
+    if (!report) return;
+
+    this.updateReportMetrics(
+      report,
+      points,
+      category,
+      weightPoints,
+      complexityWeight,
+      issue,
+    );
+    this.updateComplexityMetrics(complexityMap, memberName, complexityWeight);
+  }
+
+  private updateReportMetrics(
+    report: JiraIssueReportResponseDto,
+    points: number,
+    category: 'productPoint' | 'techDebtPoint',
+    weightPoints: 'weightPointsProduct' | 'weightPointsTechDebt',
+    complexityWeight: number,
+    issue: JiraIssueEntity,
+  ): void {
+    // Update points
+    report[category] += points;
+    report.totalPoint += points;
+
+    // Populate weight points based on task type (product or tech debt)
+    report[weightPoints] += complexityWeight;
+
+    // Count bugs
+    if (issue.fields.issuetype?.name === 'Bug') {
+      report.devDefect++;
+    }
+  }
+
+  private updateComplexityMetrics(
+    complexityMap: Map<string, { totalComplexity: number; count: number }>,
+    memberName: string,
+    complexityWeight: number,
+  ): void {
+    const complexityData = complexityMap.get(memberName);
+    if (complexityData) {
+      complexityData.totalComplexity += complexityWeight;
+      complexityData.count++;
+    }
   }
 }

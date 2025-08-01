@@ -1,5 +1,6 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getRemoteConfig } from 'firebase/remote-config';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -26,4 +27,14 @@ googleProvider.setCustomParameters({
   hd: 'amarbank.co.id',
 });
 
-export { app, auth, googleProvider };
+const remoteConfig = getRemoteConfig(app);
+remoteConfig.settings = {
+  minimumFetchIntervalMillis: 3600000,
+  fetchTimeoutMillis: 3600000,
+};
+
+remoteConfig.defaultConfig = {
+  welcome_message: 'Welcome to the app!',
+};
+
+export { app, auth, googleProvider, remoteConfig };
