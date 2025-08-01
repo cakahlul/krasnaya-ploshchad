@@ -47,6 +47,8 @@ export class ReportJiraRepository {
               'customfield_10796', // Story point type
               'customfield_10865', // Complexity (low/medium/high)
               'customfield_11015', // Weight of Complexity
+              'customfield_11444', // Appendix weight point
+              'customfield_11312', // Story point type v2
               'assignee',
               'issuetype',
             ].join(','),
@@ -60,10 +62,9 @@ export class ReportJiraRepository {
         allIssues.push(...this.transformIssues(response.data.issues));
 
         // Respect rate limits (Jira's guideline: 1 request/second)
-        // eslint-disable-next-line prettier/prettier
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } while (startAt < totalIssues);
 
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      } while (startAt < totalIssues);
       return allIssues;
     } catch (error) {
       console.error('Error fetching data from Jira:', error);
