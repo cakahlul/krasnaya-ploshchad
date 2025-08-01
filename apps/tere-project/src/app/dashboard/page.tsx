@@ -1,8 +1,20 @@
 'use client';
 import useUser from '@src/hooks/useUser';
+import { remoteConfig } from '@src/lib/firebase';
+import { fetchAndActivate, getValue } from 'firebase/remote-config';
+import { useEffect, useState } from 'react';
 
 export default function Dashboard() {
   const { getDisplayName } = useUser();
+  const [message, setMessage] = useState(
+    'Ready to rock this day? Let’s code and conquer 💻🔥',
+  );
+
+  useEffect(() => {
+    fetchAndActivate(remoteConfig).then(() => {
+      setMessage(getValue(remoteConfig, 'welcome_message').asString());
+    });
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-accent via-muted text-center space-y-6 px-4">
@@ -11,7 +23,7 @@ export default function Dashboard() {
       </h1>
 
       <p className="text-xl text-secondary font-medium transition-all duration-300 hover:tracking-wider hover:text-primary">
-        Ready to rock this day? Let’s code and conquer 💻🔥
+        {message}
       </p>
 
       <div className="mt-6 bg-muted px-6 py-4 rounded-2xl shadow-xl text-gray-800 text-lg transition-all duration-300 hover:shadow-2xl hover:scale-105 hover:rotate-1">
