@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   PieChartOutlined,
@@ -6,42 +6,42 @@ import {
   ToolOutlined,
   ProductOutlined,
   AppstoreAddOutlined,
-} from '@ant-design/icons';
-import { useTeamReportTransform } from '../hooks/useTeamReportTransform';
+} from "@ant-design/icons";
+import { useTeamReportTransform } from "../hooks/useTeamReportTransform";
 
 export default function TeamPerformance() {
   const { data } = useTeamReportTransform();
 
   const defaultData = [
     {
-      label: 'Total Issue Product',
+      label: "Total Product Points",
       value: data?.productTask,
       icon: <ProductOutlined className="text-white text-2xl" />,
-      bg: 'bg-indigo-700',
+      bg: "bg-indigo-700",
     },
     {
-      label: 'Total Issue Tech Debt',
+      label: "Total Tech Debt Points",
       value: data?.techDebtTask,
       icon: <ToolOutlined className="text-white text-2xl" />,
-      bg: 'bg-rose-700',
+      bg: "bg-rose-700",
     },
     {
-      label: 'Product Percentage',
+      label: "Product Percentage",
       value: data?.productPercentage,
       icon: <PieChartOutlined className="text-white text-2xl" />,
-      bg: 'bg-emerald-700',
+      bg: "bg-emerald-700",
     },
     {
-      label: 'Tech Debt Percentage',
+      label: "Tech Debt Percentage",
       value: data?.techDebtPercentage,
       icon: <AppstoreAddOutlined className="text-white text-2xl" />,
-      bg: 'bg-yellow-700',
+      bg: "bg-yellow-700",
     },
     {
-      label: 'Avg Productivity',
+      label: "Avg Productivity",
       value: data?.averageProductivity,
       icon: <RiseOutlined className="text-white text-2xl" />,
-      bg: 'bg-blue-800',
+      bg: "bg-blue-800",
     },
   ];
 
