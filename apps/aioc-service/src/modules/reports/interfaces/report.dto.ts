@@ -32,10 +32,8 @@ export interface GetReportResponseDto {
 }
 
 export interface JiraSearchResponseDto {
-  expand: string;
-  startAt: number;
-  maxResults: number;
-  total: number;
+  isLast: boolean;
+  nextPageToken?: string;
   issues: JiraIssueDto[];
 }
 
