@@ -99,8 +99,6 @@ export class ReportJiraRepository {
             'customfield_10796', // Story point type
             'customfield_10865', // Complexity (low/medium/high)
             'customfield_11015', // Weight of Complexity
-            'customfield_11444', // Appendix weight point
-            'customfield_11312', // Story point type v2
             'assignee',
             'issuetype',
           ].join(','),
