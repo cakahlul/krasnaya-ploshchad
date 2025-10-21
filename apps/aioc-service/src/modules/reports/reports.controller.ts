@@ -28,10 +28,36 @@ export class ReportsController {
       data: GetReportResponseDto;
     }> = [];
 
+    // Get current quarter and previous quarter
+    const today = new Date();
+    const currentQuarter = Math.floor(today.getMonth() / 3) + 1;
+    const currentYear = today.getFullYear();
+
+    // Calculate previous quarter
+    let previousQuarter = currentQuarter - 1;
+    let previousQuarterYear = currentYear;
+    if (previousQuarter === 0) {
+      previousQuarter = 4;
+      previousQuarterYear = currentYear - 1;
+    }
+
     for (const boardId of boardIds) {
       const sprints = await this.projectService.fetchAllSprint(boardId);
 
-      for (const sprint of sprints) {
+      // Filter sprints that started in the current quarter or previous quarter
+      const filteredSprints = sprints.filter((sprint) => {
+        if (!sprint.startDate) return false;
+        const startDate = new Date(sprint.startDate);
+        const sprintQuarter = Math.floor(startDate.getMonth() / 3) + 1;
+        const sprintYear = startDate.getFullYear();
+        return (
+          (sprintQuarter === currentQuarter && sprintYear === currentYear) ||
+          (sprintQuarter === previousQuarter &&
+            sprintYear === previousQuarterYear)
+        );
+      });
+
+      for (const sprint of filteredSprints) {
         for (const project of projects) {
           const reportData = await this.reportsService.generateReport(
             String(sprint.id),
