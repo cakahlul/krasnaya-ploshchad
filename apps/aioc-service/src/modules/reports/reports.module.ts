@@ -7,8 +7,10 @@ import { LegacyComplexityWeightStrategy } from './strategies/legacy-complexity-w
 import { NewComplexityWeightStrategy } from './strategies/new-complexity-weight.strategy';
 import { LegacyIssueCategorizer } from './strategies/legacy-issue-categorizer.strategy';
 import { NewIssueCategorizer } from './strategies/new-issue-categorizer.strategy';
+import { ProjectModule } from '../sprint/project.module';
 
 @Module({
+  imports: [ProjectModule],
   controllers: [ReportsController],
   providers: [
     ReportsService,
