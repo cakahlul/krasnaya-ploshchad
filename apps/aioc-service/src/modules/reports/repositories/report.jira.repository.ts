@@ -121,7 +121,7 @@ export class ReportJiraRepository {
         );
 
         isLast = Boolean(response.data.isLast);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
         nextPageToken = response.data.nextPageToken;
         const pageIssues = this.transformIssues(response.data.issues);
         allIssues.push(...pageIssues);
