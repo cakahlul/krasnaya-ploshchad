@@ -13,8 +13,8 @@ import { IssueProcessingStrategyFactory } from './strategies/issue-processing-st
 @Injectable()
 export class ReportsService {
   private readonly minimumComplexityByLevels: { [key: string]: number } = {
-    junior: 32,
-    medior: 48,
+    junior: 56,
+    medior: 68,
     senior: 80,
     'individual contributor': 80,
   };
