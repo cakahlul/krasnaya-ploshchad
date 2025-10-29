@@ -4,6 +4,7 @@ import { IComplexityWeightStrategy } from './complexity-weight.strategy';
 import { IIssueCategorizer } from './issue-categorizer.strategy';
 import { LegacyComplexityWeightStrategy } from './legacy-complexity-weight.strategy';
 import { NewComplexityWeightStrategy } from './new-complexity-weight.strategy';
+import { V3ComplexityWeightStrategy } from './v3-complexity-weight.strategy';
 import { LegacyIssueCategorizer } from './legacy-issue-categorizer.strategy';
 import { NewIssueCategorizer } from './new-issue-categorizer.strategy';
 
@@ -17,25 +18,42 @@ export class IssueProcessingStrategyFactory {
   constructor(
     private readonly legacyComplexityWeightStrategy: LegacyComplexityWeightStrategy,
     private readonly newComplexityWeightStrategy: NewComplexityWeightStrategy,
+    private readonly v3ComplexityWeightStrategy: V3ComplexityWeightStrategy,
     private readonly legacyIssueCategorizer: LegacyIssueCategorizer,
     private readonly newIssueCategorizer: NewIssueCategorizer,
   ) {}
 
   createStrategies(issue: JiraIssueEntity): IssueProcessingStrategies {
     return {
-      complexityWeightStrategy: this.shouldUseNewComplexityWeightStrategy(issue)
-        ? this.newComplexityWeightStrategy
-        : this.legacyComplexityWeightStrategy,
+      complexityWeightStrategy: this.getComplexityWeightStrategy(issue),
       issueCategorizer: this.shouldUseNewIssueCategorizer(issue)
         ? this.newIssueCategorizer
         : this.legacyIssueCategorizer,
     };
   }
 
-  private shouldUseNewComplexityWeightStrategy(
+  private getComplexityWeightStrategy(
     issue: JiraIssueEntity,
-  ): boolean {
-    // Use new strategy if appendix weight point field is present
+  ): IComplexityWeightStrategy {
+    // Priority: v3 (customfield_11543) > v2 (customfield_11444) > v1 (customfield_11015)
+    // Check v3 first - multiple select field
+    if (this.hasCustomfield11543(issue)) {
+      return this.v3ComplexityWeightStrategy;
+    }
+    // Check v2 - single select field
+    if (this.hasCustomfield11444(issue)) {
+      return this.newComplexityWeightStrategy;
+    }
+    // Fall back to v1 (legacy)
+    return this.legacyComplexityWeightStrategy;
+  }
+
+  private hasCustomfield11543(issue: JiraIssueEntity): boolean {
+    const selectedOptions = issue.fields.customfield_11543;
+    return !!selectedOptions && selectedOptions.length > 0;
+  }
+
+  private hasCustomfield11444(issue: JiraIssueEntity): boolean {
     return !!issue.fields.customfield_11444;
   }
 

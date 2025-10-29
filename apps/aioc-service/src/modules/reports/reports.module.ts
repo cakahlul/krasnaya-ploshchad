@@ -5,6 +5,7 @@ import { ReportJiraRepository } from './repositories/report.jira.repository';
 import { IssueProcessingStrategyFactory } from './strategies/issue-processing-strategy.factory';
 import { LegacyComplexityWeightStrategy } from './strategies/legacy-complexity-weight.strategy';
 import { NewComplexityWeightStrategy } from './strategies/new-complexity-weight.strategy';
+import { V3ComplexityWeightStrategy } from './strategies/v3-complexity-weight.strategy';
 import { LegacyIssueCategorizer } from './strategies/legacy-issue-categorizer.strategy';
 import { NewIssueCategorizer } from './strategies/new-issue-categorizer.strategy';
 import { ProjectModule } from '../sprint/project.module';
@@ -18,6 +19,7 @@ import { ProjectModule } from '../sprint/project.module';
     IssueProcessingStrategyFactory,
     LegacyComplexityWeightStrategy,
     NewComplexityWeightStrategy,
+    V3ComplexityWeightStrategy,
     LegacyIssueCategorizer,
     NewIssueCategorizer,
   ],
