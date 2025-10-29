@@ -131,7 +131,9 @@ export class ReportsService {
       },
     );
 
-    return Array.from(reports.values());
+    return Array.from(reports.values()).filter(
+      (report) => report.totalPoint > 0,
+    );
   }
 
   private calculateDefectRate(defectCount: number): string {
