@@ -1,7 +1,7 @@
 'use client';
 import LoadingBar from '@src/components/loadingBar';
 import { DateRangePicker } from '@src/features/talent-leave/components/DateRangePicker';
-import { LeaveCalendar } from '@src/features/talent-leave/components/LeaveCalendar';
+import { LeaveCalendarSimple } from '@src/features/talent-leave/components/LeaveCalendarSimple';
 import { LeaveModal } from '@src/features/talent-leave/components/LeaveModal';
 import { useTalentLeaveStore } from '@src/features/talent-leave/store/talentLeaveStore';
 import { useTalentLeave } from '@src/features/talent-leave/hooks/useTalentLeave';
@@ -53,7 +53,7 @@ export default function TalentLeavePage() {
         </div>
       </div>
 
-      <LeaveCalendar />
+      <LeaveCalendarSimple />
 
       <LeaveModal
         leaveRecord={
