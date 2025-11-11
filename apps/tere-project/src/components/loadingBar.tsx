@@ -17,16 +17,16 @@ import {
 import { Progress } from 'antd';
 
 const iconSet = [
-  <SmileOutlined key="smile" className="text-3xl text-white" />,
-  <CoffeeOutlined key="coffee" className="text-3xl text-white" />,
-  <FireOutlined key="fire" className="text-3xl text-white" />,
-  <RocketOutlined key="rocket" className="text-3xl text-white" />,
-  <ThunderboltOutlined key="bolt" className="text-3xl text-white" />,
-  <CloudOutlined key="cloud" className="text-3xl text-white" />,
-  <LoadingOutlined key="loading" className="text-3xl text-white" />,
-  <GiftOutlined key="gift" className="text-3xl text-white" />,
-  <ApiOutlined key="api" className="text-3xl text-white" />,
-  <ToolOutlined key="tool" className="text-3xl text-white" />,
+  <SmileOutlined key="smile" className="text-3xl text-black" />,
+  <CoffeeOutlined key="coffee" className="text-3xl text-black" />,
+  <FireOutlined key="fire" className="text-3xl text-black" />,
+  <RocketOutlined key="rocket" className="text-3xl text-black" />,
+  <ThunderboltOutlined key="bolt" className="text-3xl text-black" />,
+  <CloudOutlined key="cloud" className="text-3xl text-black" />,
+  <LoadingOutlined key="loading" className="text-3xl text-black" />,
+  <GiftOutlined key="gift" className="text-3xl text-black" />,
+  <ApiOutlined key="api" className="text-3xl text-black" />,
+  <ToolOutlined key="tool" className="text-3xl text-black" />,
 ];
 
 const messages = [

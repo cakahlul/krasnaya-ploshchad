@@ -23,11 +23,11 @@ const messages = [
 ];
 
 const icons = [
-  { key: 'smile', element: <SmileOutlined /> },
-  { key: 'coffee', element: <CoffeeOutlined /> },
-  { key: 'fire', element: <FireOutlined /> },
-  { key: 'rocket', element: <RocketOutlined /> },
-  { key: 'thunderbolt', element: <ThunderboltOutlined /> },
+  { key: 'smile', element: <SmileOutlined style={{ color: '#000' }} /> },
+  { key: 'coffee', element: <CoffeeOutlined style={{ color: '#000' }} /> },
+  { key: 'fire', element: <FireOutlined style={{ color: '#000' }} /> },
+  { key: 'rocket', element: <RocketOutlined style={{ color: '#000' }} /> },
+  { key: 'thunderbolt', element: <ThunderboltOutlined style={{ color: '#000' }} /> },
 ];
 
 export default function LoadingBounce() {
@@ -56,7 +56,7 @@ export default function LoadingBounce() {
 
   return (
     <div className="fixed inset-0 bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg flex flex-col items-center justify-center z-50 space-y-4">
-      <div className="text-4xl animate-bounce text-primary">
+      <div className="text-4xl animate-bounce text-black">
         {icons[iconIndex].element}
       </div>
       <p className="text-lg text-primary font-semibold animate-pulse">

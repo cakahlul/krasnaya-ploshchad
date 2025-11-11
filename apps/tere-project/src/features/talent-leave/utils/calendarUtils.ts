@@ -197,9 +197,9 @@ export function getCellColorClass(
   // Only show leave color if not weekend or holiday
   if (isLeaveDate) {
     if (leaveStatus === 'Draft') {
-      return 'bg-yellow-200'; // #FEF08A - yellow for draft
+      return 'bg-gradient-to-br from-amber-100 to-yellow-200'; // Modern gradient for draft
     }
-    return 'bg-orange-200'; // #FED7AA - soft orange for confirmed
+    return 'bg-gradient-to-br from-emerald-100 to-green-200'; // Modern gradient for confirmed
   }
 
   // Default background
