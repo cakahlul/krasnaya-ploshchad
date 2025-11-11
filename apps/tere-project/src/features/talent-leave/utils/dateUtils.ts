@@ -2,25 +2,30 @@ import type { CalendarCell } from '../types/talent-leave.types';
 import type { Dayjs } from 'dayjs';
 
 /**
- * Generate array of dates for 2-month range starting from day 1 of the selected month
- * Example: If user selects November, shows Nov 1 - Dec 31
- * @param startMonth - Any date in the starting month (will use day 1)
+ * Generate array of dates for a given date range
+ * @param startDate - Start date of the range
+ * @param endDate - End date of the range (optional, defaults to 2 months from start)
  * @returns Array of CalendarCell objects with date information
  */
-export function generateDateRange(startMonth: Date): CalendarCell[] {
+export function generateDateRange(startDate: Date, endDate?: Date): CalendarCell[] {
   const cells: CalendarCell[] = [];
 
-  // Start from day 1 of the selected month
-  const currentDate = new Date(startMonth);
-  currentDate.setDate(1); // Set to first day of month
+  // Create working copy of start date
+  const currentDate = new Date(startDate);
   currentDate.setHours(0, 0, 0, 0);
 
-  // Calculate end date: last day of the next month
-  const endDate = new Date(startMonth);
-  endDate.setMonth(endDate.getMonth() + 2); // Move to month after next
-  endDate.setDate(0); // Go back to last day of previous month (which is next month)
+  // Calculate end date if not provided: last day of the next month
+  let finalEndDate: Date;
+  if (endDate) {
+    finalEndDate = new Date(endDate);
+    finalEndDate.setHours(23, 59, 59, 999);
+  } else {
+    finalEndDate = new Date(startDate);
+    finalEndDate.setMonth(finalEndDate.getMonth() + 2); // Move to month after next
+    finalEndDate.setDate(0); // Go back to last day of previous month (which is next month)
+  }
 
-  while (currentDate <= endDate) {
+  while (currentDate <= finalEndDate) {
     // Format date as YYYY-MM-DD without timezone conversion
     const year = currentDate.getFullYear();
     const month = String(currentDate.getMonth() + 1).padStart(2, '0');

@@ -31,11 +31,11 @@ export default function DashboardLayout({
     <>
       <QueryClientProvider client={queryClient}>
         <App>
-          <div className="flex min-h-screen bg-white text-gray-800">
+          <div className="flex min-h-screen bg-white text-gray-800 overflow-x-hidden">
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-            <div className="flex flex-col flex-1">
+            <div className="flex flex-col flex-1 min-w-0">
               <Topbar onMenuClick={() => setSidebarOpen(true)} />
-              <main className="flex-1 bg-white">{children}</main>
+              <main className="flex-1 bg-white overflow-x-hidden">{children}</main>
               <footer className="shadow-sm bg-white/60 backdrop-blur-sm text-center text-xs py-1.5">
                 Built with ⚒️ by{' '}
                 <strong className="text-primary">Esasjana</strong> – still cooler
