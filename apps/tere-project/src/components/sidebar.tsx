@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useMediaQuery } from 'react-responsive';
-import { LayoutDashboard, MonitorCheck } from 'lucide-react'; // Fun, clean icon set
+import { LayoutDashboard, MonitorCheck, Calendar } from 'lucide-react'; // Fun, clean icon set
 import clsx from 'clsx';
 
 const menuItems = [
@@ -15,6 +15,11 @@ const menuItems = [
     key: '/dashboard/monitoring',
     label: 'Application Monitoring',
     icon: <MonitorCheck className="w-5 h-5" />,
+  },
+  {
+    key: '/dashboard/talent-leave',
+    label: 'Talent Leave',
+    icon: <Calendar className="w-5 h-5" />,
   },
 ];
 
