@@ -15,9 +15,11 @@ Monorepo architecture using Turborepo with two main services:
 ### Backend Stack (AIoC Service)
 - **Framework**: NestJS with TypeScript
 - **Runtime**: Node.js
+- **Database**: Firebase Firestore (NoSQL document database)
 - **Testing**: Jest with full coverage support
 - **API Architecture**: RESTful services
 - **Configuration**: Environment-based with @nestjs/config
+- **Data Models**: TypeScript interfaces for DTOs, Entities, and Repositories
 
 ### Frontend Stack (Tere Project)
 - **Framework**: Next.js 15 (App Router)
@@ -32,6 +34,9 @@ Monorepo architecture using Turborepo with two main services:
 
 ### External Integrations
 - **Firebase**: Data storage and authentication (both client and admin SDKs)
+  - **Firestore**: NoSQL document database for talent leave records and team roster
+  - **Firebase Authentication**: User authentication and authorization
+  - **Firebase Admin SDK**: Backend server-side operations
 - **Jira API**: Primary data source for issue tracking and metrics collection
 
 ### Development Tools
@@ -64,7 +69,20 @@ Monorepo architecture using Turborepo with two main services:
 
 ## Technical Decisions
 - **Monorepo**: Chosen for shared configuration and coordinated releases
-- **NestJS**: Selected for enterprise-grade Node.js backend architecture
+- **NestJS**: Selected for enterprise-grade Node.js backend architecture with modular design
 - **Next.js**: Chosen for modern React development with excellent performance
-- **Firebase**: Selected for managed backend services and real-time capabilities
-- **TypeScript**: Enforced across all services for type safety
+- **Firebase Firestore**: Selected for managed NoSQL database with real-time capabilities
+  - Flexible schema for evolving data models (talent leave, team roster)
+  - Built-in authentication integration
+  - Scalable cloud infrastructure
+- **TypeScript**: Enforced across all services for type safety and better developer experience
+
+## Data Architecture
+
+### Firestore Collections
+- **talent-leave**: Stores leave records
+  - Fields: id, name, team, dateFrom, dateTo, status, role, createdAt, updatedAt
+  - Indexed by: dateFrom, dateTo, status, team
+- **talent**: Stores team member roster
+  - Fields: name, team (string or array), role
+  - Used for team dropdown and roster management

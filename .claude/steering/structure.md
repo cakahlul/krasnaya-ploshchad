@@ -23,21 +23,52 @@ apps/aioc-service/src/
 ├── auth/                 # Authentication modules
 ├── common/               # Shared utilities and helpers
 ├── config/               # Configuration modules
-└── [feature-modules]/    # Feature-specific modules
+├── firebase/             # Firebase Admin SDK configuration
+├── modules/              # Feature-specific modules
+│   └── talent-leave/     # Example: Talent leave management
+│       ├── talent-leave.controller.ts
+│       ├── talent-leave.service.ts
+│       ├── talent-leave.module.ts
+│       ├── interfaces/   # DTOs and entities
+│       │   ├── talent-leave.dto.ts
+│       │   └── talent-leave.entity.ts
+│       └── repositories/ # Data access layer
+│           └── talent-leave.repository.ts
+└── shared/               # Shared constants and interfaces
+    ├── constants/
+    └── interfaces/
 ```
 
 ### NestJS Conventions
 - **Modules**: Each feature should have its own module
 - **Controllers**: Handle HTTP requests and responses
 - **Services**: Business logic and data processing
-- **DTOs**: Data Transfer Objects for validation
+- **Repositories**: Data access layer for Firestore operations
+- **DTOs**: Data Transfer Objects for validation (in interfaces/)
+- **Entities**: Internal data structures (in interfaces/)
 - **Guards**: Authentication and authorization
 - **Interceptors**: Cross-cutting concerns
 - **Testing**: `.spec.ts` files alongside source files
 
+### Module Structure Pattern
+For each feature module, follow this pattern:
+```
+src/modules/[feature-name]/
+├── [feature-name].controller.ts    # HTTP endpoints
+├── [feature-name].service.ts       # Business logic
+├── [feature-name].module.ts        # Module definition
+├── interfaces/                     # Data models
+│   ├── [feature-name].dto.ts      # Request/response DTOs
+│   └── [feature-name].entity.ts   # Internal entities
+└── repositories/                   # Data access
+    └── [feature-name].repository.ts
+```
+
 ### New Feature Organization
 - Follow NestJS best practices
-- Create dedicated modules for major features
+- Create dedicated modules for major features under `src/modules/`
+- Use Controller → Service → Repository pattern
+- Separate DTOs (external) and Entities (internal) in interfaces/
 - Use dependency injection patterns
 - Maintain separation of concerns
 
@@ -127,20 +158,59 @@ apps/tere-project/src/
 ## New Feature Guidelines
 
 ### Backend Features (AIoC)
-1. Create feature module in appropriate directory
-2. Follow NestJS module structure (controller, service, module)
-3. Add proper DTOs for validation
-4. Include unit tests
-5. Update module imports in `app.module.ts`
+1. Create feature module under `src/modules/[feature-name]/`
+2. Follow the module structure pattern:
+   - Create controller file for HTTP endpoints
+   - Create service file for business logic
+   - Create repository file for data access (if using Firestore)
+   - Create interfaces/ directory for DTOs and entities
+   - Create module file to wire everything together
+3. Add proper DTOs for request/response validation
+4. Create entities for internal data structures
+5. Include unit tests (`.spec.ts`) alongside each file
+6. Update module imports in `app.module.ts`
+
+**Example: Talent Leave Module**
+```
+src/modules/talent-leave/
+├── talent-leave.controller.ts       # Routes: GET, POST, PUT, DELETE
+├── talent-leave.service.ts          # Business logic
+├── talent-leave.module.ts           # Module definition
+├── interfaces/
+│   ├── talent-leave.dto.ts         # CreateDto, UpdateDto, ResponseDto
+│   └── talent-leave.entity.ts      # TalentLeaveEntity
+└── repositories/
+    └── talent-leave.repository.ts   # Firestore operations
+```
 
 ### Frontend Features (Tere)
-1. Create feature directory in `src/features/`
+1. Create feature directory in `src/features/[feature-name]/`
 2. Follow existing component patterns
-3. Use TypeScript for all components
-4. Integrate with Zustand store if needed
-5. Add to appropriate route in `src/app/`
+3. Organize by feature:
+   - `components/` for feature-specific components
+   - `hooks/` for custom React hooks (if needed)
+   - `store/` for Zustand state (if needed)
+   - `types/` for TypeScript interfaces
+4. Use TypeScript for all components
+5. Integrate with TanStack React Query for API calls
+6. Add to appropriate route in `src/app/`
+7. Use Ant Design components for consistency
+
+**Example: Talent Leave Feature (planned)**
+```
+src/features/talent-leave/
+├── components/
+│   ├── LeaveCalendar.tsx
+│   ├── LeaveModal.tsx
+│   └── LeaveFilters.tsx
+├── hooks/
+│   └── useTalentLeave.ts
+└── types/
+    └── talent-leave.types.ts
+```
 
 ### Shared Code
 - Place shared utilities in appropriate service's `common/` or `lib/` directory
+- Team constants in `shared/constants/team-member.const.ts`
 - Consider creating shared package in `packages/` for cross-service code
 - Maintain clear boundaries between services
