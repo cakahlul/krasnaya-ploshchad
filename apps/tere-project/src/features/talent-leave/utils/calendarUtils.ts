@@ -164,8 +164,8 @@ function generateLeaveDatesArray(dateFrom: string, dateTo: string): string[] {
 
 /**
  * Get Tailwind CSS color class for a calendar cell based on its state
- * Priority: national holiday > weekend > regional holiday > leave (by status) > default
- * Weekends and holidays are never overridden by leave dates
+ * Priority: national holiday > weekend > leave (by status) > default
+ * Non-national holidays do not affect cell color
  * @param isWeekend - Whether the date is a weekend
  * @param isHoliday - Whether the date is a public holiday
  * @param isNationalHoliday - Whether it's a national (vs regional) holiday
@@ -180,8 +180,8 @@ export function getCellColorClass(
   isLeaveDate: boolean,
   leaveStatus?: 'Draft' | 'Confirmed'
 ): string {
-  // Priority: national holiday > weekend > regional holiday > leave (by status)
-  // Weekends and holidays always take precedence
+  // Priority: national holiday > weekend > leave (by status)
+  // Only national holidays affect cell color, not regional holidays
   if (isNationalHoliday) {
     return 'bg-red-100'; // #FEE2E2 - soft red (national holiday overrides everything)
   }
@@ -190,11 +190,7 @@ export function getCellColorClass(
     return 'bg-slate-100'; // #F1F5F9 - soft gray (weekend overrides leave)
   }
 
-  if (isHoliday) {
-    return 'bg-red-50'; // Light red for regional holidays
-  }
-
-  // Only show leave color if not weekend or holiday
+  // Only show leave color if not weekend or national holiday
   if (isLeaveDate) {
     if (leaveStatus === 'Draft') {
       return 'bg-gradient-to-br from-amber-100 to-yellow-200'; // Modern gradient for draft
@@ -202,6 +198,6 @@ export function getCellColorClass(
     return 'bg-gradient-to-br from-emerald-100 to-green-200'; // Modern gradient for confirmed
   }
 
-  // Default background
+  // Default background (non-national holidays use default color)
   return 'bg-white';
 }

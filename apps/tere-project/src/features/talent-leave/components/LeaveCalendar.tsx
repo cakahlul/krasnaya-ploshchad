@@ -77,7 +77,7 @@ export function LeaveCalendar() {
   // Generate date columns based on date range
   const dateColumns = useMemo(
     () => generateDateRange(dateRangeStart, dateRangeEnd),
-    [dateRangeStart, dateRangeEnd]
+    [dateRangeStart, dateRangeEnd],
   );
 
   // Mark holidays in date columns
@@ -348,7 +348,7 @@ export function LeaveCalendar() {
             leaveStatus as 'Draft' | 'Confirmed' | undefined,
           );
           const showCheckmark =
-            isLeaveDate && !cell.isWeekend && !cell.isHoliday;
+            isLeaveDate && !cell.isWeekend && !cell.isNationalHoliday;
 
           return (
             <div

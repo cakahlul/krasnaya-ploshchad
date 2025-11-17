@@ -313,7 +313,7 @@ export function LeaveCalendarSimple() {
                         isLeaveDate,
                         leaveStatus as 'Draft' | 'Confirmed' | undefined,
                       );
-                      const showCheckmark = isLeaveDate && !cell.isWeekend && !cell.isHoliday;
+                      const showCheckmark = isLeaveDate && !cell.isWeekend && !cell.isNationalHoliday;
                       const isDraft = leaveStatus === 'Draft';
 
                       return (
