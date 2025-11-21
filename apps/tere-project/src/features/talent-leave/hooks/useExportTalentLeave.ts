@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import axiosClient from '@src/lib/axiosClient';
 
 interface ExportResponse {
   success: boolean;
@@ -13,8 +14,6 @@ interface ExportResponse {
   exportedAt: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_AIOC_SERVICE || 'http://localhost:3001';
-
 export function useExportTalentLeave() {
   const [isExporting, setIsExporting] = useState(false);
   const [authUrl, setAuthUrl] = useState<string | null>(null);
@@ -24,12 +23,8 @@ export function useExportTalentLeave() {
    */
   const getAuthUrl = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/talent-leave/auth/google`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to get authorization URL');
-      }
+      const response = await axiosClient.get('/talent-leave/auth/google');
+      const data = response.data;
 
       setAuthUrl(data.authUrl);
       return data.authUrl;
@@ -50,26 +45,14 @@ export function useExportTalentLeave() {
     setIsExporting(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/talent-leave/export`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          startDate,
-          endDate,
-          accessToken,
-        }),
+      const response = await axiosClient.post('/talent-leave/export', {
+        startDate,
+        endDate,
+        accessToken,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to export data');
-      }
-
       // Don't show message here, let the component handle it
-      return data;
+      return response.data;
     } catch (error) {
       // Don't show message here, let the component handle it
       throw error;
