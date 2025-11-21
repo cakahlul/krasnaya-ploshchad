@@ -27,14 +27,16 @@
     "deploy:local": "npm run deploy:build && npm run docker:compose:up"
   },
   "dependencies": {
+    "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.1",
-    "@nestjs/platform-express": "^11.0.1",
-    "axios": "^1.7.9",
+    "@nestjs/platform-express": "^11.1.9",
+    "axios": "^1.13.2",
+    "firebase-admin": "^13.3.0",
+    "googleapis": "^166.0.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1",
-    "firebase-admin": "^13.3.0"
+    "rxjs": "^7.8.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

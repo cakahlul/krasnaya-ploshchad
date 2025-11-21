@@ -3,16 +3,26 @@ import LoadingBar from '@src/components/loadingBar';
 import { DateRangePicker } from '@src/features/talent-leave/components/DateRangePicker';
 import { LeaveCalendarSimple } from '@src/features/talent-leave/components/LeaveCalendarSimple';
 import { LeaveModal } from '@src/features/talent-leave/components/LeaveModal';
+import { ExportButton } from '@src/features/talent-leave/components/ExportButton';
+import { ExportToast } from '@src/features/talent-leave/components/ExportToast';
 import { useTalentLeaveStore } from '@src/features/talent-leave/store/talentLeaveStore';
 import { useTalentLeave } from '@src/features/talent-leave/hooks/useTalentLeave';
 import { useIsAdmin } from '@src/hooks/useIsAdmin';
 import { Button } from 'antd';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 export default function TalentLeavePage() {
   const { openCreateModal, modalState } = useTalentLeaveStore();
   const { isLoading, data: leaveRecords } = useTalentLeave();
   const { data: isAdmin = false } = useIsAdmin();
+  const [toast, setToast] = useState<{
+    show: boolean;
+    type: 'success' | 'error';
+    spreadsheetUrl?: string;
+  }>({
+    show: false,
+    type: 'success',
+  });
 
   // Find the leave record for edit mode
   const leaveRecord = useMemo(() => {
@@ -41,6 +51,16 @@ export default function TalentLeavePage() {
           </div>
         </div>
         <div className="flex gap-4 items-center">
+          <ExportButton
+            onSuccess={(url) => {
+              setToast({ show: true, type: 'success', spreadsheetUrl: url });
+              setTimeout(() => setToast({ show: false, type: 'success' }), 8000);
+            }}
+            onError={() => {
+              setToast({ show: true, type: 'error' });
+              setTimeout(() => setToast({ show: false, type: 'error' }), 8000);
+            }}
+          />
           {isAdmin && (
             <Button
               type="primary"
@@ -54,6 +74,13 @@ export default function TalentLeavePage() {
       </div>
 
       <LeaveCalendarSimple />
+
+      <ExportToast
+        show={toast.show}
+        type={toast.type}
+        spreadsheetUrl={toast.spreadsheetUrl}
+        onClose={() => setToast({ ...toast, show: false })}
+      />
 
       <LeaveModal
         leaveRecord={
