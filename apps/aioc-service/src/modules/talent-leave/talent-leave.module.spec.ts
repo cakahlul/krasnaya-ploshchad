@@ -1,8 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigModule } from '@nestjs/config';
 import { TalentLeaveModule } from './talent-leave.module';
 import { TalentLeaveController } from './talent-leave.controller';
 import { TalentLeaveService } from './talent-leave.service';
 import { TalentLeaveRepository } from './repositories/talent-leave.repository';
+import { TalentLeaveExportService } from './talent-leave-export.service';
+import { GoogleSheetsClient } from './clients/google-sheets.client';
 
 // Mock firebase-admin for testing
 jest.mock('../../firebase/firebase-admin', () => ({
@@ -18,7 +21,13 @@ describe('TalentLeaveModule', () => {
 
   beforeEach(async () => {
     module = await Test.createTestingModule({
-      imports: [TalentLeaveModule],
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          envFilePath: '.env.test',
+        }),
+        TalentLeaveModule,
+      ],
     }).compile();
   });
 
@@ -49,10 +58,40 @@ describe('TalentLeaveModule', () => {
     expect(exportedService).toBeDefined();
   });
 
+  it('should provide TalentLeaveExportService', () => {
+    const exportService = module.get<TalentLeaveExportService>(
+      TalentLeaveExportService,
+    );
+    expect(exportService).toBeDefined();
+    expect(exportService).toBeInstanceOf(TalentLeaveExportService);
+  });
+
+  it('should provide GoogleSheetsClient', () => {
+    const googleSheetsClient =
+      module.get<GoogleSheetsClient>(GoogleSheetsClient);
+    expect(googleSheetsClient).toBeDefined();
+    expect(googleSheetsClient).toBeInstanceOf(GoogleSheetsClient);
+  });
+
+  it('should import HttpModule', () => {
+    // HttpModule is imported, verify by checking if module compiles
+    // HttpModule provides HttpService which is injected into TalentLeaveExportService
+    const exportService = module.get<TalentLeaveExportService>(
+      TalentLeaveExportService,
+    );
+    expect(exportService).toBeDefined();
+  });
+
   it('should compile without errors', async () => {
     await expect(
       Test.createTestingModule({
-        imports: [TalentLeaveModule],
+        imports: [
+          ConfigModule.forRoot({
+            isGlobal: true,
+            envFilePath: '.env.test',
+          }),
+          TalentLeaveModule,
+        ],
       }).compile(),
     ).resolves.toBeDefined();
   });
