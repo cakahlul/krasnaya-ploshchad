@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
+import { Public } from '../../auth/public.decorator';
 import { TalentLeaveService } from './talent-leave.service';
 import {
   CreateTalentLeaveDto,
@@ -80,6 +81,7 @@ export class TalentLeaveController {
     };
   }
 
+  @Public()
   @Get('auth/google/callback')
   async googleAuthCallback(
     @Query() query: GoogleAuthCallbackDto,
