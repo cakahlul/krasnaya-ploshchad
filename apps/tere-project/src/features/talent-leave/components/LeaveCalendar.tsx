@@ -481,16 +481,21 @@ export function LeaveCalendar() {
                     if (
                       typeof cellContent === 'object' &&
                       cellContent &&
-                      'colSpan' in cellContent
+                      'colSpan' in cellContent &&
+                      'content' in cellContent
                     ) {
-                      if (cellContent.colSpan === 0) return null;
+                      const spanContent = cellContent as unknown as {
+                        colSpan: number;
+                        content: React.ReactNode;
+                      };
+                      if (spanContent.colSpan === 0) return null;
                       return (
                         <td
                           key={cell.id}
-                          colSpan={cellContent.colSpan}
+                          colSpan={spanContent.colSpan}
                           className="border border-gray-200 px-2 py-1"
                         >
-                          {cellContent.content}
+                          {spanContent.content}
                         </td>
                       );
                     }
