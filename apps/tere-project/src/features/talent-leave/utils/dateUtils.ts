@@ -104,7 +104,11 @@ export function calculateDayCount(
   while (currentDate <= endDate) {
     const dayOfWeek = currentDate.getDay();
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday = 0, Saturday = 6
-    const dateString = currentDate.toISOString().split('T')[0];
+    // Format date as YYYY-MM-DD without timezone conversion to avoid UTC issues
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const day = String(currentDate.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
     const isHoliday = holidaySet.has(dateString);
 
     // Only count if not weekend and not holiday
