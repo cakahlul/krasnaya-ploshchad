@@ -1,30 +1,40 @@
 import { Injectable } from '@nestjs/common';
-import { ProjectEntity, SprintEntity } from '../interfaces/project.entity';
+import { ProjectEntity, Sprint, SprintEntity } from '../interfaces/project.entity';
 import axios from 'axios';
 
 @Injectable()
 export class ProjectRepository {
   private url = process.env.JIRA_URL ?? '';
-  private limitFetch = process.env.LIMIT_SPRINT_FETCH ?? 50;
   private readonly auth = {
     username: process.env.JIRA_USERNAME ?? '',
     password: process.env.JIRA_API_TOKEN ?? '',
   };
 
-  async fetchJiraSprint(boardId: number): Promise<SprintEntity> {
-    //hardcoded logic startAt to exclude old sprint
-    let startAt = this.limitFetch;
-    if (boardId == 143) {
-      startAt = 32;
-    }
+  async fetchJiraSprint(boardId: number): Promise<Sprint[]> {
+    const baseUrl = `${this.url}/rest/agile/1.0/board/${boardId}/sprint`;
+    const config = { auth: this.auth };
 
-    const response = await axios.get<SprintEntity>(
-      `${this.url}/rest/agile/1.0/board/${boardId}/sprint?maxResults=100&startAt=${startAt}`,
-      {
-        auth: this.auth,
-      },
+    // Fetch active sprints and get closed sprint count in parallel
+    const [activeResponse, closedCountResponse] = await Promise.all([
+      axios.get<SprintEntity>(`${baseUrl}?state=active`, config),
+      axios.get<SprintEntity>(`${baseUrl}?state=closed&maxResults=1`, config),
+    ]);
+
+    const activeSprints = activeResponse.data.values;
+
+    // Calculate startAt to get only the last 6 closed sprints
+    const closedTotal = closedCountResponse.data.total;
+    const closedLimit = 6;
+    const closedStartAt = Math.max(0, closedTotal - closedLimit);
+
+    const closedResponse = await axios.get<SprintEntity>(
+      `${baseUrl}?state=closed&maxResults=${closedLimit}&startAt=${closedStartAt}`,
+      config,
     );
-    return response.data;
+
+    const closedSprints = closedResponse.data.values;
+
+    return [...closedSprints, ...activeSprints];
   }
 
   async fetchJiraProject(): Promise<ProjectEntity[]> {

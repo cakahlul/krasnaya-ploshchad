@@ -108,7 +108,7 @@ export const teamMembers: TeamMember[] = [
     name: 'Tara',
     id: '5ed5fc5c8063980c18eee63c',
     email: 'tara.desyafriben@amarbank.co.id',
-    team: [TEAM_FUNDING],
+    team: [TEAM_FUNDING, TEAM_LENDING],
     level: Level[LEVEL_SENIOR],
   },
   {

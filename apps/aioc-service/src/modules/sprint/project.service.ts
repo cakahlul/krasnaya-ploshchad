@@ -8,8 +8,9 @@ export class ProjectService {
   constructor(private projectRepository: ProjectRepository) {}
 
   async fetchAllSprint(boardId: number): Promise<SprintDto[]> {
-    const response = await this.projectRepository.fetchJiraSprint(boardId);
-    return response.values.map((sprint: Sprint) => ({
+    const sprints = await this.projectRepository.fetchJiraSprint(boardId);
+
+    return sprints.map((sprint: Sprint) => ({
       id: sprint.id,
       state: sprint.state,
       name: sprint.name,
