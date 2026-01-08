@@ -2,7 +2,7 @@ export type AppendixWeightPoint = 'Very Low' | 'Low' | 'Medium' | 'High';
 
 export function parseAppendixWeightPoints(
   appendixText: string,
-): AppendixWeightPoint {
+): AppendixWeightPoint | null {
   const weightPattern = /-(Very Low|Low|Medium|High)$/;
   const match = appendixText.match(weightPattern);
 
@@ -10,5 +10,5 @@ export function parseAppendixWeightPoints(
     return match[1] as AppendixWeightPoint;
   }
 
-  return 'Medium';
+  return null;
 }

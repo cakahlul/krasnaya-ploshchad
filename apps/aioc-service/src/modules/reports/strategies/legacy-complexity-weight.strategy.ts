@@ -14,8 +14,10 @@ export class LegacyComplexityWeightStrategy
   };
 
   calculateWeight(issue: JiraIssueEntity): number {
-    const complexityId =
-      issue.fields.customfield_11015?.id?.toString() ?? '10650';
-    return this.complexityWeights[complexityId] ?? 1.5;
+    const complexityId = issue.fields.customfield_11015?.id?.toString();
+    if (!complexityId) {
+      return 0;
+    }
+    return this.complexityWeights[complexityId] ?? 0;
   }
 }

@@ -23,8 +23,14 @@ export class V3ComplexityWeightStrategy implements IComplexityWeightStrategy {
 
     // Sum the weight of all selected options
     const totalWeight = selectedOptions.reduce((total, option) => {
-      const appendixWeightText = option?.value || '';
+      const appendixWeightText = option?.value;
+      if (!appendixWeightText) {
+        return total;
+      }
       const weightPoint = parseAppendixWeightPoints(appendixWeightText);
+      if (!weightPoint) {
+        return total;
+      }
       const weight = this.appendixWeightPointsMapping[weightPoint];
       return total + weight;
     }, 0);

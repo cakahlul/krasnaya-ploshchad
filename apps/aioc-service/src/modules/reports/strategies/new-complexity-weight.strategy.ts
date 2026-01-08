@@ -18,8 +18,14 @@ export class NewComplexityWeightStrategy implements IComplexityWeightStrategy {
   };
 
   calculateWeight(issue: JiraIssueEntity): number {
-    const appendixWeightText = issue.fields.customfield_11444?.value || '';
+    const appendixWeightText = issue.fields.customfield_11444?.value;
+    if (!appendixWeightText) {
+      return 0;
+    }
     const weightPoint = parseAppendixWeightPoints(appendixWeightText);
+    if (!weightPoint) {
+      return 0;
+    }
     return this.appendixWeightPointsMapping[weightPoint];
   }
 }
