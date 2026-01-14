@@ -20,6 +20,7 @@ export interface JiraIssueReportResponseDto {
   level: Level;
   weightPointsProduct: number;
   weightPointsTechDebt: number;
+  workingDays?: number; // Working days available for this member during sprint
 }
 
 export interface GetReportResponseDto {
@@ -29,6 +30,8 @@ export interface GetReportResponseDto {
   productPercentage: string;
   techDebtPercentage: string;
   averageProductivity: string;
+  totalWorkingDays?: number; // Total working days across all team members
+  averageWorkingDays?: number; // Average working days per team member
 }
 
 export interface JiraSearchResponseDto {

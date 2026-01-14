@@ -15,6 +15,8 @@ export const useTeamReportTransform = () => {
       productPercentage: data.productPercentage,
       techDebtPercentage: data.techDebtPercentage,
       averageProductivity: data.averageProductivity,
+      totalWorkingDays: data.totalWorkingDays,
+      averageWorkingDays: data.averageWorkingDays,
     };
   }, [data]);
 

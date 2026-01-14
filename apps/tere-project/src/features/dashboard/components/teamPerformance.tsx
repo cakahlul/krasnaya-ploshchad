@@ -43,6 +43,12 @@ export default function TeamPerformance() {
       icon: <RiseOutlined className="text-white text-2xl" />,
       bg: "bg-blue-800",
     },
+    {
+      label: "Total Working Days",
+      value: data?.totalWorkingDays,
+      icon: <RiseOutlined className="text-white text-2xl" />,
+      bg: "bg-purple-700",
+    },
   ];
 
   return (
