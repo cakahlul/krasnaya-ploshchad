@@ -43,6 +43,11 @@ export default function TeamTable() {
       dataIndex: 'totalWeightPoints',
       key: 'totalWeightPoints',
     },
+    {
+      title: 'Working Days',
+      dataIndex: 'workingDays',
+      key: 'workingDays',
+    },
     { title: 'Dev Defect', dataIndex: 'devDefect', key: 'devDefect' },
     {
       title: 'Dev Defect Rate',
@@ -78,8 +83,8 @@ export default function TeamTable() {
       {!!data && (
         <div>
           <p className="text-red-500 text-xs">
-            **The shown data is collected based on the assumption that each team
-            member works 10 days per sprint. This data may vary based on actual
+            **The shown data is collected based on the actual working days per sprint
+            (excluding weekends, national holidays, and personal leaves). This data may vary based on actual
             workdays and team dynamics.
           </p>
         </div>

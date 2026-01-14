@@ -9,9 +9,11 @@ import { V3ComplexityWeightStrategy } from './strategies/v3-complexity-weight.st
 import { LegacyIssueCategorizer } from './strategies/legacy-issue-categorizer.strategy';
 import { NewIssueCategorizer } from './strategies/new-issue-categorizer.strategy';
 import { ProjectModule } from '../sprint/project.module';
+import { TalentLeaveModule } from '../talent-leave/talent-leave.module';
+import { HolidaysModule } from '../holidays/holidays.module';
 
 @Module({
-  imports: [ProjectModule],
+  imports: [ProjectModule, TalentLeaveModule, HolidaysModule],
   controllers: [ReportsController],
   providers: [
     ReportsService,

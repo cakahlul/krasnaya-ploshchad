@@ -10,6 +10,7 @@ export interface WorkItem {
   totalWeightPoints: number;
   weightPointsProduct: number;
   weightPointsTechDebt: number;
+  workingDays?: number;
 }
 
 export interface DashboardDto {
@@ -19,6 +20,8 @@ export interface DashboardDto {
   productPercentage: string;
   techDebtPercentage: string;
   averageProductivity: string;
+  totalWorkingDays?: number;
+  averageWorkingDays?: number;
 }
 
 export interface DashhboardEntity {
@@ -28,6 +31,8 @@ export interface DashhboardEntity {
   productPercentage: string;
   techDebtPercentage: string;
   averageProductivity: string;
+  totalWorkingDays?: number;
+  averageWorkingDays?: number;
 }
 
 export interface DashboardFilter {

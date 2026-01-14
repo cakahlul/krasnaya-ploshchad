@@ -9,6 +9,13 @@ import { JiraIssueEntity } from './interfaces/report.entity';
 import { TeamMember } from 'src/shared/interfaces/team-member.interface';
 import { teamMembers } from 'src/shared/constants/team-member.const';
 import { IssueProcessingStrategyFactory } from './strategies/issue-processing-strategy.factory';
+import { TalentLeaveService } from '../talent-leave/talent-leave.service';
+import { ProjectService } from '../sprint/project.service';
+import { HolidaysService } from '../holidays/holidays.service';
+import {
+  calculateWorkingDays,
+  getLeaveDataForMember,
+} from './utils/working-days.util';
 
 @Injectable()
 export class ReportsService {
@@ -22,6 +29,9 @@ export class ReportsService {
   constructor(
     private readonly jiraReportRepository: ReportJiraRepository,
     private readonly strategyFactory: IssueProcessingStrategyFactory,
+    private readonly talentLeaveService: TalentLeaveService,
+    private readonly projectService: ProjectService,
+    private readonly holidaysService: HolidaysService,
   ) {}
 
   async generateReport(
@@ -29,7 +39,29 @@ export class ReportsService {
     project: string,
   ): Promise<GetReportResponseDto> {
     const rawData = await this.fetchRawData(sprint, project);
-    const teamReport = this.processRawData(rawData, project);
+    
+    // Fetch sprint details to get start and end dates
+    const sprintDetails = await this.getSprintDetails(sprint);
+    
+    // Fetch leave data if sprint details are available
+    let leaveData: Array<{ name: string; leaveDate: Array<{ dateFrom: string; dateTo: string; status: string }> }> = [];
+    if (sprintDetails) {
+      leaveData = await this.fetchLeaveData(
+        sprintDetails.startDate,
+        sprintDetails.endDate,
+        project,
+      );
+    }
+    
+    // Fetch national holidays if sprint details are available
+    let nationalHolidays: string[] = [];
+    if (sprintDetails) {
+      const startDate = new Date(sprintDetails.startDate);
+      const endDate = new Date(sprintDetails.endDate);
+      nationalHolidays = await this.holidaysService.getNationalHolidays(startDate, endDate);
+    }
+    
+    const teamReport = this.processRawData(rawData, project, sprintDetails, leaveData, nationalHolidays);
     return this.summarizeTeamReport(teamReport);
   }
 
@@ -49,9 +81,77 @@ export class ReportsService {
     return this.jiraReportRepository.fetchRawData(request);
   }
 
+  private async getSprintDetails(
+    sprintId: string,
+  ): Promise<{ startDate: string; endDate: string } | null> {
+    try {
+      // Try to extract boardId from common patterns (e.g., sprint ID might be numeric)
+      // Since we don't have direct access to boardId, we'll try common board IDs
+      const boardIds = [142, 143]; // SLS and DS boards
+      
+      for (const boardId of boardIds) {
+        const sprints = await this.projectService.fetchAllSprint(boardId);
+        const sprint = sprints.find((s) => String(s.id) === sprintId);
+        if (sprint && sprint.startDate && sprint.endDate) {
+          return {
+            startDate: sprint.startDate,
+            endDate: sprint.endDate,
+          };
+        }
+      }
+      
+      console.warn(`Sprint ${sprintId} not found, working days will not be calculated`);
+      return null;
+    } catch (error) {
+      console.error('Error fetching sprint details:', error);
+      return null;
+    }
+  }
+
+  private async fetchLeaveData(
+    startDate: string,
+    endDate: string,
+    project: string,
+  ): Promise<Array<{ name: string; leaveDate: Array<{ dateFrom: string; dateTo: string; status: string }> }>> {
+    try {
+      // Get team member names for this project
+      const projectMemberNames = teamMembers
+        .filter((member: TeamMember) => member.team.includes(project))
+        .map((member: TeamMember) => member.name.toLowerCase());
+
+      // Fetch all leave records filtered by date range only (no team filter)
+      // The team field in Firebase may not match exactly with project code
+      const leaveRecords = await this.talentLeaveService.findAll({
+        startDate,
+        endDate,
+        // Don't filter by team here - we'll filter by member names instead
+      });
+
+      console.log('Leave records before filtering:', leaveRecords.length);
+
+      // Filter to only include team members for this project
+      const filteredRecords = leaveRecords.filter((record) =>
+        projectMemberNames.includes(record.name.toLowerCase()),
+      );
+
+      console.log('Leave records after filtering by project members:', filteredRecords.length);
+
+      return filteredRecords.map((record) => ({
+        name: record.name,
+        leaveDate: record.leaveDate,
+      }));
+    } catch (error) {
+      console.error('Error fetching leave data:', error);
+      return [];
+    }
+  }
+
   private processRawData(
     rawData: JiraIssueEntity[],
     project: string,
+    sprintDetails?: { startDate: string; endDate: string } | null,
+    leaveData?: Array<{ name: string; leaveDate: Array<{ dateFrom: string; dateTo: string; status: string }> }>,
+    nationalHolidays: string[] = [],
   ): JiraIssueReportResponseDto[] {
     const accountIdMap = new Map<string, string>(
       teamMembers
@@ -124,6 +224,17 @@ export class ReportsService {
         report.averageComplexity = average.toFixed(2);
         report.totalWeightPoints = complexityData?.totalComplexity ?? 0;
 
+        // Calculate working days if sprint details and leave data are available
+        if (sprintDetails && leaveData) {
+          const memberLeaveDates = getLeaveDataForMember(leaveData, report.member);
+          report.workingDays = calculateWorkingDays(
+            new Date(sprintDetails.startDate),
+            new Date(sprintDetails.endDate),
+            memberLeaveDates,
+            nationalHolidays,
+          );
+        }
+
         // Reset metrics for members with no points (not working on any tasks)
         if (report.totalPoint === 0) {
           this.resetMemberMetrics(report);
@@ -172,6 +283,19 @@ export class ReportsService {
       productivityRates.reduce((sum, rate) => sum + rate, 0) /
         productivityRates.length || 0;
 
+    // Calculate working days metrics
+    const membersWithWorkingDays = activeMembers.filter(
+      (issue) => issue.workingDays !== undefined,
+    );
+    const totalWorkingDays = membersWithWorkingDays.reduce(
+      (sum, issue) => sum + (issue.workingDays || 0),
+      0,
+    );
+    const averageWorkingDays =
+      membersWithWorkingDays.length > 0
+        ? totalWorkingDays / membersWithWorkingDays.length
+        : undefined;
+
     return {
       issues,
       totalIssueProduct,
@@ -179,6 +303,8 @@ export class ReportsService {
       productPercentage: `${productPercentage.toFixed(2)}%`,
       techDebtPercentage: `${techDebtPercentage.toFixed(2)}%`,
       averageProductivity: `${averageProductivity.toFixed(2)}%`,
+      totalWorkingDays: totalWorkingDays > 0 ? totalWorkingDays : undefined,
+      averageWorkingDays,
     };
   }
 
