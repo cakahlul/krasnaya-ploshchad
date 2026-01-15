@@ -209,8 +209,20 @@ export class ReportsService {
 
     Array.from(reports.values()).forEach(
       (report: JiraIssueReportResponseDto) => {
-        // Productivity calculation (total points / 80 * 100%)
-        const maximumPoints = report.member === 'Rahmad' ? 40 : 80;
+        // Calculate working days if sprint details and leave data are available
+        if (sprintDetails && leaveData) {
+          const memberLeaveDates = getLeaveDataForMember(leaveData, report.member);
+          report.workingDays = calculateWorkingDays(
+            new Date(sprintDetails.startDate),
+            new Date(sprintDetails.endDate),
+            memberLeaveDates,
+            nationalHolidays,
+          );
+        }
+
+        // Productivity calculation (total points / (working days * 8 points per day) * 100%)
+        // Each team member is expected to have 8 points per working day
+        const maximumPoints = report.workingDays ? report.workingDays * 8 : 80;
         report.productivityRate = `${((report.totalPoint / maximumPoints) * 100).toFixed(2)}%`;
 
         // Defect rate calculation
@@ -223,17 +235,6 @@ export class ReportsService {
           : 0;
         report.averageComplexity = average.toFixed(2);
         report.totalWeightPoints = complexityData?.totalComplexity ?? 0;
-
-        // Calculate working days if sprint details and leave data are available
-        if (sprintDetails && leaveData) {
-          const memberLeaveDates = getLeaveDataForMember(leaveData, report.member);
-          report.workingDays = calculateWorkingDays(
-            new Date(sprintDetails.startDate),
-            new Date(sprintDetails.endDate),
-            memberLeaveDates,
-            nationalHolidays,
-          );
-        }
 
         // Reset metrics for members with no points (not working on any tasks)
         if (report.totalPoint === 0) {
