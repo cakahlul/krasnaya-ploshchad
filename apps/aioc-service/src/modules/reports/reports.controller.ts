@@ -2,7 +2,6 @@ import { Controller, Get, Query } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { GetReportResponseDto } from './interfaces/report.dto';
 import { ProjectService } from '../sprint/project.service';
-import { Public } from 'src/auth/public.decorator';
 
 
 @Controller('report')
