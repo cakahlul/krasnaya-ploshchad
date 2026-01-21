@@ -95,6 +95,13 @@ export function LeaveCalendarSimple() {
     [holidays],
   );
 
+  // Helper function to check if a member has any future leave dates
+  const hasFutureLeaveDates = (member: { dateRanges: Array<{ dateFrom: string; dateTo: string }> }) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return member.dateRanges.some(range => new Date(range.dateTo) >= today);
+  };
+
   // Group leave records by team
   const teamGroups = useMemo(() => {
     if (!leaveRecords) return [];
@@ -153,8 +160,7 @@ export function LeaveCalendarSimple() {
               </th>
               <th className="sticky z-40 bg-gradient-to-r from-indigo-50 to-blue-50 border border-gray-200 px-3 py-2 text-left shadow-lg" style={{ left: 290, width: 180, minWidth: 180 }}>
                 <div className="font-semibold text-gray-700 flex items-center gap-1">
-                  <CalendarOutlined />
-                  <span>Tanggal Cuti</span>
+                  <span>Tanggal Cuti Terdekat</span>
                 </div>
               </th>
 
@@ -273,13 +279,15 @@ export function LeaveCalendarSimple() {
                         <span className="text-indigo-900 font-medium truncate flex-1">
                           {member.name}
                         </span>
-                        <button
-                          onClick={() => openEditModal(member.id)}
-                          className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 p-1 rounded transition-all duration-150 flex-shrink-0"
-                          title="Edit leave record"
-                        >
-                          <EditOutlined className="text-base" />
-                        </button>
+                        {hasFutureLeaveDates(member) && (
+                          <button
+                            onClick={() => openEditModal(member.id)}
+                            className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 p-1 rounded transition-all duration-150 flex-shrink-0"
+                            title="Edit leave record"
+                          >
+                            <EditOutlined className="text-base" />
+                          </button>
+                        )}
                       </div>
                     </td>
                     <td className="border border-gray-200 px-3 py-2 sticky z-10 bg-white shadow-sm" style={{ left: 210, width: 80 }}>
@@ -311,10 +319,11 @@ export function LeaveCalendarSimple() {
                         cell.isHoliday,
                         cell.isNationalHoliday,
                         isLeaveDate,
-                        leaveStatus as 'Draft' | 'Confirmed' | undefined,
+                        leaveStatus as 'Draft' | 'Confirmed' | 'Sick' | undefined,
                       );
                       const showCheckmark = isLeaveDate && !cell.isWeekend && !cell.isNationalHoliday;
                       const isDraft = leaveStatus === 'Draft';
+                      const isSick = leaveStatus === 'Sick';
 
                       return (
                         <td
@@ -325,13 +334,17 @@ export function LeaveCalendarSimple() {
                           <div className="h-full flex items-center justify-center py-2 px-2">
                             {showCheckmark && (
                               <CheckCircleFilled
-                                className={`text-lg drop-shadow-md ${isDraft ? 'text-amber-600' : 'text-emerald-600'}`}
+                                className={`text-lg drop-shadow-md ${
+                                  isDraft ? 'text-amber-600' : isSick ? 'text-purple-600' : 'text-emerald-600'
+                                }`}
                               />
                             )}
                           </div>
                           {isLeaveDate && (
                             <div
-                              className={`absolute left-0 top-0 bottom-0 w-1 ${isDraft ? 'bg-amber-500' : 'bg-emerald-600'}`}
+                              className={`absolute left-0 top-0 bottom-0 w-1 ${
+                                isDraft ? 'bg-amber-500' : isSick ? 'bg-purple-600' : 'bg-emerald-600'
+                              }`}
                             ></div>
                           )}
                         </td>

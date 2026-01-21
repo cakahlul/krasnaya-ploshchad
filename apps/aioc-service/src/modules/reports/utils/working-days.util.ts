@@ -32,27 +32,44 @@ export function isOnLeave(
 
   const dateStr = formatDateToYYYYMMDD(date);
 
-  return leaveDates.some((leave) => {
+  const result = leaveDates.some((leave) => {
     // Only count Confirmed and Sick status leaves
     if (leave.status !== 'Confirmed' && leave.status !== 'Sick') {
       return false;
     }
 
-    const fromDate = new Date(leave.dateFrom);
-    const toDate = new Date(leave.dateTo);
+    const fromDate = parseLocalDate(leave.dateFrom);
+    const toDate = parseLocalDate(leave.dateTo);
 
     // Normalize to start of day for comparison
     const checkDate = new Date(date);
     checkDate.setHours(0, 0, 0, 0);
-    fromDate.setHours(0, 0, 0, 0);
-    toDate.setHours(0, 0, 0, 0);
 
     return checkDate >= fromDate && checkDate <= toDate;
   });
+
+  return result;
 }
 
 /**
- * Format date as YYYY-MM-DD
+ * Parse a date string as a local date (without timezone conversion)
+ * Handles both YYYY-MM-DD and ISO 8601 formats
+ * @param dateStr - Date string in YYYY-MM-DD or ISO 8601 format
+ * @returns Date object normalized to local date (no timezone shift)
+ */
+function parseLocalDate(dateStr: string): Date {
+  // Extract just the date part (YYYY-MM-DD) from ISO 8601 or plain format
+  const datePart = dateStr.split('T')[0];
+  const [year, month, day] = datePart.split('-').map(Number);
+  
+  // Create date using local timezone (year, month is 0-indexed, day)
+  const date = new Date(year, month - 1, day);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+/**
+ * Format date as YYYY-MM-DD using local timezone
  */
 function formatDateToYYYYMMDD(date: Date): string {
   const year = date.getFullYear();
@@ -79,7 +96,11 @@ export function calculateWorkingDays(
     return 0;
   }
 
+
+
   let workingDays = 0;
+  
+  // Normalize start and end dates to local timezone midnight
   const currentDate = new Date(startDate);
   currentDate.setHours(0, 0, 0, 0);
 
@@ -90,11 +111,13 @@ export function calculateWorkingDays(
   while (currentDate <= end) {
     const dateStr = formatDateToYYYYMMDD(currentDate);
     const isHoliday = nationalHolidays.includes(dateStr);
+    const isOnLeaveBool = isOnLeave(currentDate, leaveDates);
+    const isWeekendBool = isWeekend(currentDate);
 
     // Count the day if it's not a weekend, not on leave, and not a holiday
     if (
-      !isWeekend(currentDate) &&
-      !isOnLeave(currentDate, leaveDates) &&
+      !isWeekendBool &&
+      !isOnLeaveBool &&
       !isHoliday
     ) {
       workingDays++;

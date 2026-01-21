@@ -22,7 +22,7 @@ export default function useUser() {
     });
 
     return () => unsubscribe();
-  });
+  }, [setUser, setLoading]);
 
   return {
     user,

@@ -8,7 +8,7 @@ import { useTalentList } from '../hooks/useTalentList';
 import { useLeaveCreate } from '../hooks/useLeaveCreate';
 import { useLeaveUpdate } from '../hooks/useLeaveUpdate';
 import { useLeaveDelete } from '../hooks/useLeaveDelete';
-import { disablePastDates, disableBeforeDate } from '../utils/dateUtils';
+import { disableOlderThanOneMonth, disableBeforeDate } from '../utils/dateUtils';
 import { CreateLeaveRequest, LeaveDateRange } from '../types/talent-leave.types';
 
 interface LeaveModalProps {
@@ -39,18 +39,25 @@ export function LeaveModal({ leaveRecord, isAdmin = false }: LeaveModalProps) {
   // Populate form when editing
   useEffect(() => {
     if (isEditMode && leaveRecord) {
-      // Map all leave dates for editing
-      const leaveDates = leaveRecord.leaveDate.map((range) => ({
-        dateFrom: dayjs(range.dateFrom),
-        dateTo: dayjs(range.dateTo),
-        status: range.status,
-      }));
+      // Get today's date at start of day for comparison
+      const today = dayjs().startOf('day');
+      
+      // Filter out leave dates that have already passed (dateTo is before today)
+      // Only show current and future leave dates
+      const futureLeaveDates = leaveRecord.leaveDate
+        .filter((range) => dayjs(range.dateTo).isAfter(today) || dayjs(range.dateTo).isSame(today, 'day'))
+        .map((range) => ({
+          dateFrom: dayjs(range.dateFrom),
+          dateTo: dayjs(range.dateTo),
+          status: range.status,
+        }));
 
       form.setFieldsValue({
         name: leaveRecord.name,
         team: leaveRecord.team,
         role: leaveRecord.role,
-        leaveDates: leaveDates.length > 0 ? leaveDates : [{}],
+        // Show filtered dates, or one empty field if no future dates
+        leaveDates: futureLeaveDates.length > 0 ? futureLeaveDates : [{}],
       });
 
       // Find talent by name to set selectedTalentId
@@ -261,7 +268,7 @@ export function LeaveModal({ leaveRecord, isAdmin = false }: LeaveModalProps) {
                       >
                         <DatePicker
                           format="YYYY-MM-DD"
-                          disabledDate={disablePastDates}
+                          disabledDate={disableOlderThanOneMonth}
                           style={{ width: '100%' }}
                         />
                       </Form.Item>
@@ -328,6 +335,7 @@ export function LeaveModal({ leaveRecord, isAdmin = false }: LeaveModalProps) {
                           options={[
                             { value: 'Draft', label: 'Draft' },
                             { value: 'Confirmed', label: 'Confirmed' },
+                            { value: 'Sick', label: 'Sick' },
                           ]}
                         />
                       </Form.Item>

@@ -63,15 +63,25 @@ export function transformToRowData(
   visibleStartDate?: string,
   visibleEndDate?: string
 ): LeaveRowData {
+  // Get today's date for filtering past dates
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   // Process all leave date ranges with status
-  const dateRanges = leave.leaveDate.map((range) => ({
+  const allDateRanges = leave.leaveDate.map((range) => ({
     dateFrom: range.dateFrom,
     dateTo: range.dateTo,
     status: range.status,
     display: formatDateRange(range.dateFrom, range.dateTo),
   }));
 
-  // Calculate total leave count only for dates within visible range
+  // Filter to only show current and future leave dates (dateTo >= today)
+  const futureDateRanges = allDateRanges.filter((range) => {
+    const dateTo = new Date(range.dateTo);
+    return dateTo >= today;
+  });
+
+  // Calculate total leave count based on visible range only
   const leaveCount = leave.leaveDate.reduce((total, range) => {
     // If visible range is specified, clip the leave range to visible range
     let countFrom = range.dateFrom;
@@ -103,7 +113,7 @@ export function transformToRowData(
   );
 
   // Create a map of date to status
-  const leaveDatesWithStatus: Record<string, 'Draft' | 'Confirmed'> = {};
+  const leaveDatesWithStatus: Record<string, 'Draft' | 'Confirmed' | 'Sick'> = {};
   leave.leaveDate.forEach((range) => {
     const dates = generateLeaveDatesArray(range.dateFrom, range.dateTo);
     dates.forEach((date) => {
@@ -112,10 +122,11 @@ export function transformToRowData(
   });
 
   // Generate combined date range display (comma-separated if multiple)
-  const dateRange = dateRanges.map(r => r.display).join(', ');
+  // Only show future dates
+  const dateRange = futureDateRanges.map(r => r.display).join(', ');
 
-  // Generate status display (show unique statuses)
-  const uniqueStatuses = Array.from(new Set(dateRanges.map(r => r.status)));
+  // Generate status display (show unique statuses from future dates only)
+  const uniqueStatuses = Array.from(new Set(futureDateRanges.map(r => r.status)));
   const status = uniqueStatuses.join(', ');
 
   return {
@@ -124,7 +135,7 @@ export function transformToRowData(
     team: leave.team,
     role: leave.role,
     leaveCount,
-    dateRanges,
+    dateRanges: allDateRanges,
     leaveDates,
     leaveDatesWithStatus,
     dateRange,
@@ -178,7 +189,7 @@ export function getCellColorClass(
   isHoliday: boolean,
   isNationalHoliday: boolean,
   isLeaveDate: boolean,
-  leaveStatus?: 'Draft' | 'Confirmed'
+  leaveStatus?: 'Draft' | 'Confirmed' | 'Sick'
 ): string {
   // Priority: national holiday > weekend > leave (by status)
   // Only national holidays affect cell color, not regional holidays
@@ -194,6 +205,9 @@ export function getCellColorClass(
   if (isLeaveDate) {
     if (leaveStatus === 'Draft') {
       return 'bg-gradient-to-br from-amber-100 to-yellow-200'; // Modern gradient for draft
+    }
+    if (leaveStatus === 'Sick') {
+      return 'bg-gradient-to-br from-purple-100 to-violet-200'; // Modern gradient for sick leave
     }
     return 'bg-gradient-to-br from-emerald-100 to-green-200'; // Modern gradient for confirmed
   }

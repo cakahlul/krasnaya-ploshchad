@@ -160,18 +160,21 @@ export function getIndonesianDayName(date: Date): string {
 }
 
 /**
- * Disable past dates for DatePicker (Ant Design)
+ * Disable dates older than 1 month from today for DatePicker (Ant Design)
  * @param current - Current date being evaluated (Dayjs)
  * @returns True if date should be disabled
  */
-export function disablePastDates(current: Dayjs): boolean {
+export function disableOlderThanOneMonth(current: Dayjs): boolean {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  const oneMonthAgo = new Date(today);
+  oneMonthAgo.setMonth(today.getMonth() - 1);
 
   const checkDate = current.toDate();
   checkDate.setHours(0, 0, 0, 0);
 
-  return checkDate < today;
+  return checkDate < oneMonthAgo;
 }
 
 /**
