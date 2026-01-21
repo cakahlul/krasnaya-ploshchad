@@ -217,8 +217,7 @@ export function LeaveCalendar() {
         id: 'dateRange',
         header: () => (
           <div className="font-semibold text-gray-700 flex items-center gap-1">
-            <CalendarOutlined />
-            <span>Tanggal Cuti</span>
+            <span>Tanggal Cuti Terdekat</span>
           </div>
         ),
         cell: ({ row }) => {
@@ -345,7 +344,7 @@ export function LeaveCalendar() {
             cell.isHoliday,
             cell.isNationalHoliday,
             isLeaveDate,
-            leaveStatus as 'Draft' | 'Confirmed' | undefined,
+            leaveStatus as 'Draft' | 'Confirmed' | 'Sick' | undefined,
           );
           const showCheckmark =
             isLeaveDate && !cell.isWeekend && !cell.isNationalHoliday;

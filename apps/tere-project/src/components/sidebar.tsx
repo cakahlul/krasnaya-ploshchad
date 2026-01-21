@@ -4,22 +4,27 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useMediaQuery } from 'react-responsive';
 import { LayoutDashboard, MonitorCheck, Calendar } from 'lucide-react'; // Fun, clean icon set
 import clsx from 'clsx';
+import { useUserAccess } from '@src/hooks/useUserAccess';
+import { useMemo } from 'react';
 
 const menuItems = [
   {
     key: '/dashboard/reports',
     label: 'Team Reporting',
     icon: <LayoutDashboard className="w-5 h-5" />,
+    roles: ['Lead', 'Member'], // Both roles can access
   },
   {
     key: '/dashboard/monitoring',
     label: 'Application Monitoring',
     icon: <MonitorCheck className="w-5 h-5" />,
+    roles: ['Lead'], // Only Lead can access
   },
   {
     key: '/dashboard/talent-leave',
     label: 'Talent Leave',
     icon: <Calendar className="w-5 h-5" />,
+    roles: ['Lead', 'Member'], // Both roles can access
   },
 ];
 
@@ -33,6 +38,13 @@ export default function Sidebar({
   const isDesktop = useMediaQuery({ minWidth: 1024 });
   const pathname = usePathname();
   const router = useRouter();
+  const { role } = useUserAccess();
+
+  // Filter menu items based on user role
+  const filteredMenuItems = useMemo(() => {
+    if (!role) return [];
+    return menuItems.filter(item => item.roles.includes(role));
+  }, [role]);
 
   const handleClick = (path: string) => {
     router.push(path);
@@ -43,7 +55,7 @@ export default function Sidebar({
     <div className="min-h-screen w-64 bg-gradient-to-b from-primary to-accent text-white p-4 space-y-8 shadow-lg">
       <h1 className="text-2xl font-bold mb-4">📊 Team Reporting</h1>
       <nav className="flex flex-col space-y-2">
-        {menuItems.map(item => (
+        {filteredMenuItems.map(item => (
           <button
             key={item.key}
             onClick={() => handleClick(item.key)}

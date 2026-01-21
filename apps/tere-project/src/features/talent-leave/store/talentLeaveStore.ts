@@ -20,14 +20,14 @@ interface TalentLeaveState {
   closeModal: () => void;
 }
 
-// Helper to calculate default date range (1 month from today)
+// Helper to calculate default date range (1 month)
 const getDefaultDateRange = () => {
   const start = new Date();
   start.setDate(1); // First day of current month
 
   const end = new Date(start);
-  end.setMonth(end.getMonth() + 2); // Move to month after next
-  end.setDate(0); // Last day of next month
+  end.setMonth(end.getMonth() + 1); // Move to next month
+  end.setDate(0); // Last day of current month
 
   return { start, end };
 };

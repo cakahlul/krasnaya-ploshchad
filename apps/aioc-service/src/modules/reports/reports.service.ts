@@ -34,6 +34,44 @@ export class ReportsService {
     private readonly holidaysService: HolidaysService,
   ) {}
 
+  /**
+   * Parse a date string as a local date (without timezone conversion)
+   * Handles both YYYY-MM-DD and ISO 8601 formats
+   * For ISO 8601 dates from Jira (e.g., '2026-01-19T05:01:28.046Z'), we want to use
+   * the date as-is but normalize to start of day in local timezone
+   */
+  private parseLocalDate(dateStr: string): Date {
+    // If it's an ISO 8601 string with timezone (from Jira), parse it normally
+    // and then normalize to start of day in local timezone
+    if (dateStr.includes('T')) {
+      const date = new Date(dateStr);
+      // Get the local date components
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const day = date.getDate();
+      // Create new date at midnight in local timezone
+      const localDate = new Date(year, month, day);
+      localDate.setHours(0, 0, 0, 0);
+      return localDate;
+    }
+    
+    // For plain YYYY-MM-DD strings, parse directly as local date
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
+  /**
+   * Format a Date object to YYYY-MM-DD string
+   */
+  private formatToYYYYMMDD(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   async generateReport(
     sprint: string,
     project: string,
@@ -46,9 +84,17 @@ export class ReportsService {
     // Fetch leave data if sprint details are available
     let leaveData: Array<{ name: string; leaveDate: Array<{ dateFrom: string; dateTo: string; status: string }> }> = [];
     if (sprintDetails) {
+      // Convert Jira ISO dates to local dates in GMT+7, then format as YYYY-MM-DD for Firestore query
+      const sprintStartDate = this.parseLocalDate(sprintDetails.startDate);
+      const sprintEndDate = this.parseLocalDate(sprintDetails.endDate);
+      const startDateStr = this.formatToYYYYMMDD(sprintStartDate);
+      const endDateStr = this.formatToYYYYMMDD(sprintEndDate);
+      
+
+      
       leaveData = await this.fetchLeaveData(
-        sprintDetails.startDate,
-        sprintDetails.endDate,
+        startDateStr,
+        endDateStr,
         project,
       );
     }
@@ -56,8 +102,8 @@ export class ReportsService {
     // Fetch national holidays if sprint details are available
     let nationalHolidays: string[] = [];
     if (sprintDetails) {
-      const startDate = new Date(sprintDetails.startDate);
-      const endDate = new Date(sprintDetails.endDate);
+      const startDate = this.parseLocalDate(sprintDetails.startDate);
+      const endDate = this.parseLocalDate(sprintDetails.endDate);
       nationalHolidays = await this.holidaysService.getNationalHolidays(startDate, endDate);
     }
     
@@ -93,6 +139,7 @@ export class ReportsService {
         const sprints = await this.projectService.fetchAllSprint(boardId);
         const sprint = sprints.find((s) => String(s.id) === sprintId);
         if (sprint && sprint.startDate && sprint.endDate) {
+
           return {
             startDate: sprint.startDate,
             endDate: sprint.endDate,
@@ -127,14 +174,10 @@ export class ReportsService {
         // Don't filter by team here - we'll filter by member names instead
       });
 
-      console.log('Leave records before filtering:', leaveRecords.length);
-
       // Filter to only include team members for this project
       const filteredRecords = leaveRecords.filter((record) =>
         projectMemberNames.includes(record.name.toLowerCase()),
       );
-
-      console.log('Leave records after filtering by project members:', filteredRecords.length);
 
       return filteredRecords.map((record) => ({
         name: record.name,
@@ -212,12 +255,14 @@ export class ReportsService {
         // Calculate working days if sprint details and leave data are available
         if (sprintDetails && leaveData) {
           const memberLeaveDates = getLeaveDataForMember(leaveData, report.member);
+
           report.workingDays = calculateWorkingDays(
-            new Date(sprintDetails.startDate),
-            new Date(sprintDetails.endDate),
+            this.parseLocalDate(sprintDetails.startDate),
+            this.parseLocalDate(sprintDetails.endDate),
             memberLeaveDates,
             nationalHolidays,
           );
+
         }
 
         // Productivity calculation (total points / (working days * 8 points per day) * 100%)
