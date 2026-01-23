@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useMediaQuery } from 'react-responsive';
-import { LayoutDashboard, MonitorCheck, Calendar } from 'lucide-react'; // Fun, clean icon set
+import { LayoutDashboard, MonitorCheck, Calendar, Bug } from 'lucide-react'; // Fun, clean icon set
 import clsx from 'clsx';
 import { useUserAccess } from '@src/hooks/useUserAccess';
 import { useMemo } from 'react';
@@ -15,9 +15,9 @@ const menuItems = [
     roles: ['Lead', 'Member'], // Both roles can access
   },
   {
-    key: '/dashboard/monitoring',
-    label: 'Application Monitoring',
-    icon: <MonitorCheck className="w-5 h-5" />,
+    key: '/dashboard/bug-monitoring',
+    label: 'Bug Monitoring',
+    icon: <Bug className="w-5 h-5" />,
     roles: ['Lead'], // Only Lead can access
   },
   {

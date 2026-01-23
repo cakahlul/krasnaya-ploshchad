@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ProjectModule } from './modules/sprint/project.module';
 import { TalentLeaveModule } from './modules/talent-leave/talent-leave.module';
 import { UserAccessModule } from './modules/user-access/user-access.module';
+import { BugMonitoringModule } from './modules/bug-monitoring/bug-monitoring.module';
 import { APP_GUARD } from '@nestjs/core';
 import { FirebaseAuthGuard } from './auth/firebase-auth.guard';
 
@@ -18,6 +19,7 @@ import { FirebaseAuthGuard } from './auth/firebase-auth.guard';
     ProjectModule,
     TalentLeaveModule,
     UserAccessModule,
+    BugMonitoringModule,
   ],
   controllers: [AppController],
   providers: [

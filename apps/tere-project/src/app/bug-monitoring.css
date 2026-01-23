@@ -1,0 +1,76 @@
+/* Custom styles for bug monitoring */
+
+/* Tab styling for better contrast */
+.bug-monitoring-tabs .ant-tabs-tab {
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 2px solid transparent !important;
+  background: #f3f4f6 !important;
+  margin-right: 8px !important;
+}
+
+.bug-monitoring-tabs .ant-tabs-tab:hover {
+  transform: translateY(-2px);
+  background: #e5e7eb !important;
+}
+
+.bug-monitoring-tabs .ant-tabs-tab-active {
+  font-weight: 700 !important;
+  background: #ffffff !important;
+  border: 2px solid #3b82f6 !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2) !important;
+}
+
+.bug-monitoring-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #1e40af !important;
+}
+
+/* Enhance the tag colors in active tab */
+.bug-monitoring-tabs .ant-tabs-tab-active .ant-tag {
+  font-weight: 700;
+  border-width: 2px;
+}
+
+/* Tab bar border */
+.bug-monitoring-tabs .ant-tabs-nav {
+  margin-bottom: 16px !important;
+}
+
+.bug-monitoring-tabs .ant-tabs-nav::before {
+  border-bottom: 2px solid #e5e7eb !important;
+}
+
+/* Pulse animation for high-priority bugs */
+@keyframes pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+}
+
+.high-priority-bug {
+  animation: pulse-red 2s infinite;
+}
+
+/* Skeleton shimmer effect */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton-shimmer {
+  animation: shimmer 2s infinite;
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 1000px 100%;
+}
