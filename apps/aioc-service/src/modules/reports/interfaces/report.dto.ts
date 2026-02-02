@@ -21,6 +21,7 @@ export interface JiraIssueReportResponseDto {
   weightPointsProduct: number;
   weightPointsTechDebt: number;
   workingDays?: number; // Working days available for this member during sprint
+  wpToHours?: number; // Weight points to hours ratio (totalWeightPoints / targetStoryPoints where target = workingDays * 8)
 }
 
 export interface GetReportResponseDto {

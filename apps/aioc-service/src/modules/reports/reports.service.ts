@@ -281,6 +281,12 @@ export class ReportsService {
         report.averageComplexity = average.toFixed(2);
         report.totalWeightPoints = complexityData?.totalComplexity ?? 0;
 
+        // Calculate wpToHours: totalWeightPoints / targetStoryPoints
+        // targetStoryPoints = workingDays * 8 (8 points per day target)
+        // If workingDays is not available, defaults to 80 (10 days * 8 points)
+        const targetStoryPoints = report.workingDays ? report.workingDays * 8 : 80;
+        report.wpToHours = report.totalWeightPoints / targetStoryPoints;
+
         // Reset metrics for members with no points (not working on any tasks)
         if (report.totalPoint === 0) {
           this.resetMemberMetrics(report);
@@ -362,6 +368,7 @@ export class ReportsService {
     report.devDefectRate = '0%';
     report.averageComplexity = '0';
     report.productivityRate = '0%';
+    report.wpToHours = 0;
   }
 
   private processIndividualIssue(
