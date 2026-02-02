@@ -48,11 +48,11 @@ export default function TeamTable() {
       dataIndex: 'workingDays',
       key: 'workingDays',
     },
-    { title: 'Dev Defect', dataIndex: 'devDefect', key: 'devDefect' },
     {
-      title: 'Dev Defect Rate',
-      dataIndex: 'devDefectRate',
-      key: 'devDefectRate',
+      title: 'WP to Hours',
+      dataIndex: 'wpToHours',
+      key: 'wpToHours',
+      render: (value: number | undefined) => value?.toFixed(2) ?? '-',
     },
   ];
   return (

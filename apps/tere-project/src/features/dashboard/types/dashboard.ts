@@ -11,6 +11,7 @@ export interface WorkItem {
   weightPointsProduct: number;
   weightPointsTechDebt: number;
   workingDays?: number;
+  wpToHours?: number;
 }
 
 export interface DashboardDto {
