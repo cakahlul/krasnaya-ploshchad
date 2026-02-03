@@ -22,6 +22,9 @@ export interface JiraFieldEntity {
   customfield_11312: JiraCustomFieldEntity; //Story point v2
   customfield_11543: JiraCustomFieldEntity[]; //Appendix v3
   issuetype: JiraIssueTypeEntity;
+  created?: string; // Issue creation date
+  resolutiondate?: string; // Resolution date (when marked as Done)
+  resolution?: { name: string }; // Resolution status
 }
 
 export interface JiraAssigneeEntity {

@@ -25,5 +25,6 @@ import { HolidaysModule } from '../holidays/holidays.module';
     LegacyIssueCategorizer,
     NewIssueCategorizer,
   ],
+  exports: [ReportsService],
 })
 export class ReportsModule {}

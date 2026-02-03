@@ -9,6 +9,12 @@ import { useMemo } from 'react';
 
 const menuItems = [
   {
+    key: '/dashboard',
+    label: 'Main Dashboard',
+    icon: <MonitorCheck className="w-5 h-5" />,
+    roles: ['Lead', 'Member'],
+  },
+  {
     key: '/dashboard/reports',
     label: 'Team Reporting',
     icon: <LayoutDashboard className="w-5 h-5" />,
