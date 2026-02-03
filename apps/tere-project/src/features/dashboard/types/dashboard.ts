@@ -23,6 +23,7 @@ export interface DashboardDto {
   averageProductivity: string;
   totalWorkingDays?: number;
   averageWorkingDays?: number;
+  averageWpPerHour?: number;
 }
 
 export interface DashhboardEntity {
@@ -34,6 +35,7 @@ export interface DashhboardEntity {
   averageProductivity: string;
   totalWorkingDays?: number;
   averageWorkingDays?: number;
+  averageWpPerHour?: number;
 }
 
 export interface DashboardFilter {
