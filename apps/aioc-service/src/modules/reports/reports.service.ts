@@ -108,7 +108,7 @@ export class ReportsService {
     }
     
     const teamReport = this.processRawData(rawData, project, sprintDetails, leaveData, nationalHolidays);
-    return this.summarizeTeamReport(teamReport);
+    return this.summarizeTeamReport(teamReport, sprintDetails, nationalHolidays);
   }
 
   private async fetchRawData(
@@ -308,6 +308,8 @@ export class ReportsService {
 
   private summarizeTeamReport(
     issues: JiraIssueReportResponseDto[],
+    sprintDetails?: { startDate: string; endDate: string } | null,
+    nationalHolidays: string[] = [],
   ): GetReportResponseDto {
     // Filter out members with no points (not working on any tasks)
     const activeMembers = issues.filter(
@@ -335,17 +337,33 @@ export class ReportsService {
       productivityRates.reduce((sum, rate) => sum + rate, 0) /
         productivityRates.length || 0;
 
-    // Calculate working days metrics
+    // Calculate total working days for the sprint (excluding weekends and holidays only)
+    let totalWorkingDays: number | undefined;
+    if (sprintDetails) {
+      totalWorkingDays = calculateWorkingDays(
+        this.parseLocalDate(sprintDetails.startDate),
+        this.parseLocalDate(sprintDetails.endDate),
+        [], // No leave dates - we only exclude weekends and holidays for sprint total
+        nationalHolidays,
+      );
+    }
+
+    // Calculate average working days per team member (accounts for leaves)
     const membersWithWorkingDays = activeMembers.filter(
       (issue) => issue.workingDays !== undefined,
     );
-    const totalWorkingDays = membersWithWorkingDays.reduce(
-      (sum, issue) => sum + (issue.workingDays || 0),
-      0,
-    );
     const averageWorkingDays =
       membersWithWorkingDays.length > 0
-        ? totalWorkingDays / membersWithWorkingDays.length
+        ? membersWithWorkingDays.reduce((sum, issue) => sum + (issue.workingDays || 0), 0) / membersWithWorkingDays.length
+        : undefined;
+
+    // Calculate average WP per hour across all team members
+    const membersWithWpToHours = activeMembers.filter(
+      (issue) => issue.wpToHours !== undefined,
+    );
+    const averageWpPerHour =
+      membersWithWpToHours.length > 0
+        ? membersWithWpToHours.reduce((sum, issue) => sum + (issue.wpToHours || 0), 0) / membersWithWpToHours.length
         : undefined;
 
     return {
@@ -355,8 +373,9 @@ export class ReportsService {
       productPercentage: `${productPercentage.toFixed(2)}%`,
       techDebtPercentage: `${techDebtPercentage.toFixed(2)}%`,
       averageProductivity: `${averageProductivity.toFixed(2)}%`,
-      totalWorkingDays: totalWorkingDays > 0 ? totalWorkingDays : undefined,
+      totalWorkingDays,
       averageWorkingDays,
+      averageWpPerHour,
     };
   }
 

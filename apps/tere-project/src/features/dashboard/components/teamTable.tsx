@@ -77,15 +77,13 @@ export default function TeamTable() {
             <h2>
               <strong>Team Performance Metrics</strong>
             </h2>
-          )} // Added header
+          )}
         />
       </div>
       {!!data && (
         <div>
           <p className="text-red-500 text-xs">
-            **The shown data is collected based on the actual working days per sprint
-            (excluding weekends, national holidays, and personal leaves). This data may vary based on actual
-            workdays and team dynamics.
+            **The shown data is collected based on the actual working days per sprint. There is a chance about inaccurate joint holidays and personal leaves.
           </p>
         </div>
       )}

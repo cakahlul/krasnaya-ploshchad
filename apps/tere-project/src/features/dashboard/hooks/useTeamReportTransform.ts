@@ -17,6 +17,7 @@ export const useTeamReportTransform = () => {
       averageProductivity: data.averageProductivity,
       totalWorkingDays: data.totalWorkingDays,
       averageWorkingDays: data.averageWorkingDays,
+      averageWpPerHour: data.averageWpPerHour,
     };
   }, [data]);
 
