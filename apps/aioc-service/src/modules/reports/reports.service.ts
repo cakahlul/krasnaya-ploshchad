@@ -111,6 +111,104 @@ export class ReportsService {
     return this.summarizeTeamReport(teamReport, sprintDetails, nationalHolidays);
   }
 
+  /**
+   * Generate report for the currently active/open sprint
+   * Uses openSprints() JQL function to avoid sprint name quoting issues
+   */
+  async generateOpenSprintReport(project: string): Promise<GetReportResponseDto | null> {
+    // Get the active sprint for this project's board
+    const boardId = project === 'DS' ? 143 : 142;
+    const sprints = await this.projectService.fetchAllSprint(boardId);
+    const activeSprint = sprints.find((s) => s.state === 'active');
+    
+    if (!activeSprint) {
+      return null;
+    }
+
+    // Get assignees for this project
+    const assignees: string[] = teamMembers
+      .filter((member: TeamMember) => member.team.includes(project))
+      .map((member: TeamMember) => member.id);
+
+    // Fetch raw data using openSprints() JQL
+    const rawData = await this.jiraReportRepository.fetchOpenSprintData(project, assignees);
+    
+    // Get sprint details for working days calculation
+    const sprintDetails = {
+      startDate: activeSprint.startDate,
+      endDate: activeSprint.endDate,
+    };
+    
+    // Fetch leave data
+    const sprintStartDate = this.parseLocalDate(sprintDetails.startDate);
+    const sprintEndDate = this.parseLocalDate(sprintDetails.endDate);
+    const startDateStr = this.formatToYYYYMMDD(sprintStartDate);
+    const endDateStr = this.formatToYYYYMMDD(sprintEndDate);
+    
+    const leaveData = await this.fetchLeaveData(startDateStr, endDateStr, project);
+    
+    // Fetch national holidays
+    const nationalHolidays = await this.holidaysService.getNationalHolidays(
+      sprintStartDate,
+      sprintEndDate,
+    );
+    
+    const teamReport = this.processRawData(rawData, project, sprintDetails, leaveData, nationalHolidays);
+    const report = this.summarizeTeamReport(teamReport, sprintDetails, nationalHolidays);
+    
+    return {
+      ...report,
+      sprintName: activeSprint.name,
+    };
+  }
+
+  async getSprintWorkItemStats(project: string): Promise<{
+    totalWorkItems: number;
+    closedWorkItems: number;
+    averageHoursOpen: number | null;
+  }> {
+    // Fetch all issues for the active sprint (both open and closed)
+    const allIssues = await this.jiraReportRepository.fetchAllSprintIssues(project);
+
+    const totalWorkItems = allIssues.length;
+    
+    // Filter closed items (resolution = Done or has resolution date)
+    const closedIssues = allIssues.filter(
+      (issue) => 
+        issue.fields.resolutiondate || 
+        issue.fields.resolution?.name?.toLowerCase() === 'done'
+    );
+    const closedWorkItems = closedIssues.length;
+
+    // Calculate average hours open for closed items
+    let totalHours = 0;
+    let countWithDates = 0;
+
+    for (const issue of closedIssues) {
+      if (issue.fields.created && issue.fields.resolutiondate) {
+        const created = new Date(issue.fields.created);
+        const resolved = new Date(issue.fields.resolutiondate);
+        
+        // Calculate difference in hours
+        const diffMs = resolved.getTime() - created.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+        
+        if (diffHours >= 0) {
+          totalHours += diffHours;
+          countWithDates++;
+        }
+      }
+    }
+
+    const averageHoursOpen = countWithDates > 0 ? totalHours / countWithDates : null;
+
+    return {
+      totalWorkItems,
+      closedWorkItems,
+      averageHoursOpen,
+    };
+  }
+
   private async fetchRawData(
     sprint: string,
     project: string,

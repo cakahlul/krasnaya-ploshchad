@@ -168,6 +168,173 @@ export class ReportJiraRepository {
     }
   }
 
+  /**
+   * Fetch issues from the currently open/active sprint using openSprints() JQL
+   * This is used for dashboard summary to avoid sprint name quoting issues
+   */
+  async fetchOpenSprintData(
+    project: string,
+    assignees: string[],
+  ): Promise<JiraIssueEntity[]> {
+    const jql = `
+      project = ${project}
+      AND sprint in openSprints()
+      AND assignee IN (${assignees.join(',')})
+      AND type IN standardIssueTypes()
+      AND resolution = Done
+      ORDER BY created DESC
+    `
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const searchUrl = `${this.url}${this.searchEndpoint}`;
+    const allIssues: JiraIssueEntity[] = [];
+    let nextPageToken: string | undefined = undefined;
+    let isLast = false;
+    let pageCount = 0;
+
+    try {
+      do {
+        pageCount++;
+        const params: Record<string, unknown> = {
+          jql,
+          maxResults: this.maxResults,
+          fields: [
+            'summary',
+            'customfield_10005',
+            'customfield_10796',
+            'customfield_10865',
+            'customfield_11015',
+            'customfield_11444',
+            'customfield_11312',
+            'customfield_11543',
+            'assignee',
+            'issuetype',
+          ].join(','),
+          validateQuery: 'strict',
+        };
+
+        if (nextPageToken) {
+          params['nextPageToken'] = nextPageToken;
+        }
+
+        const response = await this.executeWithRetry(() =>
+          axios.get<JiraSearchResponseDto>(searchUrl, {
+            auth: this.auth,
+            params,
+            timeout: this.requestTimeout,
+          }),
+        );
+        isLast = Boolean(response.data.isLast);
+
+        nextPageToken = response.data.nextPageToken;
+        const pageIssues = this.transformIssues(response.data.issues);
+        allIssues.push(...pageIssues);
+
+        this.logger.log('Jira API (openSprints) request successful', {
+          page: pageCount,
+          issues: pageIssues.length,
+          hasNextPage: !isLast,
+        });
+
+        if (!isLast && !nextPageToken) {
+          isLast = true;
+        }
+
+        if (!isLast) {
+          await new Promise((resolve) => setTimeout(resolve, this.rateLimitMs));
+        }
+      } while (!isLast);
+      return allIssues;
+    } catch (error) {
+      this.logger.error('Jira API error (openSprints)', {
+        ...this.sanitizeErrorForLogging(error),
+        context: 'fetchOpenSprintData',
+      });
+      console.error('Error fetching open sprint data from Jira:', error);
+      throw new Error('Failed to fetch open sprint data from Jira');
+    }
+  }
+
+  /**
+   * Fetch ALL issues from the currently open/active sprint (both open and closed)
+   * Used for calculating work item statistics (total vs closed, avg time to close)
+   */
+  async fetchAllSprintIssues(project: string): Promise<JiraIssueEntity[]> {
+    const jql = `
+      project = ${project}
+      AND sprint in openSprints()
+      AND type IN standardIssueTypes()
+      ORDER BY created DESC
+    `
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const searchUrl = `${this.url}${this.searchEndpoint}`;
+    const allIssues: JiraIssueEntity[] = [];
+    let nextPageToken: string | undefined = undefined;
+    let isLast = false;
+    let pageCount = 0;
+
+    try {
+      do {
+        pageCount++;
+        const params: Record<string, unknown> = {
+          jql,
+          maxResults: this.maxResults,
+          fields: [
+            'summary',
+            'created',
+            'resolutiondate',
+            'resolution',
+            'assignee',
+            'issuetype',
+          ].join(','),
+          validateQuery: 'strict',
+        };
+
+        if (nextPageToken) {
+          params['nextPageToken'] = nextPageToken;
+        }
+
+        const response = await this.executeWithRetry(() =>
+          axios.get<JiraSearchResponseDto>(searchUrl, {
+            auth: this.auth,
+            params,
+            timeout: this.requestTimeout,
+          }),
+        );
+        isLast = Boolean(response.data.isLast);
+
+        nextPageToken = response.data.nextPageToken;
+        const pageIssues = this.transformIssues(response.data.issues);
+        allIssues.push(...pageIssues);
+
+        this.logger.log('Jira API (allSprintIssues) request successful', {
+          page: pageCount,
+          issues: pageIssues.length,
+          hasNextPage: !isLast,
+        });
+
+        if (!isLast && !nextPageToken) {
+          isLast = true;
+        }
+
+        if (!isLast) {
+          await new Promise((resolve) => setTimeout(resolve, this.rateLimitMs));
+        }
+      } while (!isLast);
+      return allIssues;
+    } catch (error) {
+      this.logger.error('Jira API error (allSprintIssues)', {
+        ...this.sanitizeErrorForLogging(error),
+        context: 'fetchAllSprintIssues',
+      });
+      console.error('Error fetching all sprint issues from Jira:', error);
+      throw new Error('Failed to fetch all sprint issues from Jira');
+    }
+  }
+
   private async executeWithRetry<T>(operation: () => Promise<T>): Promise<T> {
     let lastError: unknown;
 
