@@ -8,6 +8,7 @@ import { TalentLeaveModule } from './modules/talent-leave/talent-leave.module';
 import { UserAccessModule } from './modules/user-access/user-access.module';
 import { BugMonitoringModule } from './modules/bug-monitoring/bug-monitoring.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { SearchModule } from './modules/search/search.module';
 import { APP_GUARD } from '@nestjs/core';
 import { FirebaseAuthGuard } from './auth/firebase-auth.guard';
 
@@ -22,6 +23,7 @@ import { FirebaseAuthGuard } from './auth/firebase-auth.guard';
     UserAccessModule,
     BugMonitoringModule,
     DashboardModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [

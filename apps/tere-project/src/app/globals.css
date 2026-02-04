@@ -181,4 +181,62 @@
     transform-origin: 70% 70%;
     animation: wave 2.5s infinite;
   }
+
+  /* Airdrop-like animation for search dropdown */
+  @keyframes airdrop {
+    0% {
+      transform: translateY(-15px) scale(0.96);
+      opacity: 0;
+    }
+    60% {
+      transform: translateY(4px) scale(1.01);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  }
+
+  .animate-airdrop {
+    animation: airdrop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  /* Staggered airdrop for list items */
+  @keyframes airdrop-item {
+    0% {
+      transform: translateY(-10px) scale(0.97);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  }
+
+  .animate-airdrop-item {
+    animation: airdrop-item 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    opacity: 0;
+  }
+
+  /* Glassmorphism shimmer effect */
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
 }
