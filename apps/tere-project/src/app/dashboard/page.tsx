@@ -21,6 +21,13 @@ import {
 import RoleBasedRoute from '@src/components/RoleBasedRoute';
 import { useUserAccess } from '@src/hooks/useUserAccess';
 import LoadingBounce from '@src/components/loadingBounce';
+import dynamic from 'next/dynamic';
+
+// Dynamic import with SSR disabled to prevent hydration errors
+const GlobalSearch = dynamic(
+  () => import('@src/features/dashboard/components/GlobalSearch'),
+  { ssr: false }
+);
 
 export default function Dashboard() {
   const { getDisplayName } = useUser();
@@ -76,7 +83,7 @@ export default function Dashboard() {
 
         <div className="relative z-10 max-w-7xl mx-auto">
           {/* Header Section */}
-          <div className="mb-10 animate-slide-in">
+          <div className="mb-6 animate-slide-in">
             <h1 className="text-4xl font-extrabold text-gray-900 mb-3 flex items-center gap-3">
               <span className="text-5xl animate-wave">👋</span>
               <span>Yo! {getDisplayName()}!</span>
@@ -84,6 +91,11 @@ export default function Dashboard() {
             <p className="text-xl text-gray-600 font-medium">
               {message}
             </p>
+          </div>
+
+          {/* Global Search - Spotlight style centered */}
+          <div className="flex justify-center mb-10">
+            <GlobalSearch />
           </div>
 
           {/* Sprint Statistics Section */}
