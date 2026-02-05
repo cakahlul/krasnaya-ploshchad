@@ -52,6 +52,7 @@ interface JiraIssue {
     updated?: string;
     customfield_10005?: number; // Story Points
     customfield_10020?: Array<{ name?: string }>; // Sprint
+    customfield_11312?: { self: string; value: string; id: string }; // Story Point Type v2 (SLS/DS)
     customfield_11543?: number | { self: string; value: string; id: string } | Array<{ self: string; value: string; id: string }>; // Appendix v3 - can be object, array, or number
   };
 }
@@ -181,6 +182,7 @@ export class SearchJiraRepository {
             'updated',
             'customfield_10005', // Story Points
             'customfield_10020', // Sprint
+            'customfield_11312', // Story Point Type v2 (SLS/DS)
             'customfield_11543', // Appendix v3
           ].join(','),
         },
@@ -301,6 +303,7 @@ export class SearchJiraRepository {
       projectName: issue.fields.project?.name ?? projectKey,
       sprint,
       storyPoints: issue.fields.customfield_10005,
+      spType: issue.fields.customfield_11312?.value,
       appendixV3,
       webUrl: `${this.url}/browse/${issue.key}`,
     };

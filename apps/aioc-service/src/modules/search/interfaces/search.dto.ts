@@ -43,6 +43,7 @@ export interface TicketDetailDto {
   projectName: string;
   sprint?: string;
   storyPoints?: number;
+  spType?: string; // Story Point Type (e.g., Feature Development, Bug Fixing, etc.)
   appendixV3?: number | string | string[]; // Weight Complexity (formerly Appendix v3)
   webUrl?: string;
 }

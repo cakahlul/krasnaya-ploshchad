@@ -92,22 +92,30 @@ export class DashboardService {
        this.logger.log(`Priorities: ${JSON.stringify(stats.priorityDistribution)}`);
     }
 
-    // Build bug summary from BUZZ board data
-    const getPriorityCount = (priority: string): number => {
-      if (!stats?.priorityDistribution) return 0;
-      const found = stats.priorityDistribution.find(
-        (p) => p.priority.toLowerCase() === priority.toLowerCase(),
-      );
-      return found?.count || 0;
+    // Build bug summary from BUZZ board data - using ONLY active/open bugs (not Done)
+    const activeStatuses = ['To Do', 'In Progress', 'Ready to Test'];
+    const activeBugsOnly = bugs?.allBugs?.filter(bug => activeStatuses.includes(bug.status)) || [];
+    
+    // Calculate statistics from active bugs only
+    const activePriorityCount: Record<string, number> = {};
+    let totalDaysOpen = 0;
+    
+    activeBugsOnly.forEach(bug => {
+      activePriorityCount[bug.priority] = (activePriorityCount[bug.priority] || 0) + 1;
+      totalDaysOpen += bug.daysOpen;
+    });
+
+    const getActivePriorityCount = (priority: string): number => {
+      return activePriorityCount[priority] || 0;
     };
 
     const bugSummary: BugSummaryDto = {
-      totalBugs: stats?.totalCount || 0,
-      criticalCount: getPriorityCount('Highest'),
-      highCount: getPriorityCount('High'),
-      mediumCount: getPriorityCount('Medium'),
-      lowCount: getPriorityCount('Low'),
-      averageDaysOpen: stats?.averageDaysOpen || 0,
+      totalBugs: activeBugsOnly.length,
+      criticalCount: getActivePriorityCount('Highest'),
+      highCount: getActivePriorityCount('High'),
+      mediumCount: getActivePriorityCount('Medium'),
+      lowCount: getActivePriorityCount('Low'),
+      averageDaysOpen: activeBugsOnly.length > 0 ? totalDaysOpen / activeBugsOnly.length : 0,
     };
 
     return {

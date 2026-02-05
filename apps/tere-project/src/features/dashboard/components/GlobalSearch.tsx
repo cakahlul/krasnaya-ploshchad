@@ -421,14 +421,27 @@ function TicketDetailCard({ ticket, formatDate, getStatusBadgeColor, getResoluti
         </div>
 
         {/* Complexity & Weight (New Section) */}
-        {(ticket.storyPoints !== undefined || ticket.appendixV3 !== undefined) && (
-          <div className="grid grid-cols-1 gap-4 mb-5">
-            {ticket.storyPoints !== undefined && (
-              <div className="bg-cyan-50/50 rounded-xl p-3 border border-cyan-100/50">
-                 <p className="text-xs text-cyan-600/80 mb-1 font-semibold uppercase tracking-wider">Story Points</p>
-                 <span className="text-lg font-bold text-cyan-700">
-                   {ticket.storyPoints} SP
-                 </span>
+        {(ticket.storyPoints !== undefined || ticket.spType || ticket.appendixV3 !== undefined) && (
+          <div className="space-y-4 mb-5">
+            {/* Story Points & SP Type Row */}
+            {(ticket.storyPoints !== undefined || ticket.spType) && (
+              <div className="grid grid-cols-2 gap-4">
+                {ticket.storyPoints !== undefined && (
+                  <div className="bg-cyan-50/50 rounded-xl p-3 border border-cyan-100/50">
+                    <p className="text-xs text-cyan-600/80 mb-1 font-semibold uppercase tracking-wider">Story Points</p>
+                    <span className="text-lg font-bold text-cyan-700">
+                      {ticket.storyPoints} SP
+                    </span>
+                  </div>
+                )}
+                {ticket.spType && (
+                  <div className="bg-purple-50/50 rounded-xl p-3 border border-purple-100/50">
+                    <p className="text-xs text-purple-600/80 mb-1 font-semibold uppercase tracking-wider">Story Point Type</p>
+                    <span className="text-sm font-bold text-purple-700">
+                      {ticket.spType}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
             
