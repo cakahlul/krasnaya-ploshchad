@@ -1,9 +1,26 @@
 import { NextResponse } from 'next/server';
 
 /**
- * Fetch Indonesian public holidays from api-hari-libur
+ * External API response format from libur.deno.dev
+ */
+interface ExternalHolidayResponse {
+  date: string;   // e.g., "2026-01-01"
+  name: string;   // e.g., "Tahun Baru 2026 Masehi"
+}
+
+/**
+ * Response format for our API
+ */
+interface HolidayResponse {
+  date: string;
+  name: string;
+  isNational: boolean;
+}
+
+/**
+ * Fetch Indonesian public holidays from libur.deno.dev
  * This is a free public API for Indonesian holidays
- * Source: https://github.com/radyakaze/api-hari-libur
+ * Source: https://github.com/AbuDhabi/libur-api
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -22,82 +39,76 @@ export async function GET(request: Request) {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    // Collect all unique month-year combinations in the range
-    const monthYearPairs: Array<{ month: number; year: number }> = [];
-    const current = new Date(start);
+    // Get unique years in the date range
+    const startYear = start.getFullYear();
+    const endYear = end.getFullYear();
+    const years: number[] = [];
 
-    while (current <= end) {
-      const month = current.getMonth() + 1; // 1-12
-      const year = current.getFullYear();
-
-      // Add if not already in list
-      if (!monthYearPairs.some(p => p.month === month && p.year === year)) {
-        monthYearPairs.push({ month, year });
-      }
-
-      // Move to next month
-      current.setMonth(current.getMonth() + 1);
+    for (let year = startYear; year <= endYear; year++) {
+      years.push(year);
     }
 
-    // Fetch holidays for each month
-    const allHolidays: Array<{
-      date: string;
-      name: string;
-      isNational: boolean;
-    }> = [];
+    // Fetch holidays for each year
+    const allHolidays: HolidayResponse[] = [];
 
-    for (const { month, year } of monthYearPairs) {
-      const response = await fetch(
-        `https://api-harilibur.vercel.app/api?month=${month}&year=${year}`,
-        {
-          headers: {
-            Accept: 'application/json',
-          },
-        }
-      );
-
-      if (!response.ok) {
-        console.error(
-          `Failed to fetch holidays for ${month}/${year}:`,
-          response.status
-        );
-        continue;
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data: any = await response.json();
-
-      if (data && Array.isArray(data)) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        data.forEach((holiday: any) => {
-          // Parse the date string (handles both 2026-01-1 and 2026-01-01)
-          const [yearStr, monthStr, dayStr] = holiday.holiday_date.split('-');
-          const holidayYear = parseInt(yearStr, 10);
-          const holidayMonth = parseInt(monthStr, 10) - 1; // Month is 0-indexed
-          const holidayDay = parseInt(dayStr, 10);
-
-          // Create date in local timezone
-          const holidayDate = new Date(holidayYear, holidayMonth, holidayDay);
-
-          // Only include holidays within our date range
-          if (holidayDate >= start && holidayDate <= end) {
-            // Normalize date format to YYYY-MM-DD without timezone conversion
-            const year = holidayDate.getFullYear();
-            const month = String(holidayDate.getMonth() + 1).padStart(2, '0');
-            const day = String(holidayDate.getDate()).padStart(2, '0');
-            const normalizedDate = `${year}-${month}-${day}`;
-
-            allHolidays.push({
-              date: normalizedDate, // Always YYYY-MM-DD format
-              name: holiday.holiday_name,
-              isNational: holiday.is_national_holiday,
-            });
+    for (const year of years) {
+      try {
+        const response = await fetch(
+          `https://libur.deno.dev/api?year=${year}`,
+          {
+            headers: {
+              Accept: 'application/json',
+            },
+            // Add timeout using signal
+            next: { revalidate: 86400 }, // Cache for 24 hours
           }
-        });
+        );
+
+        if (!response.ok) {
+          console.error(
+            `Failed to fetch holidays for year ${year}:`,
+            response.status
+          );
+          continue;
+        }
+
+        const data: ExternalHolidayResponse[] = await response.json();
+
+        if (data && Array.isArray(data)) {
+          data.forEach((holiday) => {
+            // Parse the date string
+            const [yearStr, monthStr, dayStr] = holiday.date.split('-');
+            const holidayYear = parseInt(yearStr, 10);
+            const holidayMonth = parseInt(monthStr, 10) - 1; // Month is 0-indexed
+            const holidayDay = parseInt(dayStr, 10);
+
+            // Create date in local timezone
+            const holidayDate = new Date(holidayYear, holidayMonth, holidayDay);
+
+            // Only include holidays within our date range
+            if (holidayDate >= start && holidayDate <= end) {
+              // Normalize date format to YYYY-MM-DD without timezone conversion
+              const y = holidayDate.getFullYear();
+              const m = String(holidayDate.getMonth() + 1).padStart(2, '0');
+              const d = String(holidayDate.getDate()).padStart(2, '0');
+              const normalizedDate = `${y}-${m}-${d}`;
+
+              allHolidays.push({
+                date: normalizedDate,
+                name: holiday.name,
+                // Default to true since the API only returns national holidays
+                isNational: true,
+              });
+            }
+          });
+        }
+      } catch (yearError) {
+        console.error(`Error fetching holidays for year ${year}:`, yearError);
+        // Continue with next year
       }
     }
 
-    console.log(`Fetched ${allHolidays.length} holidays from api-hari-libur for date range ${startDate} to ${endDate}`);
+    console.log(`Fetched ${allHolidays.length} holidays from libur.deno.dev for date range ${startDate} to ${endDate}`);
     return NextResponse.json(allHolidays);
   } catch (error) {
     console.error('Failed to fetch holidays:', error);
