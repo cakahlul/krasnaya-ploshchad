@@ -18,6 +18,7 @@ export const useTeamReportTransform = () => {
       totalWorkingDays: data.totalWorkingDays,
       averageWorkingDays: data.averageWorkingDays,
       averageWpPerHour: data.averageWpPerHour,
+      totalWeightPoints: data.totalWeightPoints,
     };
   }, [data]);
 

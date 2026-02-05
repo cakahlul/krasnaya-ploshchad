@@ -464,6 +464,12 @@ export class ReportsService {
         ? membersWithWpToHours.reduce((sum, issue) => sum + (issue.wpToHours || 0), 0) / membersWithWpToHours.length
         : undefined;
 
+    // Calculate total weight points for all team members
+    const totalWeightPoints = activeMembers.reduce(
+      (sum, issue) => sum + issue.totalWeightPoints,
+      0,
+    );
+
     return {
       issues,
       totalIssueProduct,
@@ -474,6 +480,7 @@ export class ReportsService {
       totalWorkingDays,
       averageWorkingDays,
       averageWpPerHour,
+      totalWeightPoints,
     };
   }
 

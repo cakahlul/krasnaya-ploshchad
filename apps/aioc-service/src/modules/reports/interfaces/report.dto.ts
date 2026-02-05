@@ -34,6 +34,7 @@ export interface GetReportResponseDto {
   totalWorkingDays?: number; // Total working days in the sprint (excluding weekends and holidays)
   averageWorkingDays?: number; // Average working days per team member
   averageWpPerHour?: number; // Average WP per hour across all team members
+  totalWeightPoints?: number; // Total weight points for all team members in the sprint
   sprintName?: string; // Sprint name (used by dashboard summary)
 }
 
