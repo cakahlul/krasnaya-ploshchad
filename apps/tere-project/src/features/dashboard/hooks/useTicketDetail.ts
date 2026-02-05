@@ -27,6 +27,7 @@ export interface TicketDetail {
   projectName: string;
   sprint?: string;
   storyPoints?: number;
+  spType?: string; // Story Point Type (e.g., Feature Development, Bug Fixing, etc.)
   appendixV3?: number | string | string[]; // Weight Complexity
   webUrl?: string;
 }

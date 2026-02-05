@@ -114,7 +114,7 @@ export default function Dashboard() {
           <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
             <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
               <BugOutlined className="text-red-500" />
-              Bug Report Summary
+              Open Bug Report Summary
             </h2>
             <BugSummaryCard bugs={bugs} />
           </div>
