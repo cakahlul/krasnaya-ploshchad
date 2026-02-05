@@ -124,6 +124,23 @@
     animation: fade-in 0.4s ease-in-out forwards;
   }
 
+  /* Fade in with upward motion */
+  @keyframes fade-in-up {
+    0% {
+      opacity: 0;
+      transform: translateY(20px) scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    opacity: 0;
+  }
+
   /* Dashboard floating orb animations */
   @keyframes float {
     0%, 100% {

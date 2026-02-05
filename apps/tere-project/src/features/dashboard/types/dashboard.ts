@@ -24,6 +24,7 @@ export interface DashboardDto {
   totalWorkingDays?: number;
   averageWorkingDays?: number;
   averageWpPerHour?: number;
+  totalWeightPoints?: number;
 }
 
 export interface DashhboardEntity {
@@ -36,6 +37,7 @@ export interface DashhboardEntity {
   totalWorkingDays?: number;
   averageWorkingDays?: number;
   averageWpPerHour?: number;
+  totalWeightPoints?: number;
 }
 
 export interface DashboardFilter {
