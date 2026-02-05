@@ -8,10 +8,23 @@ export const jiraRepository = {
   fetchTeamReport: async (
     sprint: string,
     project: string,
+    startDate?: string,
+    endDate?: string,
   ): Promise<DashboardDto> => {
-    const response = await axiosClient.get(
-      `${baseUrl}/report?sprint=${sprint}&project=${project}`,
-    );
+    // Build query params based on whether date range or sprint is provided
+    const params = new URLSearchParams();
+    params.append('project', project);
+    
+    if (startDate && endDate) {
+      // Date range mode
+      params.append('startDate', startDate);
+      params.append('endDate', endDate);
+    } else if (sprint) {
+      // Sprint mode
+      params.append('sprint', sprint);
+    }
+    
+    const response = await axiosClient.get(`${baseUrl}/report?${params.toString()}`);
     return response.data;
   },
 

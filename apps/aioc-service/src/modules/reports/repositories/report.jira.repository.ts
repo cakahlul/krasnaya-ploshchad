@@ -169,6 +169,98 @@ export class ReportJiraRepository {
   }
 
   /**
+   * Fetch raw data by date range instead of sprint
+   * Uses resolutiondate to filter issues resolved within the date range
+   */
+  async fetchRawDataByDateRange(
+    project: string,
+    assignees: string[],
+    startDate: string,
+    endDate: string,
+  ): Promise<JiraIssueEntity[]> {
+    const jql = `
+      project = ${project}
+      AND assignee IN (${assignees.join(',')})
+      AND type IN standardIssueTypes()
+      AND resolution = Done
+      AND resolutiondate >= "${startDate}"
+      AND resolutiondate <= "${endDate}"
+      ORDER BY created DESC
+    `
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const searchUrl = `${this.url}${this.searchEndpoint}`;
+    const allIssues: JiraIssueEntity[] = [];
+    let nextPageToken: string | undefined = undefined;
+    let isLast = false;
+    let pageCount = 0;
+
+    try {
+      do {
+        pageCount++;
+        const params: Record<string, unknown> = {
+          jql,
+          maxResults: this.maxResults,
+          fields: [
+            'summary',
+            'customfield_10005', // Story Points
+            'customfield_10796', // Story point type
+            'customfield_10865', // Complexity (low/medium/high)
+            'customfield_11015', // Weight of Complexity
+            'customfield_11444', // Appendix weight point v2
+            'customfield_11312', // Story point type v2
+            'customfield_11543', // Appendix v3
+            'assignee',
+            'issuetype',
+          ].join(','),
+          validateQuery: 'strict',
+        };
+
+        if (nextPageToken) {
+          params['nextPageToken'] = nextPageToken;
+        }
+
+        const response = await this.executeWithRetry(() =>
+          axios.get<JiraSearchResponseDto>(searchUrl, {
+            auth: this.auth,
+            params,
+            timeout: this.requestTimeout,
+          }),
+        );
+        isLast = Boolean(response.data.isLast);
+
+        nextPageToken = response.data.nextPageToken;
+        const pageIssues = this.transformIssues(response.data.issues);
+        allIssues.push(...pageIssues);
+
+        this.logger.log('Jira API (dateRange) request successful', {
+          page: pageCount,
+          issues: pageIssues.length,
+          hasNextPage: !isLast,
+          dateRange: `${startDate} to ${endDate}`,
+        });
+
+        if (!isLast && !nextPageToken) {
+          isLast = true;
+        }
+
+        if (!isLast) {
+          await new Promise((resolve) => setTimeout(resolve, this.rateLimitMs));
+        }
+      } while (!isLast);
+      return allIssues;
+    } catch (error) {
+      this.logger.error('Jira API error (dateRange)', {
+        ...this.sanitizeErrorForLogging(error),
+        context: 'fetchRawDataByDateRange',
+      });
+      console.error('Error fetching date range data from Jira:', error);
+      throw new Error('Failed to fetch date range data from Jira');
+    }
+  }
+
+  /**
    * Fetch issues from the currently open/active sprint using openSprints() JQL
    * This is used for dashboard summary to avoid sprint name quoting issues
    */

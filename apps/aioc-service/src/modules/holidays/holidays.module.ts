@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common';
 import { HolidaysService } from './holidays.service';
-import { HttpModule } from '@nestjs/axios';
+import { HolidaysRepository } from './holidays.repository';
 
 @Module({
-  imports: [HttpModule],
-  providers: [HolidaysService],
+  providers: [HolidaysRepository, HolidaysService],
   exports: [HolidaysService],
 })
 export class HolidaysModule {}

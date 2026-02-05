@@ -43,6 +43,8 @@ export interface DashhboardEntity {
 export interface DashboardFilter {
   sprint: string;
   project: string;
+  startDate?: string;  // YYYY-MM-DD format
+  endDate?: string;    // YYYY-MM-DD format
 }
 
 export interface SprintDto {

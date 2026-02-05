@@ -15,7 +15,15 @@ export class ReportsController {
   async getAll(
     @Query('sprint') sprint: string,
     @Query('project') project: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ): Promise<GetReportResponseDto> {
+    // If date range is provided, use date-based report
+    if (startDate && endDate) {
+      return this.reportsService.generateReportByDateRange(startDate, endDate, project);
+    }
+    
+    // Otherwise use sprint-based report (existing behavior)
     return this.reportsService.generateReport(sprint, project);
   }
 

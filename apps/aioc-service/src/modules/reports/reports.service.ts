@@ -112,6 +112,59 @@ export class ReportsService {
   }
 
   /**
+   * Generate report based on date range instead of sprint
+   * @param startDate Start date in YYYY-MM-DD format
+   * @param endDate End date in YYYY-MM-DD format
+   * @param project Project code (SLS or DS)
+   */
+  async generateReportByDateRange(
+    startDate: string,
+    endDate: string,
+    project: string,
+  ): Promise<GetReportResponseDto> {
+    // Get assignees for this project
+    const assignees: string[] = teamMembers
+      .filter((member: TeamMember) => member.team.includes(project))
+      .map((member: TeamMember) => member.id);
+
+    // Fetch raw data using date range
+    const rawData = await this.jiraReportRepository.fetchRawDataByDateRange(
+      project,
+      assignees,
+      startDate,
+      endDate,
+    );
+
+    // Create pseudo sprint details from date range for working days calculation
+    const dateRangeDetails = {
+      startDate,
+      endDate,
+    };
+
+    // Parse dates for leave and holiday calculations
+    const rangeStartDate = this.parseLocalDate(startDate);
+    const rangeEndDate = this.parseLocalDate(endDate);
+
+    // Fetch leave data for the date range
+    const leaveData = await this.fetchLeaveData(startDate, endDate, project);
+
+    // Fetch national holidays for the date range
+    const nationalHolidays = await this.holidaysService.getNationalHolidays(
+      rangeStartDate,
+      rangeEndDate,
+    );
+
+    const teamReport = this.processRawData(
+      rawData,
+      project,
+      dateRangeDetails,
+      leaveData,
+      nationalHolidays,
+    );
+    return this.summarizeTeamReport(teamReport, dateRangeDetails, nationalHolidays);
+  }
+
+  /**
    * Generate report for the currently active/open sprint
    * Uses openSprints() JQL function to avoid sprint name quoting issues
    */
