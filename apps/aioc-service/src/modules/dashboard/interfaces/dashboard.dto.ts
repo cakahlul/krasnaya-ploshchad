@@ -26,6 +26,6 @@ export interface BugSummaryDto {
 export interface DashboardSummaryResponseDto {
   ds: TeamSummaryDto;
   sls: TeamSummaryDto;
-  bugs: BugSummaryDto;
+  bugs?: BugSummaryDto;
   generatedAt: string;
 }

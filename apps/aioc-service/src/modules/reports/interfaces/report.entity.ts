@@ -25,6 +25,31 @@ export interface JiraFieldEntity {
   created?: string; // Issue creation date
   resolutiondate?: string; // Resolution date (when marked as Done)
   resolution?: { name: string }; // Resolution status
+  parent?: JiraParentEntity; // Parent issue (Epic)
+}
+
+export interface JiraParentEntity {
+  id: string;
+  key: string;
+  self: string;
+  fields: {
+    summary: string;
+    priority: {
+      name: string;
+      id: string;
+    };
+    status: {
+      name: string;
+      id: string;
+    };
+    issuetype: {
+      id: string;
+      description: string;
+      name: string;
+      subtask: boolean;
+      hierarchyLevel: number;
+    };
+  };
 }
 
 export interface JiraAssigneeEntity {

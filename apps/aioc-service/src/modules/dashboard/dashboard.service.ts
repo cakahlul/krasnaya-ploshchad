@@ -1,4 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ReportsService } from '../reports/reports.service';
 import { ProjectService } from '../sprint/project.service';
 import { BugMonitoringService } from '../bug-monitoring/bug-monitoring.service';
@@ -21,13 +23,23 @@ export class DashboardService {
     private readonly reportsService: ReportsService,
     private readonly projectService: ProjectService,
     private readonly bugMonitoringService: BugMonitoringService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async getDashboardSummary(): Promise<DashboardSummaryResponseDto> {
+    const CACHE_KEY = 'dashboard_summary';
+    const cachedSummary = await this.cacheManager.get<DashboardSummaryResponseDto>(CACHE_KEY);
+
+    if (cachedSummary) {
+      this.logger.log('Using cached dashboard summary');
+      return cachedSummary;
+    }
+
     this.logger.log('Generating dashboard summary');
 
+    // ... (rest of the method remains mostly same, just wrap return with set cache) ...
     // Fetch all data in parallel - using openSprints() for reports
-    const [dsReport, slsReport, bugs, dsWorkItems, slsWorkItems] =
+    const [dsReport, slsReport, dsWorkItems, slsWorkItems] =
       await Promise.all([
         this.reportsService.generateOpenSprintReport('DS').catch((e) => {
           this.logger.error(`Failed to fetch DS report: ${e.message}`);
@@ -35,10 +47,6 @@ export class DashboardService {
         }),
         this.reportsService.generateOpenSprintReport('SLS').catch((e) => {
           this.logger.error(`Failed to fetch SLS report: ${e.message}`);
-          return null;
-        }),
-        this.bugMonitoringService.getBugsForBoard(BOARD_BUZZ).catch((e) => {
-          this.logger.error(`Failed to fetch BUZZ bugs: ${e.message}`);
           return null;
         }),
         this.reportsService.getSprintWorkItemStats('DS').catch((e) => {
@@ -85,44 +93,15 @@ export class DashboardService {
       averageHoursOpen: slsWorkItems?.averageHoursOpen || null,
     };
 
-    // Log bug stats for debugging
-    const stats = bugs?.statistics;
-    this.logger.log(`Bug Stats Debug: Total=${stats?.totalCount}`);
-    if (stats?.priorityDistribution) {
-       this.logger.log(`Priorities: ${JSON.stringify(stats.priorityDistribution)}`);
-    }
-
-    // Build bug summary from BUZZ board data - using ONLY active/open bugs (not Done)
-    const activeStatuses = ['To Do', 'In Progress', 'Ready to Test'];
-    const activeBugsOnly = bugs?.allBugs?.filter(bug => activeStatuses.includes(bug.status)) || [];
-    
-    // Calculate statistics from active bugs only
-    const activePriorityCount: Record<string, number> = {};
-    let totalDaysOpen = 0;
-    
-    activeBugsOnly.forEach(bug => {
-      activePriorityCount[bug.priority] = (activePriorityCount[bug.priority] || 0) + 1;
-      totalDaysOpen += bug.daysOpen;
-    });
-
-    const getActivePriorityCount = (priority: string): number => {
-      return activePriorityCount[priority] || 0;
-    };
-
-    const bugSummary: BugSummaryDto = {
-      totalBugs: activeBugsOnly.length,
-      criticalCount: getActivePriorityCount('Highest'),
-      highCount: getActivePriorityCount('High'),
-      mediumCount: getActivePriorityCount('Medium'),
-      lowCount: getActivePriorityCount('Low'),
-      averageDaysOpen: activeBugsOnly.length > 0 ? totalDaysOpen / activeBugsOnly.length : 0,
-    };
-
-    return {
+    const response = {
       ds: dsTeamSummary,
       sls: slsTeamSummary,
-      bugs: bugSummary,
       generatedAt: new Date().toISOString(),
     };
+
+    // Cache for 5 minutes (300 seconds)
+    await this.cacheManager.set(CACHE_KEY, response, 300000); // 300000 ms = 5 mins
+
+    return response;
   }
 }

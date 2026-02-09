@@ -1,4 +1,5 @@
 import { Select, DatePicker, Divider } from 'antd';
+import { EpicSelect } from './epicSelect';
 import { useSprintDataTransform } from '../hooks/useSprintDataTransform';
 import { useSprintFilterStore } from '../store/sprintFilterStore';
 import { useTeamReportFilterStore } from '../store/teamReportFilterStore';
@@ -139,6 +140,10 @@ export function FilterReport() {
             allowClear
           />
         </div>
+
+        <Divider type="vertical" className="h-16 bg-gray-300" />
+
+        <EpicSelect />
       </div>
 
       {/* Helper text */}

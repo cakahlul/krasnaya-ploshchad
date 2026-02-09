@@ -33,12 +33,19 @@ export interface BugSummary {
 export interface DashboardSummaryResponse {
   ds: TeamSummary;
   sls: TeamSummary;
-  bugs: BugSummary;
+  bugs?: BugSummary; // Make optional as it's removed from response
   generatedAt: string;
 }
 
 async function fetchDashboardSummary(): Promise<DashboardSummaryResponse> {
   const response = await axiosClient.get(`${apiUrl}/dashboard/summary`);
+  return response.data;
+}
+
+async function fetchDashboardBugSummary(boardId: number = 177): Promise<BugSummary> {
+  const response = await axiosClient.get(`${apiUrl}/bug-monitoring/summary`, {
+    params: { boardId },
+  });
   return response.data;
 }
 
@@ -63,17 +70,31 @@ export function useDashboardSummary() {
       isLoading: query.isLoading,
       error: query.error as Error | null,
     } as TeamSummary & { isLoading: boolean; error: Error | null },
+    generatedAt: query.data?.generatedAt,
+    isLoading: query.isLoading,
+    error: query.error,
+  };
+}
+
+export function useDashboardBugSummary(boardId: number = 177) {
+  const query = useQuery({
+    queryKey: ['dashboard-bug-summary', boardId],
+    queryFn: () => fetchDashboardBugSummary(boardId),
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+  });
+
+  return {
     bugs: {
-      totalBugs: query.data?.bugs?.totalBugs || 0,
-      criticalCount: query.data?.bugs?.criticalCount || 0,
-      highCount: query.data?.bugs?.highCount || 0,
-      mediumCount: query.data?.bugs?.mediumCount || 0,
-      lowCount: query.data?.bugs?.lowCount || 0,
-      averageDaysOpen: query.data?.bugs?.averageDaysOpen || 0,
+      totalBugs: query.data?.totalBugs || 0,
+      criticalCount: query.data?.criticalCount || 0,
+      highCount: query.data?.highCount || 0,
+      mediumCount: query.data?.mediumCount || 0,
+      lowCount: query.data?.lowCount || 0,
+      averageDaysOpen: query.data?.averageDaysOpen || 0,
       isLoading: query.isLoading,
       error: query.error as Error | null,
     } as BugSummary & { isLoading: boolean; error: Error | null },
-    generatedAt: query.data?.generatedAt,
     isLoading: query.isLoading,
     error: query.error,
   };

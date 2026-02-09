@@ -22,6 +22,14 @@ export interface JiraIssueReportResponseDto {
   weightPointsTechDebt: number;
   workingDays?: number; // Working days available for this member during sprint
   wpToHours?: number; // Weight points to hours ratio (totalWeightPoints / targetStoryPoints where target = workingDays * 8)
+  epic?: EpicDto | null;
+}
+
+export interface EpicDto {
+  id: string; // Epic Key (e.g., 'SLS-123')
+  key: string;
+  name: string;
+  summary: string;
 }
 
 export interface GetReportResponseDto {

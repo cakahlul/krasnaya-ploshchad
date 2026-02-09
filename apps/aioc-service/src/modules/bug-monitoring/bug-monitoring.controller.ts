@@ -16,4 +16,12 @@ export class BugMonitoringController {
   ): Promise<GetBugsResponseDto> {
     return this.bugMonitoringService.getBugsForBoard(boardId);
   }
+
+  @Get('summary')
+  @Roles('Lead')
+  async getBugSummary(
+    @Query('boardId', ParseIntPipe) boardId: number,
+  ) {
+    return this.bugMonitoringService.getBugSummary(boardId);
+  }
 }

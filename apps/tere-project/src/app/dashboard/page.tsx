@@ -4,7 +4,7 @@ import useUser from '@src/hooks/useUser';
 import { remoteConfig } from '@src/lib/firebase';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { useEffect, useState } from 'react';
-import { useDashboardSummary, TeamSummary, BugSummary } from '@src/features/dashboard/hooks/useDashboardSummary';
+import { useDashboardSummary, useDashboardBugSummary, TeamSummary, BugSummary } from '@src/features/dashboard/hooks/useDashboardSummary';
 import {
   RocketOutlined,
   TeamOutlined,
@@ -34,7 +34,8 @@ export default function Dashboard() {
   const [message, setMessage] = useState(
     "Ready to rock this day? Let's code and conquer 💻🔥",
   );
-  const { ds, sls, bugs } = useDashboardSummary();
+  const { ds, sls } = useDashboardSummary();
+  const { bugs } = useDashboardBugSummary();
 
   const { role, isLoading } = useUserAccess();
 

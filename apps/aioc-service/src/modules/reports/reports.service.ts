@@ -75,8 +75,9 @@ export class ReportsService {
   async generateReport(
     sprint: string,
     project: string,
+    epicId?: string,
   ): Promise<GetReportResponseDto> {
-    const rawData = await this.fetchRawData(sprint, project);
+    const rawData = await this.fetchRawData(sprint, project, epicId);
     
     // Fetch sprint details to get start and end dates
     const sprintDetails = await this.getSprintDetails(sprint);
@@ -121,6 +122,7 @@ export class ReportsService {
     startDate: string,
     endDate: string,
     project: string,
+    epicId?: string,
   ): Promise<GetReportResponseDto> {
     // Get assignees for this project
     const assignees: string[] = teamMembers
@@ -128,12 +130,25 @@ export class ReportsService {
       .map((member: TeamMember) => member.id);
 
     // Fetch raw data using date range
-    const rawData = await this.jiraReportRepository.fetchRawDataByDateRange(
+    let rawData = await this.jiraReportRepository.fetchRawDataByDateRange(
       project,
       assignees,
       startDate,
       endDate,
     );
+
+    // Filter by Epic if provided
+    if (epicId) {
+      const epicIds = epicId.split(',');
+      rawData = rawData.filter(issue => {
+        // If 'null' is one of the selected IDs, include issues without parent
+        if (epicIds.includes('null') && !issue.fields.parent) {
+          return true;
+        }
+        // Check if issue's parent key matches any of the selected epic IDs
+        return issue.fields.parent?.key && epicIds.includes(issue.fields.parent.key);
+      });
+    }
 
     // Create pseudo sprint details from date range for working days calculation
     const dateRangeDetails = {
@@ -161,7 +176,56 @@ export class ReportsService {
       leaveData,
       nationalHolidays,
     );
+        
+    // Apply Epic filter if provided (for date range report)
+    // Note: generateReportByDateRange doesn't have epicId param yet, need to add it to interface/controller first?
+    // User requested "selected sprint or selected date". So date range also needs epic filter.
+    
     return this.summarizeTeamReport(teamReport, dateRangeDetails, nationalHolidays);
+  }
+
+  async getEpics(
+    sprint: string,
+    project: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<import('./interfaces/report.dto').EpicDto[]> {
+    let rawData: JiraIssueEntity[] = [];
+    
+    if (startDate && endDate) {
+        // reuse existing date range fetch logic
+        const assignees: string[] = teamMembers
+          .filter((member: TeamMember) => member.team.includes(project))
+          .map((member: TeamMember) => member.id);
+          
+        rawData = await this.jiraReportRepository.fetchRawDataByDateRange(
+          project,
+          assignees,
+          startDate,
+          endDate,
+        );
+    } else {
+        // reuse existing sprint fetch logic
+        rawData = await this.fetchRawData(sprint, project);
+    }
+
+    const epicsMap = new Map<string, import('./interfaces/report.dto').EpicDto>();
+    
+    rawData.forEach(issue => {
+        if (issue.fields.parent) {
+            const epic = issue.fields.parent;
+            if (!epicsMap.has(epic.key)) {
+                epicsMap.set(epic.key, {
+                    id: epic.key,
+                    key: epic.key,
+                    name: epic.fields.summary,
+                    summary: epic.fields.summary
+                });
+            }
+        }
+    });
+    
+    return Array.from(epicsMap.values());
   }
 
   /**
@@ -205,6 +269,7 @@ export class ReportsService {
       sprintStartDate,
       sprintEndDate,
     );
+    // const nationalHolidays: string[] = []; // Disabled for performance
     
     const teamReport = this.processRawData(rawData, project, sprintDetails, leaveData, nationalHolidays);
     const report = this.summarizeTeamReport(teamReport, sprintDetails, nationalHolidays);
@@ -265,17 +330,39 @@ export class ReportsService {
   private async fetchRawData(
     sprint: string,
     project: string,
+    epicId?: string,
   ): Promise<JiraIssueEntity[]> {
     const assignees: string[] = teamMembers
       .filter((member: TeamMember) => member.team.includes(project))
       .map((member: TeamMember) => member.id);
 
+    // If epicId is provided, we can filter here or pass to repository
+    // For now, let's fetch all and filter in memory to avoid changing repository signature too much if not needed,
+    // OR update request DTO. Updating request DTO is cleaner.
+    // However, existing repository `fetchRawData` takes `JiraSearchRequestDto` which doesn't have `epicId`.
+    // Let's filter in memory here for simplicity unless performance is an issue.
+    // Actually, `fetchRawData` (service) calls `jiraReportRepository.fetchRawData` (repo).
+    
     const request: JiraSearchRequestDto = {
       sprint,
       assignees,
       project,
     };
-    return this.jiraReportRepository.fetchRawData(request);
+    const issues = await this.jiraReportRepository.fetchRawData(request);
+    
+    if (epicId) {
+      const epicIds = epicId.split(',');
+      return issues.filter(issue => {
+        // If 'null' is one of the selected IDs, include issues without parent
+        if (epicIds.includes('null') && !issue.fields.parent) {
+          return true;
+        }
+        // Check if issue's parent key matches any of the selected epic IDs
+        return issue.fields.parent?.key && epicIds.includes(issue.fields.parent.key);
+      });
+    }
+    
+    return issues;
   }
 
   private async getSprintDetails(
