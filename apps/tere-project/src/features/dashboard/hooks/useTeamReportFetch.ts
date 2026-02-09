@@ -21,7 +21,7 @@ export function useTeamReportFetch() {
       project, 
       startDate, 
       endDate,
-      epicId
+      epicId ? epicId.join(',') : undefined
     ),
     enabled: hasValidFilter && !!project,
   });

@@ -45,7 +45,7 @@ export interface DashboardFilter {
   project: string;
   startDate?: string;  // YYYY-MM-DD format
   endDate?: string;    // YYYY-MM-DD format
-  epicId?: string;
+  epicId?: string[];
 }
 
 export interface EpicDto {

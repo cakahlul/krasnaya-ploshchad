@@ -1,9 +1,9 @@
 'use client';
-import { Select } from 'antd';
 import { useQuery } from '@tanstack/react-query';
 import { jiraRepository } from '../repositories/jiraRepository';
 import { useTeamReportFilterStore } from '../store/teamReportFilterStore';
 import { EpicDto } from '../types/dashboard';
+import { TagOutlined } from '@ant-design/icons';
 
 export function EpicSelect() {
   const { sprint, project, startDate, endDate, epicId } = useTeamReportFilterStore(
@@ -27,39 +27,63 @@ export function EpicSelect() {
   }
 
   const options = [
-    { value: 'all', label: 'All Epics' },
-    { value: 'null', label: 'No Epic' },
+    { value: 'all', label: 'All Epics', title: 'Show all epics' },
+    { value: 'null', label: 'No Epic', title: 'Show issues with no epic' },
     ...(epics || []).map((epic: EpicDto) => ({
       value: epic.key,
-      label: epic.summary, // Or use generic name format like [KEY] Summary
-      title: epic.summary // Tooltip
+      label: epic.summary,
+      title: epic.summary
     })),
   ];
 
+  const currentEpics = epicId || [];
+  const isAnyActive = currentEpics.length > 0;
+
   return (
-    <div className="flex flex-col gap-2 min-w-[200px] animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-      <label htmlFor="epic" className="flex items-center gap-2 text-sm font-medium text-gray-600">
+    <div className="flex flex-col gap-2 w-full animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+      <label className="flex items-center gap-2 text-sm font-medium text-gray-600">
+        <TagOutlined />
         Filter by Epic
-        {epicId && epicId !== 'all' && (
+        {isAnyActive && (
           <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full animate-pulse">
-            Active
+            Filtered ({currentEpics.length})
           </span>
         )}
       </label>
-      <Select
-        id="epic"
-        showSearch
-        style={{ width: '100%' }}
-        placeholder="Select Epic"
-        optionFilterProp="label"
-        options={options}
-        onChange={handleChange}
-        loading={isLoading}
-        value={epicId || 'all'}
-        className="w-full shadow-sm hover:shadow transition-shadow duration-300 rounded-md"
-        popupClassName="animate-airdrop"
-        listHeight={300}
-      />
+      
+      {isLoading ? (
+        <div className="flex gap-2 overflow-hidden py-1">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-8 w-24 bg-gray-100 rounded-full animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="flex gap-2 overflow-x-auto pb-2 pt-1 scrollbar-hide mask-fade-sides select-none">
+          {options.map((option) => {
+            const isActive = option.value === 'all' 
+              ? currentEpics.length === 0
+              : currentEpics.includes(option.value);
+
+            return (
+              <button
+                key={option.value}
+                onClick={() => handleChange(option.value)}
+                title={option.title || option.label}
+                className={`
+                  flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-300
+                  border select-none whitespace-nowrap
+                  ${isActive 
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200 transform scale-105' 
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50'
+                  }
+                `}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

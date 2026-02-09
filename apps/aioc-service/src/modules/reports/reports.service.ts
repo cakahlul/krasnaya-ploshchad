@@ -139,11 +139,15 @@ export class ReportsService {
 
     // Filter by Epic if provided
     if (epicId) {
-      if (epicId === 'null') {
-         rawData = rawData.filter(issue => !issue.fields.parent);
-      } else {
-         rawData = rawData.filter(issue => issue.fields.parent?.key === epicId);
-      }
+      const epicIds = epicId.split(',');
+      rawData = rawData.filter(issue => {
+        // If 'null' is one of the selected IDs, include issues without parent
+        if (epicIds.includes('null') && !issue.fields.parent) {
+          return true;
+        }
+        // Check if issue's parent key matches any of the selected epic IDs
+        return issue.fields.parent?.key && epicIds.includes(issue.fields.parent.key);
+      });
     }
 
     // Create pseudo sprint details from date range for working days calculation
@@ -347,10 +351,15 @@ export class ReportsService {
     const issues = await this.jiraReportRepository.fetchRawData(request);
     
     if (epicId) {
-      if (epicId === 'null') {
-         return issues.filter(issue => !issue.fields.parent);
-      }
-      return issues.filter(issue => issue.fields.parent?.key === epicId);
+      const epicIds = epicId.split(',');
+      return issues.filter(issue => {
+        // If 'null' is one of the selected IDs, include issues without parent
+        if (epicIds.includes('null') && !issue.fields.parent) {
+          return true;
+        }
+        // Check if issue's parent key matches any of the selected epic IDs
+        return issue.fields.parent?.key && epicIds.includes(issue.fields.parent.key);
+      });
     }
     
     return issues;
