@@ -104,6 +104,7 @@ export class ReportJiraRepository {
             'customfield_11543', // Appendix v3
             'assignee',
             'issuetype',
+            'parent',
           ].join(','),
           validateQuery: 'strict', // Enable JQL validation
         };
@@ -213,6 +214,7 @@ export class ReportJiraRepository {
             'customfield_11543', // Appendix v3
             'assignee',
             'issuetype',
+            'parent',
           ].join(','),
           validateQuery: 'strict',
         };
@@ -302,6 +304,7 @@ export class ReportJiraRepository {
             'customfield_11543',
             'assignee',
             'issuetype',
+            'parent',
           ].join(','),
           validateQuery: 'strict',
         };

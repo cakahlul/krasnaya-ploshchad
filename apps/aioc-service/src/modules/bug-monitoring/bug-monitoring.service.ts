@@ -8,6 +8,7 @@ import {
   PriorityDistributionDto,
 } from './interfaces/bug-monitoring.dto';
 import { JiraBugEntity } from './interfaces/bug-monitoring.entity';
+import { BugSummaryDto } from '../dashboard/interfaces/dashboard.dto';
 
 @Injectable()
 export class BugMonitoringService {
@@ -146,6 +147,36 @@ export class BugMonitoringService {
       priorityDistribution,
       averageDaysOpen: bugs.length > 0 ? totalDaysOpen / bugs.length : 0,
       assigneeDistribution: assigneeCount,
+    };
+  }
+  async getBugSummary(boardId: number): Promise<BugSummaryDto> {
+    const allBugs = await this.bugMonitoringRepository.fetchBugsByBoard(boardId);
+    const transformedBugs = this.transformBugs(allBugs);
+
+    // Build bug summary from BUZZ board data - using ONLY active/open bugs (not Done)
+    const activeStatuses = ['To Do', 'In Progress', 'Ready to Test'];
+    const activeBugsOnly = transformedBugs.filter(bug => activeStatuses.includes(bug.status));
+    
+    // Calculate statistics from active bugs only
+    const activePriorityCount: Record<string, number> = {};
+    let totalDaysOpen = 0;
+    
+    activeBugsOnly.forEach(bug => {
+      activePriorityCount[bug.priority] = (activePriorityCount[bug.priority] || 0) + 1;
+      totalDaysOpen += bug.daysOpen;
+    });
+
+    const getActivePriorityCount = (priority: string): number => {
+      return activePriorityCount[priority] || 0;
+    };
+
+    return {
+      totalBugs: activeBugsOnly.length,
+      criticalCount: getActivePriorityCount('Highest'),
+      highCount: getActivePriorityCount('High'),
+      mediumCount: getActivePriorityCount('Medium'),
+      lowCount: getActivePriorityCount('Low'),
+      averageDaysOpen: activeBugsOnly.length > 0 ? totalDaysOpen / activeBugsOnly.length : 0,
     };
   }
 }

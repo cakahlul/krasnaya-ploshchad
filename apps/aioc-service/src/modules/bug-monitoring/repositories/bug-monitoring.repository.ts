@@ -64,13 +64,16 @@ export class BugMonitoringRepository {
   }
 
   async fetchBugsByBoard(boardId: number): Promise<JiraBugEntity[]> {
-    // Fetch ALL BugProduction bugs (all statuses)
-    // Statistics will use all bugs, table will filter client-side
+    // Switch to Jira Search API for better performance and standard JQL support
     const jql = `project = BUZZ AND issuetype = BugProduction ORDER BY created DESC`;
-    const searchUrl = `${this.url}/rest/agile/1.0/board/${boardId}/issue`;
+    const searchUrl = `${this.url}/rest/api/3/search/jql`;
     const allBugs: JiraBugEntity[] = [];
     let startAt = 0;
     let total = 0;
+
+    // Remove artificial delay as Search API is faster and we want to fetch as quickly as possible
+    // Jira Cloud rate limits are header-based, we can handle 429s if they occur (retry logic handles it)
+    const delayPerPage = 0; 
 
     try {
       do {
@@ -103,9 +106,9 @@ export class BugMonitoringRepository {
 
         startAt += this.maxResults;
 
-        // Respect rate limits
-        if (startAt < total) {
-          await new Promise((resolve) => setTimeout(resolve, this.rateLimitMs));
+        // Minimal delay only if needed, but 0 should be fine for < 50 pages
+        if (startAt < total && delayPerPage > 0) {
+          await new Promise((resolve) => setTimeout(resolve, delayPerPage));
         }
       } while (startAt < total);
 

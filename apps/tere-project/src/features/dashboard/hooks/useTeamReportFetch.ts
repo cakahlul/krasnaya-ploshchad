@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { jiraRepository } from '@src/features/dashboard/repositories/jiraRepository';
 
 export function useTeamReportFetch() {
-  const { sprint, project, startDate, endDate } = useTeamReportFilterStore(
+  const { sprint, project, startDate, endDate, epicId } = useTeamReportFilterStore(
     state => state.selectedFilter,
   );
 
@@ -15,8 +15,14 @@ export function useTeamReportFetch() {
 
   return useQuery({
     // Include both sprint and date range in queryKey for proper cache management
-    queryKey: ['teamReport', sprint, startDate, endDate, project],
-    queryFn: () => jiraRepository.fetchTeamReport(sprint, project, startDate, endDate),
+    queryKey: ['teamReport', sprint, startDate, endDate, project, epicId],
+    queryFn: () => jiraRepository.fetchTeamReport(
+      sprint, 
+      project, 
+      startDate, 
+      endDate,
+      epicId
+    ),
     enabled: hasValidFilter && !!project,
   });
 }

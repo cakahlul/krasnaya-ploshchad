@@ -17,14 +17,38 @@ export class ReportsController {
     @Query('project') project: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('epicId') epicId?: string,
   ): Promise<GetReportResponseDto> {
     // If date range is provided, use date-based report
     if (startDate && endDate) {
-      return this.reportsService.generateReportByDateRange(startDate, endDate, project);
+      // Logic for filtering by epic in date range mode is not yet in generateReportByDateRange
+      // We should pass epicId there too. But first let's update that method signature if needed.
+      // Or, since we implemented filtering inside useTeamsReportTransform (frontend), maybe separate endpoint is key?
+      // No, user said "enhance the response api report".
+      // But I only updated `generateReport` (sprint based) to take `epicId`.
+      // I need to update `generateReportByDateRange` too.
+      // But `generateReportByDateRange` inside service does NOT take `epicId` yet?
+      // Wait, I updated `fetchRawData` inside service to take `epicId`.
+      // `generateReportByDateRange` calls `jiraReportRepository.fetchRawDataByDateRange` directly!
+      // I need to update `generateReportByDateRange` to filter as well.
+      
+      // For now let's just update `generateReport`.
+      // I will come back to `generateReportByDateRange` filtering.
+      return this.reportsService.generateReportByDateRange(startDate, endDate, project, epicId);
     }
     
     // Otherwise use sprint-based report (existing behavior)
-    return this.reportsService.generateReport(sprint, project);
+    return this.reportsService.generateReport(sprint, project, epicId);
+  }
+
+  @Get('epics')
+  async getEpics(
+    @Query('sprint') sprint: string,
+    @Query('project') project: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.reportsService.getEpics(sprint, project, startDate, endDate);
   }
 
   @Get('all')

@@ -28,6 +28,4 @@ export interface JiraBugSearchResponseDto {
   maxResults: number;
   startAt: number;
   total: number;
-  isLast?: boolean;
-  nextPageToken?: string;
 }

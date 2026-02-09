@@ -8,6 +8,7 @@ type FilterState = {
   setSprintFilter: (sprint: string, project: string) => void;
   setDateRangeFilter: (startDate: string, endDate: string, project: string) => void;
   clearFilter: () => void;
+  setEpicFilter: (epicId: string) => void;
 };
 
 export const useTeamReportFilterStore = create<FilterState>(set => ({
@@ -16,6 +17,11 @@ export const useTeamReportFilterStore = create<FilterState>(set => ({
   setSelectedFilter: (filter: DashboardFilter) =>
     set({ selectedFilter: filter }),
   
+  setEpicFilter: (epicId: string) =>
+    set(state => ({
+      selectedFilter: { ...state.selectedFilter, epicId },
+    })),
+
   // Set sprint filter and clear date range
   setSprintFilter: (sprint: string, project: string) =>
     set({
@@ -24,6 +30,7 @@ export const useTeamReportFilterStore = create<FilterState>(set => ({
         project,
         startDate: undefined,
         endDate: undefined,
+        epicId: undefined,
       },
     }),
   
@@ -35,6 +42,7 @@ export const useTeamReportFilterStore = create<FilterState>(set => ({
         project,
         startDate,
         endDate,
+        epicId: undefined,
       },
     }),
   
