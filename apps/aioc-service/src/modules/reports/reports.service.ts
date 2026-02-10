@@ -595,20 +595,24 @@ export class ReportsService {
         ? membersWithWorkingDays.reduce((sum, issue) => sum + (issue.workingDays || 0), 0) / membersWithWorkingDays.length
         : undefined;
 
-    // Calculate average WP per hour across all team members
-    const membersWithWpToHours = activeMembers.filter(
-      (issue) => issue.wpToHours !== undefined,
-    );
-    const averageWpPerHour =
-      membersWithWpToHours.length > 0
-        ? membersWithWpToHours.reduce((sum, issue) => sum + (issue.wpToHours || 0), 0) / membersWithWpToHours.length
-        : undefined;
-
     // Calculate total weight points for all team members
     const totalWeightPoints = activeMembers.reduce(
       (sum, issue) => sum + issue.totalWeightPoints,
       0,
     );
+
+    // Calculate total working days for all active members (sum of man-days)
+    const teamTotalWorkingDays = activeMembers.reduce(
+      (sum, issue) => sum + (issue.workingDays || 0),
+      0,
+    );
+
+    // Calculate average WP per hour: (Total Team WP / Total Team Working Days) / 8
+    // This gives the average WP per hour per person across the team
+    const averageWpPerHour =
+      teamTotalWorkingDays > 0
+        ? (totalWeightPoints / teamTotalWorkingDays) / 8
+        : 0;
 
     return {
       issues,
