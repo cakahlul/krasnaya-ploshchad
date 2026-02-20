@@ -29,6 +29,7 @@ export interface TicketDetail {
   storyPoints?: number;
   spType?: string; // Story Point Type (e.g., Feature Development, Bug Fixing, etc.)
   appendixV3?: number | string | string[]; // Weight Complexity
+  totalWeightPoints?: number; // Calculated total weight points
   webUrl?: string;
 }
 
