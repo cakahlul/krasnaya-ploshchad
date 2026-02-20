@@ -3,30 +3,32 @@ import { WorkItem } from '../types/dashboard';
 import { Table, TableColumnsType } from 'antd';
 import { useTeamReportTransform } from '../hooks/useTeamReportTransform';
 import TeamPerformance from './teamPerformance';
+import MemberTaskModal from './MemberTaskModal';
 import { useState } from 'react';
 
 export default function TeamTable() {
   const { data } = useTeamReportTransform();
   const [pageSize, setPageSize] = useState(5);
+  const [selectedMember, setSelectedMember] = useState<WorkItem | null>(null);
 
   const columns: TableColumnsType<WorkItem> = [
-    { title: 'Member', dataIndex: 'member', key: 'member' },
-    { title: 'Product Point', dataIndex: 'productPoint', key: 'productPoint' },
     {
-      title: 'Tech Debt Point',
-      dataIndex: 'techDebtPoint',
-      key: 'techDebtPoint',
+      title: 'Member',
+      dataIndex: 'member',
+      key: 'member',
+      render: (text: string, record: WorkItem) => (
+        <button
+          className="text-purple-600 hover:text-purple-800 font-medium hover:underline cursor-pointer bg-transparent border-none p-0 text-left"
+          onClick={() => setSelectedMember(record)}
+        >
+          {text}
+        </button>
+      ),
     },
-    { title: 'Total Point', dataIndex: 'totalPoint', key: 'totalPoint' },
     {
       title: 'Productivity Rate',
       dataIndex: 'productivityRate',
       key: 'productivityRate',
-    },
-    {
-      title: 'Avg. Complexity',
-      dataIndex: 'averageComplexity',
-      key: 'averageComplexity',
     },
     {
       title: 'Weight Points Product',
@@ -42,6 +44,11 @@ export default function TeamTable() {
       title: 'Total Weight Points',
       dataIndex: 'totalWeightPoints',
       key: 'totalWeightPoints',
+    },
+    {
+      title: 'Target WP',
+      dataIndex: 'targetWeightPoints',
+      key: 'targetWeightPoints',
     },
     {
       title: 'Working Days',
@@ -87,6 +94,12 @@ export default function TeamTable() {
           </p>
         </div>
       )}
+
+      <MemberTaskModal
+        open={!!selectedMember}
+        onClose={() => setSelectedMember(null)}
+        member={selectedMember}
+      />
     </div>
   );
 }

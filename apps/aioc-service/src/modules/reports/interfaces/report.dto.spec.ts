@@ -177,36 +177,34 @@ describe('Report DTOs', () => {
     it('should maintain JiraIssueReportResponseDto structure', () => {
       const report: JiraIssueReportResponseDto = {
         member: 'John Doe',
-        productPoint: 10,
-        techDebtPoint: 5,
-        totalPoint: 15,
         productivityRate: '75.00%',
-        averageComplexity: '2.5',
         devDefect: 1,
         devDefectRate: '100%',
         totalWeightPoints: 20,
         level: Level.Senior,
         weightPointsProduct: 15,
         weightPointsTechDebt: 5,
+        targetWeightPoints: 80,
+        issueKeys: ['SLS-101', 'SLS-102'],
       };
 
       expect(report.member).toBe('John Doe');
-      expect(report.totalPoint).toBe(15);
+      expect(report.totalWeightPoints).toBe(20);
       expect(report.level).toBe(Level.Senior);
     });
 
     it('should maintain GetReportResponseDto structure', () => {
       const response: GetReportResponseDto = {
         issues: [],
-        totalIssueProduct: 100,
-        totalIssueTechDebt: 20,
+        totalWeightPointsProduct: 100,
+        totalWeightPointsTechDebt: 20,
         productPercentage: '83.33%',
         techDebtPercentage: '16.67%',
         averageProductivity: '80.00%',
       };
 
-      expect(response.totalIssueProduct).toBe(100);
-      expect(response.totalIssueTechDebt).toBe(20);
+      expect(response.totalWeightPointsProduct).toBe(100);
+      expect(response.totalWeightPointsTechDebt).toBe(20);
       expect(response.productPercentage).toBe('83.33%');
     });
   });

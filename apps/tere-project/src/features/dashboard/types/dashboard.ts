@@ -1,23 +1,21 @@
 export interface WorkItem {
   member: string;
-  productPoint: number;
-  techDebtPoint: number;
-  totalPoint: number;
   productivityRate: string;
-  averageComplexity: string;
   devDefect: number;
   devDefectRate: string;
   totalWeightPoints: number;
   weightPointsProduct: number;
   weightPointsTechDebt: number;
+  targetWeightPoints: number;
+  issueKeys: string[];
   workingDays?: number;
   wpToHours?: number;
 }
 
 export interface DashboardDto {
   issues: WorkItem[];
-  totalIssueProduct: number;
-  totalIssueTechDebt: number;
+  totalWeightPointsProduct: number;
+  totalWeightPointsTechDebt: number;
   productPercentage: string;
   techDebtPercentage: string;
   averageProductivity: string;
@@ -25,12 +23,14 @@ export interface DashboardDto {
   averageWorkingDays?: number;
   averageWpPerHour?: number;
   totalWeightPoints?: number;
+  sprintStartDate?: string;
+  sprintEndDate?: string;
 }
 
 export interface DashhboardEntity {
   workItems: WorkItem[];
-  productTask: number;
-  techDebtTask: number;
+  totalWeightPointsProduct: number;
+  totalWeightPointsTechDebt: number;
   productPercentage: string;
   techDebtPercentage: string;
   averageProductivity: string;
@@ -38,6 +38,8 @@ export interface DashhboardEntity {
   averageWorkingDays?: number;
   averageWpPerHour?: number;
   totalWeightPoints?: number;
+  sprintStartDate?: string;
+  sprintEndDate?: string;
 }
 
 export interface DashboardFilter {
