@@ -281,6 +281,24 @@ export class SearchJiraRepository {
         appendixV3 = field;
       }
     }
+
+    // Calculate total weight points from raw customfield_11543
+    let totalWeightPoints: number | undefined;
+    if (['SLS', 'DS'].includes(projectKey)) {
+      const field = issue.fields.customfield_11543;
+      if (Array.isArray(field) && field.length > 0) {
+        totalWeightPoints = field.reduce((sum, option) => {
+          if (typeof option === 'object' && option !== null && 'value' in option) {
+            const level = parseAppendixWeightPoints(option.value);
+            if (level) return sum + this.appendixWeightMapping[level];
+          }
+          return sum;
+        }, 0);
+      } else if (typeof field === 'object' && field !== null && 'value' in field) {
+        const level = parseAppendixWeightPoints((field as { value: string }).value);
+        if (level) totalWeightPoints = this.appendixWeightMapping[level];
+      }
+    }
     
     return {
       key: issue.key,
@@ -306,6 +324,7 @@ export class SearchJiraRepository {
       storyPoints: issue.fields.customfield_10005,
       spType: issue.fields.customfield_11312?.value,
       appendixV3,
+      totalWeightPoints,
       webUrl: `${this.url}/browse/${issue.key}`,
     };
   }
