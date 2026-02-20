@@ -24,6 +24,6 @@ import { GoogleSheetsClient } from './clients/google-sheets.client';
     TalentLeaveExportService,
     GoogleSheetsClient,
   ],
-  exports: [TalentLeaveService],
+  exports: [TalentLeaveService, GoogleSheetsClient, HttpModule],
 })
 export class TalentLeaveModule {}

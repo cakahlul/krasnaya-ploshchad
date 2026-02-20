@@ -11,12 +11,14 @@ import { NewIssueCategorizer } from './strategies/new-issue-categorizer.strategy
 import { ProjectModule } from '../sprint/project.module';
 import { TalentLeaveModule } from '../talent-leave/talent-leave.module';
 import { HolidaysModule } from '../holidays/holidays.module';
+import { ProductivitySummaryService } from './productivity-summary.service';
 
 @Module({
   imports: [ProjectModule, TalentLeaveModule, HolidaysModule],
   controllers: [ReportsController],
   providers: [
     ReportsService,
+    ProductivitySummaryService,
     ReportJiraRepository,
     IssueProcessingStrategyFactory,
     LegacyComplexityWeightStrategy,
@@ -25,6 +27,6 @@ import { HolidaysModule } from '../holidays/holidays.module';
     LegacyIssueCategorizer,
     NewIssueCategorizer,
   ],
-  exports: [ReportsService],
+  exports: [ReportsService, ProductivitySummaryService],
 })
 export class ReportsModule {}
