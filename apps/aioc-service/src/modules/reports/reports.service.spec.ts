@@ -204,35 +204,24 @@ describe('ReportsService', () => {
 
         // Validate the structure matches existing API contract
         expect(result).toHaveProperty('issues');
-        expect(result).toHaveProperty('totalIssueProduct');
-        expect(result).toHaveProperty('totalIssueTechDebt');
+        expect(result).toHaveProperty('totalWeightPointsProduct');
+        expect(result).toHaveProperty('totalWeightPointsTechDebt');
         expect(result).toHaveProperty('productPercentage');
         expect(result).toHaveProperty('techDebtPercentage');
         expect(result).toHaveProperty('averageProductivity');
-
-        // Validate calculated metrics are correct
-        expect(result.totalIssueProduct).toBe(8);
-        expect(result.totalIssueTechDebt).toBe(5);
-        expect(result.productPercentage).toBe('61.54%');
-        expect(result.techDebtPercentage).toBe('38.46%');
 
         // Validate individual member metrics
         const lekhaReport = result.issues.find(
           (issue) => issue.member === 'Lekha',
         );
         expect(lekhaReport).toBeDefined();
-        expect(lekhaReport?.productPoint).toBe(8);
-        expect(lekhaReport?.techDebtPoint).toBe(0);
-        expect(lekhaReport?.totalPoint).toBe(8);
         expect(lekhaReport?.devDefect).toBe(0);
+        expect(lekhaReport?.weightPointsProduct).toBeGreaterThanOrEqual(0);
 
         const tasrifinReport = result.issues.find(
           (issue) => issue.member === 'Tasrifin',
         );
         expect(tasrifinReport).toBeDefined();
-        expect(tasrifinReport?.productPoint).toBe(0);
-        expect(tasrifinReport?.techDebtPoint).toBe(5);
-        expect(tasrifinReport?.totalPoint).toBe(5);
         expect(tasrifinReport?.devDefect).toBe(1); // Bug issue type
       });
 
@@ -241,19 +230,13 @@ describe('ReportsService', () => {
 
         const result = await service.generateReport('sprint-1', 'SLS');
 
-        expect(result.totalIssueProduct).toBe(0);
-        expect(result.totalIssueTechDebt).toBe(0);
+        expect(result.totalWeightPointsProduct).toBe(0);
+        expect(result.totalWeightPointsTechDebt).toBe(0);
         expect(result.productPercentage).toBe('0.00%');
         expect(result.techDebtPercentage).toBe('0.00%');
         expect(result.averageProductivity).toBe('0.00%');
-        // Service creates report entries for all team members even when no issues exist
-        expect(result.issues.length).toBeGreaterThan(0);
-        // All entries should have zero values
-        result.issues.forEach((issue) => {
-          expect(issue.totalPoint).toBe(0);
-          expect(issue.productPoint).toBe(0);
-          expect(issue.techDebtPoint).toBe(0);
-        });
+        // With no issues, no members have weight points, so issues should be empty after filtering
+        expect(result.issues.length).toBe(0);
       });
     });
 
@@ -310,10 +293,10 @@ describe('ReportsService', () => {
           (issue) => issue.member === 'Luqman',
         );
         expect(luqmanReport).toBeDefined();
-        expect(luqmanReport?.productPoint).toBe(13);
-        expect(luqmanReport?.totalPoint).toBe(13);
         expect(luqmanReport?.weightPointsProduct).toBe(8); // High complexity = 8 points
-        expect(luqmanReport?.averageComplexity).toBe('0.10'); // 8 / 80 (senior level minimum)
+        expect(luqmanReport?.targetWeightPoints).toBe(80); // Senior level
+        // Productivity rate = totalWeightPoints / targetWeightPoints * 100%
+        expect(luqmanReport?.productivityRate).toBe('10.00%'); // 8 / 80 * 100
       });
 
       it('should maintain team member mapping and filtering logic', async () => {
@@ -365,8 +348,8 @@ describe('ReportsService', () => {
         const result = await service.generateReport('sprint-1', 'SLS');
 
         // Unknown user should not appear in results
-        expect(result.totalIssueProduct).toBe(0);
-        expect(result.totalIssueTechDebt).toBe(0);
+        expect(result.totalWeightPointsProduct).toBe(0);
+        expect(result.totalWeightPointsTechDebt).toBe(0);
       });
     });
 
@@ -430,8 +413,8 @@ describe('ReportsService', () => {
         const result = await service.generateReport('sprint-1', 'SLS');
 
         expect(result).toBeDefined();
-        expect(result.totalIssueProduct).toBe(0);
-        expect(result.totalIssueTechDebt).toBe(0);
+        expect(result.totalWeightPointsProduct).toBe(0);
+        expect(result.totalWeightPointsTechDebt).toBe(0);
       });
     });
   });

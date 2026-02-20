@@ -19,11 +19,11 @@ import {
 
 @Injectable()
 export class ReportsService {
-  private readonly minimumComplexityByLevels: { [key: string]: number } = {
-    junior: 56,
-    medior: 68,
-    senior: 80,
-    'individual contributor': 80,
+  private readonly dailyTargetWPByLevel: { [key: string]: number } = {
+    junior: 5.6,
+    medior: 6.8,
+    senior: 8,
+    'individual contributor': 8,
   };
 
   constructor(
@@ -447,17 +447,15 @@ export class ReportsService {
           member.name,
           {
             member: member.name,
-            productPoint: 0,
-            techDebtPoint: 0,
-            totalPoint: 0,
             productivityRate: '',
-            averageComplexity: '',
             totalWeightPoints: 0,
             devDefect: 0,
             devDefectRate: '',
             level: member.level,
             weightPointsProduct: 0,
             weightPointsTechDebt: 0,
+            targetWeightPoints: (this.dailyTargetWPByLevel[member.level] ?? 8) * 10, // default 10 days, recalculated later
+            issueKeys: [],
           },
         ]),
     );
@@ -500,40 +498,40 @@ export class ReportsService {
             memberLeaveDates,
             nationalHolidays,
           );
-
         }
 
-        // Productivity calculation (total points / (working days * 8 points per day) * 100%)
-        // Each team member is expected to have 8 points per working day
-        const maximumPoints = report.workingDays ? report.workingDays * 8 : 80;
-        report.productivityRate = `${((report.totalPoint / maximumPoints) * 100).toFixed(2)}%`;
+        // Recalculate targetWeightPoints based on actual working days
+        const dailyRate = this.dailyTargetWPByLevel[report.level] ?? 8;
+        const effectiveWorkingDays = report.workingDays ?? 10;
+        report.targetWeightPoints = dailyRate * effectiveWorkingDays;
+
+        // Accumulate totalWeightPoints from complexityMap
+        const complexityData = complexityMap.get(report.member);
+        report.totalWeightPoints = complexityData?.totalComplexity ?? 0;
+
+        // Productivity Rate: totalWeightPoints / targetWeightPoints * 100%
+        const targetWP = report.targetWeightPoints;
+        report.productivityRate = targetWP > 0
+          ? `${((report.totalWeightPoints / targetWP) * 100).toFixed(2)}%`
+          : '0.00%';
 
         // Defect rate calculation
         report.devDefectRate = this.calculateDefectRate(report.devDefect);
-        // Calculate average complexity
-        const complexityData = complexityMap.get(report.member);
-        const average = complexityData?.count
-          ? complexityData.totalComplexity /
-            this.minimumComplexityByLevels[report.level]
-          : 0;
-        report.averageComplexity = average.toFixed(2);
-        report.totalWeightPoints = complexityData?.totalComplexity ?? 0;
 
-        // Calculate wpToHours: totalWeightPoints / targetStoryPoints
-        // targetStoryPoints = workingDays * 8 (8 points per day target)
+        // Calculate wpToHours: totalWeightPoints / (workingDays * 8)
         // If workingDays is not available, defaults to 80 (10 days * 8 points)
         const targetStoryPoints = report.workingDays ? report.workingDays * 8 : 80;
         report.wpToHours = report.totalWeightPoints / targetStoryPoints;
 
-        // Reset metrics for members with no points (not working on any tasks)
-        if (report.totalPoint === 0) {
+        // Reset metrics for members with no weight points (not working on any tasks)
+        if (report.totalWeightPoints === 0) {
           this.resetMemberMetrics(report);
         }
       },
     );
 
     return Array.from(reports.values()).filter(
-      (report) => report.totalPoint > 0,
+      (report) => report.totalWeightPoints > 0,
     );
   }
 
@@ -549,31 +547,37 @@ export class ReportsService {
     sprintDetails?: { startDate: string; endDate: string } | null,
     nationalHolidays: string[] = [],
   ): GetReportResponseDto {
-    // Filter out members with no points (not working on any tasks)
+    // Filter out members with no weight points (not working on any tasks)
     const activeMembers = issues.filter(
-      (issue: JiraIssueReportResponseDto) => issue.totalPoint > 0,
+      (issue: JiraIssueReportResponseDto) => issue.totalWeightPoints > 0,
     );
 
-    const totalIssueProduct = activeMembers.reduce(
-      (sum, issue) => sum + issue.productPoint,
+    // Product % / Tech Debt % based on weight points
+    const totalWeightPointsProduct = activeMembers.reduce(
+      (sum, issue) => sum + issue.weightPointsProduct,
       0,
     );
-    const totalIssueTechDebt = activeMembers.reduce(
-      (sum, issue) => sum + issue.techDebtPoint,
+    const totalWeightPointsTechDebt = activeMembers.reduce(
+      (sum, issue) => sum + issue.weightPointsTechDebt,
       0,
     );
-    const totalIssues = totalIssueProduct + totalIssueTechDebt;
+    const totalWP = totalWeightPointsProduct + totalWeightPointsTechDebt;
 
-    const productPercentage = (totalIssueProduct / totalIssues) * 100 || 0;
-    const techDebtPercentage = (totalIssueTechDebt / totalIssues) * 100 || 0;
+    const productPercentage = totalWP > 0 ? (totalWeightPointsProduct / totalWP) * 100 : 0;
+    const techDebtPercentage = totalWP > 0 ? (totalWeightPointsTechDebt / totalWP) * 100 : 0;
 
-    const productivityRates = activeMembers.map(
-      (issue: JiraIssueReportResponseDto) =>
-        parseFloat(issue.productivityRate.replace('%', '')),
+    // Avg Productivity: sum(totalWeightPoints) / sum(targetWeightPoints) * 100%
+    const sumTotalWP = activeMembers.reduce(
+      (sum, issue) => sum + issue.totalWeightPoints,
+      0,
     );
-    const averageProductivity =
-      productivityRates.reduce((sum, rate) => sum + rate, 0) /
-        productivityRates.length || 0;
+    const sumTargetWP = activeMembers.reduce(
+      (sum, issue) => sum + issue.targetWeightPoints,
+      0,
+    );
+    const averageProductivity = sumTargetWP > 0
+      ? (sumTotalWP / sumTargetWP) * 100
+      : 0;
 
     // Calculate total working days for the sprint (excluding weekends and holidays only)
     let totalWorkingDays: number | undefined;
@@ -608,7 +612,6 @@ export class ReportsService {
     );
 
     // Calculate average WP per hour: (Total Team WP / Total Team Working Days) / 8
-    // This gives the average WP per hour per person across the team
     const averageWpPerHour =
       teamTotalWorkingDays > 0
         ? (totalWeightPoints / teamTotalWorkingDays) / 8
@@ -616,8 +619,8 @@ export class ReportsService {
 
     return {
       issues,
-      totalIssueProduct,
-      totalIssueTechDebt,
+      totalWeightPointsProduct,
+      totalWeightPointsTechDebt,
       productPercentage: `${productPercentage.toFixed(2)}%`,
       techDebtPercentage: `${techDebtPercentage.toFixed(2)}%`,
       averageProductivity: `${averageProductivity.toFixed(2)}%`,
@@ -625,6 +628,8 @@ export class ReportsService {
       averageWorkingDays,
       averageWpPerHour,
       totalWeightPoints,
+      sprintStartDate: sprintDetails?.startDate,
+      sprintEndDate: sprintDetails?.endDate,
     };
   }
 
@@ -634,7 +639,6 @@ export class ReportsService {
     report.weightPointsTechDebt = 0;
     report.devDefect = 0;
     report.devDefectRate = '0%';
-    report.averageComplexity = '0';
     report.productivityRate = '0%';
     report.wpToHours = 0;
   }
@@ -652,8 +656,6 @@ export class ReportsService {
     if (!memberName) return;
 
     const strategies = this.strategyFactory.createStrategies(issue);
-    const points = issue.fields.customfield_10005 ?? 0;
-    const category = strategies.issueCategorizer.categorize(issue);
     const weightPoints =
       strategies.issueCategorizer.getWeightPointsCategory(issue);
     const complexityWeight =
@@ -664,8 +666,6 @@ export class ReportsService {
 
     this.updateReportMetrics(
       report,
-      points,
-      category,
       weightPoints,
       complexityWeight,
       issue,
@@ -675,18 +675,15 @@ export class ReportsService {
 
   private updateReportMetrics(
     report: JiraIssueReportResponseDto,
-    points: number,
-    category: 'productPoint' | 'techDebtPoint',
     weightPoints: 'weightPointsProduct' | 'weightPointsTechDebt',
     complexityWeight: number,
     issue: JiraIssueEntity,
   ): void {
-    // Update points
-    report[category] += points;
-    report.totalPoint += points;
-
     // Populate weight points based on task type (product or tech debt)
     report[weightPoints] += complexityWeight;
+
+    // Track issue key for lazy-loading details
+    report.issueKeys.push(issue.key);
 
     // Count bugs
     if (issue.fields.issuetype?.name === 'Bug') {

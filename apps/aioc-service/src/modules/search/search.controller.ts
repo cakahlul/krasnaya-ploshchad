@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  Post,
+  Body,
   Logger,
   NotFoundException,
   Param,
@@ -55,5 +57,19 @@ export class SearchController {
     }
 
     return detail;
+  }
+
+  /**
+   * Batch fetch ticket details for multiple keys
+   * Used by Team Reporting to lazy-load member issue details
+   */
+  @Post('tickets/batch')
+  async getTicketDetailBatch(
+    @Body() body: { keys: string[] },
+  ): Promise<TicketDetailDto[]> {
+    const keys = body.keys?.slice(0, 100) ?? []; // Cap at 100 to prevent abuse
+    this.logger.log(`Batch ticket detail request: ${keys.length} keys`);
+
+    return this.searchService.getTicketDetailBatch(keys);
   }
 }

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { SearchTicketDto, TicketDetailDto } from './interfaces/search.dto';
+import { parseAppendixWeightPoints, AppendixWeightPoint } from 'src/shared/utils/appendix-level';
 
 // Allowed boards for search
 const ALLOWED_PROJECTS = ['ABB', 'SLS', 'DS', 'BUZZ', 'REL', 'VUL', 'TAE', 'SRETASK'];
@@ -269,13 +270,13 @@ export class SearchJiraRepository {
         // Extract value from each object in the array
         const values = field
           .filter(item => typeof item === 'object' && item !== null && 'value' in item)
-          .map(item => item.value);
+          .map(item => this.appendWeightPoint(item.value));
         
         if (values.length > 0) {
           appendixV3 = values;
         }
       } else if (typeof field === 'object' && field !== null && 'value' in field) {
-        appendixV3 = (field as { value: string }).value;
+        appendixV3 = this.appendWeightPoint((field as { value: string }).value);
       } else if (typeof field === 'number' || typeof field === 'string') {
         appendixV3 = field;
       }
@@ -345,6 +346,26 @@ export class SearchJiraRepository {
     }
 
     return texts.join(' ').trim();
+  }
+
+  private readonly appendixWeightMapping: { [key in AppendixWeightPoint]: number } = {
+    'Very Low': 1.5,
+    Low: 2,
+    Medium: 4,
+    High: 8,
+  };
+
+  /**
+   * Append numeric weight point to appendix value string
+   * e.g. "BE-6. API documentation per api.-Very Low" → "BE-6. API documentation per api.-Very Low (1.5)"
+   */
+  private appendWeightPoint(value: string): string {
+    const level = parseAppendixWeightPoints(value);
+    if (level) {
+      const weight = this.appendixWeightMapping[level];
+      return `${value} (${weight})`;
+    }
+    return value;
   }
 
   private escapeJqlString(value: string): string {

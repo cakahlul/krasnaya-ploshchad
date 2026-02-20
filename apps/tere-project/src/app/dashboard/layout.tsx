@@ -44,7 +44,7 @@ export default function DashboardLayout({
               <footer className="shadow-sm bg-white/60 backdrop-blur-sm text-center text-xs py-1.5">
                 Built with ⚒️ by{' '}
                 <strong className="text-primary">Esasjana</strong> – still
-                cooler than your average dev 😎
+                cooler than average dev 😎 🚀 - version 1.5.0
               </footer>
             </div>
           </div>

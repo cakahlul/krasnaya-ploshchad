@@ -41,4 +41,33 @@ export class SearchService {
     this.logger.log(`Fetching ticket detail: ${key}`);
     return this.searchJiraRepository.getTicketDetail(key);
   }
+
+  /**
+   * Batch fetch ticket details for multiple keys.
+   * Fetches in parallel with concurrency control to avoid Jira rate limits.
+   */
+  async getTicketDetailBatch(keys: string[]): Promise<TicketDetailDto[]> {
+    if (keys.length === 0) return [];
+
+    // Fetch in batches of 5 to respect Jira rate limits
+    const CONCURRENCY = 5;
+    const results: TicketDetailDto[] = [];
+
+    for (let i = 0; i < keys.length; i += CONCURRENCY) {
+      const batch = keys.slice(i, i + CONCURRENCY);
+      const batchResults = await Promise.all(
+        batch.map((key) =>
+          this.searchJiraRepository.getTicketDetail(key).catch((err) => {
+            this.logger.warn(`Failed to fetch detail for ${key}: ${err.message}`);
+            return null;
+          }),
+        ),
+      );
+      results.push(
+        ...batchResults.filter((r): r is TicketDetailDto => r !== null),
+      );
+    }
+
+    return results;
+  }
 }

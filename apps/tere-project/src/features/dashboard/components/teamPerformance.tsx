@@ -13,13 +13,14 @@ import { useTeamReportTransform } from '../hooks/useTeamReportTransform';
 interface StatCardProps {
   label: string;
   value: string | number | undefined;
+  subtitle?: string;
   icon: React.ReactNode;
   gradient: string;
   delay: number;
   accentColor: string;
 }
 
-function StatCard({ label, value, icon, gradient, delay, accentColor }: StatCardProps) {
+function StatCard({ label, value, subtitle, icon, gradient, delay, accentColor }: StatCardProps) {
   return (
     <div
       className={`
@@ -78,6 +79,9 @@ function StatCard({ label, value, icon, gradient, delay, accentColor }: StatCard
         >
           {value ?? '-'}
         </p>
+        {subtitle && (
+          <p className="text-white/70 text-xs mt-1">{subtitle}</p>
+        )}
       </div>
       
       {/* Shine effect on hover */}
@@ -93,8 +97,19 @@ function StatCard({ label, value, icon, gradient, delay, accentColor }: StatCard
   );
 }
 
+function formatDateRange(startDate?: string, endDate?: string): string | undefined {
+  if (!startDate || !endDate) return undefined;
+  const format = (d: string) => {
+    const date = new Date(d);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+  return `${format(startDate)} — ${format(endDate)}`;
+}
+
 export default function TeamPerformance() {
   const { data } = useTeamReportTransform();
+
+  const dateSubtitle = formatDateRange(data?.sprintStartDate, data?.sprintEndDate);
 
   const statsData = [
     {
@@ -128,6 +143,7 @@ export default function TeamPerformance() {
     {
       label: 'Working Days',
       value: data?.totalWorkingDays,
+      subtitle: dateSubtitle,
       icon: <CalendarOutlined />,
       gradient: 'bg-gradient-to-br from-purple-500 via-purple-600 to-violet-700',
       accentColor: 'bg-purple-300',
@@ -156,6 +172,7 @@ export default function TeamPerformance() {
             key={item.label}
             label={item.label}
             value={item.value}
+            subtitle={'subtitle' in item ? item.subtitle : undefined}
             icon={item.icon}
             gradient={item.gradient}
             accentColor={item.accentColor}

@@ -10,8 +10,8 @@ export const useTeamReportTransform = () => {
 
     return {
       workItems: data.issues,
-      productTask: data.totalIssueProduct,
-      techDebtTask: data.totalIssueTechDebt,
+      totalWeightPointsProduct: data.totalWeightPointsProduct,
+      totalWeightPointsTechDebt: data.totalWeightPointsTechDebt,
       productPercentage: data.productPercentage,
       techDebtPercentage: data.techDebtPercentage,
       averageProductivity: data.averageProductivity,
@@ -19,6 +19,8 @@ export const useTeamReportTransform = () => {
       averageWorkingDays: data.averageWorkingDays,
       averageWpPerHour: data.averageWpPerHour,
       totalWeightPoints: data.totalWeightPoints,
+      sprintStartDate: data.sprintStartDate,
+      sprintEndDate: data.sprintEndDate,
     };
   }, [data]);
 
