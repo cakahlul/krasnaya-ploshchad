@@ -1,15 +1,69 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, BadRequestException, HttpCode, HttpStatus, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { ReportsService } from './reports.service';
+import { ProductivitySummaryService } from './productivity-summary.service';
 import { GetReportResponseDto } from './interfaces/report.dto';
 import { ProjectService } from '../sprint/project.service';
-
+import { GoogleSheetsClient } from '../talent-leave/clients/google-sheets.client';
 
 @Controller('report')
 export class ReportsController {
   constructor(
     private readonly reportsService: ReportsService,
+    private readonly productivitySummaryService: ProductivitySummaryService,
     private readonly projectService: ProjectService,
+    private readonly googleSheetsClient: GoogleSheetsClient,
   ) {}
+
+  @Get('productivity-summary/auth/google')
+  @HttpCode(HttpStatus.OK)
+  getGoogleAuthUrl() {
+    const oauth2Client = this.googleSheetsClient.getOAuth2Client();
+
+    const authUrl = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: [
+        'https://www.googleapis.com/auth/spreadsheets',
+        'https://www.googleapis.com/auth/drive.file',
+      ],
+      prompt: 'consent',
+    });
+
+    return {
+      authUrl,
+      message:
+        'Visit this URL to authorize the application. After authorization, you will receive an access token.',
+    };
+  }
+
+  @Post('productivity-summary/export')
+  @HttpCode(HttpStatus.OK)
+  async exportToSpreadsheet(
+    @Body('month') month: string,
+    @Body('year') year: string,
+    @Body('accessToken') accessToken: string,
+  ) {
+    if (!month || !year || !accessToken) {
+      throw new BadRequestException('month, year, and accessToken are required');
+    }
+
+    return this.productivitySummaryService.exportToSpreadsheet(
+      parseInt(month, 10),
+      parseInt(year, 10),
+      accessToken,
+    );
+  }
+
+  @Get('productivity-summary')
+  async getProductivitySummary(
+    @Query('month') month: string,
+    @Query('year') year: string,
+  ) {
+    return this.productivitySummaryService.generateProductivitySummary(
+      parseInt(month, 10),
+      parseInt(year, 10),
+    );
+  }
 
   @Get('')
   async getAll(
