@@ -15,6 +15,7 @@ import {
   BarChart2,
   PieChart,
   Activity,
+  Clock,
 } from 'lucide-react';
 import { ProductivitySummaryExportButton } from './ProductivitySummaryExportButton';
 
@@ -84,65 +85,93 @@ export default function ProductivitySummary() {
     isHighlight = false,
     highlightValue = 0,
     delay = 0,
+    colorTheme = 'default',
   }: {
     title: string;
     value: string | number;
     icon: React.ReactNode;
-    subtitle?: string;
+    subtitle?: React.ReactNode;
     isHighlight?: boolean;
     highlightValue?: number;
     delay?: number;
-  }) => (
-    <div
-      className={`relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
-        isHighlight
-          ? highlightValue >= 0
-            ? 'bg-gradient-to-br from-emerald-500 to-teal-400 text-white shadow-emerald-500/30'
-            : 'bg-gradient-to-br from-red-500 to-rose-400 text-white shadow-rose-500/30'
-          : 'bg-white border border-gray-100 shadow-sm hover:border-purple-200'
-      }`}
-      style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
-    >
-      <div className="flex justify-between items-start mb-4">
-        <div
-          className={`p-3 rounded-xl ${
-            isHighlight ? 'bg-white/20' : 'bg-purple-50 text-purple-600'
-          }`}
-        >
-          {icon}
+    colorTheme?: 'default' | 'success' | 'danger' | 'purple' | 'amber' | 'blue';
+  }) => {
+    let bgClass = 'bg-white border border-gray-100 shadow-sm hover:border-purple-200';
+    let textClass = 'text-gray-900';
+    let titleClass = 'text-gray-500';
+    let iconClass = 'bg-purple-50 text-purple-600';
+    let subtitleClass = 'text-gray-400';
+
+    if (isHighlight) {
+        if (highlightValue >= 0) colorTheme = 'success';
+        else colorTheme = 'danger';
+    }
+
+    if (colorTheme === 'success') {
+      bgClass = 'bg-gradient-to-br from-emerald-500 to-teal-400 text-white shadow-emerald-500/30 border-transparent';
+      textClass = 'text-white';
+      titleClass = 'text-emerald-50/80';
+      iconClass = 'bg-white/20 text-white';
+      subtitleClass = 'text-white/80';
+    } else if (colorTheme === 'danger') {
+      bgClass = 'bg-gradient-to-br from-red-500 to-rose-400 text-white shadow-rose-500/30 border-transparent';
+      textClass = 'text-white';
+      titleClass = 'text-rose-50/80';
+      iconClass = 'bg-white/20 text-white';
+      subtitleClass = 'text-white/80';
+    } else if (colorTheme === 'purple') {
+      bgClass = 'bg-gradient-to-br from-purple-600 to-indigo-500 text-white shadow-purple-500/30 border-transparent hover:shadow-purple-500/50 hover:border-transparent';
+      textClass = 'text-white';
+      titleClass = 'text-purple-100/80';
+      iconClass = 'bg-white/20 text-white';
+      subtitleClass = 'text-purple-100/80';
+    } else if (colorTheme === 'amber') {
+      bgClass = 'bg-gradient-to-br from-orange-500 to-amber-400 text-white shadow-orange-500/30 border-transparent hover:shadow-orange-500/50 hover:border-transparent';
+      textClass = 'text-white';
+      titleClass = 'text-orange-50/80';
+      iconClass = 'bg-white/20 text-white';
+      subtitleClass = 'text-orange-50/80';
+    } else if (colorTheme === 'blue') {
+      bgClass = 'bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-blue-500/30 border-transparent hover:shadow-blue-500/50 hover:border-transparent';
+      textClass = 'text-white';
+      titleClass = 'text-blue-100/80';
+      iconClass = 'bg-white/20 text-white';
+      subtitleClass = 'text-blue-100/80';
+    }
+
+    return (
+      <div
+        className={`relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${bgClass}`}
+        style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
+      >
+        <div className="flex justify-between items-start mb-4">
+          <div className={`p-3 rounded-xl flex items-center justify-center ${iconClass}`}>
+            {icon}
+          </div>
+          {isHighlight && (
+            <span className="flex items-center gap-1 text-sm font-semibold bg-white/20 px-2 py-1 rounded-lg backdrop-blur-sm text-white">
+              {highlightValue >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+              {Math.abs(highlightValue).toFixed(2)}%
+            </span>
+          )}
         </div>
-        {isHighlight && (
-          <span className="flex items-center gap-1 text-sm font-semibold bg-white/20 px-2 py-1 rounded-lg backdrop-blur-sm">
-            {highlightValue >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-            {Math.abs(highlightValue).toFixed(2)}%
-          </span>
-        )}
-      </div>
-      <div>
-        <h3
-          className={`text-sm font-medium mb-1 ${
-            isHighlight ? 'text-emerald-50/80' : 'text-gray-500'
-          }`}
-        >
-          {title}
-        </h3>
-        <p className={`text-3xl font-bold tracking-tight ${isHighlight ? 'text-white' : 'text-gray-900'}`}>
-          {value}
-        </p>
-        {subtitle && (
-          <p
-            className={`text-xs mt-2 ${
-              isHighlight ? 'text-white/80' : 'text-gray-400'
-            }`}
-          >
-            {subtitle}
+        <div>
+          <h3 className={`text-sm font-medium mb-1 ${titleClass}`}>
+            {title}
+          </h3>
+          <p className={`text-3xl font-bold tracking-tight ${textClass}`}>
+            {value}
           </p>
-        )}
+          {subtitle && (
+            <div className={`text-xs mt-2 ${subtitleClass}`}>
+              {subtitle}
+            </div>
+          )}
+        </div>
+        <div className="absolute -bottom-6 -right-6 w-24 h-24 rounded-full bg-gradient-to-br from-white/5 to-white/20 blur-2xl pointer-events-none" />
       </div>
-      {/* Decorative background circle */}
-      <div className="absolute -bottom-6 -right-6 w-24 h-24 rounded-full bg-gradient-to-br from-white/5 to-white/20 blur-2xl pointer-events-none" />
-    </div>
-  );
+    );
+  };
 
   const columns = [
     {
@@ -316,15 +345,19 @@ export default function ProductivitySummary() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <StatCard
               title="Productivity Expected"
-              value={`${(data.summary.productivityExpected * 100).toFixed(2)}%`}
+              value={data.summary.productivityExpected.toFixed(2)}
               icon={<Layers />}
+              subtitle={<span className="flex items-center gap-1.5 opacity-90 font-medium"><Clock size={12} /> Calculation is per hour</span>}
               delay={400}
+              colorTheme="purple"
             />
             <StatCard
               title="Productivity Produced"
-              value={`${(data.summary.productivityProduced * 100).toFixed(2)}%`}
+              value={data.summary.productivityProduced.toFixed(2)}
               icon={<PieChart />}
+              subtitle={<span className="flex items-center gap-1.5 opacity-90 font-medium"><Clock size={12} /> Calculation is per hour</span>}
               delay={500}
+              colorTheme="blue"
             />
           </div>
 

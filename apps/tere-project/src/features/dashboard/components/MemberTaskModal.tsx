@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
-import { Modal } from 'antd';
+import { useState } from 'react';
+import { Modal, Select } from 'antd';
 import {
   TagOutlined,
   UserOutlined,
@@ -260,32 +260,21 @@ function TicketListSkeleton() {
   );
 }
 
-// --- Loading More Indicator ---
-function LoadingMoreIndicator() {
-  return (
-    <div className="flex items-center justify-center gap-2 py-4 text-purple-500">
-      <LoadingOutlined className="text-lg animate-spin" />
-      <span className="text-xs font-medium text-gray-500">Loading more tasks...</span>
-    </div>
-  );
-}
-
 // --- Main Modal ---
 export default function MemberTaskModal({ open, onClose, member }: MemberTaskModalProps) {
-  const { issues, isLoading, isFetchingMore, hasMore, fetchMore, totalKeys } = useMemberIssues(
+  const { issues, isLoading, totalKeys } = useMemberIssues(
     member?.issueKeys ?? [],
     open && !!member,
   );
-  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Infinite scroll handler
-  const handleScroll = useCallback(() => {
-    if (!scrollRef.current || isFetchingMore || !hasMore) return;
-    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    if (scrollTop + clientHeight >= scrollHeight - 80) {
-      fetchMore();
-    }
-  }, [hasMore, isFetchingMore, fetchMore]);
+  const [sortBy, setSortBy] = useState<'wp-desc' | 'wp-asc' | 'default'>('wp-desc');
+
+  const sortedIssues = [...issues].sort((a, b) => {
+    if (sortBy === 'default') return 0;
+    const wpA = a.totalWeightPoints ?? 0;
+    const wpB = b.totalWeightPoints ?? 0;
+    return sortBy === 'wp-desc' ? wpB - wpA : wpA - wpB;
+  });
 
   return (
     <Modal
@@ -315,9 +304,25 @@ export default function MemberTaskModal({ open, onClose, member }: MemberTaskMod
               <h2 className="text-xl font-bold text-gray-800">
                 {member?.member}
               </h2>
-              <span className="text-sm text-gray-500 font-medium">
-                {issues.length}/{totalKeys} tasks loaded
-              </span>
+              <div className="flex items-center gap-4">
+                <Select
+                  value={sortBy}
+                  onChange={(value) => setSortBy(value)}
+                  options={[
+                    { value: 'wp-desc', label: 'WP: High to Low' },
+                    { value: 'wp-asc', label: 'WP: Low to High' },
+                    { value: 'default', label: 'Default' },
+                  ]}
+                  size="small"
+                  className="w-40 min-w-40 bg-white/50 backdrop-blur-md rounded-lg shadow-sm border border-gray-200/50"
+                  bordered={false}
+                  popupMatchSelectWidth={false}
+                  dropdownStyle={{ zIndex: 1100 }}
+                />
+                <span className="text-sm text-gray-500 font-medium whitespace-nowrap">
+                  {issues.length}/{totalKeys} tasks loaded
+                </span>
+              </div>
             </div>
 
             {/* Stats row */}
@@ -338,46 +343,29 @@ export default function MemberTaskModal({ open, onClose, member }: MemberTaskMod
           </div>
         </div>
 
-        {/* Task List with infinite scroll */}
+        {/* Task List */}
         <div
-          ref={scrollRef}
-          onScroll={handleScroll}
           className="px-6 pb-6 max-h-[60vh] overflow-y-auto scroll-smooth"
           style={{ scrollBehavior: 'smooth' }}
         >
           {isLoading ? (
             <TicketListSkeleton />
-          ) : issues.length === 0 ? (
+          ) : sortedIssues.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               <TagOutlined className="text-3xl mb-2" />
               <p className="text-sm">No tasks found</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {issues.map((ticket, index) => (
+              {sortedIssues.map((ticket, index) => (
                 <TicketItem key={ticket.key} ticket={ticket} index={index} />
               ))}
 
-              {/* Loading more */}
-              {isFetchingMore && <LoadingMoreIndicator />}
-
-              {/* Scroll hint */}
-              {hasMore && !isFetchingMore && (
-                <div className="text-center py-3">
-                  <p className="text-xs text-gray-400 animate-pulse">
-                    ↓ Scroll for more tasks
-                  </p>
-                </div>
-              )}
-
-              {/* All loaded */}
-              {!hasMore && issues.length > 0 && (
-                <div className="text-center py-3">
-                  <p className="text-xs text-gray-400">
-                    All {issues.length} tasks loaded
-                  </p>
-                </div>
-              )}
+              <div className="text-center py-3">
+                <p className="text-xs text-gray-400">
+                  All {issues.length} tasks loaded
+                </p>
+              </div>
             </div>
           )}
         </div>
