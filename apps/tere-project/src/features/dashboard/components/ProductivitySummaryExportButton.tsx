@@ -1,5 +1,5 @@
 'use client';
-import { Button } from 'antd';
+import { Button, App } from 'antd';
 import { FileExcelOutlined, LoadingOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import { useExportProductivitySummary } from '../hooks/useExportProductivitySummary';
@@ -16,6 +16,7 @@ export function ProductivitySummaryExportButton({ month, year, onSuccess, onErro
   const { startExportFlow, isExporting } = useExportProductivitySummary();
   const [isHovered, setIsHovered] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const { notification } = App.useApp();
 
   const handleExport = async () => {
     try {
@@ -25,13 +26,42 @@ export function ProductivitySummaryExportButton({ month, year, onSuccess, onErro
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 2000);
 
+      // Notify user via Ant Design notification
+      if (result?.spreadsheetUrl) {
+        notification.success({
+          message: 'Export Successful',
+          description: (
+            <span>
+              The summary has been exported to Google Drive.{' '}
+              <a 
+                href={result.spreadsheetUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-purple-600 underline font-medium hover:text-purple-700"
+              >
+                Open Spreadsheet
+              </a>
+            </span>
+          ),
+          duration: 9,
+          placement: 'topRight',
+        });
+      }
+
       // Notify parent component
       if (result?.spreadsheetUrl) {
         onSuccess?.(result.spreadsheetUrl);
-        // Also open spreadsheet in new tab
+        // Also open spreadsheet in new tab automatically
         window.open(result.spreadsheetUrl, '_blank');
       }
     } catch (error) {
+      notification.error({
+        message: 'Export Failed',
+        description: 'An error occurred while exporting the spreadsheet. Please try again.',
+        duration: 9,
+        placement: 'topRight',
+      });
+
       // Notify parent component of error
       onError?.();
       console.error('Export failed:', error);
