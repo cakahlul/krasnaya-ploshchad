@@ -51,7 +51,8 @@ export function useExportProductivitySummary() {
       });
 
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Export HTTP Error:', error?.response?.data || error);
       throw error;
     } finally {
       setIsExporting(false);

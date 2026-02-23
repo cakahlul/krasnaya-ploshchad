@@ -3,6 +3,7 @@ import { ReportsService } from './reports.service';
 import { ProductivitySummaryResponseDto, ProductivitySummaryMemberDto } from './interfaces/productivity-summary.dto';
 import { Level } from 'src/shared/enums/level.enum';
 import { GoogleSheetsClient } from '../talent-leave/clients/google-sheets.client';
+import { teamMembers } from 'src/shared/constants/team-member.const';
 
 @Injectable()
 export class ProductivitySummaryService {
@@ -53,8 +54,11 @@ export class ProductivitySummaryService {
         const targetWp = issue.targetWeightPoints || 0;
         const expectedAverageWp = workingDays > 0 ? targetWp / workingDays : 0;
 
+        const memberInfo = teamMembers.find(m => m.name === issue.member);
+        const displayName = memberInfo?.fullName || issue.member;
+
         details.push({
-          name: issue.member,
+          name: displayName,
           team: teamName,
           wpProduct,
           wpTech,
@@ -138,14 +142,15 @@ export class ProductivitySummaryService {
       
       // Summary Data
       values.push(['Total Days of Works', data.summary.totalDaysOfWorks]);
-      values.push(['Total WP Expected', data.summary.totalWpExpected.toFixed(2)]);
-      values.push(['Average WP Expected', data.summary.averageWpExpected.toFixed(2)]);
-      values.push(['Productivity Expected', `${(data.summary.productivityExpected * 100).toFixed(2)}%`]);
-      values.push(['Total WP Produced', data.summary.totalWpProduced.toFixed(2)]);
-      values.push(['Average WP Produced', data.summary.averageWpProduced.toFixed(2)]);
-      values.push(['Productivity Produced', `${(data.summary.productivityProduced * 100).toFixed(2)}%`]);
+      const safeNumber = (val: number) => !isFinite(val) ? 0 : Number(val.toFixed(2));
+
+      values.push(['Total WP Expected', safeNumber(data.summary.totalWpExpected)]);
+      values.push(['Average WP Expected', safeNumber(data.summary.averageWpExpected)]);
+      values.push(['Productivity Expected', safeNumber(data.summary.productivityExpected)]);
+      values.push(['Total WP Produced', safeNumber(data.summary.totalWpProduced)]);
+      values.push(['Average WP Produced', safeNumber(data.summary.averageWpProduced)]);
+      values.push(['Productivity Produced', safeNumber(data.summary.productivityProduced)]);
       values.push(['Produce vs Expected', `${(data.summary.productivityProduceVsExpected * 100).toFixed(2)}%`]);
-      values.push([]);
       values.push([]);
 
       // Detailed Member Table Header
@@ -168,9 +173,9 @@ export class ProductivitySummaryService {
           member.workingDays,
           member.wpProduct,
           member.wpTech,
-          Number(member.wpTotal.toFixed(2)),
-          Number(member.averageWp.toFixed(2)),
-          Number(member.expectedAverageWp.toFixed(2))
+          Number(member.wpTotal.toFixed(2)) || 0,
+          Number(member.averageWp.toFixed(2)) || 0,
+          Number(member.expectedAverageWp.toFixed(2)) || 0
         ]);
       });
 
@@ -263,6 +268,7 @@ export class ProductivitySummaryService {
           sheets: [
             {
               properties: {
+                sheetId: 0,
                 title: 'Summary',
                 gridProperties: { rowCount: values.length + 10, columnCount: 10 },
               },

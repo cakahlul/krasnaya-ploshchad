@@ -12,6 +12,7 @@ export const teamMembers: TeamMember[] = [
     email: 'lekha.sholehati@amarbank.co.id',
     team: [TEAM_FUNDING, TEAM_LENDING],
     level: Level[LEVEL_JUNIOR],
+    fullName: 'Lekha Sholehati',
   },
   {
     name: 'Tasrifin',
@@ -19,6 +20,7 @@ export const teamMembers: TeamMember[] = [
     email: 'tasrifin@amarbank.co.id',
     team: [TEAM_LENDING],
     level: Level[LEVEL_MEDIOR],
+    fullName: 'Tasrifin',
   },
   {
     name: 'Luqman',
@@ -26,6 +28,7 @@ export const teamMembers: TeamMember[] = [
     email: 'luqman.nugroho@amarbank.co.id',
     team: [TEAM_LENDING],
     level: Level[LEVEL_SENIOR],
+    fullName: 'Luqman Hakim Krisna Nugroho',
   },
   {
     name: 'Arijona',
@@ -33,6 +36,7 @@ export const teamMembers: TeamMember[] = [
     email: 'arijona.purba@amarbank.co.id',
     team: [TEAM_LENDING],
     level: Level[LEVEL_JUNIOR],
+    fullName: 'Arijona Purba',
   },
   {
     name: 'Irvandy',
@@ -40,6 +44,7 @@ export const teamMembers: TeamMember[] = [
     email: 'irvandy.hartono@amarbank.co.id',
     team: [TEAM_FUNDING, TEAM_LENDING],
     level: Level[LEVEL_MEDIOR],
+    fullName: 'Irvandy Hartono',
   },
   {
     name: 'Tryse',
@@ -47,6 +52,7 @@ export const teamMembers: TeamMember[] = [
     email: 'tryse.rezza@amarbank.co.id',
     team: [TEAM_LENDING],
     level: Level[LEVEL_SENIOR],
+    fullName: 'Tryse Rezza',
   },
   {
     name: 'Dito',
@@ -54,6 +60,7 @@ export const teamMembers: TeamMember[] = [
     email: 'dito.laksono@amarbank.co.id',
     team: [TEAM_FUNDING, TEAM_LENDING],
     level: Level[LEVEL_SENIOR],
+    fullName: 'Dito Laksono Yudha Putra',
   },
   {
     name: 'Fharied',
@@ -61,6 +68,7 @@ export const teamMembers: TeamMember[] = [
     email: 'fharied.fhaturrachman@amarbank.co.id',
     team: [TEAM_LENDING],
     level: Level[LEVEL_MEDIOR],
+    fullName: 'Fharied Fhaturrachman',
   },
   {
     name: 'Ruth',
@@ -68,6 +76,7 @@ export const teamMembers: TeamMember[] = [
     email: 'ruth.hutauruk@amarbank.co.id',
     team: [TEAM_FUNDING],
     level: Level[LEVEL_MEDIOR],
+    fullName: 'Ruth Natasya',
   },
   {
     name: 'Mike',
@@ -75,6 +84,7 @@ export const teamMembers: TeamMember[] = [
     email: 'michael.william@amarbank.co.id',
     team: [TEAM_FUNDING],
     level: Level[LEVEL_JUNIOR],
+    fullName: 'Michael William',
   },
   {
     name: 'Dala',
@@ -82,6 +92,7 @@ export const teamMembers: TeamMember[] = [
     email: 'iketut.cahyoga@amarbank.co.id',
     team: [TEAM_FUNDING],
     level: Level[LEVEL_JUNIOR],
+    fullName: 'I Ketut Dala Cahyoga',
   },
   {
     name: 'Tara',
@@ -89,6 +100,7 @@ export const teamMembers: TeamMember[] = [
     email: 'tara.desyafriben@amarbank.co.id',
     team: [TEAM_FUNDING, TEAM_LENDING],
     level: Level[LEVEL_SENIOR],
+    fullName: 'Tara Desyafriben',
   },
   {
     name: 'Tommy',
@@ -96,5 +108,6 @@ export const teamMembers: TeamMember[] = [
     email: 'tommy.putranto@amarbank.co.id',
     team: [TEAM_FUNDING],
     level: Level[LEVEL_SENIOR],
+    fullName: 'Tommy Dwi Putranto',
   },
 ];
