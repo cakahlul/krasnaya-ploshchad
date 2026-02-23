@@ -7,9 +7,12 @@ import { TalentLeaveRepository } from './repositories/talent-leave.repository';
 import { TalentLeaveExportService } from './talent-leave-export.service';
 import { GoogleSheetsClient } from './clients/google-sheets.client';
 
+import { HolidaysModule } from '../holidays/holidays.module';
+
 @Module({
   imports: [
     HttpModule,
+    HolidaysModule,
     ThrottlerModule.forRoot([
       {
         ttl: 3600000, // 1 hour in milliseconds

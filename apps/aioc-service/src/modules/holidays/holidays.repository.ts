@@ -1,112 +1,140 @@
-import { Injectable, Logger } from '@nestjs/common';
-import axios from 'axios';
+import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import admin from '../../firebase/firebase-admin';
 
-/**
- * Response format from the external holiday API (libur.deno.dev)
- */
-interface ExternalHolidayResponse {
-  date: string;   // e.g., "2026-01-01"
-  name: string;   // e.g., "Tahun Baru 2026 Masehi"
-}
-
-/**
- * Internal holiday interface used in business logic
- */
 export interface Holiday {
-  holiday_date: string;      // e.g., "2026-01-01"
-  holiday_name: string;      // e.g., "Tahun Baru 2026 Masehi"
-  is_national_holiday: boolean;  // true for national holidays (defaults to true)
+  id?: string;
+  holiday_date: string;      // e.g., "2026-01-01" (maps to Firestore 'date')
+  holiday_name: string;      // e.g., "Tahun Baru 2026 Masehi" (maps to Firestore 'name')
+  is_national_holiday: boolean;  // true for national holidays
 }
 
 @Injectable()
 export class HolidaysRepository {
   private readonly logger = new Logger(HolidaysRepository.name);
-  private readonly baseUrl = 'https://libur.deno.dev/api';
-  
-  // Cache to store fetched holidays by year
-  private readonly cache = new Map<number, Holiday[]>();
-  private readonly cacheTTL = 24 * 60 * 60 * 1000; // 24 hours
-  private readonly cacheTimestamps = new Map<number, number>();
+  private readonly firestore: admin.firestore.Firestore;
+  private readonly collectionName = 'holiday';
 
-  /**
-   * Fetch holidays for a specific year from the external API
-   * @param year The year to fetch holidays for
-   * @returns Array of Holiday objects
-   */
-  async fetchHolidaysByYear(year: number): Promise<Holiday[]> {
-    // Check cache first
-    const cachedData = this.cache.get(year);
-    const cacheTimestamp = this.cacheTimestamps.get(year);
-    
-    if (cachedData && cacheTimestamp && (Date.now() - cacheTimestamp) < this.cacheTTL) {
-      this.logger.debug(`Using cached holidays for year ${year}`);
-      return cachedData;
-    }
+  constructor() {
+    this.firestore = admin.firestore();
+  }
 
+  async findAll(): Promise<Holiday[]> {
     try {
-      this.logger.log(`Fetching holidays for year ${year} from external API`);
-      
-      const response = await axios.get<ExternalHolidayResponse[]>(this.baseUrl, {
-        params: { year },
-        timeout: 10000,
+      const snapshot = await this.firestore.collection(this.collectionName).get();
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          holiday_date: data.date,
+          holiday_name: data.name,
+          is_national_holiday: data.is_national_holiday !== false // Default to true if missing
+        };
       });
-
-      if (!response.data || !Array.isArray(response.data)) {
-        this.logger.warn(`Invalid response format from holiday API for year ${year}`);
-        return [];
-      }
-
-      // Transform external API response to internal Holiday format
-      const holidays: Holiday[] = response.data.map((item) => ({
-        holiday_date: item.date,
-        holiday_name: item.name,
-        // Default to true if is_national_holiday is not provided by the API
-        is_national_holiday: true,
-      }));
-
-      // Update cache
-      this.cache.set(year, holidays);
-      this.cacheTimestamps.set(year, Date.now());
-
-      this.logger.log(`Fetched ${holidays.length} holidays for year ${year}`);
-      return holidays;
-
     } catch (error) {
-      this.logger.error(`Failed to fetch holidays for year ${year}: ${error.message}`);
-      
-      // Return cached data if available, even if expired
-      if (cachedData) {
-        this.logger.warn(`Using expired cache for year ${year}`);
-        return cachedData;
-      }
-      
+      this.logger.error(`Error fetching holidays: ${error.message}`);
+      throw new InternalServerErrorException('Failed to fetch holidays');
+    }
+  }
+
+  async fetchHolidaysByYear(year: number): Promise<Holiday[]> {
+    try {
+      const start = `${year}-01-01`;
+      const end = `${year}-12-31`;
+      const snapshot = await this.firestore.collection(this.collectionName)
+        .where('date', '>=', start)
+        .where('date', '<=', end)
+        .get();
+
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          holiday_date: data.date,
+          holiday_name: data.name,
+          is_national_holiday: data.is_national_holiday !== false
+        };
+      });
+    } catch (error) {
+      this.logger.error(`Error fetching holidays by year: ${error.message}`);
       return [];
     }
   }
 
-  /**
-   * Fetch holidays for multiple years
-   * @param years Array of years to fetch
-   * @returns Array of all holidays across the specified years
-   */
   async fetchHolidaysForYears(years: number[]): Promise<Holiday[]> {
-    const uniqueYears = [...new Set(years)];
-    const allHolidays: Holiday[] = [];
+    if (!years || years.length === 0) return [];
+    
+    const minYear = Math.min(...years);
+    const maxYear = Math.max(...years);
+    try {
+      const start = `${minYear}-01-01`;
+      const end = `${maxYear}-12-31`;
+      const snapshot = await this.firestore.collection(this.collectionName)
+        .where('date', '>=', start)
+        .where('date', '<=', end)
+        .get();
 
-    for (const year of uniqueYears) {
-      const holidays = await this.fetchHolidaysByYear(year);
-      allHolidays.push(...holidays);
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          holiday_date: data.date,
+          holiday_name: data.name,
+          is_national_holiday: data.is_national_holiday !== false
+        };
+      }).filter(h => {
+        const hYear = parseInt(h.holiday_date.substring(0, 4), 10);
+        return years.includes(hYear);
+      });
+    } catch (error) {
+      this.logger.error(`Error fetching holidays for multiple years: ${error.message}`);
+      return [];
     }
-
-    return allHolidays;
   }
 
-  /**
-   * Clear the cache (useful for testing or forced refresh)
-   */
-  clearCache(): void {
-    this.cache.clear();
-    this.cacheTimestamps.clear();
-    this.logger.log('Holiday cache cleared');
+  async create(data: { date: string; name: string; is_national_holiday?: boolean }): Promise<Holiday> {
+    try {
+      const isNational = data.is_national_holiday !== false;
+      const docRef = await this.firestore.collection(this.collectionName).add({
+        date: data.date,
+        name: data.name,
+        is_national_holiday: isNational
+      });
+      return {
+        id: docRef.id,
+        holiday_date: data.date,
+        holiday_name: data.name,
+        is_national_holiday: isNational
+      };
+    } catch (error) {
+      this.logger.error(`Error creating holiday: ${error.message}`);
+      throw new InternalServerErrorException('Failed to create holiday');
+    }
+  }
+
+  async delete(id: string): Promise<void> {
+    try {
+      await this.firestore.collection(this.collectionName).doc(id).delete();
+    } catch (error) {
+      this.logger.error(`Error deleting holiday: ${error.message}`);
+      throw new InternalServerErrorException('Failed to delete holiday');
+    }
+  }
+
+  async bulkCreate(holidays: Array<{ date: string; name: string }>): Promise<void> {
+    try {
+      const batch = this.firestore.batch();
+      holidays.forEach(holiday => {
+        const docRef = this.firestore.collection(this.collectionName).doc();
+        batch.set(docRef, {
+          date: holiday.date,
+          name: holiday.name,
+          is_national_holiday: true
+        });
+      });
+      await batch.commit();
+    } catch (error) {
+      this.logger.error(`Error in bulk create: ${error.message}`);
+      throw new InternalServerErrorException('Failed to bulk create holidays');
+    }
   }
 }

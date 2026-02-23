@@ -12,12 +12,13 @@ import { of, throwError } from 'rxjs';
 import { TalentLeaveExportService } from './talent-leave-export.service';
 import { TalentLeaveRepository } from './repositories/talent-leave.repository';
 import { GoogleSheetsClient } from './clients/google-sheets.client';
+import { HolidaysService } from '../holidays/holidays.service';
 
 describe('TalentLeaveExportService', () => {
   let service: TalentLeaveExportService;
   let repository: TalentLeaveRepository;
   let googleSheetsClient: GoogleSheetsClient;
-  let httpService: HttpService;
+  let holidaysService: HolidaysService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -42,13 +43,19 @@ describe('TalentLeaveExportService', () => {
             get: jest.fn(),
           },
         },
+        {
+          provide: HolidaysService,
+          useValue: {
+            getHolidaysByYear: jest.fn(),
+          }
+        },
       ],
     }).compile();
 
     service = module.get<TalentLeaveExportService>(TalentLeaveExportService);
     repository = module.get<TalentLeaveRepository>(TalentLeaveRepository);
     googleSheetsClient = module.get<GoogleSheetsClient>(GoogleSheetsClient);
-    httpService = module.get<HttpService>(HttpService);
+    holidaysService = module.get<HolidaysService>(HolidaysService);
   });
 
   describe('validateDateRange', () => {
@@ -57,6 +64,7 @@ describe('TalentLeaveExportService', () => {
         startDate: '2025-01-31',
         endDate: '2025-01-01',
         ownerEmail: 'test@example.com',
+        accessToken: 'mock-token',
       };
 
       await expect(service.exportToSpreadsheet(dto)).rejects.toThrow(
@@ -72,6 +80,7 @@ describe('TalentLeaveExportService', () => {
         startDate: '2025-01-01',
         endDate: '2025-04-10', // 99 days
         ownerEmail: 'test@example.com',
+        accessToken: 'mock-token',
       };
 
       await expect(service.exportToSpreadsheet(dto)).rejects.toThrow(
@@ -90,7 +99,7 @@ describe('TalentLeaveExportService', () => {
       };
 
       jest.spyOn(repository, 'findAll').mockResolvedValue([]);
-      jest.spyOn(httpService, 'get').mockReturnValue(of({ data: [] } as any));
+      jest.spyOn(holidaysService, 'getHolidaysByYear').mockResolvedValue([]);
       jest.spyOn(googleSheetsClient, 'createSpreadsheet').mockResolvedValue({
         spreadsheetId: 'test-id',
         spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/test-id',
@@ -135,9 +144,7 @@ describe('TalentLeaveExportService', () => {
 
     beforeEach(() => {
       jest.spyOn(repository, 'findAll').mockResolvedValue(mockLeaveRecords);
-      jest
-        .spyOn(httpService, 'get')
-        .mockReturnValue(of({ data: mockHolidays } as any));
+      jest.spyOn(holidaysService, 'getHolidaysByYear').mockResolvedValue(mockHolidays);
       jest.spyOn(googleSheetsClient, 'createSpreadsheet').mockResolvedValue({
         spreadsheetId: 'test-spreadsheet-id',
         spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/test-id',
@@ -153,39 +160,34 @@ describe('TalentLeaveExportService', () => {
       });
     });
 
-    it('should fetch holidays from api-harilibur.vercel.app using HTTP service', async () => {
+    it('should fetch holidays from internal HolidaysService', async () => {
       await service.exportToSpreadsheet(validDto);
 
-      expect(httpService.get).toHaveBeenCalledWith(
-        'https://api-harilibur.vercel.app/api?year=2025&month=1',
-      );
+      expect(holidaysService.getHolidaysByYear).toHaveBeenCalledWith(2025);
     });
 
-    it('should continue without holidays if API fails (graceful degradation)', async () => {
+    it('should continue without holidays if service fails (graceful degradation)', async () => {
       jest
-        .spyOn(httpService, 'get')
-        .mockReturnValue(throwError(() => new Error('API Error')));
+        .spyOn(holidaysService, 'getHolidaysByYear')
+        .mockRejectedValue(new Error('Internal Service Error'));
 
       const result = await service.exportToSpreadsheet(validDto);
 
       expect(result.success).toBe(true);
     });
 
-    it('should fetch holidays for multiple months if date range spans months', async () => {
-      const crossMonthDto = {
-        startDate: '2025-01-25',
-        endDate: '2025-02-05',
+    it('should fetch holidays for multiple years if date range spans years', async () => {
+      const crossYearDto = {
+        startDate: '2025-12-25',
+        endDate: '2026-01-05',
         ownerEmail: 'test@example.com',
+        accessToken: 'mock-token',
       };
 
-      await service.exportToSpreadsheet(crossMonthDto);
+      await service.exportToSpreadsheet(crossYearDto);
 
-      expect(httpService.get).toHaveBeenCalledWith(
-        'https://api-harilibur.vercel.app/api?year=2025&month=1',
-      );
-      expect(httpService.get).toHaveBeenCalledWith(
-        'https://api-harilibur.vercel.app/api?year=2025&month=2',
-      );
+      expect(holidaysService.getHolidaysByYear).toHaveBeenCalledWith(2025);
+      expect(holidaysService.getHolidaysByYear).toHaveBeenCalledWith(2026);
     });
 
     it('should create spreadsheet using GoogleSheetsClient', async () => {
@@ -196,15 +198,6 @@ describe('TalentLeaveExportService', () => {
         expect.any(Array),
         expect.any(Array),
         expect.any(Object),
-      );
-    });
-
-    it('should transfer ownership using GoogleSheetsClient', async () => {
-      await service.exportToSpreadsheet(validDto);
-
-      expect(googleSheetsClient.transferOwnership).toHaveBeenCalledWith(
-        'test-spreadsheet-id',
-        'test@example.com',
       );
     });
 

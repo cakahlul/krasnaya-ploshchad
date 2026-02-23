@@ -19,12 +19,15 @@ import {
 } from './utils/calendar-data-transformer';
 import { formatDateDDMMYYYY } from './utils/date-utilities';
 
+import { HolidaysService } from '../holidays/holidays.service';
+
 @Injectable()
 export class TalentLeaveExportService {
   constructor(
     private readonly talentLeaveRepository: TalentLeaveRepository,
     private readonly googleSheetsClient: GoogleSheetsClient,
     private readonly httpService: HttpService,
+    private readonly holidaysService: HolidaysService,
   ) {}
 
   /**
@@ -45,7 +48,7 @@ export class TalentLeaveExportService {
         dto.endDate,
       );
 
-      // Fetch holidays from api-harilibur.vercel.app
+      // Fetch holidays from internal HolidaysService
       const holidays = await this.fetchHolidays(dto.startDate, dto.endDate);
 
       // Extract holiday dates for day count calculation
@@ -203,8 +206,7 @@ export class TalentLeaveExportService {
   }
 
   /**
-   * Fetch Indonesian holidays from api-harilibur.vercel.app
-   * Gracefully handles API failures by returning empty array
+   * Fetch holidays from internal HolidaysService
    */
   private async fetchHolidays(
     startDate: string,
@@ -213,93 +215,31 @@ export class TalentLeaveExportService {
     try {
       const start = new Date(startDate);
       const end = new Date(endDate);
+      const startYear = start.getFullYear();
+      const endYear = end.getFullYear();
 
-      // Get unique months in the date range
-      const months = this.getMonthsInRange(start, end);
-
-      // Fetch holidays for each month
-      const holidayPromises = months.map((month) =>
-        this.fetchHolidaysForMonth(month.year, month.month),
-      );
-
+      // Get all years in range
+      const years = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
+      
+      const holidayPromises = years.map(year => this.holidaysService.getHolidaysByYear(year));
       const holidayArrays = await Promise.all(holidayPromises);
-
-      // Flatten and filter to date range
+      
       const allHolidays = holidayArrays.flat();
 
-      return allHolidays.filter((holiday) => {
-        const holidayDate = new Date(holiday.date);
-        return holidayDate >= start && holidayDate <= end;
-      });
+      return allHolidays
+        .filter((holiday) => {
+          const holidayDate = new Date(holiday.holiday_date);
+          return holidayDate >= start && holidayDate <= end;
+        })
+        .map(h => ({
+          date: h.holiday_date,
+          name: h.holiday_name,
+          isNational: h.is_national_holiday
+        }));
     } catch (error) {
-      // Graceful degradation: continue without holidays if API fails
-      console.warn(
-        'Failed to fetch holidays, continuing without holiday data:',
-        error,
-      );
+      console.warn('Failed to fetch holidays, continuing without holiday data:', error);
       return [];
     }
-  }
-
-  /**
-   * Fetch holidays for a specific month from api-harilibur.vercel.app
-   */
-  private async fetchHolidaysForMonth(
-    year: number,
-    month: number,
-  ): Promise<Array<{ date: string; name: string; isNational: boolean }>> {
-    try {
-      const response = await firstValueFrom(
-        this.httpService.get(
-          `https://api-harilibur.vercel.app/api?year=${year}&month=${month}`,
-        ),
-      );
-
-      if (!response.data || !Array.isArray(response.data)) {
-        return [];
-      }
-
-      return response.data.map((holiday: any) => ({
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        date: holiday.holiday_date,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        name: holiday.holiday_name,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        isNational: holiday.is_national_holiday || false,
-      }));
-    } catch (error) {
-      console.warn(`Failed to fetch holidays for ${year}-${month}:`, error);
-      return [];
-    }
-  }
-
-  /**
-   * Get unique months in date range
-   */
-  private getMonthsInRange(
-    start: Date,
-    end: Date,
-  ): Array<{ year: number; month: number }> {
-    const months: Array<{ year: number; month: number }> = [];
-    const current = new Date(start);
-
-    while (current <= end) {
-      months.push({
-        year: current.getFullYear(),
-        month: current.getMonth() + 1, // API expects 1-12
-      });
-
-      // Move to next month
-      current.setMonth(current.getMonth() + 1);
-      current.setDate(1); // Reset to first day to avoid date overflow
-    }
-
-    // Remove duplicates
-    const unique = Array.from(
-      new Map(months.map((m) => [`${m.year}-${m.month}`, m])).values(),
-    );
-
-    return unique;
   }
 
   /**

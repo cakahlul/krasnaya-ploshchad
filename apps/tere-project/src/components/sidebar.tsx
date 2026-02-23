@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useMediaQuery } from 'react-responsive';
-import { LayoutDashboard, MonitorCheck, Calendar, Bug, TrendingUp } from 'lucide-react'; // Fun, clean icon set
+import { LayoutDashboard, MonitorCheck, Calendar, Bug, TrendingUp, Palmtree } from 'lucide-react'; // Fun, clean icon set
 import clsx from 'clsx';
 import { useUserAccess } from '@src/hooks/useUserAccess';
 import { useMemo } from 'react';
@@ -35,8 +35,14 @@ const menuItems = [
   {
     key: '/dashboard/talent-leave',
     label: 'Talent Leave',
-    icon: <Calendar className="w-5 h-5" />,
+    icon: <Palmtree className="w-5 h-5" />,
     roles: ['Lead', 'Member'], // Both roles can access
+  },
+  {
+    key: '/dashboard/holiday-management',
+    label: 'Holiday Management',
+    icon: <Calendar className="w-5 h-5" />, // Reusing Calendar icon
+    roles: ['Lead'], // Only Lead can access
   },
 ];
 

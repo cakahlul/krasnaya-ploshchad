@@ -71,9 +71,14 @@ describe('TalentLeaveRepository', () => {
       const entity: TalentLeaveEntity = {
         name: 'John Doe',
         team: 'Engineering',
-        dateFrom: new Date('2024-12-25T00:00:00Z'),
-        dateTo: new Date('2024-12-27T23:59:59Z'),
-        status: 'approved',
+        role: 'BE',
+        leaveDate: [
+          {
+            dateFrom: new Date('2024-12-25T00:00:00Z'),
+            dateTo: new Date('2024-12-27T23:59:59Z'),
+            status: 'approved',
+          }
+        ],
         createdAt: new Date('2024-11-10T10:00:00Z'),
         updatedAt: new Date('2024-11-10T10:00:00Z'),
       };
@@ -103,9 +108,14 @@ describe('TalentLeaveRepository', () => {
       const entity: TalentLeaveEntity = {
         name: 'John Doe',
         team: 'Engineering',
-        dateFrom: new Date('2024-12-25T00:00:00Z'),
-        dateTo: new Date('2024-12-27T23:59:59Z'),
-        status: 'approved',
+        role: 'BE',
+        leaveDate: [
+          {
+            dateFrom: new Date('2024-12-25T00:00:00Z'),
+            dateTo: new Date('2024-12-27T23:59:59Z'),
+            status: 'approved',
+          }
+        ],
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -127,9 +137,14 @@ describe('TalentLeaveRepository', () => {
           data: () => ({
             name: 'User 1',
             team: 'Engineering',
-            dateFrom: { toDate: () => new Date('2024-12-25T00:00:00Z') },
-            dateTo: { toDate: () => new Date('2024-12-27T23:59:59Z') },
-            status: 'approved',
+            role: 'BE',
+            leaveDate: [
+              {
+                dateFrom: { toDate: () => new Date('2024-12-25T00:00:00Z') },
+                dateTo: { toDate: () => new Date('2024-12-27T23:59:59Z') },
+                status: 'approved',
+              }
+            ],
             createdAt: { toDate: () => new Date('2024-11-10T10:00:00Z') },
             updatedAt: { toDate: () => new Date('2024-11-10T10:00:00Z') },
           }),
@@ -139,9 +154,14 @@ describe('TalentLeaveRepository', () => {
           data: () => ({
             name: 'User 2',
             team: 'Marketing',
-            dateFrom: { toDate: () => new Date('2024-12-26T00:00:00Z') },
-            dateTo: { toDate: () => new Date('2024-12-28T23:59:59Z') },
-            status: 'pending',
+            role: 'Content',
+            leaveDate: [
+              {
+                dateFrom: { toDate: () => new Date('2024-12-26T00:00:00Z') },
+                dateTo: { toDate: () => new Date('2024-12-28T23:59:59Z') },
+                status: 'pending',
+              }
+            ],
             createdAt: { toDate: () => new Date('2024-11-10T11:00:00Z') },
             updatedAt: { toDate: () => new Date('2024-11-10T11:00:00Z') },
           }),
@@ -178,9 +198,14 @@ describe('TalentLeaveRepository', () => {
           data: () => ({
             name: 'User 1',
             team: 'Engineering',
-            dateFrom: { toDate: () => new Date('2024-12-25T00:00:00Z') },
-            dateTo: { toDate: () => new Date('2024-12-27T23:59:59Z') },
-            status: 'approved',
+            role: 'BE',
+            leaveDate: [
+              {
+                dateFrom: { toDate: () => new Date('2024-12-25T00:00:00Z') },
+                dateTo: { toDate: () => new Date('2024-12-27T23:59:59Z') },
+                status: 'approved',
+              }
+            ],
             createdAt: { toDate: () => new Date('2024-11-10T10:00:00Z') },
             updatedAt: { toDate: () => new Date('2024-11-10T10:00:00Z') },
           }),
@@ -192,8 +217,8 @@ describe('TalentLeaveRepository', () => {
 
       const result = await repository.findAll();
 
-      expect(result[0].dateFrom instanceof Date).toBe(true);
-      expect(result[0].dateTo instanceof Date).toBe(true);
+      expect(result[0].leaveDate[0].dateFrom instanceof Date).toBe(true);
+      expect(result[0].leaveDate[0].dateTo instanceof Date).toBe(true);
       expect(result[0].createdAt instanceof Date).toBe(true);
       expect(result[0].updatedAt instanceof Date).toBe(true);
     });
@@ -204,9 +229,14 @@ describe('TalentLeaveRepository', () => {
       const mockData = {
         name: 'John Doe',
         team: 'Engineering',
-        dateFrom: { toDate: () => new Date('2024-12-25T00:00:00Z') },
-        dateTo: { toDate: () => new Date('2024-12-27T23:59:59Z') },
-        status: 'approved',
+        role: 'BE',
+        leaveDate: [
+          {
+            dateFrom: { toDate: () => new Date('2024-12-25T00:00:00Z') },
+            dateTo: { toDate: () => new Date('2024-12-27T23:59:59Z') },
+            status: 'approved',
+          }
+        ],
         createdAt: { toDate: () => new Date('2024-11-10T10:00:00Z') },
         updatedAt: { toDate: () => new Date('2024-11-10T10:00:00Z') },
       };
@@ -253,16 +283,27 @@ describe('TalentLeaveRepository', () => {
   describe('update', () => {
     it('should update existing document with partial data', async () => {
       const partialData: Partial<TalentLeaveEntity> = {
-        status: 'cancelled',
+        leaveDate: [
+          {
+            dateFrom: new Date('2024-12-25T00:00:00Z'),
+            dateTo: new Date('2024-12-27T23:59:59Z'),
+            status: 'cancelled',
+          }
+        ],
         updatedAt: new Date('2024-11-11T10:00:00Z'),
       };
 
       const mockUpdatedData = {
         name: 'John Doe',
         team: 'Engineering',
-        dateFrom: { toDate: () => new Date('2024-12-25T00:00:00Z') },
-        dateTo: { toDate: () => new Date('2024-12-27T23:59:59Z') },
-        status: 'cancelled',
+        role: 'BE',
+        leaveDate: [
+          {
+            dateFrom: { toDate: () => new Date('2024-12-25T00:00:00Z') },
+            dateTo: { toDate: () => new Date('2024-12-27T23:59:59Z') },
+            status: 'cancelled',
+          }
+        ],
         createdAt: { toDate: () => new Date('2024-11-10T10:00:00Z') },
         updatedAt: { toDate: () => new Date('2024-11-11T10:00:00Z') },
       };
@@ -284,7 +325,7 @@ describe('TalentLeaveRepository', () => {
       expect(mockDoc.update).toHaveBeenCalledWith(partialData);
       expect(result).toBeDefined();
       expect(result?.id).toBe('test-id-123');
-      expect(result?.status).toBe('cancelled');
+      expect(result?.leaveDate[0].status).toBe('cancelled');
     });
 
     it('should return null when document does not exist', async () => {
@@ -294,7 +335,13 @@ describe('TalentLeaveRepository', () => {
       mockDoc.get.mockResolvedValue(mockDoc);
 
       const result = await repository.update('non-existent-id', {
-        status: 'cancelled',
+        leaveDate: [
+          {
+            dateFrom: new Date('2024-12-25T00:00:00Z'),
+            dateTo: new Date('2024-12-27T23:59:59Z'),
+            status: 'cancelled',
+          }
+        ],
       });
 
       expect(result).toBeNull();

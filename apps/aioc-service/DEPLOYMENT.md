@@ -311,12 +311,11 @@ The rate limiting (10 requests/hour) ensures you stay well within these limits.
 **Note**: This is not a critical error. The export continues without holidays.
 
 **Possible causes:**
-1. **api-harilibur.vercel.app is down**
-   - The export gracefully degrades and continues without holiday data
-   - Check https://api-harilibur.vercel.app/api status
+1. **Firestore Connection Issues**
+   - Verify server can reach Firestore database
 
 2. **Network issues**
-   - Verify server can reach external APIs
+   - Verify server can reach internal APIs
 
 #### Debugging
 
