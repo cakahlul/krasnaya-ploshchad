@@ -214,7 +214,7 @@ describe('SpreadsheetStyleBuilder', () => {
       const countFormat = buildMemberCellFormat('count');
       expect(countFormat.horizontalAlignment).toBe('CENTER');
       expect(countFormat.textFormat.foregroundColor).toEqual(
-        hexToRgb(COLORS.countGreen),
+        hexToRgb('#D9D9D9'),
       );
       expect(countFormat.textFormat.bold).toBe(true);
 
