@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
+  darkMode: 'class',
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -16,6 +17,18 @@ const config: Config = {
         muted: '#e4dfda',
         darkBrown: '#63372c',
         card: '#ffffff',
+        'primary-brand': '#0f4c81',
+        'primary-hover': '#0a3a63',
+        'background-light': '#f8f9fa',
+        'background-dark': '#111827',
+        'card-light': '#ffffff',
+        'card-dark': '#1f2937',
+        'input-border-light': '#e5e7eb',
+        'input-border-dark': '#374151',
+        'text-main-light': '#1f2937',
+        'text-main-dark': '#f9fafb',
+        'text-sub-light': '#6b7280',
+        'text-sub-dark': '#9ca3af',
       },
       animation: {
         'bounce-up-down': 'bounce-up-down 0.4s ease-in-out',
@@ -25,6 +38,8 @@ const config: Config = {
         'fade-in': 'fade-in 0.4s ease-in-out',
         pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         bounce: 'bounce 1s infinite',
+        'slide-up-login': 'slideUpLogin 0.5s ease-out',
+        'float-login': 'floatLogin 6s ease-in-out infinite',
       },
       keyframes: {
         'bounce-up-down': {
@@ -52,6 +67,14 @@ const config: Config = {
         pulse: {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '.5' },
+        },
+        slideUpLogin: {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        floatLogin: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-20px)' },
         },
         bounce: {
           '0%, 100%': {
