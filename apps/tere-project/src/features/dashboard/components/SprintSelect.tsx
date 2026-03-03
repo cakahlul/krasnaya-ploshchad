@@ -75,11 +75,11 @@ export function SprintSelect({
     };
   }, [sprints, search]);
 
-  const selectedSprint = sprints.find(s => s.label === value);
+  const selectedSprint = sprints.find(s => String(s.value) === value);
   const totalFiltered = activeSprints.length + closedSprints.length;
 
   const handleSelect = (sprint: SprintOption) => {
-    onChange(sprint.label);
+    onChange(String(sprint.value));
     setOpen(false);
     setSearch('');
   };
@@ -184,7 +184,7 @@ export function SprintSelect({
                   <SprintItem
                     key={sprint.value}
                     sprint={sprint}
-                    selected={value === sprint.label}
+                    selected={value === String(sprint.value)}
                     onSelect={handleSelect}
                   />
                 ))}
@@ -203,7 +203,7 @@ export function SprintSelect({
                   <SprintItem
                     key={sprint.value}
                     sprint={sprint}
-                    selected={value === sprint.label}
+                    selected={value === String(sprint.value)}
                     onSelect={handleSelect}
                   />
                 ))}
