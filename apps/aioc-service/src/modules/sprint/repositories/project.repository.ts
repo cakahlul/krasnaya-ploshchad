@@ -15,8 +15,7 @@ export class ProjectRepository {
     const config = { auth: this.auth };
 
     const lastYear = new Date().getFullYear() - 1;
-    const yearStart = new Date(`${lastYear}-01-01T00:00:00Z`);
-    const yearEnd = new Date(`${lastYear}-12-31T23:59:59Z`);
+    const cutoffDate = new Date(`${lastYear}-01-01T00:00:00Z`);
 
     // Fetch active sprints
     const activeResponse = await axios.get<SprintEntity>(
@@ -25,7 +24,7 @@ export class ProjectRepository {
     );
     const activeSprints = activeResponse.data.values;
 
-    // Paginate through closed sprints, collecting those from last year
+    // Paginate through closed sprints, collecting those from last year onwards
     const closedSprints: Sprint[] = [];
     const pageSize = 50;
     let startAt = 0;
@@ -43,7 +42,7 @@ export class ProjectRepository {
 
       for (const sprint of values) {
         const sprintStart = new Date(sprint.startDate);
-        if (sprintStart >= yearStart && sprintStart <= yearEnd) {
+        if (sprintStart >= cutoffDate) {
           closedSprints.push(sprint);
         }
       }
