@@ -21,7 +21,9 @@ export const login = (email: string, password: string) => {
   return signInWithEmailAndPassword(auth, email, password);
 };
 
-export const logout = () => {
+export const logout = async () => {
+  // Clear the server-side session cookie
+  await fetch('/api/auth/session', { method: 'DELETE' });
   return signOut(auth);
 };
 

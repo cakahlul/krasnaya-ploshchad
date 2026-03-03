@@ -2,8 +2,22 @@
 
 import { useState, FormEvent, useEffect } from 'react';
 import { login, signInWithGoogle } from '@src/lib/auth';
+import { getAuth } from 'firebase/auth';
 import useUser from '@src/hooks/useUser';
 import { useRouter } from 'next/navigation';
+
+async function createSessionCookie() {
+  const auth = getAuth();
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const idToken = await user.getIdToken();
+  await fetch('/api/auth/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idToken }),
+  });
+}
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -29,6 +43,7 @@ export default function SignIn() {
     setLoading(true);
     try {
       await login(email, password);
+      await createSessionCookie();
       setSuccess(true);
       setTimeout(() => {
         router.push('/dashboard');
@@ -197,6 +212,7 @@ export default function SignIn() {
               setLoading(true);
               try {
                 await signInWithGoogle();
+                await createSessionCookie();
                 setSuccess(true);
                 setTimeout(() => {
                   router.push('/dashboard');
