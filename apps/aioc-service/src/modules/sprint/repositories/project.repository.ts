@@ -14,25 +14,40 @@ export class ProjectRepository {
     const baseUrl = `${this.url}/rest/agile/1.0/board/${boardId}/sprint`;
     const config = { auth: this.auth };
 
-    // Fetch active sprints and get closed sprint count in parallel
-    const [activeResponse, closedCountResponse] = await Promise.all([
-      axios.get<SprintEntity>(`${baseUrl}?state=active`, config),
-      axios.get<SprintEntity>(`${baseUrl}?state=closed&maxResults=1`, config),
-    ]);
+    const lastYear = new Date().getFullYear() - 1;
+    const yearStart = new Date(`${lastYear}-01-01T00:00:00Z`);
+    const yearEnd = new Date(`${lastYear}-12-31T23:59:59Z`);
 
-    const activeSprints = activeResponse.data.values;
-
-    // Calculate startAt to get only the last 6 closed sprints
-    const closedTotal = closedCountResponse.data.total;
-    const closedLimit = 6;
-    const closedStartAt = Math.max(0, closedTotal - closedLimit);
-
-    const closedResponse = await axios.get<SprintEntity>(
-      `${baseUrl}?state=closed&maxResults=${closedLimit}&startAt=${closedStartAt}`,
+    // Fetch active sprints
+    const activeResponse = await axios.get<SprintEntity>(
+      `${baseUrl}?state=active`,
       config,
     );
+    const activeSprints = activeResponse.data.values;
 
-    const closedSprints = closedResponse.data.values;
+    // Paginate through closed sprints, collecting those from last year
+    const closedSprints: Sprint[] = [];
+    const pageSize = 50;
+    let startAt = 0;
+    let isLast = false;
+
+    while (!isLast) {
+      const response = await axios.get<SprintEntity>(
+        `${baseUrl}?state=closed&maxResults=${pageSize}&startAt=${startAt}`,
+        config,
+      );
+
+      const { values, isLast: last } = response.data;
+      isLast = last;
+      startAt += pageSize;
+
+      for (const sprint of values) {
+        const sprintStart = new Date(sprint.startDate);
+        if (sprintStart >= yearStart && sprintStart <= yearEnd) {
+          closedSprints.push(sprint);
+        }
+      }
+    }
 
     return [...closedSprints, ...activeSprints];
   }
