@@ -1,43 +1,65 @@
 /* Custom styles for bug monitoring */
 
-/* Tab styling for better contrast */
-.bug-monitoring-tabs .ant-tabs-tab {
-  font-weight: 500;
-  transition: all 0.3s ease;
-  border: 2px solid transparent !important;
-  background: #f3f4f6 !important;
-  margin-right: 8px !important;
+/* Modern glassmorphism tabs styling */
+.custom-modern-tabs .ant-tabs-tab {
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #e5e7eb !important;
+  background: rgba(243, 244, 246, 0.7) !important;
+  backdrop-filter: blur(8px);
+  margin-right: 12px !important;
+  border-radius: 12px 12px 0 0 !important;
+  padding: 12px 24px !important;
 }
 
-.bug-monitoring-tabs .ant-tabs-tab:hover {
+.custom-modern-tabs .ant-tabs-tab:hover {
   transform: translateY(-2px);
-  background: #e5e7eb !important;
+  background: rgba(229, 231, 235, 0.9) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
-.bug-monitoring-tabs .ant-tabs-tab-active {
-  font-weight: 700 !important;
+.custom-modern-tabs .ant-tabs-tab-active {
   background: #ffffff !important;
-  border: 2px solid #3b82f6 !important;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2) !important;
+  border: 1px solid #e5e7eb !important;
+  border-bottom: 1px solid #ffffff !important;
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.02) !important;
+  z-index: 10;
 }
 
-.bug-monitoring-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
-  color: #1e40af !important;
+.custom-modern-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #111827 !important;
 }
 
-/* Enhance the tag colors in active tab */
-.bug-monitoring-tabs .ant-tabs-tab-active .ant-tag {
-  font-weight: 700;
-  border-width: 2px;
+.custom-modern-tabs .ant-tabs-nav {
+  margin-bottom: 20px !important;
 }
 
-/* Tab bar border */
-.bug-monitoring-tabs .ant-tabs-nav {
-  margin-bottom: 16px !important;
+.custom-modern-tabs .ant-tabs-nav::before {
+  border-bottom: 1px solid #e5e7eb !important;
 }
 
-.bug-monitoring-tabs .ant-tabs-nav::before {
-  border-bottom: 2px solid #e5e7eb !important;
+/* Table styling enhancements */
+.custom-modern-tabs .ant-table-wrapper {
+  background: transparent;
+}
+.custom-modern-tabs .ant-table {
+  background: transparent;
+}
+.custom-modern-tabs .ant-table-thead > tr > th {
+  background: #f9fafb !important;
+  font-weight: 600;
+  color: #4b5563;
+  border-bottom: 2px solid #f3f4f6 !important;
+  padding-top: 16px !important;
+  padding-bottom: 16px !important;
+}
+.custom-modern-tabs .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #f3f4f6 !important;
+  padding-top: 16px !important;
+  padding-bottom: 16px !important;
+}
+.custom-modern-tabs .ant-table-tbody > tr.ant-table-row:hover > td {
+  background: #f9fafb !important;
 }
 
 /* Pulse animation for high-priority bugs */
