@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Card, Segmented, DatePicker, Row, Col } from 'antd';
+import { Segmented, DatePicker, Row, Col } from 'antd';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 import type { Bug } from '../types/bug-monitoring.types';
@@ -135,113 +135,127 @@ export default function BugTrendChart({ bugs, showActiveOnly }: BugTrendChartPro
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="mb-6"
+      className="mb-8"
     >
-      <Card
-        title={
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <span className="text-lg font-bold text-gray-800">📈 {showActiveOnly ? 'Active Bugs Trend' : 'Bug Trends'}</span>
-              <p className="text-xs text-gray-500 font-normal mt-1">
-                {showActiveOnly ? 'Cumulative Active bugs over time' : 'Cumulative Active vs Closed bugs over time'}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Segmented
-                size="small"
-                options={[
-                  { label: 'Week', value: 'week' },
-                  { label: 'Month', value: 'month' },
-                  { label: 'Year', value: 'year' },
-                  { label: 'Custom', value: 'custom' },
-                ]}
-                value={timeRange}
-                onChange={handleTimeRangeChange}
-              />
-              {timeRange === 'custom' && (
-                <RangePicker
-                  size="small"
-                  value={customDateRange}
-                  onChange={(dates) => {
-                    if (dates) {
-                        setCustomDateRange(dates as [Dayjs, Dayjs]);
-                        setTimeRange('custom');
-                    }
-                  }}
-                  format="MMM D, YYYY"
-                />
-              )}
-            </div>
+      <div className="bg-white/90 backdrop-blur-sm shadow-sm border border-gray-100 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+        
+        {/* Header content matching the previous Card Title */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-6 border-b border-gray-100 bg-gray-50/50">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <span className="text-2xl animate-pulse">📈</span> 
+              {showActiveOnly ? 'Active Bugs Trend' : 'Bug Trends'}
+            </h2>
+            <p className="text-sm text-gray-500 font-medium mt-1">
+              {showActiveOnly ? 'Cumulative Active bugs over time' : 'Cumulative Active vs Closed bugs over time'}
+            </p>
           </div>
-        }
-        className="shadow-md hover:shadow-lg transition-shadow duration-300"
-      >
-        <div className="flex gap-6 mb-4">
-            <div>
-                <p className="text-sm text-gray-500">Current Active</p>
-                <p className="text-2xl font-bold text-red-500">{currentActive}</p>
-            </div>
-            {!showActiveOnly && (
-            <div>
-                <p className="text-sm text-gray-500">Total Closed</p>
-                <p className="text-2xl font-bold text-green-500">{currentClosed}</p>
-            </div>
+          <div className="flex items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-100">
+            <Segmented
+              size="middle"
+              options={[
+                { label: 'Week', value: 'week' },
+                { label: 'Month', value: 'month' },
+                { label: 'Year', value: 'year' },
+                { label: 'Custom', value: 'custom' },
+              ]}
+              value={timeRange}
+              onChange={handleTimeRangeChange}
+              className="font-medium"
+            />
+            {timeRange === 'custom' && (
+              <RangePicker
+                size="middle"
+                value={customDateRange}
+                onChange={(dates) => {
+                  if (dates) {
+                      setCustomDateRange(dates as [Dayjs, Dayjs]);
+                      setTimeRange('custom');
+                  }
+                }}
+                format="MMM D, YYYY"
+                className="rounded-lg font-medium"
+              />
             )}
+          </div>
         </div>
 
-        <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <defs>
-                        <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#EF4444" stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
-                        </linearGradient>
-                        <linearGradient id="colorClosed" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10B981" stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                        </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                    <XAxis 
-                        dataKey="date" 
-                        tick={{ fontSize: 12, fill: '#6B7280' }} 
-                        axisLine={false}
-                        tickLine={false}
-                    />
-                    <YAxis 
-                        tick={{ fontSize: 12, fill: '#6B7280' }}
-                        axisLine={false}
-                        tickLine={false}
-                    />
-                    <Tooltip 
-                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    />
-                    <Legend />
-                    <Area 
-                        type="monotone" 
-                        dataKey="active" 
-                        name="Active Bugs"
-                        stroke="#EF4444" 
-                        fillOpacity={1} 
-                        fill="url(#colorActive)" 
-                        strokeWidth={2}
-                    />
-                    {!showActiveOnly && (
-                    <Area 
-                        type="monotone" 
-                        dataKey="closed" 
-                        name="Closed Bugs"
-                        stroke="#10B981" 
-                        fillOpacity={1} 
-                        fill="url(#colorClosed)" 
-                        strokeWidth={2}
-                    />
-                    )}
-                </AreaChart>
-            </ResponsiveContainer>
+        {/* Chart Content Body */}
+        <div className="p-6">
+          <div className="flex gap-8 mb-6">
+              <div className="bg-red-50 px-4 py-3 rounded-xl border border-red-100">
+                  <p className="text-sm font-semibold tracking-wide text-red-600/80 mb-1 uppercase">Current Active</p>
+                  <p className="text-3xl font-extrabold text-red-600 drop-shadow-sm">{currentActive}</p>
+              </div>
+              {!showActiveOnly && (
+              <div className="bg-emerald-50 px-4 py-3 rounded-xl border border-emerald-100">
+                  <p className="text-sm font-semibold tracking-wide text-emerald-600/80 mb-1 uppercase">Total Closed</p>
+                  <p className="text-3xl font-extrabold text-emerald-600 drop-shadow-sm">{currentClosed}</p>
+              </div>
+              )}
+          </div>
+
+          <div className="h-[350px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={trendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                      <defs>
+                          <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id="colorClosed" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                          </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                      <XAxis 
+                          dataKey="date" 
+                          tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 500 }} 
+                          axisLine={false}
+                          tickLine={false}
+                          tickMargin={10}
+                      />
+                      <YAxis 
+                          tick={{ fontSize: 12, fill: '#6B7280', fontWeight: 500 }}
+                          axisLine={false}
+                          tickLine={false}
+                          tickMargin={10}
+                      />
+                      <Tooltip 
+                          contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}
+                          itemStyle={{ fontWeight: 'bold' }}
+                      />
+                      <Legend 
+                        wrapperStyle={{ paddingTop: '10px' }}
+                      />
+                      <Area 
+                          type="monotone" 
+                          dataKey="active" 
+                          name="Active Bugs"
+                          stroke="#EF4444" 
+                          fillOpacity={1} 
+                          fill="url(#colorActive)" 
+                          strokeWidth={3}
+                          activeDot={{ r: 6, strokeWidth: 0, fill: '#EF4444' }}
+                      />
+                      {!showActiveOnly && (
+                      <Area 
+                          type="monotone" 
+                          dataKey="closed" 
+                          name="Closed Bugs"
+                          stroke="#10B981" 
+                          fillOpacity={1} 
+                          fill="url(#colorClosed)" 
+                          strokeWidth={3}
+                          activeDot={{ r: 6, strokeWidth: 0, fill: '#10B981' }}
+                      />
+                      )}
+                  </AreaChart>
+              </ResponsiveContainer>
+          </div>
         </div>
-      </Card>
+      </div>
     </motion.div>
   );
 }

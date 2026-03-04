@@ -13,14 +13,15 @@ const statusColors: Record<string, string> = {
   'To Do': 'gray',
   'In Progress': 'orange',
   'Ready to Test': 'blue',
+  'Ready Set Test': 'blue'
 };
 
 const priorityColors: Record<string, string> = {
-  'Highest': 'red',
-  'High': 'orange',
-  'Medium': 'gold',
-  'Low': 'blue',
-  'Lowest': 'green',
+  'Highest': 'error',
+  'High': 'warning',
+  'Medium': 'processing',
+  'Low': 'success',
+  'Lowest': 'default',
   'None': 'default',
 };
 
@@ -35,7 +36,7 @@ export default function BugTable({ bugsByStatus }: BugTableProps) {
           href={`https://amarbank.atlassian.net/browse/${key}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-800 font-semibold hover:underline transition-colors"
+          className="text-blue-600 hover:text-blue-800 font-bold hover:underline transition-colors flex items-center gap-1"
         >
           {key}
         </a>
@@ -53,7 +54,7 @@ export default function BugTable({ bugsByStatus }: BugTableProps) {
       dataIndex: 'priority',
       key: 'priority',
       render: (priority: string) => (
-        <Tag color={priorityColors[priority] || 'default'}>{priority}</Tag>
+        <Tag color={priorityColors[priority] || 'default'} className="px-2 py-0.5 rounded-md font-medium border-0 shadow-sm">{priority}</Tag>
       ),
       width: 100,
       sorter: (a, b) => {
@@ -65,8 +66,21 @@ export default function BugTable({ bugsByStatus }: BugTableProps) {
       title: 'Assignee',
       dataIndex: 'assignee',
       key: 'assignee',
-      render: (assignee: string | null) => assignee || 'Unassigned',
-      width: 150,
+      render: (assignee: string | null) => (
+        <span className="flex items-center gap-2">
+          {assignee ? (
+            <>
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-700 font-bold flex items-center justify-center text-xs shadow-inner">
+                {assignee.charAt(0)}
+              </div>
+              <span className="font-medium text-gray-700">{assignee}</span>
+            </>
+          ) : (
+            <span className="text-gray-400 italic">Unassigned</span>
+          )}
+        </span>
+      ),
+      width: 180,
     },
     {
       title: 'Days Open',
@@ -128,16 +142,26 @@ export default function BugTable({ bugsByStatus }: BugTableProps) {
   }));
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-      <h2 className="text-xl font-bold mb-4 text-gray-800">
-        Active Bug List
-      </h2>
-      <Tabs
-        items={tabItems}
-        type="card"
-        size="large"
-        className="bug-monitoring-tabs"
-      />
-    </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="bg-white/90 backdrop-blur-sm shadow-sm border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300">
+        <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+          <h2 className="text-xl font-bold flex items-center gap-2 text-gray-800">
+            <span className="text-2xl animate-pulse">📋</span> Active Bug List
+          </h2>
+        </div>
+        <div className="p-2 sm:p-6">
+          <Tabs
+            items={tabItems}
+            type="card"
+            size="large"
+            className="bug-monitoring-tabs custom-modern-tabs"
+          />
+        </div>
+      </div>
+    </motion.div>
   );
 }

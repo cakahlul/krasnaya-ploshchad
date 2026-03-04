@@ -1,7 +1,7 @@
 'use client';
 
 import type { BugStatistics } from '../types/bug-monitoring.types';
-import { Card, Progress } from 'antd';
+import { Progress } from 'antd';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { motion } from 'framer-motion';
 import { BugOutlined, ClockCircleOutlined } from '@ant-design/icons';
@@ -74,44 +74,51 @@ export default function BugStatisticsView({ statistics }: BugStatisticsProps) {
     >
       {/* Total Bugs Card */}
       <motion.div variants={itemVariants}>
-        <Card className="h-full bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-500 hover:shadow-xl transition-all duration-300">
-          <div className="flex items-center justify-between">
+        <div className="h-full bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden relative group">
+          <div className="absolute -right-6 -top-6 w-24 h-24 bg-red-200 rounded-full blur-2xl opacity-50 group-hover:bg-red-300 transition-all duration-500"></div>
+          <div className="flex items-center justify-between relative z-10">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Total Bugs</p>
-              <p className="text-4xl font-bold text-red-600">{statistics.totalCount}</p>
+              <p className="text-sm font-semibold text-red-600/80 mb-1 tracking-wide uppercase">Total Bugs</p>
+              <p className="text-5xl font-extrabold text-red-600 drop-shadow-sm">{statistics.totalCount}</p>
             </div>
-            <BugOutlined className="text-5xl text-red-500 opacity-70" />
+            <div className="bg-white/60 p-4 rounded-full shadow-inner">
+              <BugOutlined className="text-4xl text-red-500" />
+            </div>
           </div>
-        </Card>
+        </div>
       </motion.div>
 
       {/* Average Days Open Card */}
       <motion.div variants={itemVariants}>
-        <Card className="h-full bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-500 hover:shadow-xl transition-all duration-300">
-          <div className="flex items-center justify-between">
+        <div className="h-full bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden relative group">
+          <div className="absolute -right-6 -top-6 w-24 h-24 bg-orange-200 rounded-full blur-2xl opacity-50 group-hover:bg-orange-300 transition-all duration-500"></div>
+          <div className="flex items-center justify-between relative z-10">
             <div>
-              <p className="text-sm text-gray-600 mb-1">Avg Days Open</p>
-              <p className="text-4xl font-bold text-orange-600">
+              <p className="text-sm font-semibold text-orange-600/80 mb-1 tracking-wide uppercase">Avg Days Open</p>
+              <p className="text-5xl font-extrabold text-orange-600 drop-shadow-sm">
                 {statistics.averageDaysOpen.toFixed(1)}
               </p>
             </div>
-            <ClockCircleOutlined className="text-5xl text-orange-500 opacity-70" />
+            <div className="bg-white/60 p-4 rounded-full shadow-inner">
+              <ClockCircleOutlined className="text-4xl text-orange-500" />
+            </div>
           </div>
-          <Progress
-            percent={Math.min((statistics.averageDaysOpen / 30) * 100, 100)}
-            strokeColor={statistics.averageDaysOpen > 14 ? '#F97316' : '#10B981'}
-            showInfo={false}
-            className="mt-2"
-          />
-        </Card>
+          <div className="relative z-10 mt-4">
+            <Progress
+              percent={Math.min((statistics.averageDaysOpen / 30) * 100, 100)}
+              strokeColor={statistics.averageDaysOpen > 14 ? '#F97316' : '#10B981'}
+              showInfo={false}
+              size="small"
+              className="drop-shadow-sm"
+            />
+          </div>
+        </div>
       </motion.div>
 
       {/* Status Distribution Pie Chart */}
       <motion.div variants={itemVariants} className="md:col-span-2">
-        <Card
-          title="Bug Distribution by Status"
-          className="h-full hover:shadow-xl transition-all duration-300"
-        >
+        <div className="bg-white/90 backdrop-blur-sm border border-gray-100 rounded-2xl p-6 shadow-sm h-full hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+          <h3 className="text-xl font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2">Bug Distribution by Status</h3>
           <div className="flex items-center justify-center h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -121,15 +128,17 @@ export default function BugStatisticsView({ statistics }: BugStatisticsProps) {
                   cy="50%"
                   innerRadius={60}
                   outerRadius={80}
-                  paddingAngle={2}
+                  paddingAngle={5}
                   dataKey="value"
+                  stroke="none"
                 >
                   {statusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
+                    <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}
+                  itemStyle={{ fontWeight: 'bold' }}
                 />
                 <Legend 
                   layout="vertical" 
@@ -140,29 +149,30 @@ export default function BugStatisticsView({ statistics }: BugStatisticsProps) {
               </PieChart>
             </ResponsiveContainer>
           </div>
-        </Card>
+        </div>
       </motion.div>
 
       {/* Priority Distribution Bar Chart */}
       <motion.div variants={itemVariants} className="lg:col-span-4">
-        <Card
-          title="Bug Distribution by Priority"
-          className="hover:shadow-xl transition-all duration-300"
-        >
+        <div className="bg-white/90 backdrop-blur-sm border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+          <h3 className="text-xl font-bold text-gray-800 mb-6 border-b border-gray-100 pb-2">Bug Distribution by Priority</h3>
           <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={priorityData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="priority" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+            <BarChart data={priorityData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+              <XAxis dataKey="priority" axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontWeight: 500 }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#6B7280' }} />
+              <Tooltip 
+                cursor={{ fill: '#F3F4F6' }}
+                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }}
+              />
+              <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={40}>
                 {priorityData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.fill} />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </Card>
+        </div>
       </motion.div>
     </motion.div>
   );

@@ -3,9 +3,14 @@
 import RoleBasedRoute from '@src/components/RoleBasedRoute';
 import { useBugMonitoring } from '@src/features/bug-monitoring/hooks/useBugMonitoring';
 import BugStatisticsView from '@src/features/bug-monitoring/components/BugStatistics';
-import BugTrendChart from '@src/features/bug-monitoring/components/BugTrendChart';
+import dynamic from 'next/dynamic';
+
+const BugTrendChart = dynamic(
+  () => import('@src/features/bug-monitoring/components/BugTrendChart'),
+  { ssr: false }
+);
 import BugTable from '@src/features/bug-monitoring/components/BugTable';
-import { Skeleton, Alert, Switch } from 'antd';
+import { Skeleton, Alert } from 'antd';
 import { motion } from 'framer-motion';
 import { useState, useMemo } from 'react';
 import '../../bug-monitoring.css';
@@ -82,46 +87,59 @@ export default function BugMonitoringPage() {
 
   return (
     <RoleBasedRoute allowedRoles={['Lead']}>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-red-50 to-orange-50 p-6">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-7xl mx-auto"
-        >
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 p-8">
+        {/* Animated background orbs - matching Main Dashboard */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-purple-200/40 rounded-full blur-3xl animate-float" />
+          <div className="absolute top-40 right-20 w-96 h-96 bg-cyan-200/40 rounded-full blur-3xl animate-float-delayed" />
+          <div className="absolute bottom-20 left-1/3 w-80 h-80 bg-pink-200/40 rounded-full blur-3xl animate-float-slow" />
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto">
           {/* Header with Toggle */}
-          <div className="mb-8 flex items-start justify-between">
+          <div className="mb-8 flex items-start justify-between animate-slide-in">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                <span className="text-red-600">🐛</span>
-                Bug Monitoring
+              <h1 className="text-4xl font-extrabold text-gray-900 mb-3 flex items-center gap-3">
+                <span className="text-5xl animate-wave inline-block origin-bottom-right">🐛</span>
+                <span>Bug Monitoring</span>
               </h1>
-              <p className="text-gray-600 text-lg">
+              <p className="text-xl text-gray-600 font-medium">
                 Real-time bug tracking from BUZZ
               </p>
             </div>
             
-            {/* Statistics Filter Toggle */}
-            <div className="bg-white rounded-lg shadow-md p-4 border-2 border-gray-200">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-semibold text-gray-700">
+            
+            {/* Statistics Filter Toggle - Glassmorphism style with sophisticated animation */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 p-5 transform transition-all duration-300 hover:shadow-md hover:scale-[1.02]">
+              <div className="flex items-center gap-5">
+                <span className="text-sm font-bold text-gray-800 flex items-center gap-2">
                   Statistics Filter:
                 </span>
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm ${!showAllBugs ? 'font-bold text-blue-600' : 'text-gray-500'}`}>
-                    Active Only
-                  </span>
-                  <Switch
-                    checked={showAllBugs}
-                    onChange={(checked) => setShowAllBugs(checked)}
-                    className="bg-gray-300"
+                
+                {/* Custom Animated Pill Toggle */}
+                <div 
+                  className="relative flex items-center bg-gray-100/90 p-1.5 rounded-xl shadow-inner cursor-pointer w-64 h-[44px] hover:bg-gray-200/80 transition-colors"
+                  onClick={() => setShowAllBugs(!showAllBugs)}
+                >
+                  <motion.div
+                    className="absolute top-[6px] bottom-[6px] bg-white rounded-lg shadow-md border border-gray-200"
+                    animate={{
+                      x: showAllBugs ? '100%' : '0%',
+                      width: 'calc(50% - 6px)'
+                    }}
+                    transition={{ type: "spring", stiffness: 450, damping: 30 }}
+                    style={{ left: 6 }}
                   />
-                  <span className={`text-sm ${showAllBugs ? 'font-bold text-blue-600' : 'text-gray-500'}`}>
+                  <div className={`relative z-10 w-1/2 h-full flex items-center justify-center text-sm transition-colors duration-200 select-none ${!showAllBugs ? 'font-bold text-blue-600' : 'text-gray-500 font-medium'}`}>
+                    Active Only
+                  </div>
+                  <div className={`relative z-10 w-1/2 h-full flex items-center justify-center text-sm transition-colors duration-200 select-none ${showAllBugs ? 'font-bold text-blue-600' : 'text-gray-500 font-medium'}`}>
                     All Bugs
-                  </span>
+                  </div>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-gray-500 mt-3 font-medium flex items-center gap-1">
+                <span className="text-blue-500">ℹ️</span> 
                 {showAllBugs 
                   ? 'Showing statistics for all bugs (all statuses)'
                   : 'Showing statistics for active bugs only (To Do, In Progress, Ready to Test)'}
@@ -187,10 +205,10 @@ export default function BugMonitoringPage() {
               description="There are currently no bugs in the BUZZ project. Great job! 🎉"
               type="success"
               showIcon
-              className="mt-6"
+              className="mt-6 rounded-2xl bg-emerald-50 border-emerald-200"
             />
           )}
-        </motion.div>
+        </div>
       </div>
     </RoleBasedRoute>
   );
