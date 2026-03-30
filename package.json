@@ -3,28 +3,17 @@
   "private": true,
   "version": "1.6.0",
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "dev": "npm run dev --workspace=apps/tere-project",
+    "build": "npm run build --workspace=apps/tere-project",
+    "lint": "npm run lint --workspace=apps/tere-project",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
     "prettier": "^3.5.3",
-    "turbo": "^2.4.4",
     "typescript": "5.8.2"
   },
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "npm@10.9.2",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "dependencies": {
-    "@nestjs/throttler": "^6.4.0",
-    "firebase": "^11.6.1",
-    "firebase-admin": "^13.3.0"
-  }
+  "packageManager": "npm@10.9.2"
 }

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Checks if the given email is in the admin list
  * Admin emails are configured in ADMIN_EMAILS environment variable

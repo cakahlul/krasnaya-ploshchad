@@ -3,8 +3,6 @@
 import { useQuery } from '@tanstack/react-query';
 import axiosClient from '@src/lib/axiosClient';
 
-const apiUrl = process.env.NEXT_PUBLIC_AIOC_SERVICE;
-
 export interface TeamSummary {
   teamName: string;
   boardId: number;
@@ -38,12 +36,12 @@ export interface DashboardSummaryResponse {
 }
 
 async function fetchDashboardSummary(): Promise<DashboardSummaryResponse> {
-  const response = await axiosClient.get(`${apiUrl}/dashboard/summary`);
+  const response = await axiosClient.get('/dashboard/summary');
   return response.data;
 }
 
 async function fetchDashboardBugSummary(boardId: number = 177): Promise<BugSummary> {
-  const response = await axiosClient.get(`${apiUrl}/bug-monitoring/summary`, {
+  const response = await axiosClient.get('/bug-monitoring/summary', {
     params: { boardId },
   });
   return response.data;
