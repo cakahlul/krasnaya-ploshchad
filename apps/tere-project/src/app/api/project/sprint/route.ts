@@ -1,6 +1,8 @@
 import { withAuth } from '@server/auth/with-auth';
 import { sprintService } from '@server/modules/sprint/sprint.service';
 
+export const dynamic = 'force-dynamic';
+
 export const GET = withAuth(async (req) => {
   const boardId = new URL(req.url).searchParams.get('boardId');
   if (!boardId) {

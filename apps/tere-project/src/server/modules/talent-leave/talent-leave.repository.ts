@@ -4,7 +4,7 @@ export interface TalentLeaveEntity {
   id?: string;
   name: string;
   team: string;
-  leaveDate: Array<{ dateFrom: Date; dateTo: Date; status: string }>;
+  leaveDate: Array<{ dateFrom: Date; dateTo: Date; status: 'Draft' | 'Confirmed' | 'Sick' }>;
   role: string;
   createdAt: Date;
   updatedAt: Date;

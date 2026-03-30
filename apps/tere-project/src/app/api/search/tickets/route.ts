@@ -1,6 +1,8 @@
 import { withAuth } from '@server/auth/with-auth';
 import { searchService } from '@server/modules/search/search.service';
 
+export const dynamic = 'force-dynamic';
+
 export const GET = withAuth(async (req) => {
   const { searchParams } = new URL(req.url);
   const q = searchParams.get('q') ?? '';

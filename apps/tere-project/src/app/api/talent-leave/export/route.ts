@@ -1,6 +1,8 @@
 import { withAuth } from '@server/auth/with-auth';
 import { talentLeaveExportService } from '@server/modules/talent-leave/talent-leave-export.service';
 
+export const dynamic = 'force-dynamic';
+
 export const POST = withAuth(async (req) => {
   const body = await req.json();
   const { startDate, endDate, accessToken } = body;

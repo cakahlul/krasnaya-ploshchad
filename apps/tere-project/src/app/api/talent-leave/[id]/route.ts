@@ -1,6 +1,8 @@
 import { withAuth } from '@server/auth/with-auth';
 import { talentLeaveService } from '@server/modules/talent-leave/talent-leave.service';
 
+export const dynamic = 'force-dynamic';
+
 export const GET = withAuth(async (req, { params }) => {
   const { id } = await params!;
   try {

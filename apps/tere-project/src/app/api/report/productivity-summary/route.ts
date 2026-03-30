@@ -1,6 +1,8 @@
 import { withAuth } from '@server/auth/with-auth';
 import { generateProductivitySummary } from '@server/modules/reports/productivity-summary.service';
 
+export const dynamic = 'force-dynamic';
+
 export const GET = withAuth(async (req) => {
   const { searchParams } = new URL(req.url);
   const month = parseInt(searchParams.get('month') ?? '0', 10);

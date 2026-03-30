@@ -204,7 +204,7 @@ export class SearchRepository {
       spType: issue.fields.customfield_11312?.value,
       appendixV3,
       totalWeightPoints,
-      webUrl: `${jiraBaseUrl}/browse/${issue.key}`,
+      webUrl: `${process.env.JIRA_URL ?? ''}/browse/${issue.key}`,
     };
   }
 

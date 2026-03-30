@@ -1,6 +1,8 @@
 import { withAuth } from '@server/auth/with-auth';
 import { getEpics } from '@server/modules/reports/reports.service';
 
+export const dynamic = 'force-dynamic';
+
 export const GET = withAuth(async (req) => {
   const { searchParams } = new URL(req.url);
   const project = searchParams.get('project') ?? '';

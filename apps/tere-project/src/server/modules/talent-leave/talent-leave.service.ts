@@ -81,7 +81,7 @@ class TalentLeaveService {
       leaveDate: entity.leaveDate.map((leave) => ({
         dateFrom: formatDateWithoutTimezone(leave.dateFrom),
         dateTo: formatDateWithoutTimezone(leave.dateTo),
-        status: leave.status as 'Draft' | 'Confirmed' | 'Sick',
+        status: leave.status,
       })),
       role: entity.role || '',
       createdAt: entity.createdAt.toISOString(),

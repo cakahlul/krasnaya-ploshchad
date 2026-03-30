@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth } from '@src/lib/firebaseAdmin';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 // Session cookie duration (configurable via env, default 8 hours)
 const SESSION_DURATION_HOURS = parseInt(process.env.SESSION_DURATION_HOURS || '8', 10);
 const SESSION_DURATION_MS = SESSION_DURATION_HOURS * 60 * 60 * 1000;

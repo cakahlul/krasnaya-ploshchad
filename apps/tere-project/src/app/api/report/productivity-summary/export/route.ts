@@ -1,6 +1,8 @@
 import { withAuth } from '@server/auth/with-auth';
 import { exportProductivitySummaryToSpreadsheet } from '@server/modules/reports/productivity-summary.service';
 
+export const dynamic = 'force-dynamic';
+
 export const POST = withAuth(async (req) => {
   const body = await req.json();
   const month = parseInt(body.month, 10);

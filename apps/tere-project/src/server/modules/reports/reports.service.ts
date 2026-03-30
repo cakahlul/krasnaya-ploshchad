@@ -1,8 +1,9 @@
 import type {
   JiraIssueEntity, JiraIssueReportResponseDto, GetReportResponseDto,
-  JiraSearchRequestDto, EpicDto,
+  EpicDto,
 } from '@shared/types/report.types';
 import type { TeamMember } from '@shared/types/common.types';
+import type { LeaveDateRange } from '@shared/types/talent-leave.types';
 import { teamMembers } from '@shared/constants/team-members';
 import { issueProcessingStrategyFactory } from './strategies/issue-processing-strategy.factory';
 import { talentLeaveService } from '@server/modules/talent-leave/talent-leave.service';
@@ -43,7 +44,7 @@ async function getSprintDetails(sprintId: string): Promise<{ startDate: string; 
   } catch { return null; }
 }
 
-async function fetchLeaveData(startDate: string, endDate: string, project: string) {
+async function fetchLeaveData(startDate: string, endDate: string, project: string): Promise<Array<{ name: string; leaveDate: LeaveDateRange[] }>> {
   try {
     const projectMemberNames = teamMembers.filter((m: TeamMember) => m.team.includes(project)).map((m: TeamMember) => m.name.toLowerCase());
     const leaveRecords = await talentLeaveService.findAll({ startDate, endDate });
@@ -64,7 +65,7 @@ function processRawData(
   rawData: JiraIssueEntity[],
   project: string,
   sprintDetails?: { startDate: string; endDate: string } | null,
-  leaveData?: Array<{ name: string; leaveDate: Array<{ dateFrom: string; dateTo: string; status: string }> }>,
+  leaveData?: Array<{ name: string; leaveDate: LeaveDateRange[] }>,
   nationalHolidays: string[] = [],
 ): JiraIssueReportResponseDto[] {
   const accountIdMap = new Map<string, string>(
@@ -160,7 +161,7 @@ export async function generateReport(sprint: string, project: string, epicId?: s
     });
   }
   const sprintDetails = await getSprintDetails(sprint);
-  let leaveData: any[] = [];
+  let leaveData: Array<{ name: string; leaveDate: LeaveDateRange[] }> = [];
   let nationalHolidays: string[] = [];
   if (sprintDetails) {
     const start = formatToYYYYMMDD(parseLocalDate(sprintDetails.startDate));
@@ -228,7 +229,7 @@ export async function getSprintWorkItemStats(project: string): Promise<{ totalWo
   // Use agile sprint issue API — no JQL search needed
   const allIssues = await sprintService.fetchIssuesBySprintId(activeSprint.id);
 
-  const closedIssues = allIssues.filter((i: any) => i.fields.resolutiondate || i.fields.resolution?.name?.toLowerCase() === 'done');
+  const closedIssues = allIssues.filter((i: { fields: { resolutiondate?: string; resolution?: { name?: string } } }) => i.fields.resolutiondate || i.fields.resolution?.name?.toLowerCase() === 'done');
   let totalHours = 0; let countWithDates = 0;
   for (const issue of closedIssues) {
     if (issue.fields.created && issue.fields.resolutiondate) {

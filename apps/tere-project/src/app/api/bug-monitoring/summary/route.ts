@@ -1,6 +1,8 @@
 import { withRole } from '@server/auth/with-role';
 import { bugMonitoringService } from '@server/modules/bug-monitoring/bug-monitoring.service';
 
+export const dynamic = 'force-dynamic';
+
 export const GET = withRole('Lead', async (req) => {
   const boardId = new URL(req.url).searchParams.get('boardId');
   if (!boardId) {

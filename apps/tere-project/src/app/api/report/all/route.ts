@@ -1,6 +1,8 @@
 import { withRole } from '@server/auth/with-role';
 import { generateOpenSprintReport } from '@server/modules/reports/reports.service';
 
+export const dynamic = 'force-dynamic';
+
 export const GET = withRole('Lead', async (req) => {
   const { searchParams } = new URL(req.url);
   const project = searchParams.get('project') ?? '';

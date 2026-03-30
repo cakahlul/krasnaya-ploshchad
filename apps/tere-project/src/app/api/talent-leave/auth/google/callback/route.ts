@@ -1,5 +1,7 @@
 import { createOAuthClient } from '@server/lib/google-oauth.client';
 
+export const dynamic = 'force-dynamic';
+
 // PUBLIC route — no withAuth wrapper. Handles Google OAuth2 callback and postMessages token to opener.
 export async function GET(req: Request): Promise<Response> {
   const { searchParams } = new URL(req.url);

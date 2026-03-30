@@ -1,6 +1,8 @@
 import { withAuth } from '@server/auth/with-auth';
 import { searchService } from '@server/modules/search/search.service';
 
+export const dynamic = 'force-dynamic';
+
 export const GET = withAuth(async (_req, { params }) => {
   const { key } = await params!;
   const ticket = await searchService.getTicketDetail(key);
