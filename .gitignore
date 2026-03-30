@@ -11,13 +11,9 @@ node_modules
 .env.development.local
 .env.test.local
 .env.production.local
-apps/aioc-service/tere-project-5billion-firebase-admin.json
 
 # Testing
 coverage
-
-# Turbo
-.turbo
 
 # Vercel
 .vercel
