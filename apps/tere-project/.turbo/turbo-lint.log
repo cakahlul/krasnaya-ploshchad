@@ -1,0 +1,9 @@
+
+> tere-project@0.1.0 lint
+> next lint
+
+You are using Node.js 18.12.0. For Next.js, Node.js version "^18.18.0 || ^19.8.0 || >= 20.0.0" is required.
+npm ERR! Lifecycle script `lint` failed with error: 
+npm ERR! Error: command failed 
+npm ERR!   in workspace: tere-project@0.1.0 
+npm ERR!   at location: /Users/ahlulesasjana/labs/krasnaya-ploshchad/apps/tere-project 
