@@ -67,5 +67,6 @@ export interface SprintDto {
   completeDate: string;
   createdDate: string;
   originBoardId: number;
+  boardId?: number;  // Added for multi-team sprint grouping
   goal: string;
 }

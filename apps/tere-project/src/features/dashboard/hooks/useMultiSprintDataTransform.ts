@@ -16,7 +16,7 @@ export function useMultiSprintDataTransform() {
       state: sprint.state,
       startDate: sprint.startDate,
       endDate: sprint.endDate,
-      boardId: sprint.boardId,
+      boardId: sprint.boardId || sprint.originBoardId,
     }));
   }, [data]);
 
