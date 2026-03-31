@@ -21,6 +21,7 @@ import {
 import RoleBasedRoute from '@src/components/RoleBasedRoute';
 import { useUserAccess } from '@src/hooks/useUserAccess';
 import LoadingBounce from '@src/components/loadingBounce';
+import { ThemeToggle } from '@src/components/ThemeToggle';
 import dynamic from 'next/dynamic';
 
 // Dynamic import with SSR disabled to prevent hydration errors
@@ -49,23 +50,27 @@ export default function Dashboard() {
 
   if (role === 'Member') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[80vh] bg-gradient-to-br from-accent via-muted text-center space-y-6 px-4">
-        <h1 className="text-5xl font-extrabold text-primary transition-transform duration-500 hover:scale-110 hover:rotate-1">
+      <div className="flex flex-col items-center justify-center min-h-[80vh] bg-gradient-to-br from-accent via-muted dark:from-gray-800 dark:via-gray-700 dark:text-gray-100 text-center space-y-6 px-4 transition-colors duration-300">
+        <div className="absolute top-6 right-6">
+          <ThemeToggle />
+        </div>
+
+        <h1 className="text-5xl font-extrabold text-primary dark:text-blue-400 transition-transform duration-500 hover:scale-110 hover:rotate-1">
           👋 Yo! {getDisplayName()}!
         </h1>
 
-        <p className="text-xl text-secondary font-medium transition-all duration-300 hover:tracking-wider hover:text-primary">
+        <p className="text-xl text-secondary dark:text-gray-300 font-medium transition-all duration-300 hover:tracking-wider hover:text-primary dark:hover:text-blue-400">
           {message}
         </p>
 
-        <div className="mt-6 bg-muted px-6 py-4 rounded-2xl shadow-xl text-gray-800 text-lg transition-all duration-300 hover:shadow-2xl hover:scale-105 hover:rotate-1">
+        <div className="mt-6 bg-muted dark:bg-gray-600 px-6 py-4 rounded-2xl shadow-xl text-gray-800 dark:text-gray-100 text-lg transition-all duration-300 hover:shadow-2xl hover:scale-105 hover:rotate-1">
           <span className="inline-block animate-bounce text-2xl">📊</span>
           <span className="ml-2">
             Click the menu and make some magic happen ✨
           </span>
         </div>
 
-        <p className="text-sm text-gray-500 italic animate-pulse">
+        <p className="text-sm text-gray-500 dark:text-gray-400 italic animate-pulse">
           Try hovering over elements for some fun surprises! 🎉
         </p>
       </div>
@@ -74,7 +79,7 @@ export default function Dashboard() {
 
   return (
     <RoleBasedRoute allowedRoles={['Lead', 'Member']}>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 p-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 dark:text-gray-100 p-8 transition-colors duration-300">
         {/* Animated background orbs - lighter and more subtle */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-20 left-10 w-72 h-72 bg-purple-200/40 rounded-full blur-3xl animate-float" />
@@ -84,14 +89,17 @@ export default function Dashboard() {
 
         <div className="relative z-10 max-w-7xl mx-auto">
           {/* Header Section */}
-          <div className="mb-6 animate-slide-in">
-            <h1 className="text-4xl font-extrabold text-gray-900 mb-3 flex items-center gap-3">
-              <span className="text-5xl animate-wave">👋</span>
-              <span>Yo! {getDisplayName()}!</span>
-            </h1>
-            <p className="text-xl text-gray-600 font-medium">
-              {message}
-            </p>
+          <div className="mb-6 animate-slide-in flex justify-between items-start">
+            <div>
+              <h1 className="text-4xl font-extrabold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-3">
+                <span className="text-5xl animate-wave">👋</span>
+                <span>Yo! {getDisplayName()}!</span>
+              </h1>
+              <p className="text-xl text-gray-600 dark:text-gray-400 font-medium">
+                {message}
+              </p>
+            </div>
+            <ThemeToggle />
           </div>
 
           {/* Global Search - Spotlight style centered */}

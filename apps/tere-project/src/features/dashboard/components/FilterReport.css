@@ -14,6 +14,12 @@
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: 16px;
   border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+:dark .filter-bar {
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  border-color: #374151;
 }
 
 .filter-bar__row {
@@ -39,6 +45,11 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #64748b;
+  transition: color 0.3s ease;
+}
+
+:dark .filter-bar__label {
+  color: #d1d5db;
 }
 
 .filter-bar__divider {
@@ -98,6 +109,10 @@
   transition: all 0.3s ease;
 }
 
+:dark .filter-bar__hint {
+  color: #9ca3af;
+}
+
 .filter-bar__hint svg {
   flex-shrink: 0;
 }
@@ -122,6 +137,13 @@
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   gap: 8px;
   font-family: inherit;
+  color: #1f2937;
+}
+
+:dark .fr-select__trigger {
+  border-color: #374151;
+  background: #1f2937;
+  color: #f9fafb;
 }
 
 .fr-select__trigger:hover {
@@ -243,6 +265,16 @@
   z-index: 1000;
   overflow: hidden;
   animation: frDropdownEnter 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.3s ease;
+}
+
+:dark .fr-select__dropdown {
+  background: rgba(31, 41, 55, 0.98);
+  border-color: rgba(55, 65, 81, 0.8);
+  box-shadow:
+    0 20px 60px -12px rgba(0, 0, 0, 0.4),
+    0 8px 24px -8px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(55, 65, 81, 0.2);
 }
 
 .fr-select__dropdown--compact {
@@ -273,6 +305,11 @@
   cursor: pointer;
   font-family: inherit;
   transition: all 0.15s ease;
+  color: #1e293b;
+}
+
+:dark .fr-select__option {
+  color: #f9fafb;
 }
 
 .fr-select__option:hover {
@@ -280,8 +317,16 @@
   transform: translateX(2px);
 }
 
+:dark .fr-select__option:hover {
+  background: linear-gradient(135deg, #1e3a8a 0%, #172554 100%);
+}
+
 .fr-select__option--selected {
   background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+}
+
+:dark .fr-select__option--selected {
+  background: linear-gradient(135deg, #0369a1 0%, #1e3a8a 100%);
 }
 
 .fr-select__option-content {
@@ -297,9 +342,17 @@
   color: #1e293b;
 }
 
+:dark .fr-select__option-label {
+  color: #f9fafb;
+}
+
 .fr-select__option-desc {
   font-size: 11px;
   color: #94a3b8;
+}
+
+:dark .fr-select__option-desc {
+  color: #9ca3af;
 }
 
 .fr-select__option-check {
