@@ -1,19 +1,31 @@
 import { EpicSelect } from './epicSelect';
-import { TeamSelect } from './TeamSelect';
-import { SprintSelect } from './SprintSelect';
+import { MultiSelectTeam } from './MultiSelectTeam';
+import { MultiSelectSprint } from './MultiSelectSprint';
 import { DateRangeSelect } from './DateRangeSelect';
-import { useSprintDataTransform } from '../hooks/useSprintDataTransform';
-import { useSprintFilterStore } from '../store/sprintFilterStore';
+import { useMultiSprintDataTransform } from '../hooks/useMultiSprintDataTransform';
 import { useTeamReportFilterStore } from '../store/teamReportFilterStore';
 import dayjs from 'dayjs';
 import './FilterReport.css';
 
 export function FilterReport() {
-  const { sprints, isLoading } = useSprintDataTransform();
-  const board = useSprintFilterStore(state => state.board);
-  const setBoardId = useSprintFilterStore(state => state.setSelectedBoard);
+  const { sprints, isLoading } = useMultiSprintDataTransform();
+  const selectedTeams = useTeamReportFilterStore(state => state.selectedTeams);
+  const selectedSprints = useTeamReportFilterStore(state => state.selectedSprints);
+  const setTeams = useTeamReportFilterStore(state => state.setTeams);
+  const setSprints = useTeamReportFilterStore(state => state.setSprints);
+
+  const { sprint, startDate, endDate } = useTeamReportFilterStore(
+    state => state.selectedFilter,
+  );
+  const setDateRangeFilter = useTeamReportFilterStore(state => state.setDateRangeFilter);
+  const clearFilter = useTeamReportFilterStore(state => state.clearFilter);
 
   const boardNameMap: Record<number, string> = {
+    143: 'Funding - DS Board',
+    142: 'Lending - SLS Board',
+  };
+
+  const shortNameMap: Record<number, string> = {
     143: 'DS',
     142: 'SLS',
   };
@@ -23,32 +35,27 @@ export function FilterReport() {
     { value: 142, label: 'Lending - SLS Board' },
   ];
 
-  const { sprint, startDate, endDate } = useTeamReportFilterStore(
-    state => state.selectedFilter,
-  );
-  const setSprintFilter = useTeamReportFilterStore(state => state.setSprintFilter);
-  const setDateRangeFilter = useTeamReportFilterStore(state => state.setDateRangeFilter);
-  const clearFilter = useTeamReportFilterStore(state => state.clearFilter);
-
-  const handleTeamChange = (value: number) => {
-    if (board.id !== value) {
-      clearFilter();
-    }
-    setBoardId({ id: value, name: boardNameMap[value] });
+  const handleTeamChange = (values: number[]) => {
+    setTeams(values);
+    // Clear sprints when teams change
+    setSprints([]);
   };
 
-  const handleSprintChange = (value: string) => {
-    setSprintFilter(value, board.name);
+  const handleSprintChange = (values: string[]) => {
+    setSprints(values);
   };
 
   const handleDateRangeChange = (
     dates: [dayjs.Dayjs | null, dayjs.Dayjs | null] | null,
   ) => {
     if (dates && dates[0] && dates[1]) {
+      const projectName = selectedTeams.length > 0
+        ? selectedTeams.map(id => shortNameMap[id]).join(', ')
+        : 'Multi-Team';
       setDateRangeFilter(
         dates[0].format('YYYY-MM-DD'),
         dates[1].format('YYYY-MM-DD'),
-        board.name,
+        projectName,
       );
     } else {
       clearFilter();
@@ -57,48 +64,54 @@ export function FilterReport() {
 
   const isSprintMode = !!sprint;
   const isDateRangeMode = !!startDate && !!endDate;
+  const hasTeamsSelected = selectedTeams.length > 0;
 
   return (
     <div className="filter-bar">
       <div className="filter-bar__row">
-        {/* Team Select */}
+        {/* Multi-Select Teams */}
         <div className="filter-bar__group">
           <label className="filter-bar__label">
             <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12">
               <path d="M7 8a3 3 0 100-6 3 3 0 000 6zM14.5 9a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM1.615 16.428a1.224 1.224 0 01-.569-1.175 6.002 6.002 0 0111.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 017 18a9.953 9.953 0 01-5.385-1.572zM14.5 16h-.106c.07-.297.088-.611.048-.933a7.47 7.47 0 00-1.588-3.755 4.502 4.502 0 015.874 2.636.818.818 0 01-.36.98A7.465 7.465 0 0114.5 16z" />
             </svg>
-            Team
+            Teams
           </label>
-          <TeamSelect
+          <MultiSelectTeam
             options={teamOptions}
-            value={board.id || undefined}
+            values={selectedTeams}
             onChange={handleTeamChange}
           />
         </div>
 
         <div className="filter-bar__divider" />
 
-        {/* Sprint Select */}
-        <div className="filter-bar__group">
-          <label className="filter-bar__label">
-            <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12">
-              <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.451a.75.75 0 000-1.5H4.5a.75.75 0 00-.75.75v3.75a.75.75 0 001.5 0v-2.127l.269.269a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm-10.624-2.85a5.5 5.5 0 019.201-2.465l.312.311H11.75a.75.75 0 000 1.5H15.5a.75.75 0 00.75-.75V3.42a.75.75 0 00-1.5 0v2.126l-.269-.268A7 7 0 002.769 8.416a.75.75 0 001.449.389l.47.769z" clipRule="evenodd" />
-            </svg>
-            Sprint
-            {isSprintMode && (
-              <span className="filter-bar__badge filter-bar__badge--blue">● Active</span>
-            )}
-          </label>
-          <SprintSelect
-            sprints={sprints}
-            value={sprint || undefined}
-            onChange={handleSprintChange}
-            onClear={() => clearFilter()}
-            loading={isLoading}
-          />
-        </div>
+        {/* Multi-Select Sprints - Only show when teams are selected */}
+        {hasTeamsSelected && (
+          <>
+            <div className="filter-bar__group">
+              <label className="filter-bar__label">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12">
+                  <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.451a.75.75 0 000-1.5H4.5a.75.75 0 00-.75.75v3.75a.75.75 0 001.5 0v-2.127l.269.269a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm-10.624-2.85a5.5 5.5 0 019.201-2.465l.312.311H11.75a.75.75 0 000 1.5H15.5a.75.75 0 00.75-.75V3.42a.75.75 0 00-1.5 0v2.126l-.269-.268A7 7 0 002.769 8.416a.75.75 0 001.449.389l.47.769z" clipRule="evenodd" />
+                </svg>
+                Sprints
+                {isSprintMode && (
+                  <span className="filter-bar__badge filter-bar__badge--blue">● Active</span>
+                )}
+              </label>
+              <MultiSelectSprint
+                sprints={sprints}
+                values={selectedSprints}
+                onChange={handleSprintChange}
+                onClear={() => setSprints([])}
+                loading={isLoading}
+                teamNames={shortNameMap}
+              />
+            </div>
 
-        <div className="filter-bar__or">or</div>
+            <div className="filter-bar__or">or</div>
+          </>
+        )}
 
         {/* Date Range Select */}
         <div className="filter-bar__group">
@@ -116,6 +129,7 @@ export function FilterReport() {
             endDate={endDate}
             onChange={handleDateRangeChange}
             isActive={isDateRangeMode}
+            disabled={!hasTeamsSelected}
           />
         </div>
 
@@ -129,11 +143,13 @@ export function FilterReport() {
         <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
           <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
         </svg>
-        {isSprintMode
-          ? 'Showing report based on selected sprint'
-          : isDateRangeMode
-            ? `Showing report from ${startDate} to ${endDate}`
-            : 'Select a sprint or date range to view the report'}
+        {!hasTeamsSelected
+          ? 'Select one or more teams to begin'
+          : isSprintMode
+            ? `Showing report for ${selectedSprints.length} sprint${selectedSprints.length !== 1 ? 's' : ''} across ${selectedTeams.length} team${selectedTeams.length !== 1 ? 's' : ''}`
+            : isDateRangeMode
+              ? `Showing report from ${startDate} to ${endDate}`
+              : `Select sprints or a date range to view team performance`}
       </div>
     </div>
   );

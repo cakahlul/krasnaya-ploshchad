@@ -360,3 +360,38 @@
   color: #6b7280;
   background: rgba(107, 114, 128, 0.1);
 }
+
+/* ── Multi-Select Specific Styles ── */
+.sprint-select-list--multi {
+  max-height: 420px;
+}
+
+.sprint-select-item--multi {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.sprint-select-item--select-all {
+  font-weight: 600;
+  padding: 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #f3f0ff;
+}
+
+.sprint-select-item--partial .fr-select__checkbox {
+  accent-color: #8b5cf6;
+}
+
+.sprint-select-group__team-name {
+  font-weight: 600;
+  color: #1f2937;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+}
+
+.sprint-select-group__dot--status {
+  margin-left: 4px;
+}

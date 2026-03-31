@@ -9,9 +9,10 @@ interface DateRangeSelectProps {
   endDate?: string;
   onChange: (dates: [dayjs.Dayjs | null, dayjs.Dayjs | null] | null) => void;
   isActive?: boolean;
+  disabled?: boolean;
 }
 
-export function DateRangeSelect({ startDate, endDate, onChange, isActive }: DateRangeSelectProps) {
+export function DateRangeSelect({ startDate, endDate, onChange, isActive, disabled }: DateRangeSelectProps) {
   const [open, setOpen] = useState(false);
   const [tempStart, setTempStart] = useState('');
   const [tempEnd, setTempEnd] = useState('');
@@ -71,11 +72,12 @@ export function DateRangeSelect({ startDate, endDate, onChange, isActive }: Date
   };
 
   return (
-    <div ref={containerRef} className="fr-select" style={{ width: 300 }}>
+    <div ref={containerRef} className="fr-select" style={{ width: 300, opacity: disabled ? 0.5 : 1 }}>
       <button
         type="button"
+        disabled={disabled}
         className={`fr-select__trigger ${open ? 'fr-select__trigger--open' : ''} ${hasValue ? 'fr-select__trigger--has-value fr-select__trigger--purple' : ''}`}
-        onClick={() => setOpen(!open)}
+        onClick={() => !disabled && setOpen(!open)}
       >
         <div className="fr-select__trigger-content">
           {/* Calendar icon */}

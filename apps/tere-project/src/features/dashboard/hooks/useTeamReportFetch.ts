@@ -7,6 +7,7 @@ export function useTeamReportFetch() {
   const { sprint, project, startDate, endDate, epicId } = useTeamReportFilterStore(
     state => state.selectedFilter,
   );
+  const selectedTeams = useTeamReportFilterStore(state => state.selectedTeams);
 
   // Determine if we have valid filter criteria
   const hasSprintFilter = !!sprint;
@@ -15,14 +16,14 @@ export function useTeamReportFetch() {
 
   return useQuery({
     // Include both sprint and date range in queryKey for proper cache management
-    queryKey: ['teamReport', sprint, startDate, endDate, project, epicId],
+    queryKey: ['teamReport', sprint, startDate, endDate, project, epicId, selectedTeams.sort().join(',')],
     queryFn: () => jiraRepository.fetchTeamReport(
       sprint, 
       project, 
       startDate, 
       endDate,
-      epicId ? epicId.join(',') : undefined
+      epicId ? (Array.isArray(epicId) ? epicId.join(',') : epicId) : undefined
     ),
-    enabled: hasValidFilter && !!project,
+    enabled: hasValidFilter && !!project && selectedTeams.length > 0,
   });
 }
