@@ -10,6 +10,7 @@ export interface SprintOption {
   state: string;
   startDate: string;
   endDate: string;
+  boardId?: number;
 }
 
 export function useSprintDataTransform() {

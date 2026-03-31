@@ -3,15 +3,7 @@
 import { useMemo } from 'react';
 import { useMultiTeamSprintFetch } from './useMultiTeamSprintFetch';
 import { SprintDto } from '../types/dashboard';
-
-export interface SprintOption {
-  value: number;
-  label: string;
-  state: string;
-  startDate: string;
-  endDate: string;
-  boardId?: number;
-}
+import { SprintOption } from './useSprintDataTransform';
 
 export function useMultiSprintDataTransform() {
   const { data, isLoading, error } = useMultiTeamSprintFetch();
