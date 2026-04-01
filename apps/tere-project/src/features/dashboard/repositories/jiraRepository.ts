@@ -43,4 +43,15 @@ export const jiraRepository = {
     const response = await axiosClient.get(`/project/sprint?boardId=${boardId}`);
     return response.data;
   },
+
+  /**
+   * Fetch sprints for multiple board IDs in a single batch request
+   * More efficient than calling fetchSprint() per team
+   */
+  fetchSprintsByBoardIds: async (boardIds: number[]): Promise<SprintDto[]> => {
+    if (boardIds.length === 0) return [];
+    const boardIdParams = boardIds.join(',');
+    const response = await axiosClient.get(`/project/sprint/batch?boardIds=${boardIdParams}`);
+    return response.data;
+  },
 };

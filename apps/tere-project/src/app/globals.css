@@ -17,24 +17,43 @@
 }
 
 @layer components {
+  /* Dark mode styles for Ant Design components */
+  .dark .ant-drawer-body {
+    @apply bg-gray-800;
+  }
+
   .ant-drawer-body {
-    @apply bg-secondary;
+    @apply bg-secondary dark:bg-gray-800;
   }
 
   .ant-menu-light {
-    @apply bg-secondary text-white;
+    @apply bg-secondary text-white dark:bg-gray-800 dark:text-gray-100;
   }
 
   .custom-menu .ant-menu-item {
-    @apply bg-secondary text-white;
+    @apply bg-secondary text-white dark:bg-gray-800 dark:text-gray-100;
   }
 
   .custom-menu .ant-menu-item-selected {
-    @apply bg-primary;
+    @apply bg-primary dark:bg-gray-700;
   }
 
   .custom-menu .ant-menu-item:hover {
-    @apply bg-primary;
+    @apply bg-primary dark:bg-gray-700;
+  }
+
+  /* Dashboard dark mode backgrounds */
+  .dark {
+    --color-background: #111827;
+    --color-card: #1f2937;
+    --color-border: #374151;
+  }
+
+  /* Smooth transitions for theme changes */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      @apply transition-colors duration-300;
+    }
   }
 }
 

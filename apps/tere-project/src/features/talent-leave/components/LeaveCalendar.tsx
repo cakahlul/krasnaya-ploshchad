@@ -27,7 +27,6 @@ type TeamMember = {
   id: string;
   name: string;
   team: string;
-  role: string;
   leaveCount: number;
   dateRange: string;
   status: string;
@@ -256,18 +255,6 @@ export function LeaveCalendar() {
           );
         },
         size: 100,
-      },
-      {
-        id: 'role',
-        header: () => <div className="font-semibold text-gray-700">Role</div>,
-        cell: ({ row }) => {
-          if (row.original.type === 'team') return null;
-          const member = row.original.data as TeamMember;
-          return (
-            <div className="text-xs text-gray-600 truncate">{member.role}</div>
-          );
-        },
-        size: 120,
       },
     ];
 

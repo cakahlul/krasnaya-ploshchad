@@ -179,23 +179,13 @@ function TicketItem({ ticket, index }: { ticket: TicketDetail; index: number }) 
             </div>
           </div>
 
-          {/* Story Points & Weight */}
-          {(ticket.storyPoints !== undefined || ticket.spType || ticket.appendixV3 !== undefined) && (
+          {/* SP Type & Weight */}
+          {(ticket.spType || ticket.appendixV3 !== undefined) && (
             <div className="space-y-3 mb-4">
-              {(ticket.storyPoints !== undefined || ticket.spType) && (
-                <div className="grid grid-cols-2 gap-3">
-                  {ticket.storyPoints !== undefined && (
-                    <div className="bg-cyan-50/50 rounded-xl p-2.5 border border-cyan-100/50 transition-all duration-200 hover:shadow-sm hover:border-cyan-200">
-                      <p className="text-[10px] text-cyan-600/80 mb-0.5 font-semibold uppercase tracking-wider">Story Points</p>
-                      <span className="text-sm font-bold text-cyan-700">{ticket.storyPoints} SP</span>
-                    </div>
-                  )}
-                  {ticket.spType && (
-                    <div className="bg-purple-50/50 rounded-xl p-2.5 border border-purple-100/50 transition-all duration-200 hover:shadow-sm hover:border-purple-200">
-                      <p className="text-[10px] text-purple-600/80 mb-0.5 font-semibold uppercase tracking-wider">SP Type</p>
-                      <span className="text-xs font-bold text-purple-700">{ticket.spType}</span>
-                    </div>
-                  )}
+              {ticket.spType && (
+                <div className="bg-purple-50/50 rounded-xl p-2.5 border border-purple-100/50 transition-all duration-200 hover:shadow-sm hover:border-purple-200">
+                  <p className="text-[10px] text-purple-600/80 mb-0.5 font-semibold uppercase tracking-wider">SP Type</p>
+                  <span className="text-xs font-bold text-purple-700">{ticket.spType}</span>
                 </div>
               )}
               {ticket.appendixV3 !== undefined && (

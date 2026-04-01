@@ -16,7 +16,6 @@ interface LeaveModalProps {
     id: string;
     name: string;
     team: string;
-    role: string;
     leaveDate: LeaveDateRange[];
   };
   isAdmin?: boolean;
@@ -55,7 +54,6 @@ export function LeaveModal({ leaveRecord, isAdmin = false }: LeaveModalProps) {
       form.setFieldsValue({
         name: leaveRecord.name,
         team: leaveRecord.team,
-        role: leaveRecord.role,
         // Show filtered dates, or one empty field if no future dates
         leaveDates: futureLeaveDates.length > 0 ? futureLeaveDates : [{}],
       });
@@ -81,7 +79,6 @@ export function LeaveModal({ leaveRecord, isAdmin = false }: LeaveModalProps) {
       form.setFieldsValue({
         name: selectedTalent.name,
         team: selectedTalent.team,
-        role: selectedTalent.role,
       });
     }
   };
@@ -102,9 +99,7 @@ export function LeaveModal({ leaveRecord, isAdmin = false }: LeaveModalProps) {
         }));
 
       const formData: CreateLeaveRequest = {
-        name: values.name,
-        team: values.team,
-        role: values.role,
+        memberId: selectedTalentId,
         // In edit mode, send empty array to remove all leave dates
         // In create mode, send undefined if no dates provided
         leaveDate: isEditMode
@@ -216,10 +211,6 @@ export function LeaveModal({ leaveRecord, isAdmin = false }: LeaveModalProps) {
         </Form.Item>
 
         <Form.Item label="Team" name="team">
-          <Input disabled placeholder="Auto-populated from name" />
-        </Form.Item>
-
-        <Form.Item label="Role" name="role">
           <Input disabled placeholder="Auto-populated from name" />
         </Form.Item>
 

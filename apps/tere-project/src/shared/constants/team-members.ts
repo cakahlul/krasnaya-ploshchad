@@ -1,3 +1,8 @@
+/**
+ * @deprecated The member list has been migrated to Firestore `members` collection.
+ * This file is kept only as the seed source for POST /api/members/seed.
+ * Do not add new members here — use the Firestore collection instead.
+ */
 import { Level, TeamMember } from '@shared/types/common.types';
 
 export const TEAM_LENDING = 'SLS';

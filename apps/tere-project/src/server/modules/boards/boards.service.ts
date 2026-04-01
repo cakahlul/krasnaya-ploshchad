@@ -1,0 +1,28 @@
+import { boardsRepository, BoardsRepository } from './boards.repository';
+import type { BoardResponse } from '@shared/types/board.types';
+
+class BoardsService {
+  constructor(private readonly repository: BoardsRepository) {}
+
+  async findAll(): Promise<BoardResponse[]> {
+    const entities = await this.repository.findAll();
+    return entities.map(e => ({
+      id: e.id,
+      boardId: e.boardId,
+      name: e.name,
+      shortName: e.shortName,
+    }));
+  }
+
+  async getBoardIds(): Promise<number[]> {
+    const boards = await this.repository.findAll();
+    return boards.map(b => b.boardId);
+  }
+
+  async getBoardIdByShortName(shortName: string): Promise<number | null> {
+    const boards = await this.repository.findAll();
+    return boards.find(b => b.shortName === shortName)?.boardId ?? null;
+  }
+}
+
+export const boardsService = new BoardsService(boardsRepository);

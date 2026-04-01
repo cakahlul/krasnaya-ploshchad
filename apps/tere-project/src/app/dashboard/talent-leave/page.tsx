@@ -93,7 +93,6 @@ export default function TalentLeavePage() {
                   id: leaveRecord.id,
                   name: leaveRecord.name,
                   team: leaveRecord.team,
-                  role: leaveRecord.role,
                   leaveDate: leaveRecord.leaveDate,
                 }
               : undefined

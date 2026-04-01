@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { DatePicker, Table, Spin, Tooltip, Empty } from 'antd';
+import { useState } from 'react';
+import { DatePicker, Table, Spin, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import axiosClient from '@src/lib/axiosClient';
 import {
@@ -18,6 +18,8 @@ import {
   Clock,
 } from 'lucide-react';
 import { ProductivitySummaryExportButton } from './ProductivitySummaryExportButton';
+import { MultiSelectTeam } from './MultiSelectTeam';
+import { useBoards } from '../hooks/useBoards';
 
 interface ProductivitySummaryMemberDto {
   name: string;
@@ -28,6 +30,9 @@ interface ProductivitySummaryMemberDto {
   workingDays: number;
   averageWp: number;
   expectedAverageWp: number;
+  spProduct: number;
+  spTechDebt: number;
+  spTotal: number;
 }
 
 interface ProductivitySummaryData {
@@ -48,26 +53,31 @@ export default function ProductivitySummary() {
   const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs>(dayjs());
   const [data, setData] = useState<ProductivitySummaryData | null>(null);
   const [loading, setLoading] = useState(false);
+  const { boards, isLoading: boardsLoading } = useBoards();
+  const [selectedTeams, setSelectedTeams] = useState<number[]>([]);
 
-  useEffect(() => {
-    fetchData(selectedDate.month() + 1, selectedDate.year());
-  }, [selectedDate]);
+  const teamOptions = boards.map(b => ({ value: b.boardId, label: b.name }));
+  const boardShortNameMap = new Map(boards.map(b => [b.boardId, b.shortName]));
 
-  const fetchData = async (month: number, year: number) => {
+  const fetchData = async (month: number, year: number, teamIds: number[]) => {
     setLoading(true);
     try {
-      const response = await axiosClient.get(
-        `/report/productivity-summary`,
-        {
-          params: { month, year },
-        }
-      );
+      const teamsParam = teamIds.length > 0
+        ? teamIds.map(id => boardShortNameMap.get(id)).filter(Boolean).join(',')
+        : '';
+      const response = await axiosClient.get('/report/productivity-summary', {
+        params: { month, year, ...(teamsParam ? { teams: teamsParam } : {}) },
+      });
       setData(response.data);
     } catch (error) {
       console.error('Failed to fetch productivity summary:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCalculate = () => {
+    fetchData(selectedDate.month() + 1, selectedDate.year(), selectedTeams);
   };
 
   const handleDateChange = (date: dayjs.Dayjs | null) => {
@@ -185,22 +195,48 @@ export default function ProductivitySummary() {
       title: 'Team',
       dataIndex: 'team',
       key: 'team',
-      render: (team: string) => (
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-semibold ${
-            team === 'DS'
-              ? 'bg-blue-50 text-blue-600 border border-blue-100'
-              : 'bg-purple-50 text-purple-600 border border-purple-100'
-          }`}
-        >
-          {team}
-        </span>
-      ),
-      filters: [
-        { text: 'DS', value: 'DS' },
-        { text: 'SLS', value: 'SLS' },
-      ],
+      render: (team: string, _: any, index: number) => {
+        const palette = [
+          'bg-blue-50 text-blue-600 border border-blue-100',
+          'bg-purple-50 text-purple-600 border border-purple-100',
+          'bg-teal-50 text-teal-600 border border-teal-100',
+          'bg-orange-50 text-orange-600 border border-orange-100',
+        ];
+        const uniqueTeams = Array.from(new Set((data?.details ?? []).map(d => d.team)));
+        const colorClass = palette[uniqueTeams.indexOf(team) % palette.length];
+        return (
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${colorClass}`}>
+            {team}
+          </span>
+        );
+      },
+      filters: Array.from(new Set((data?.details ?? []).map(d => d.team)))
+        .map(team => ({ text: team, value: team })),
       onFilter: (value: any, record: any) => record.team === value,
+    },
+    {
+      title: 'SP Product',
+      dataIndex: 'spProduct',
+      key: 'spProduct',
+      align: 'center' as const,
+      render: (val: number) => <span className="font-semibold text-indigo-600">{val.toFixed(2)}</span>,
+      sorter: (a: any, b: any) => a.spProduct - b.spProduct,
+    },
+    {
+      title: 'SP Tech Debt',
+      dataIndex: 'spTechDebt',
+      key: 'spTechDebt',
+      align: 'center' as const,
+      render: (val: number) => <span className="font-semibold text-indigo-600">{val.toFixed(2)}</span>,
+      sorter: (a: any, b: any) => a.spTechDebt - b.spTechDebt,
+    },
+    {
+      title: 'SP Total',
+      dataIndex: 'spTotal',
+      key: 'spTotal',
+      align: 'center' as const,
+      render: (val: number) => <span className="font-bold text-indigo-700">{val.toFixed(2)}</span>,
+      sorter: (a: any, b: any) => a.spTotal - b.spTotal,
     },
     {
       title: 'Working Days',
@@ -281,7 +317,7 @@ export default function ProductivitySummary() {
             Productivity Summary
           </h1>
           <p className="text-gray-500 mt-2">
-            Comprehensive team performance overview across DS and SLS.
+            Comprehensive team performance overview across all teams.
           </p>
         </div>
 
@@ -300,6 +336,34 @@ export default function ProductivitySummary() {
             className="border-none shadow-none focus:ring-0 text-sm font-medium min-w-[150px]"
           />
         </div>
+      </div>
+
+      {/* Filter & Calculate Row */}
+      <div className="flex flex-wrap items-end gap-3 mb-8 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12">
+              <path d="M7 8a3 3 0 100-6 3 3 0 000 6zM14.5 9a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM1.615 16.428a1.224 1.224 0 01-.569-1.175 6.002 6.002 0 0111.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 017 18a9.953 9.953 0 01-5.385-1.572zM14.5 16h-.106c.07-.297.088-.611.048-.933a7.47 7.47 0 00-1.588-3.755 4.502 4.502 0 015.874 2.636.818.818 0 01-.36.98A7.465 7.465 0 0114.5 16z" />
+            </svg>
+            Teams
+          </label>
+          <MultiSelectTeam
+            options={teamOptions}
+            values={selectedTeams}
+            onChange={setSelectedTeams}
+            placeholder="All teams"
+            loading={boardsLoading}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={handleCalculate}
+          disabled={loading}
+          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-500 text-white font-semibold text-sm shadow-md hover:shadow-purple-500/30 hover:from-purple-700 hover:to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+        >
+          <Zap size={16} />
+          Calculate
+        </button>
       </div>
 
       {loading ? (
@@ -377,8 +441,9 @@ export default function ProductivitySummary() {
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-gray-100 p-12 flex flex-col items-center justify-center">
-          <Empty description="No productivity data found for this month" />
+        <div className="bg-white rounded-3xl border border-gray-100 p-12 flex flex-col items-center justify-center gap-3">
+          <Activity size={48} className="text-purple-200" />
+          <p className="text-gray-400 text-lg font-medium">Select teams and click Calculate to view productivity data</p>
         </div>
       )}
 

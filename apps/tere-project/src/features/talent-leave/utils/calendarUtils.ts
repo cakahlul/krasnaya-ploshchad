@@ -133,7 +133,6 @@ export function transformToRowData(
     id: leave.id,
     name: leave.name,
     team: leave.team,
-    role: leave.role,
     leaveCount,
     dateRanges: allDateRanges,
     leaveDates,

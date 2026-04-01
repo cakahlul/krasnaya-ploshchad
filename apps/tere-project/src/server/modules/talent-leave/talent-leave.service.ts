@@ -1,11 +1,13 @@
 import { TalentLeaveRepository, TalentLeaveEntity, LeaveFilterDto, talentLeaveRepository } from './talent-leave.repository';
 import type { TalentLeaveResponse, CreateLeaveRequest, UpdateLeaveRequest } from '@shared/types/talent-leave.types';
+import { membersService } from '@server/modules/members/members.service';
 
 class TalentLeaveService {
   constructor(private readonly repository: TalentLeaveRepository) {}
 
   async create(dto: CreateLeaveRequest): Promise<TalentLeaveResponse> {
-    const existing = await this.repository.findByName(dto.name);
+    const member = await membersService.findOne(dto.memberId);
+    const existing = await this.repository.findByMemberId(dto.memberId);
     if (existing) {
       if (dto.leaveDate && dto.leaveDate.length > 0) {
         const newLeaveDates = dto.leaveDate.map((leave) => ({ dateFrom: new Date(leave.dateFrom), dateTo: new Date(leave.dateTo), status: leave.status || 'Draft' }));
@@ -18,10 +20,10 @@ class TalentLeaveService {
     }
     const now = new Date();
     const entity: TalentLeaveEntity = {
-      name: dto.name,
-      team: dto.team,
+      memberId: member.id,
+      name: member.name,
+      team: member.teams.join(', '),
       leaveDate: dto.leaveDate ? dto.leaveDate.map((leave) => ({ dateFrom: new Date(leave.dateFrom), dateTo: new Date(leave.dateTo), status: leave.status || 'Draft' })) : [],
-      role: dto.role || '',
       createdAt: now,
       updatedAt: now,
     };
@@ -44,7 +46,6 @@ class TalentLeaveService {
     const updateData: Partial<TalentLeaveEntity> = { updatedAt: new Date() };
     if (dto.name !== undefined) updateData.name = dto.name;
     if (dto.team !== undefined) updateData.team = dto.team;
-    if (dto.role !== undefined) updateData.role = dto.role;
     if (dto.leaveDate !== undefined) {
       updateData.leaveDate = dto.leaveDate.map((leave) => ({ dateFrom: new Date(leave.dateFrom), dateTo: new Date(leave.dateTo), status: leave.status || 'Draft' }));
     }
@@ -59,23 +60,14 @@ class TalentLeaveService {
     await this.repository.delete(id);
   }
 
-  async findAllTeams(): Promise<string[]> {
-    try {
-      const teams = await this.repository.findAllTeams();
-      if (teams.length === 0) return ['Lending', 'Funding'];
-      return teams;
-    } catch {
-      return ['Lending', 'Funding'];
-    }
-  }
-
-  async findAllTalents(): Promise<Array<{ id: string; name: string; team: string; role: string }>> {
-    return this.repository.findAllTalents();
+  async findAllTalents(): Promise<Array<{ id: string; name: string; team: string }>> {
+    return membersService.findAllAsTalents();
   }
 
   private entityToDto(entity: TalentLeaveEntity): TalentLeaveResponse {
     return {
       id: entity.id!,
+      memberId: entity.memberId,
       name: entity.name,
       team: entity.team,
       leaveDate: entity.leaveDate.map((leave) => ({
@@ -83,7 +75,6 @@ class TalentLeaveService {
         dateTo: formatDateWithoutTimezone(leave.dateTo),
         status: leave.status,
       })),
-      role: entity.role || '',
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),
     };

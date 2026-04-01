@@ -64,17 +64,29 @@ async function paginate(jql: string, fields: string): Promise<JiraIssueEntity[]>
   return allIssues;
 }
 
+function buildProjectFilter(project: string): string {
+  const projects = project.split(',').map(p => p.trim()).filter(Boolean);
+  return projects.length === 1 ? `project = ${projects[0]}` : `project in (${projects.join(',')})`;
+}
+
 export async function fetchRawData(dto: JiraSearchRequestDto): Promise<JiraIssueEntity[]> {
-  const jql = `project = ${dto.project} AND sprint = ${dto.sprint} AND assignee IN (${dto.assignees.join(',')}) AND type IN standardIssueTypes() AND resolution = Done ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
+  if (dto.assignees.length === 0) return [];
+  const sprintIds = dto.sprint.split(',').map(s => s.trim()).filter(Boolean);
+  const sprintFilter = sprintIds.length === 1
+    ? `sprint = ${sprintIds[0]}`
+    : `sprint in (${sprintIds.join(',')})`;
+  const jql = `${buildProjectFilter(dto.project)} AND ${sprintFilter} AND assignee IN (${dto.assignees.join(',')}) AND type IN standardIssueTypes() AND resolution = Done ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
   return paginate(jql, REPORT_FIELDS);
 }
 
 export async function fetchRawDataByDateRange(project: string, assignees: string[], startDate: string, endDate: string): Promise<JiraIssueEntity[]> {
-  const jql = `project = ${project} AND assignee IN (${assignees.join(',')}) AND type IN standardIssueTypes() AND resolution = Done AND resolutiondate >= "${startDate}" AND resolutiondate <= "${endDate}" ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
+  if (assignees.length === 0) return [];
+  const jql = `${buildProjectFilter(project)} AND assignee IN (${assignees.join(',')}) AND type IN standardIssueTypes() AND resolution = Done AND resolutiondate >= "${startDate}" AND resolutiondate <= "${endDate}" ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
   return paginate(jql, REPORT_FIELDS);
 }
 
 export async function fetchOpenSprintData(project: string, assignees: string[], sprintId?: number): Promise<JiraIssueEntity[]> {
+  if (assignees.length === 0) return [];
   const sprintFilter = sprintId ? `sprint = ${sprintId}` : 'sprint in openSprints()';
   const jql = `project = ${project} AND ${sprintFilter} AND assignee IN (${assignees.join(',')}) AND type IN standardIssueTypes() AND resolution = Done ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
   return paginate(jql, REPORT_FIELDS);

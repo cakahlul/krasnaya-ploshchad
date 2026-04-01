@@ -1,5 +1,6 @@
 export interface WorkItem {
   member: string;
+  team: string;
   productivityRate: string;
   devDefect: number;
   devDefectRate: string;
@@ -10,6 +11,9 @@ export interface WorkItem {
   issueKeys: string[];
   workingDays?: number;
   wpToHours?: number;
+  spProduct?: number;
+  spTechDebt?: number;
+  spTotal?: number;
 }
 
 export interface DashboardDto {
@@ -67,5 +71,6 @@ export interface SprintDto {
   completeDate: string;
   createdDate: string;
   originBoardId: number;
+  boardId?: number;  // Added for multi-team sprint grouping
   goal: string;
 }

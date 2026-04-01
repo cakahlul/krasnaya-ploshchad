@@ -226,6 +226,17 @@
   animation: sprintSpin 0.6s linear infinite;
 }
 
+/* Small inline spinner used on trigger buttons */
+.select-trigger-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #7c3aed;
+  border-radius: 50%;
+  animation: sprintSpin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+
 @keyframes sprintSpin {
   to { transform: rotate(360deg); }
 }
@@ -359,4 +370,97 @@
 .sprint-select-badge--closed {
   color: #6b7280;
   background: rgba(107, 114, 128, 0.1);
+}
+
+/* ── Multi-Select Specific Styles ── */
+.sprint-select-list--multi {
+  max-height: 420px;
+}
+
+.sprint-select-item--multi {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.sprint-select-item--select-all {
+  font-weight: 600;
+  padding: 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #f3f0ff;
+}
+
+.sprint-select-item--partial .fr-select__checkbox {
+  accent-color: #8b5cf6;
+}
+
+.sprint-select-group__team-name {
+  font-weight: 600;
+  color: #1f2937;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+}
+
+.sprint-select-group__dot--status {
+  margin-left: 4px;
+}
+
+/* ── Footer ── */
+.sprint-select-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-top: 1px solid #f3f0ff;
+  background: linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%);
+  gap: 8px;
+}
+
+.sprint-select-footer__hint {
+  font-size: 12px;
+  color: #9ca3af;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sprint-select-footer__search-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #ede9fe;
+  color: #7c3aed;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sprint-select-footer__search-btn:hover:not(:disabled) {
+  background: #7c3aed;
+  color: #fff;
+}
+
+.sprint-select-footer__search-btn--highlight {
+  background: #7c3aed;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+}
+
+.sprint-select-footer__search-btn--highlight:hover:not(:disabled) {
+  background: #6d28d9;
+}
+
+.sprint-select-footer__search-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
