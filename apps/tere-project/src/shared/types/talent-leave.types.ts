@@ -12,7 +12,6 @@ export interface TalentLeaveResponse {
   name: string;
   team: string;
   leaveDate: LeaveDateRange[];
-  role: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -21,7 +20,6 @@ export interface TalentResponse {
   id: string;
   name: string;
   team: string;
-  role: string;
 }
 
 export interface CreateLeaveRequest {
@@ -32,7 +30,6 @@ export interface CreateLeaveRequest {
 export interface UpdateLeaveRequest {
   name?: string;
   team?: string;
-  role?: string;
   leaveDate?: LeaveDateRange[];
 }
 
@@ -64,7 +61,6 @@ export interface LeaveRowData {
   id: string;
   name: string;
   team: string;
-  role: string;
   leaveCount: number;
   dateRanges: Array<{ dateFrom: string; dateTo: string; status: string; display: string }>;
   leaveDates: string[];

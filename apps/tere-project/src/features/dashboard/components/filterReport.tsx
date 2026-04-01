@@ -4,11 +4,13 @@ import { MultiSelectSprint } from './MultiSelectSprint';
 import { DateRangeSelect } from './DateRangeSelect';
 import { useMultiSprintDataTransform } from '../hooks/useMultiSprintDataTransform';
 import { useTeamReportFilterStore } from '../store/teamReportFilterStore';
+import { useBoards } from '../hooks/useBoards';
 import dayjs from 'dayjs';
 import './FilterReport.css';
 
 export function FilterReport() {
   const { sprints, isLoading } = useMultiSprintDataTransform();
+  const { boards, isLoading: boardsLoading } = useBoards();
   const selectedTeams = useTeamReportFilterStore(state => state.selectedTeams);
   const selectedSprints = useTeamReportFilterStore(state => state.selectedSprints);
   const setTeams = useTeamReportFilterStore(state => state.setTeams);
@@ -20,20 +22,11 @@ export function FilterReport() {
   const setDateRangeFilter = useTeamReportFilterStore(state => state.setDateRangeFilter);
   const clearFilter = useTeamReportFilterStore(state => state.clearFilter);
 
-  const boardNameMap: Record<number, string> = {
-    143: 'Funding - DS Board',
-    142: 'Lending - SLS Board',
-  };
+  const shortNameMap: Record<number, string> = Object.fromEntries(
+    boards.map(b => [b.boardId, b.shortName])
+  );
 
-  const shortNameMap: Record<number, string> = {
-    143: 'DS',
-    142: 'SLS',
-  };
-
-  const teamOptions = [
-    { value: 143, label: 'Funding - DS Board' },
-    { value: 142, label: 'Lending - SLS Board' },
-  ];
+  const teamOptions = boards.map(b => ({ value: b.boardId, label: b.name }));
 
   const handleTeamChange = (values: number[]) => {
     setTeams(values);
@@ -42,7 +35,10 @@ export function FilterReport() {
   };
 
   const handleSprintChange = (values: string[]) => {
-    setSprints(values);
+    const projectName = selectedTeams.length > 0
+      ? selectedTeams.map(id => shortNameMap[id]).join(', ')
+      : 'Multi-Team';
+    setSprints(values, projectName);
   };
 
   const handleDateRangeChange = (
@@ -81,6 +77,7 @@ export function FilterReport() {
             options={teamOptions}
             values={selectedTeams}
             onChange={handleTeamChange}
+            loading={boardsLoading}
           />
         </div>
 

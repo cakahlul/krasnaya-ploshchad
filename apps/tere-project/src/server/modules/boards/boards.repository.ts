@@ -1,0 +1,22 @@
+import { firestore } from '@server/lib/firebase-admin';
+import type { BoardEntity } from '@shared/types/board.types';
+
+const COLLECTION = 'boards';
+
+function mapDocToEntity(id: string, data: FirebaseFirestore.DocumentData): BoardEntity & { id: string } {
+  return {
+    id,
+    boardId: data.boardId as number,
+    name: data.name as string,
+    shortName: data.shortName as string,
+  };
+}
+
+export class BoardsRepository {
+  async findAll(): Promise<(BoardEntity & { id: string })[]> {
+    const snapshot = await firestore.collection(COLLECTION).orderBy('name').get();
+    return snapshot.docs.map(doc => mapDocToEntity(doc.id, doc.data()));
+  }
+}
+
+export const boardsRepository = new BoardsRepository();

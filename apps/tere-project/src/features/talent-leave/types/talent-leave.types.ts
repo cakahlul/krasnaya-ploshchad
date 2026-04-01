@@ -12,7 +12,6 @@ export interface TalentLeaveResponse {
   name: string;
   team: string;
   leaveDate: LeaveDateRange[]; // Array of leave date ranges with status
-  role: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -22,7 +21,6 @@ export interface TalentResponse {
   id: string;
   name: string;
   team: string;
-  role: string;
 }
 
 // Request for POST /talent-leave
@@ -35,7 +33,6 @@ export interface CreateLeaveRequest {
 export interface UpdateLeaveRequest {
   name?: string;
   team?: string;
-  role?: string;
   leaveDate?: LeaveDateRange[]; // Array of leave date ranges with status
 }
 
@@ -66,7 +63,6 @@ export interface LeaveRowData {
   id: string;
   name: string;
   team: string;
-  role: string;
   leaveCount: number; // Total days across all ranges
   dateRanges: Array<{ dateFrom: string; dateTo: string; status: string; display: string }>; // Multiple date ranges with status
   leaveDates: string[]; // Array of YYYY-MM-DD (flattened from all ranges)

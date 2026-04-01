@@ -6,7 +6,6 @@ export interface TalentLeaveEntity {
   name: string;
   team: string;
   leaveDate: Array<{ dateFrom: Date; dateTo: Date; status: 'Draft' | 'Confirmed' | 'Sick' }>;
-  role: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,13 +39,12 @@ function mapDocToEntity(id: string, data: FirebaseFirestore.DocumentData): Talen
       dateTo: toDate(leave.dateTo),
       status: leave.status,
     })),
-    role: data.role || '',
     createdAt: toDate(data.createdAt),
     updatedAt: toDate(data.updatedAt),
   };
 }
 
-const COLLECTION = 'talent-leave';
+const COLLECTION = 'leave';
 
 export class TalentLeaveRepository {
   async create(data: TalentLeaveEntity): Promise<TalentLeaveEntity> {
@@ -94,7 +92,7 @@ export class TalentLeaveRepository {
         });
       }
 
-      return { id: doc.id, name: data.name, team: data.team, leaveDate: processedLeaveDates, role: data.role || '', createdAt: toDate(data.createdAt), updatedAt: toDate(data.updatedAt) } as TalentLeaveEntity;
+      return { id: doc.id, name: data.name, team: data.team, leaveDate: processedLeaveDates, createdAt: toDate(data.createdAt), updatedAt: toDate(data.updatedAt) } as TalentLeaveEntity;
     });
 
     results.sort((a, b) => {
@@ -136,42 +134,6 @@ export class TalentLeaveRepository {
     await firestore.collection(COLLECTION).doc(id).delete();
   }
 
-  async findAllTeams(): Promise<string[]> {
-    const snapshot = await firestore.collection('team').get();
-    if (snapshot.empty) return [];
-    const teamSet = new Set<string>();
-    snapshot.docs.forEach((doc) => {
-      const data = doc.data();
-      const teamName = data.name || data.teamName;
-      if (typeof teamName === 'string' && teamName.trim() !== '') teamSet.add(teamName.trim());
-    });
-    return Array.from(teamSet).sort();
-  }
-
-  async findAllTalents(): Promise<Array<{ id: string; name: string; team: string; role: string }>> {
-    const snapshot = await firestore.collection('talent').get();
-    if (snapshot.empty) return [];
-    return Promise.all(
-      snapshot.docs.map(async (doc) => {
-        const data = doc.data();
-        let teamName = '';
-        let roleName = '';
-        if (data.team && typeof data.team.get === 'function') {
-          try {
-            const teamDoc = await data.team.get();
-            if (teamDoc.exists) { const td = teamDoc.data(); teamName = td.name || td.teamName || ''; }
-          } catch {}
-        } else if (typeof data.team === 'string') { teamName = data.team; }
-        if (data.role && typeof data.role.get === 'function') {
-          try {
-            const roleDoc = await data.role.get();
-            if (roleDoc.exists) { const rd = roleDoc.data(); roleName = rd.name || rd.roleName || ''; }
-          } catch {}
-        } else if (typeof data.role === 'string') { roleName = data.role; }
-        return { id: doc.id, name: data.name, team: teamName, role: roleName };
-      })
-    );
-  }
 }
 
 export const talentLeaveRepository = new TalentLeaveRepository();

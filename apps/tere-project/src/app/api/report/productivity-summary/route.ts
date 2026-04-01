@@ -8,6 +8,8 @@ export const GET = withAuth(async (req) => {
   const month = parseInt(searchParams.get('month') ?? '0', 10);
   const year = parseInt(searchParams.get('year') ?? '0', 10);
   if (!month || !year) return Response.json({ message: 'month and year are required' }, { status: 400 });
-  const data = await generateProductivitySummary(month, year);
+  const teamsParam = searchParams.get('teams') ?? '';
+  const teams = teamsParam ? teamsParam.split(',').map(t => t.trim()).filter(Boolean) : undefined;
+  const data = await generateProductivitySummary(month, year, teams);
   return Response.json(data);
 });

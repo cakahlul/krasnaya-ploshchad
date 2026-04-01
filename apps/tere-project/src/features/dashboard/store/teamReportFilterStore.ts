@@ -8,7 +8,7 @@ type FilterState = {
   selectedSprints: string[];
   setSelectedFilter: (filter: DashboardFilter) => void;
   setTeams: (teams: number[]) => void;
-  setSprints: (sprints: string[]) => void;
+  setSprints: (sprints: string[], project?: string) => void;
   setSprintFilter: (sprint: string, project: string) => void;
   setDateRangeFilter: (startDate: string, endDate: string, project: string) => void;
   clearFilter: () => void;
@@ -34,7 +34,7 @@ export const useTeamReportFilterStore = create<FilterState>((set, get) => ({
     }
   },
 
-  setSprints: (sprints: string[]) => {
+  setSprints: (sprints: string[], project?: string) => {
     set({ selectedSprints: sprints });
     // Update the filter with first sprint if available (or all as comma-separated)
     if (sprints.length > 0) {
@@ -42,6 +42,7 @@ export const useTeamReportFilterStore = create<FilterState>((set, get) => ({
         selectedFilter: {
           ...state.selectedFilter,
           sprint: sprints.join(','),
+          project: project ?? state.selectedFilter.project,
           startDate: undefined,
           endDate: undefined,
           epicId: undefined,

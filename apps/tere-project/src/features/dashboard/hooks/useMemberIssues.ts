@@ -4,12 +4,11 @@ import { useQuery } from '@tanstack/react-query';
 import axiosClient from '@src/lib/axiosClient';
 import { TicketDetail } from './useTicketDetail';
 
-const apiUrl = process.env.NEXT_PUBLIC_AIOC_SERVICE;
 const CHUNK_SIZE = 15;
 
 async function fetchMemberIssuesBatch(keys: string[]): Promise<TicketDetail[]> {
   if (keys.length === 0) return [];
-  
+
   const chunks: string[][] = [];
   for (let i = 0; i < keys.length; i += CHUNK_SIZE) {
     chunks.push(keys.slice(i, i + CHUNK_SIZE));
@@ -17,7 +16,7 @@ async function fetchMemberIssuesBatch(keys: string[]): Promise<TicketDetail[]> {
 
   const results = await Promise.all(
     chunks.map((chunk) =>
-      axiosClient.post(`${apiUrl}/search/tickets/batch`, { keys: chunk }).then(res => res.data)
+      axiosClient.post(`/search/tickets`, { keys: chunk }).then(res => res.data)
     )
   );
 

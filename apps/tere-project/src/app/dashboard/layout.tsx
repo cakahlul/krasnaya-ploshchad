@@ -8,6 +8,7 @@ import Sidebar from '@src/components/sidebar';
 import Topbar from '@src/components/topbar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App } from 'antd';
+import AxiosErrorInterceptor from '@src/components/AxiosErrorInterceptor';
 
 export default function DashboardLayout({
   children,
@@ -31,6 +32,7 @@ export default function DashboardLayout({
     <>
       <QueryClientProvider client={queryClient}>
         <App>
+          <AxiosErrorInterceptor />
           <div className="flex min-h-screen bg-white text-gray-800 overflow-x-hidden">
             <Sidebar
               isOpen={sidebarOpen}
