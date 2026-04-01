@@ -2,8 +2,18 @@ import axios from 'axios'; // used for isAxiosError type guard only
 import { jiraClient } from '@server/lib/jira.client';
 import { SearchTicketDto, TicketDetailDto } from '@shared/types/search.types';
 import { parseAppendixWeightPoints, AppendixWeightPoint } from '@shared/utils/appendix-level';
+import { boardsService } from '@server/modules/boards/boards.service';
 
-const ALLOWED_PROJECTS = ['ABB', 'SLS', 'DS', 'BUZZ', 'REL', 'VUL', 'TAE', 'SRETASK'];
+const STATIC_ALLOWED_PROJECTS = ['ABB', 'BUZZ', 'REL', 'VUL', 'TAE', 'SRETASK'];
+
+async function getAllowedProjects(): Promise<{ allowed: string[]; boardProjects: string[] }> {
+  const boards = await boardsService.findAll();
+  const boardProjects = boards.map(b => b.shortName.toUpperCase());
+  return {
+    allowed: [...new Set([...STATIC_ALLOWED_PROJECTS, ...boardProjects])],
+    boardProjects,
+  };
+}
 
 const appendixWeightMapping: Record<AppendixWeightPoint, number> = {
   'Very Low': 1.5,
@@ -53,10 +63,11 @@ export class SearchRepository {
   ): Promise<{ tickets: SearchTicketDto[]; total?: number; nextPageToken?: string }> {
     if (!query?.trim()) return { tickets: [], total: 0 };
 
+    const { allowed, boardProjects } = await getAllowedProjects();
     const escaped = query.trim().replace(/["\\]/g, '\\$&');
-    const projectFilter = `project IN (${ALLOWED_PROJECTS.join(', ')})`;
+    const projectFilter = `project IN (${allowed.join(', ')})`;
     const upper = escaped.toUpperCase();
-    const projectMatch = ALLOWED_PROJECTS.find((p) => upper === p || upper === `${p}-`);
+    const projectMatch = allowed.find((p) => upper === p || upper === `${p}-`);
 
     const textFilter = projectMatch
       ? `(project = "${projectMatch.replace(/-$/, '')}" OR text ~ "${escaped}*")`
@@ -75,7 +86,7 @@ export class SearchRepository {
     });
 
     return {
-      tickets: response.data.issues.map((i) => this.mapToSearchTicket(i)),
+      tickets: response.data.issues.map((i) => this.mapToSearchTicket(i, boardProjects)),
       total: response.data.total,
       nextPageToken: response.data.nextPageToken,
     };
@@ -83,7 +94,8 @@ export class SearchRepository {
 
   async getTicketDetail(key: string): Promise<TicketDetailDto | null> {
     const projectKey = key.split('-')[0];
-    if (!ALLOWED_PROJECTS.includes(projectKey)) return null;
+    const { allowed, boardProjects } = await getAllowedProjects();
+    if (!allowed.includes(projectKey)) return null;
 
     try {
       const response = await jiraClient.get<JiraIssue>(`/rest/api/3/issue/${key}`, {
@@ -96,17 +108,17 @@ export class SearchRepository {
         },
         timeout: TIMEOUT,
       });
-      return this.mapToTicketDetail(response.data);
+      return this.mapToTicketDetail(response.data, boardProjects);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) return null;
       throw new Error('Failed to fetch ticket detail');
     }
   }
 
-  private mapToSearchTicket(issue: JiraIssue): SearchTicketDto {
+  private mapToSearchTicket(issue: JiraIssue, boardProjects: string[]): SearchTicketDto {
     const projectKey = issue.fields.project?.key ?? issue.key.split('-')[0];
     let resolution: string | undefined;
-    if (['SLS', 'DS'].includes(projectKey)) {
+    if (boardProjects.includes(projectKey)) {
       if (issue.fields.resolution?.name) {
         resolution = 'Done';
       } else {
@@ -133,10 +145,10 @@ export class SearchRepository {
     };
   }
 
-  private mapToTicketDetail(issue: JiraIssue): TicketDetailDto {
+  private mapToTicketDetail(issue: JiraIssue, boardProjects: string[]): TicketDetailDto {
     const projectKey = issue.fields.project?.key ?? issue.key.split('-')[0];
     let resolution: string | undefined;
-    if (['SLS', 'DS'].includes(projectKey)) {
+    if (boardProjects.includes(projectKey)) {
       if (issue.fields.resolution?.name) {
         resolution = 'Done';
       } else {
@@ -150,7 +162,7 @@ export class SearchRepository {
     let appendixV3: number | string | string[] | undefined;
     let totalWeightPoints: number | undefined;
 
-    if (['SLS', 'DS'].includes(projectKey)) {
+    if (boardProjects.includes(projectKey)) {
       const field = issue.fields.customfield_11543;
       if (Array.isArray(field) && field.length > 0) {
         const values = field

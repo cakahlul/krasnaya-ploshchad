@@ -1,7 +1,7 @@
 import { google } from 'googleapis';
 import { generateReportByDateRange } from './reports.service';
-import { teamMembers } from '@shared/constants/team-members';
-import type { TeamMember } from '@shared/types/common.types';
+import { membersService } from '@server/modules/members/members.service';
+import { boardsService } from '@server/modules/boards/boards.service';
 
 export interface ProductivitySummaryMemberDto {
   name: string;
@@ -12,6 +12,9 @@ export interface ProductivitySummaryMemberDto {
   workingDays: number;
   averageWp: number;
   expectedAverageWp: number;
+  spProduct: number;
+  spTechDebt: number;
+  spTotal: number;
 }
 
 export interface ProductivitySummaryResponseDto {
@@ -32,21 +35,32 @@ function formatToYYYYMMDD(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-export async function generateProductivitySummary(month: number, year: number): Promise<ProductivitySummaryResponseDto> {
+export async function generateProductivitySummary(month: number, year: number, teams?: string[]): Promise<ProductivitySummaryResponseDto> {
   const start = new Date(year, month - 1, 1);
   const end = new Date(year, month, 0);
   const startDateStr = formatToYYYYMMDD(start);
   const endDateStr = formatToYYYYMMDD(end);
 
-  const [dsReport, slsReport] = await Promise.all([
-    generateReportByDateRange(startDateStr, endDateStr, 'DS'),
-    generateReportByDateRange(startDateStr, endDateStr, 'SLS'),
+  const [allMembers, boards] = await Promise.all([
+    membersService.findAll(),
+    boardsService.findAll(),
   ]);
 
+  const filteredBoards = teams && teams.length > 0 ? boards.filter(b => teams.includes(b.shortName)) : boards;
+
+  const teamReports = await Promise.all(
+    filteredBoards.map(board => generateReportByDateRange(startDateStr, endDateStr, board.shortName)
+      .then(report => ({ report, shortName: board.shortName }))
+      .catch(() => null)
+    )
+  );
+
+  const fullNameMap = new Map(allMembers.map((m) => [m.name, m.fullName]));
   const details: ProductivitySummaryMemberDto[] = [];
 
-  const processTeamMembers = (reportData: any, teamName: string) => {
-    for (const issue of reportData.issues || []) {
+  for (const entry of teamReports) {
+    if (!entry) continue;
+    for (const issue of entry.report.issues || []) {
       const wpProduct = issue.weightPointsProduct || 0;
       const wpTech = issue.weightPointsTechDebt || 0;
       const wpTotal = issue.totalWeightPoints || 0;
@@ -54,14 +68,14 @@ export async function generateProductivitySummary(month: number, year: number): 
       const averageWp = workingDays > 0 ? wpTotal / workingDays : 0;
       const targetWp = issue.targetWeightPoints || 0;
       const expectedAverageWp = workingDays > 0 ? targetWp / workingDays : 0;
-      const memberInfo = teamMembers.find((m: TeamMember) => m.name === issue.member);
-      const displayName = (memberInfo as any)?.fullName || issue.member;
-      details.push({ name: displayName, team: teamName, wpProduct, wpTech, wpTotal, workingDays, averageWp, expectedAverageWp });
+      const displayName = fullNameMap.get(issue.member) || issue.member;
+      const spBase = targetWp > 0 ? (8 * workingDays) / targetWp : 0;
+      const spProduct = wpProduct * spBase;
+      const spTechDebt = wpTech * spBase;
+      const spTotal = spProduct + spTechDebt;
+      details.push({ name: displayName, team: entry.shortName, wpProduct, wpTech, wpTotal, workingDays, averageWp, expectedAverageWp, spProduct, spTechDebt, spTotal });
     }
-  };
-
-  processTeamMembers(dsReport, 'DS');
-  processTeamMembers(slsReport, 'SLS');
+  }
   details.sort((a, b) => a.name.localeCompare(b.name));
 
   const totalDaysOfWorks = details.reduce((s, m) => s + m.workingDays, 0);
@@ -99,8 +113,8 @@ export async function exportProductivitySummaryToSpreadsheet(month: number, year
     ['Productivity Produced', safeNumber(data.summary.productivityProduced)],
     ['Produce vs Expected', `${(data.summary.productivityProduceVsExpected * 100).toFixed(2)}%`],
     [],
-    ['Name', 'Team', 'Working Days', 'WP Product', 'WP Tech', 'WP Total', 'Avg WP / Day', 'Expected Avg WP'],
-    ...data.details.map((m) => [m.name, m.team, m.workingDays, m.wpProduct, m.wpTech, Number(m.wpTotal.toFixed(2)) || 0, Number(m.averageWp.toFixed(2)) || 0, Number(m.expectedAverageWp.toFixed(2)) || 0]),
+    ['Name', 'Team', 'SP Product', 'SP Tech Debt', 'SP Total', 'Working Days', 'WP Product', 'WP Tech', 'WP Total', 'Avg WP / Day', 'Expected Avg WP'],
+    ...data.details.map((m) => [m.name, m.team, Number(m.spProduct.toFixed(2)) || 0, Number(m.spTechDebt.toFixed(2)) || 0, Number(m.spTotal.toFixed(2)) || 0, m.workingDays, m.wpProduct, m.wpTech, Number(m.wpTotal.toFixed(2)) || 0, Number(m.averageWp.toFixed(2)) || 0, Number(m.expectedAverageWp.toFixed(2)) || 0]),
   ];
 
   const requests: any[] = [
@@ -108,7 +122,7 @@ export async function exportProductivitySummaryToSpreadsheet(month: number, year
     { repeatCell: { range: { sheetId: 0, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 2 }, cell: { userEnteredFormat: { backgroundColor: { red: 0.4, green: 0.3, blue: 0.7 }, textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true, fontSize: 14 }, horizontalAlignment: 'CENTER' } }, fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)' } },
     { mergeCells: { range: { sheetId: 0, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 2 }, mergeType: 'MERGE_ALL' } },
     { repeatCell: { range: { sheetId: 0, startRowIndex: 2, endRowIndex: 3, startColumnIndex: 0, endColumnIndex: 2 }, cell: { userEnteredFormat: { backgroundColor: { red: 0.9, green: 0.9, blue: 0.9 }, textFormat: { bold: true } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } },
-    { repeatCell: { range: { sheetId: 0, startRowIndex: 12, endRowIndex: 13, startColumnIndex: 0, endColumnIndex: 8 }, cell: { userEnteredFormat: { backgroundColor: { red: 0.9, green: 0.9, blue: 0.9 }, textFormat: { bold: true }, horizontalAlignment: 'CENTER' } }, fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)' } },
+    { repeatCell: { range: { sheetId: 0, startRowIndex: 12, endRowIndex: 13, startColumnIndex: 0, endColumnIndex: 11 }, cell: { userEnteredFormat: { backgroundColor: { red: 0.9, green: 0.9, blue: 0.9 }, textFormat: { bold: true }, horizontalAlignment: 'CENTER' } }, fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)' } },
   ];
 
   const createResponse = await sheets.spreadsheets.create({

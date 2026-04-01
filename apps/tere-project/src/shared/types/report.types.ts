@@ -92,6 +92,7 @@ export interface EpicDto {
 
 export interface JiraIssueReportResponseDto {
   member: string;
+  team: string;
   productivityRate: string;
   devDefect: number;
   devDefectRate: string;
@@ -103,6 +104,9 @@ export interface JiraIssueReportResponseDto {
   issueKeys: string[];
   workingDays?: number;
   wpToHours?: number;
+  spProduct?: number;
+  spTechDebt?: number;
+  spTotal?: number;
   epic?: EpicDto | null;
 }
 

@@ -22,10 +22,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     
     if (stored) {
       setThemeState(stored);
-    } else {
-      // Check system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setThemeState(prefersDark ? 'dark' : 'light');
     }
     
     setMounted(true);

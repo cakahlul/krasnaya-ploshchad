@@ -2,14 +2,15 @@ import type {
   JiraIssueEntity, JiraIssueReportResponseDto, GetReportResponseDto,
   EpicDto,
 } from '@shared/types/report.types';
-import type { TeamMember } from '@shared/types/common.types';
+import type { MemberResponse } from '@shared/types/member.types';
 import type { LeaveDateRange } from '@shared/types/talent-leave.types';
-import { teamMembers } from '@shared/constants/team-members';
+import { membersService } from '@server/modules/members/members.service';
 import { issueProcessingStrategyFactory } from './strategies/issue-processing-strategy.factory';
 import { talentLeaveService } from '@server/modules/talent-leave/talent-leave.service';
 import { sprintService } from '@server/modules/sprint/sprint.service';
+import { boardsService } from '@server/modules/boards/boards.service';
 import { holidaysService } from '@server/modules/holidays/holidays.service';
-import { calculateWorkingDays, getLeaveDataForMember } from '@shared/utils/working-days.util';
+import { calculateWorkingDays } from '@shared/utils/working-days.util';
 import * as repo from './reports.repository';
 
 const dailyTargetWPByLevel: Record<string, number> = {
@@ -33,25 +34,31 @@ function formatToYYYYMMDD(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-async function getSprintDetails(sprintId: string): Promise<{ startDate: string; endDate: string } | null> {
+async function getSprintDetails(sprintParam: string): Promise<{ startDate: string; endDate: string } | null> {
   try {
-    for (const boardId of [142, 143]) {
-      const sprints = await sprintService.fetchAllSprint(boardId);
-      const sprint = sprints.find((s) => String(s.id) === sprintId);
-      if (sprint && sprint.startDate && sprint.endDate) return { startDate: sprint.startDate, endDate: sprint.endDate };
-    }
-    return null;
+    const sprintIds = sprintParam.split(',').map(s => s.trim()).filter(Boolean);
+    const boardIds = await boardsService.getBoardIds();
+    const allSprints = (await Promise.all(boardIds.map(boardId => sprintService.fetchAllSprint(boardId)))).flat();
+    const matched = sprintIds
+      .map(id => allSprints.find(s => String(s.id) === id))
+      .filter((s): s is NonNullable<typeof s> => !!s?.startDate && !!s?.endDate);
+    if (matched.length === 0) return null;
+    const startDate = matched.reduce((min, s) => s.startDate < min ? s.startDate : min, matched[0].startDate);
+    const endDate = matched.reduce((max, s) => s.endDate > max ? s.endDate : max, matched[0].endDate);
+    return { startDate, endDate };
   } catch { return null; }
 }
 
-async function fetchLeaveData(startDate: string, endDate: string, project: string): Promise<Array<{ name: string; leaveDate: LeaveDateRange[] }>> {
+async function fetchLeaveData(startDate: string, endDate: string, members: MemberResponse[]): Promise<Map<string, LeaveDateRange[]>> {
   try {
-    const projectMemberNames = teamMembers.filter((m: TeamMember) => m.team.includes(project)).map((m: TeamMember) => m.name.toLowerCase());
+    const memberIds = new Set(members.map((m) => m.id));
     const leaveRecords = await talentLeaveService.findAll({ startDate, endDate });
-    return leaveRecords
-      .filter((r) => projectMemberNames.includes(r.name.toLowerCase()))
-      .map((r) => ({ name: r.name, leaveDate: r.leaveDate }));
-  } catch { return []; }
+    const leaveMap = new Map<string, LeaveDateRange[]>();
+    for (const r of leaveRecords) {
+      if (memberIds.has(r.memberId)) leaveMap.set(r.memberId, r.leaveDate);
+    }
+    return leaveMap;
+  } catch { return new Map(); }
 }
 
 function calculateDefectRate(defectCount: number): string {
@@ -63,24 +70,26 @@ function calculateDefectRate(defectCount: number): string {
 
 function processRawData(
   rawData: JiraIssueEntity[],
-  project: string,
+  members: MemberResponse[],
   sprintDetails?: { startDate: string; endDate: string } | null,
-  leaveData?: Array<{ name: string; leaveDate: LeaveDateRange[] }>,
+  leaveData?: Map<string, LeaveDateRange[]>,
   nationalHolidays: string[] = [],
 ): JiraIssueReportResponseDto[] {
+  // accountId (Jira) === memberId (Firestore doc ID)
   const accountIdMap = new Map<string, string>(
-    teamMembers.filter((m: TeamMember) => m.team.includes(project)).map((m: TeamMember) => [m.id.toLowerCase(), m.name]),
+    members.map((m) => [m.id.toLowerCase(), m.name]),
   );
+  const nameToId = new Map<string, string>(members.map((m) => [m.name, m.id]));
 
   const reports = new Map<string, JiraIssueReportResponseDto>(
-    teamMembers.filter((m: TeamMember) => m.team.includes(project)).map((m: TeamMember) => [
+    members.map((m) => [
       m.name,
-      { member: m.name, productivityRate: '', totalWeightPoints: 0, devDefect: 0, devDefectRate: '', level: m.level, weightPointsProduct: 0, weightPointsTechDebt: 0, targetWeightPoints: (dailyTargetWPByLevel[m.level] ?? 8) * 10, issueKeys: [] },
+      { member: m.name, team: m.teams[0] ?? '', productivityRate: '', totalWeightPoints: 0, devDefect: 0, devDefectRate: '', level: m.level, weightPointsProduct: 0, weightPointsTechDebt: 0, targetWeightPoints: (dailyTargetWPByLevel[m.level] ?? 8) * 10, issueKeys: [] },
     ]),
   );
 
   const complexityMap = new Map<string, { totalComplexity: number; count: number }>(
-    teamMembers.map((m: TeamMember) => [m.name, { totalComplexity: 0, count: 0 }]),
+    members.map((m) => [m.name, { totalComplexity: 0, count: 0 }]),
   );
 
   rawData.forEach((issue) => {
@@ -104,7 +113,8 @@ function processRawData(
 
   Array.from(reports.values()).forEach((report) => {
     if (sprintDetails && leaveData) {
-      const memberLeaveDates = getLeaveDataForMember(leaveData, report.member);
+      const memberId = nameToId.get(report.member) ?? '';
+      const memberLeaveDates = leaveData.get(memberId) ?? [];
       report.workingDays = calculateWorkingDays(parseLocalDate(sprintDetails.startDate), parseLocalDate(sprintDetails.endDate), memberLeaveDates, nationalHolidays);
     }
     const dailyRate = dailyTargetWPByLevel[report.level] ?? 8;
@@ -117,13 +127,18 @@ function processRawData(
     report.devDefectRate = calculateDefectRate(report.devDefect);
     const targetSP = report.workingDays ? report.workingDays * 8 : 80;
     report.wpToHours = report.totalWeightPoints / targetSP;
+    const spBase = report.targetWeightPoints > 0 ? (8 * effectiveWorkingDays) / report.targetWeightPoints : 0;
+    report.spProduct = report.weightPointsProduct * spBase;
+    report.spTechDebt = report.weightPointsTechDebt * spBase;
+    report.spTotal = report.spProduct + report.spTechDebt;
     if (report.totalWeightPoints === 0) {
       report.weightPointsProduct = 0; report.weightPointsTechDebt = 0; report.devDefect = 0;
       report.devDefectRate = '0%'; report.productivityRate = '0%'; report.wpToHours = 0;
+      report.spProduct = 0; report.spTechDebt = 0; report.spTotal = 0;
     }
   });
 
-  return Array.from(reports.values()).filter((r) => r.totalWeightPoints > 0);
+  return Array.from(reports.values()).filter((r) => r.issueKeys.length > 0);
 }
 
 function summarizeTeamReport(issues: JiraIssueReportResponseDto[], sprintDetails?: { startDate: string; endDate: string } | null, nationalHolidays: string[] = []): GetReportResponseDto {
@@ -151,8 +166,30 @@ function summarizeTeamReport(issues: JiraIssueReportResponseDto[], sprintDetails
   };
 }
 
+function filterMembersByProject(members: MemberResponse[], project: string): MemberResponse[] {
+  const projectList = project.split(',').map(p => p.trim().toLowerCase()).filter(Boolean);
+  return members.filter((m) => m.teams.some(t => projectList.includes(t.toLowerCase())));
+}
+
+function isBadRequestError(error: unknown): boolean {
+  return !!(error && typeof error === 'object' && 'response' in error && (error as { response?: { status?: number } }).response?.status === 400);
+}
+
 export async function generateReport(sprint: string, project: string, epicId?: string): Promise<GetReportResponseDto> {
-  let rawData = await repo.fetchRawData({ sprint, assignees: teamMembers.filter((m: TeamMember) => m.team.includes(project)).map((m: TeamMember) => m.id), project });
+  const allMembers = await membersService.findAll();
+  const members = filterMembersByProject(allMembers, project);
+  const assignees = members.map((m) => m.id);
+  let rawData: Awaited<ReturnType<typeof repo.fetchRawData>>;
+  try {
+    rawData = await repo.fetchRawData({ sprint, assignees, project });
+  } catch (error) {
+    if (isBadRequestError(error)) {
+      console.warn(`[generateReport] Jira returned 400 for project=${project} sprint=${sprint}, returning empty data`);
+      rawData = [];
+    } else {
+      throw error;
+    }
+  }
   if (epicId) {
     const epicIds = epicId.split(',');
     rawData = rawData.filter((issue) => {
@@ -161,20 +198,22 @@ export async function generateReport(sprint: string, project: string, epicId?: s
     });
   }
   const sprintDetails = await getSprintDetails(sprint);
-  let leaveData: Array<{ name: string; leaveDate: LeaveDateRange[] }> = [];
+  let leaveData: Map<string, LeaveDateRange[]> = new Map();
   let nationalHolidays: string[] = [];
   if (sprintDetails) {
     const start = formatToYYYYMMDD(parseLocalDate(sprintDetails.startDate));
     const end = formatToYYYYMMDD(parseLocalDate(sprintDetails.endDate));
-    leaveData = await fetchLeaveData(start, end, project);
+    leaveData = await fetchLeaveData(start, end, members);
     nationalHolidays = await holidaysService.getNationalHolidays(parseLocalDate(sprintDetails.startDate), parseLocalDate(sprintDetails.endDate));
   }
-  const teamReport = processRawData(rawData, project, sprintDetails, leaveData, nationalHolidays);
+  const teamReport = processRawData(rawData, members, sprintDetails, leaveData, nationalHolidays);
   return summarizeTeamReport(teamReport, sprintDetails, nationalHolidays);
 }
 
 export async function generateReportByDateRange(startDate: string, endDate: string, project: string, epicId?: string): Promise<GetReportResponseDto> {
-  const assignees = teamMembers.filter((m: TeamMember) => m.team.includes(project)).map((m: TeamMember) => m.id);
+  const allMembers = await membersService.findAll();
+  const members = filterMembersByProject(allMembers, project);
+  const assignees = members.map((m) => m.id);
   let rawData = await repo.fetchRawDataByDateRange(project, assignees, startDate, endDate);
   if (epicId) {
     const epicIds = epicId.split(',');
@@ -183,17 +222,27 @@ export async function generateReportByDateRange(startDate: string, endDate: stri
       return issue.fields.parent?.key && epicIds.includes(issue.fields.parent.key);
     });
   }
-  const leaveData = await fetchLeaveData(startDate, endDate, project);
+  const leaveData = await fetchLeaveData(startDate, endDate, members);
   const nationalHolidays = await holidaysService.getNationalHolidays(parseLocalDate(startDate), parseLocalDate(endDate));
-  const teamReport = processRawData(rawData, project, { startDate, endDate }, leaveData, nationalHolidays);
+  const teamReport = processRawData(rawData, members, { startDate, endDate }, leaveData, nationalHolidays);
   return summarizeTeamReport(teamReport, { startDate, endDate }, nationalHolidays);
 }
 
 export async function getEpics(sprint: string, project: string, startDate?: string, endDate?: string): Promise<EpicDto[]> {
-  const assignees = teamMembers.filter((m: TeamMember) => m.team.includes(project)).map((m: TeamMember) => m.id);
-  const rawData = startDate && endDate
-    ? await repo.fetchRawDataByDateRange(project, assignees, startDate, endDate)
-    : await repo.fetchRawData({ sprint, assignees, project });
+  const allMembers = await membersService.findAll();
+  const assignees = filterMembersByProject(allMembers, project).map((m) => m.id);
+  let rawData: Awaited<ReturnType<typeof repo.fetchRawData>>;
+  try {
+    rawData = startDate && endDate
+      ? await repo.fetchRawDataByDateRange(project, assignees, startDate, endDate)
+      : await repo.fetchRawData({ sprint, assignees, project });
+  } catch (error) {
+    if (isBadRequestError(error)) {
+      console.warn(`[getEpics] Jira returned 400 for project=${project} sprint=${sprint}, returning empty epics`);
+      return [];
+    }
+    throw error;
+  }
   const epicsMap = new Map<string, EpicDto>();
   rawData.forEach((issue) => {
     if (issue.fields.parent && !epicsMap.has(issue.fields.parent.key)) {
@@ -204,29 +253,32 @@ export async function getEpics(sprint: string, project: string, startDate?: stri
 }
 
 export async function generateOpenSprintReport(project: string): Promise<GetReportResponseDto | null> {
-  const boardId = project === 'DS' ? 143 : 142;
+  const boardId = await boardsService.getBoardIdByShortName(project);
+  if (!boardId) return null;
   const sprints = await sprintService.fetchAllSprint(boardId);
   const activeSprint = sprints.find((s) => s.state === 'active');
   if (!activeSprint) return null;
-  const assignees = teamMembers.filter((m: TeamMember) => m.team.includes(project)).map((m: TeamMember) => m.id);
+  const allMembers = await membersService.findAll();
+  const members = allMembers.filter((m) => m.teams.some(t => t.toLowerCase() === project.toLowerCase()));
+  const assignees = members.map((m) => m.id);
   const rawData = await repo.fetchOpenSprintData(project, assignees, activeSprint.id);
   const sprintDetails = { startDate: activeSprint.startDate, endDate: activeSprint.endDate };
   const start = formatToYYYYMMDD(parseLocalDate(sprintDetails.startDate));
   const end = formatToYYYYMMDD(parseLocalDate(sprintDetails.endDate));
-  const leaveData = await fetchLeaveData(start, end, project);
+  const leaveData = await fetchLeaveData(start, end, members);
   const nationalHolidays = await holidaysService.getNationalHolidays(parseLocalDate(sprintDetails.startDate), parseLocalDate(sprintDetails.endDate));
-  const teamReport = processRawData(rawData, project, sprintDetails, leaveData, nationalHolidays);
+  const teamReport = processRawData(rawData, members, sprintDetails, leaveData, nationalHolidays);
   const report = summarizeTeamReport(teamReport, sprintDetails, nationalHolidays);
   return { ...report, sprintName: activeSprint.name };
 }
 
 export async function getSprintWorkItemStats(project: string): Promise<{ totalWorkItems: number; closedWorkItems: number; averageHoursOpen: number | null }> {
-  const boardId = project === 'DS' ? 143 : 142;
+  const boardId = await boardsService.getBoardIdByShortName(project);
+  if (!boardId) return { totalWorkItems: 0, closedWorkItems: 0, averageHoursOpen: null };
   const sprints = await sprintService.fetchAllSprint(boardId);
   const activeSprint = sprints.find((s) => s.state === 'active');
   if (!activeSprint) return { totalWorkItems: 0, closedWorkItems: 0, averageHoursOpen: null };
 
-  // Use agile sprint issue API — no JQL search needed
   const allIssues = await sprintService.fetchIssuesBySprintId(activeSprint.id);
 
   const closedIssues = allIssues.filter((i: { fields: { resolutiondate?: string; resolution?: { name?: string } } }) => i.fields.resolutiondate || i.fields.resolution?.name?.toLowerCase() === 'done');

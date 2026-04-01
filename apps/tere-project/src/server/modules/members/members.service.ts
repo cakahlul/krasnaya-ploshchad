@@ -65,13 +65,18 @@ class MembersService {
   }
 
   /** Returns members in TalentResponse shape for backwards-compatibility with talent-leave dropdown. */
+  async findByEmail(email: string): Promise<MemberResponse | null> {
+    const entity = await this.repository.findByEmail(email);
+    if (!entity) return null;
+    return this.entityToDto(entity);
+  }
+
   async findAllAsTalents(): Promise<TalentResponse[]> {
     const members = await this.repository.findAll();
     return members.map((m) => ({
       id: m.id!,
       name: m.name,
       team: m.teams.join(', '),
-      role: m.level,
     }));
   }
 
