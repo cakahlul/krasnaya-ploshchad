@@ -8,6 +8,7 @@ export interface LeaveDateRange {
 
 export interface TalentLeaveResponse {
   id: string;
+  memberId: string;
   name: string;
   team: string;
   leaveDate: LeaveDateRange[];
@@ -24,9 +25,7 @@ export interface TalentResponse {
 }
 
 export interface CreateLeaveRequest {
-  name: string;
-  team: string;
-  role: string;
+  memberId: string;
   leaveDate?: LeaveDateRange[];
 }
 

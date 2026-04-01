@@ -1,11 +1,13 @@
 import { TalentLeaveRepository, TalentLeaveEntity, LeaveFilterDto, talentLeaveRepository } from './talent-leave.repository';
 import type { TalentLeaveResponse, CreateLeaveRequest, UpdateLeaveRequest } from '@shared/types/talent-leave.types';
+import { membersService } from '@server/modules/members/members.service';
 
 class TalentLeaveService {
   constructor(private readonly repository: TalentLeaveRepository) {}
 
   async create(dto: CreateLeaveRequest): Promise<TalentLeaveResponse> {
-    const existing = await this.repository.findByName(dto.name);
+    const member = await membersService.findOne(dto.memberId);
+    const existing = await this.repository.findByMemberId(dto.memberId);
     if (existing) {
       if (dto.leaveDate && dto.leaveDate.length > 0) {
         const newLeaveDates = dto.leaveDate.map((leave) => ({ dateFrom: new Date(leave.dateFrom), dateTo: new Date(leave.dateTo), status: leave.status || 'Draft' }));
@@ -18,10 +20,11 @@ class TalentLeaveService {
     }
     const now = new Date();
     const entity: TalentLeaveEntity = {
-      name: dto.name,
-      team: dto.team,
+      memberId: member.id,
+      name: member.name,
+      team: member.teams.join(', '),
       leaveDate: dto.leaveDate ? dto.leaveDate.map((leave) => ({ dateFrom: new Date(leave.dateFrom), dateTo: new Date(leave.dateTo), status: leave.status || 'Draft' })) : [],
-      role: dto.role || '',
+      role: member.level,
       createdAt: now,
       updatedAt: now,
     };
@@ -70,12 +73,13 @@ class TalentLeaveService {
   }
 
   async findAllTalents(): Promise<Array<{ id: string; name: string; team: string; role: string }>> {
-    return this.repository.findAllTalents();
+    return membersService.findAllAsTalents();
   }
 
   private entityToDto(entity: TalentLeaveEntity): TalentLeaveResponse {
     return {
       id: entity.id!,
+      memberId: entity.memberId,
       name: entity.name,
       team: entity.team,
       leaveDate: entity.leaveDate.map((leave) => ({

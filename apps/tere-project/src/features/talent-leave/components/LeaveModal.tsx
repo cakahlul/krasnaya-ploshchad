@@ -102,9 +102,7 @@ export function LeaveModal({ leaveRecord, isAdmin = false }: LeaveModalProps) {
         }));
 
       const formData: CreateLeaveRequest = {
-        name: values.name,
-        team: values.team,
-        role: values.role,
+        memberId: selectedTalentId,
         // In edit mode, send empty array to remove all leave dates
         // In create mode, send undefined if no dates provided
         leaveDate: isEditMode

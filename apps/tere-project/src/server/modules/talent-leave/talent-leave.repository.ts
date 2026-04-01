@@ -2,6 +2,7 @@ import { firestore } from '@server/lib/firebase-admin';
 
 export interface TalentLeaveEntity {
   id?: string;
+  memberId: string;
   name: string;
   team: string;
   leaveDate: Array<{ dateFrom: Date; dateTo: Date; status: 'Draft' | 'Confirmed' | 'Sick' }>;
@@ -31,6 +32,7 @@ function mapDocToEntity(id: string, data: FirebaseFirestore.DocumentData): Talen
   const leaveDateArray = data.leaveDate || [];
   return {
     id,
+    memberId: data.memberId ?? id,
     name: data.name,
     team: data.team,
     leaveDate: leaveDateArray.map((leave: any) => ({
@@ -48,11 +50,17 @@ const COLLECTION = 'talent-leave';
 
 export class TalentLeaveRepository {
   async create(data: TalentLeaveEntity): Promise<TalentLeaveEntity> {
-    const docRef = await firestore.collection(COLLECTION).add(data);
+    // Use memberId as document ID to enforce 1:1 relationship between member and leave record.
+    const docRef = firestore.collection(COLLECTION).doc(data.memberId);
+    await docRef.set(data);
     const doc = await docRef.get();
     const docData = doc.data();
     if (!docData) throw new Error('Failed to retrieve created document');
     return mapDocToEntity(doc.id, docData);
+  }
+
+  async findByMemberId(memberId: string): Promise<TalentLeaveEntity | null> {
+    return this.findById(memberId);
   }
 
   async findAll(filters?: LeaveFilterDto): Promise<TalentLeaveEntity[]> {

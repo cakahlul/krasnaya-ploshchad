@@ -8,6 +8,7 @@ export interface LeaveDateRange {
 // Response from GET /talent-leave
 export interface TalentLeaveResponse {
   id: string;
+  memberId: string;
   name: string;
   team: string;
   leaveDate: LeaveDateRange[]; // Array of leave date ranges with status
@@ -26,9 +27,7 @@ export interface TalentResponse {
 
 // Request for POST /talent-leave
 export interface CreateLeaveRequest {
-  name: string;
-  team: string;
-  role: string;
+  memberId: string;
   leaveDate?: LeaveDateRange[]; // Optional array of leave date ranges with status
 }
 
