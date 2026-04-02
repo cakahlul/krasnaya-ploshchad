@@ -92,7 +92,7 @@ export class TalentLeaveRepository {
         });
       }
 
-      return { id: doc.id, name: data.name, team: data.team, leaveDate: processedLeaveDates, createdAt: toDate(data.createdAt), updatedAt: toDate(data.updatedAt) } as TalentLeaveEntity;
+      return { ...mapDocToEntity(doc.id, data), leaveDate: processedLeaveDates };
     });
 
     results.sort((a, b) => {
