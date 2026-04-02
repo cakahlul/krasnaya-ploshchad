@@ -9,7 +9,9 @@ export const GET = withAuth(async () => {
 });
 
 export const POST = withAuth(async (req) => {
-  const body = await req.json();
-  const member = await membersService.create(body);
+  const { id, ...body } = await req.json();
+  const member = id
+    ? await membersService.createWithId(id, body)
+    : await membersService.create(body);
   return Response.json(member, { status: 201 });
 });

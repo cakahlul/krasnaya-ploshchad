@@ -77,19 +77,19 @@ function processRawData(
 ): JiraIssueReportResponseDto[] {
   // accountId (Jira) === memberId (Firestore doc ID)
   const accountIdMap = new Map<string, string>(
-    members.map((m) => [m.id.toLowerCase(), m.name]),
+    members.map((m) => [m.id.toLowerCase(), m.fullName]),
   );
-  const nameToId = new Map<string, string>(members.map((m) => [m.name, m.id]));
+  const nameToId = new Map<string, string>(members.map((m) => [m.fullName, m.id]));
 
   const reports = new Map<string, JiraIssueReportResponseDto>(
     members.map((m) => [
-      m.name,
-      { member: m.name, team: m.teams[0] ?? '', productivityRate: '', totalWeightPoints: 0, devDefect: 0, devDefectRate: '', level: m.level, weightPointsProduct: 0, weightPointsTechDebt: 0, targetWeightPoints: (dailyTargetWPByLevel[m.level] ?? 8) * 10, issueKeys: [] },
+      m.fullName,
+      { member: m.fullName, team: m.teams[0] ?? '', productivityRate: '', totalWeightPoints: 0, devDefect: 0, devDefectRate: '', level: m.level, weightPointsProduct: 0, weightPointsTechDebt: 0, targetWeightPoints: (dailyTargetWPByLevel[m.level] ?? 8) * 10, issueKeys: [] },
     ]),
   );
 
   const complexityMap = new Map<string, { totalComplexity: number; count: number }>(
-    members.map((m) => [m.name, { totalComplexity: 0, count: 0 }]),
+    members.map((m) => [m.fullName, { totalComplexity: 0, count: 0 }]),
   );
 
   rawData.forEach((issue) => {

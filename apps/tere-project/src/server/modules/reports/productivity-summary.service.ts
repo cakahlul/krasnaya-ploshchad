@@ -1,6 +1,5 @@
 import { google } from 'googleapis';
 import { generateReportByDateRange } from './reports.service';
-import { membersService } from '@server/modules/members/members.service';
 import { boardsService } from '@server/modules/boards/boards.service';
 
 export interface ProductivitySummaryMemberDto {
@@ -41,10 +40,7 @@ export async function generateProductivitySummary(month: number, year: number, t
   const startDateStr = formatToYYYYMMDD(start);
   const endDateStr = formatToYYYYMMDD(end);
 
-  const [allMembers, boards] = await Promise.all([
-    membersService.findAll(),
-    boardsService.findAll(),
-  ]);
+  const boards = await boardsService.findAll();
 
   const filteredBoards = teams && teams.length > 0 ? boards.filter(b => teams.includes(b.shortName)) : boards;
 
@@ -55,7 +51,6 @@ export async function generateProductivitySummary(month: number, year: number, t
     )
   );
 
-  const fullNameMap = new Map(allMembers.map((m) => [m.name, m.fullName]));
   const details: ProductivitySummaryMemberDto[] = [];
 
   for (const entry of teamReports) {
@@ -68,7 +63,7 @@ export async function generateProductivitySummary(month: number, year: number, t
       const averageWp = workingDays > 0 ? wpTotal / workingDays : 0;
       const targetWp = issue.targetWeightPoints || 0;
       const expectedAverageWp = workingDays > 0 ? targetWp / workingDays : 0;
-      const displayName = fullNameMap.get(issue.member) || issue.member;
+      const displayName = issue.member;
       const spBase = targetWp > 0 ? (8 * workingDays) / targetWp : 0;
       const spProduct = wpProduct * spBase;
       const spTechDebt = wpTech * spBase;
