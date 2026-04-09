@@ -9,6 +9,7 @@ function mapDocToEntity(id: string, data: FirebaseFirestore.DocumentData): Board
     boardId: data.boardId as number,
     name: data.name as string,
     shortName: data.shortName as string,
+    isSubtaskType: data.isSubtaskType === true,
   };
 }
 

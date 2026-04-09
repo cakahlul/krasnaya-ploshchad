@@ -2,6 +2,7 @@ export interface BoardEntity {
   boardId: number;
   name: string;
   shortName: string;
+  isSubtaskType?: boolean;
 }
 
 export interface BoardResponse {
@@ -9,4 +10,5 @@ export interface BoardResponse {
   boardId: number;
   name: string;
   shortName: string;
+  isSubtaskType?: boolean;
 }

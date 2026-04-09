@@ -81,6 +81,7 @@ export interface JiraSearchRequestDto {
   sprint: string;
   assignees: string[];
   project: string;
+  isSubtaskType?: boolean;
 }
 
 export interface EpicDto {
