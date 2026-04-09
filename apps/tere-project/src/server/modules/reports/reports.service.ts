@@ -179,9 +179,10 @@ export async function generateReport(sprint: string, project: string, epicId?: s
   const allMembers = await membersService.findAll();
   const members = filterMembersByProject(allMembers, project);
   const assignees = members.map((m) => m.id);
+  const isSubtaskType = await boardsService.hasSubtaskType(project);
   let rawData: Awaited<ReturnType<typeof repo.fetchRawData>>;
   try {
-    rawData = await repo.fetchRawData({ sprint, assignees, project });
+    rawData = await repo.fetchRawData({ sprint, assignees, project, isSubtaskType });
   } catch (error) {
     if (isBadRequestError(error)) {
       console.warn(`[generateReport] Jira returned 400 for project=${project} sprint=${sprint}, returning empty data`);
@@ -214,7 +215,8 @@ export async function generateReportByDateRange(startDate: string, endDate: stri
   const allMembers = await membersService.findAll();
   const members = filterMembersByProject(allMembers, project);
   const assignees = members.map((m) => m.id);
-  let rawData = await repo.fetchRawDataByDateRange(project, assignees, startDate, endDate);
+  const isSubtaskType = await boardsService.hasSubtaskType(project);
+  let rawData = await repo.fetchRawDataByDateRange(project, assignees, startDate, endDate, isSubtaskType);
   if (epicId) {
     const epicIds = epicId.split(',');
     rawData = rawData.filter((issue) => {
@@ -231,11 +233,12 @@ export async function generateReportByDateRange(startDate: string, endDate: stri
 export async function getEpics(sprint: string, project: string, startDate?: string, endDate?: string): Promise<EpicDto[]> {
   const allMembers = await membersService.findAll();
   const assignees = filterMembersByProject(allMembers, project).map((m) => m.id);
+  const isSubtaskType = await boardsService.hasSubtaskType(project);
   let rawData: Awaited<ReturnType<typeof repo.fetchRawData>>;
   try {
     rawData = startDate && endDate
-      ? await repo.fetchRawDataByDateRange(project, assignees, startDate, endDate)
-      : await repo.fetchRawData({ sprint, assignees, project });
+      ? await repo.fetchRawDataByDateRange(project, assignees, startDate, endDate, isSubtaskType)
+      : await repo.fetchRawData({ sprint, assignees, project, isSubtaskType });
   } catch (error) {
     if (isBadRequestError(error)) {
       console.warn(`[getEpics] Jira returned 400 for project=${project} sprint=${sprint}, returning empty epics`);
@@ -261,7 +264,8 @@ export async function generateOpenSprintReport(project: string): Promise<GetRepo
   const allMembers = await membersService.findAll();
   const members = allMembers.filter((m) => m.teams.some(t => t.toLowerCase() === project.toLowerCase()));
   const assignees = members.map((m) => m.id);
-  const rawData = await repo.fetchOpenSprintData(project, assignees, activeSprint.id);
+  const isSubtaskType = await boardsService.hasSubtaskType(project);
+  const rawData = await repo.fetchOpenSprintData(project, assignees, activeSprint.id, isSubtaskType);
   const sprintDetails = { startDate: activeSprint.startDate, endDate: activeSprint.endDate };
   const start = formatToYYYYMMDD(parseLocalDate(sprintDetails.startDate));
   const end = formatToYYYYMMDD(parseLocalDate(sprintDetails.endDate));

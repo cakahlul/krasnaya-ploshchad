@@ -11,6 +11,7 @@ class BoardsService {
       boardId: e.boardId,
       name: e.name,
       shortName: e.shortName,
+      isSubtaskType: e.isSubtaskType,
     }));
   }
 
@@ -22,6 +23,12 @@ class BoardsService {
   async getBoardIdByShortName(shortName: string): Promise<number | null> {
     const boards = await this.repository.findAll();
     return boards.find(b => b.shortName === shortName)?.boardId ?? null;
+  }
+
+  async hasSubtaskType(project: string): Promise<boolean> {
+    const boards = await this.repository.findAll();
+    const projectList = project.split(',').map(p => p.trim().toLowerCase()).filter(Boolean);
+    return boards.some(b => projectList.includes(b.shortName.toLowerCase()) && b.isSubtaskType === true);
   }
 }
 

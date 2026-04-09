@@ -33,12 +33,12 @@ async function executeWithRetry<T>(operation: () => Promise<T>): Promise<T> {
 
 function isRetryableError(error: unknown): boolean {
   if (error && typeof error === 'object' && 'response' in error) {
-    const status = (error as any).response?.status;
+    const status = (error as { response?: { status?: number } }).response?.status;
     if (status === 401 || status === 403 || status === 400) return false;
     if (status === 429 || (status && status >= 500)) return true;
   }
   if (error && typeof error === 'object' && 'code' in error) {
-    return ['ENOTFOUND','ECONNRESET','ECONNABORTED','ETIMEDOUT','ECONNREFUSED'].includes((error as any).code);
+    return ['ENOTFOUND','ECONNRESET','ECONNABORTED','ETIMEDOUT','ECONNREFUSED'].includes((error as { code: string }).code);
   }
   return false;
 }
@@ -69,26 +69,35 @@ function buildProjectFilter(project: string): string {
   return projects.length === 1 ? `project = ${projects[0]}` : `project in (${projects.join(',')})`;
 }
 
+function buildIssueTypeFilter(isSubtaskType?: boolean): string {
+  return isSubtaskType
+    ? 'type IN (standardIssueTypes(), subTaskIssueTypes())'
+    : 'type IN standardIssueTypes()';
+}
+
 export async function fetchRawData(dto: JiraSearchRequestDto): Promise<JiraIssueEntity[]> {
   if (dto.assignees.length === 0) return [];
   const sprintIds = dto.sprint.split(',').map(s => s.trim()).filter(Boolean);
   const sprintFilter = sprintIds.length === 1
     ? `sprint = ${sprintIds[0]}`
     : `sprint in (${sprintIds.join(',')})`;
-  const jql = `${buildProjectFilter(dto.project)} AND ${sprintFilter} AND assignee IN (${dto.assignees.join(',')}) AND type IN standardIssueTypes() AND resolution = Done ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
+  const issueTypeFilter = buildIssueTypeFilter(dto.isSubtaskType);
+  const jql = `${buildProjectFilter(dto.project)} AND ${sprintFilter} AND assignee IN (${dto.assignees.join(',')}) AND ${issueTypeFilter} AND resolution = Done ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
   return paginate(jql, REPORT_FIELDS);
 }
 
-export async function fetchRawDataByDateRange(project: string, assignees: string[], startDate: string, endDate: string): Promise<JiraIssueEntity[]> {
+export async function fetchRawDataByDateRange(project: string, assignees: string[], startDate: string, endDate: string, isSubtaskType?: boolean): Promise<JiraIssueEntity[]> {
   if (assignees.length === 0) return [];
-  const jql = `${buildProjectFilter(project)} AND assignee IN (${assignees.join(',')}) AND type IN standardIssueTypes() AND resolution = Done AND resolutiondate >= "${startDate}" AND resolutiondate <= "${endDate}" ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
+  const issueTypeFilter = buildIssueTypeFilter(isSubtaskType);
+  const jql = `${buildProjectFilter(project)} AND assignee IN (${assignees.join(',')}) AND ${issueTypeFilter} AND resolution = Done AND resolutiondate >= "${startDate}" AND resolutiondate <= "${endDate}" ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
   return paginate(jql, REPORT_FIELDS);
 }
 
-export async function fetchOpenSprintData(project: string, assignees: string[], sprintId?: number): Promise<JiraIssueEntity[]> {
+export async function fetchOpenSprintData(project: string, assignees: string[], sprintId?: number, isSubtaskType?: boolean): Promise<JiraIssueEntity[]> {
   if (assignees.length === 0) return [];
   const sprintFilter = sprintId ? `sprint = ${sprintId}` : 'sprint in openSprints()';
-  const jql = `project = ${project} AND ${sprintFilter} AND assignee IN (${assignees.join(',')}) AND type IN standardIssueTypes() AND resolution = Done ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
+  const issueTypeFilter = buildIssueTypeFilter(isSubtaskType);
+  const jql = `project = ${project} AND ${sprintFilter} AND assignee IN (${assignees.join(',')}) AND ${issueTypeFilter} AND resolution = Done ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
   return paginate(jql, REPORT_FIELDS);
 }
 
