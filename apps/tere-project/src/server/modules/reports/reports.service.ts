@@ -175,6 +175,43 @@ function isBadRequestError(error: unknown): boolean {
   return !!(error && typeof error === 'object' && 'response' in error && (error as { response?: { status?: number } }).response?.status === 400);
 }
 
+async function buildPlannedWPMap(
+  sprint: string,
+  members: MemberResponse[],
+  abadiProjects: string[],
+  isSubtaskType: boolean,
+): Promise<Map<string, number>> {
+  const accountIdToName = new Map<string, string>(members.map(m => [m.id.toLowerCase(), m.fullName]));
+  const plannedWPMap = new Map<string, number>();
+
+  for (const abadiProject of abadiProjects) {
+    const projectMembers = members.filter(m =>
+      m.teams.some(t => t.toLowerCase() === abadiProject.toLowerCase()),
+    );
+    const assignees = projectMembers.map(m => m.id);
+    try {
+      const plannedData = await repo.fetchPlannedWPData(abadiProject, assignees, sprint, isSubtaskType);
+      for (const issue of plannedData) {
+        const accountId = issue.fields.assignee?.accountId?.toLowerCase();
+        if (!accountId) continue;
+        const memberName = accountIdToName.get(accountId);
+        if (!memberName) continue;
+        const strategies = issueProcessingStrategyFactory.createStrategies(issue);
+        const weight = strategies.complexityWeightStrategy.calculateWeight(issue);
+        plannedWPMap.set(memberName, (plannedWPMap.get(memberName) ?? 0) + weight);
+      }
+    } catch (error) {
+      if (isBadRequestError(error)) {
+        console.warn(`[buildPlannedWPMap] Jira returned 400 for project=${abadiProject}, skipping planned WP`);
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  return plannedWPMap;
+}
+
 export async function generateReport(sprint: string, project: string, epicId?: string): Promise<GetReportResponseDto> {
   const allMembers = await membersService.findAll();
   const members = filterMembersByProject(allMembers, project);
@@ -208,6 +245,21 @@ export async function generateReport(sprint: string, project: string, epicId?: s
     nationalHolidays = await holidaysService.getNationalHolidays(parseLocalDate(sprintDetails.startDate), parseLocalDate(sprintDetails.endDate));
   }
   const teamReport = processRawData(rawData, members, sprintDetails, leaveData, nationalHolidays);
+
+  const abadiShortNames = await boardsService.getAbadiShortNames();
+  const projectList = project.split(',').map(p => p.trim()).filter(Boolean);
+  const abadiProjects = projectList.filter(p =>
+    abadiShortNames.map(n => n.toLowerCase()).includes(p.toLowerCase()),
+  );
+  if (abadiProjects.length > 0) {
+    const plannedWPMap = await buildPlannedWPMap(sprint, members, abadiProjects, isSubtaskType);
+    teamReport.forEach(report => {
+      if (plannedWPMap.has(report.member)) {
+        report.plannedWP = plannedWPMap.get(report.member);
+      }
+    });
+  }
+
   return summarizeTeamReport(teamReport, sprintDetails, nationalHolidays);
 }
 

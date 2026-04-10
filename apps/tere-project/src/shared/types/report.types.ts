@@ -108,6 +108,7 @@ export interface JiraIssueReportResponseDto {
   spProduct?: number;
   spTechDebt?: number;
   spTotal?: number;
+  plannedWP?: number;
   epic?: EpicDto | null;
 }
 
