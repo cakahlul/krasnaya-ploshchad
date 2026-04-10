@@ -74,6 +74,10 @@ const COLUMN_INFO: Record<string, ColumnInfo> = {
     description: 'Weight points output per working hour.',
     formula: 'Total WP / (Working Days \u00d7 8)',
   },
+  plannedWP: {
+    label: 'Planned WP',
+    description: 'Sum of weight points from open (unresolved) issues in the current sprint. Helps identify if a member still has capacity.',
+  },
 };
 
 function ColumnHeader({ columnKey }: { columnKey: string }) {
@@ -135,6 +139,11 @@ export default function TeamTable() {
   const selectedTeams = useTeamReportFilterStore(state => state.selectedTeams);
   const { boards } = useBoards();
 
+  const hasAbadiBoard = selectedTeams.some(teamId => {
+    const board = boards.find(b => b.boardId === teamId);
+    return board?.name.startsWith('ABADI -') ?? false;
+  });
+
   const columns: TableColumnsType<WorkItem> = [
     {
       title: <ColumnHeader columnKey="member" />,
@@ -187,6 +196,12 @@ export default function TeamTable() {
       dataIndex: 'totalWeightPoints',
       key: 'totalWeightPoints',
     },
+    ...(hasAbadiBoard ? [{
+      title: <ColumnHeader columnKey="plannedWP" />,
+      dataIndex: 'plannedWP',
+      key: 'plannedWP',
+      render: (value: number | undefined) => value?.toFixed(2) ?? '-',
+    }] : []),
     {
       title: <ColumnHeader columnKey="targetWeightPoints" />,
       dataIndex: 'targetWeightPoints',

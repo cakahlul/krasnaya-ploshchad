@@ -14,6 +14,7 @@ export interface WorkItem {
   spProduct?: number;
   spTechDebt?: number;
   spTotal?: number;
+  plannedWP?: number;
 }
 
 export interface DashboardDto {

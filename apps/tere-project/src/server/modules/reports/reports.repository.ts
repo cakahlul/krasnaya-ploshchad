@@ -101,3 +101,14 @@ export async function fetchOpenSprintData(project: string, assignees: string[], 
   return paginate(jql, REPORT_FIELDS);
 }
 
+export async function fetchPlannedWPData(project: string, assignees: string[], sprint: string, isSubtaskType?: boolean): Promise<JiraIssueEntity[]> {
+  if (assignees.length === 0) return [];
+  const sprintIds = sprint.split(',').map(s => s.trim()).filter(Boolean);
+  const sprintFilter = sprintIds.length === 1
+    ? `sprint = ${sprintIds[0]}`
+    : `sprint in (${sprintIds.join(',')})`;
+  const issueTypeFilter = buildIssueTypeFilter(isSubtaskType);
+  const jql = `${buildProjectFilter(project)} AND ${sprintFilter} AND assignee IN (${assignees.join(',')}) AND ${issueTypeFilter} AND resolution is EMPTY ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
+  return paginate(jql, REPORT_FIELDS);
+}
+

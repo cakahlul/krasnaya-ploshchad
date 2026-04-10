@@ -30,6 +30,13 @@ class BoardsService {
     const projectList = project.split(',').map(p => p.trim().toLowerCase()).filter(Boolean);
     return boards.some(b => projectList.includes(b.shortName.toLowerCase()) && b.isSubtaskType === true);
   }
+
+  async getAbadiShortNames(): Promise<string[]> {
+    const boards = await this.repository.findAll();
+    return boards
+      .filter(b => b.name.startsWith('ABADI -'))
+      .map(b => b.shortName);
+  }
 }
 
 export const boardsService = new BoardsService(boardsRepository);
