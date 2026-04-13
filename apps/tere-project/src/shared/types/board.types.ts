@@ -3,6 +3,7 @@ export interface BoardEntity {
   name: string;
   shortName: string;
   isSubtaskType?: boolean;
+  isKanban?: boolean;
 }
 
 export interface BoardResponse {
@@ -11,4 +12,5 @@ export interface BoardResponse {
   name: string;
   shortName: string;
   isSubtaskType?: boolean;
+  isKanban?: boolean;
 }

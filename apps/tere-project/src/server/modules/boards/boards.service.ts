@@ -12,12 +12,13 @@ class BoardsService {
       name: e.name,
       shortName: e.shortName,
       isSubtaskType: e.isSubtaskType,
+      isKanban: e.isKanban,
     }));
   }
 
   async getBoardIds(): Promise<number[]> {
     const boards = await this.repository.findAll();
-    return boards.map(b => b.boardId);
+    return boards.filter(b => !b.isKanban).map(b => b.boardId);
   }
 
   async getBoardIdByShortName(shortName: string): Promise<number | null> {
