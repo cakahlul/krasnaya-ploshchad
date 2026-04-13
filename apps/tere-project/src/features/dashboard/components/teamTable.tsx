@@ -62,7 +62,7 @@ const COLUMN_INFO: Record<string, ColumnInfo> = {
     description:
       'The expected weight points for this member based on their level and working days.',
     formula: 'Daily Rate (by level) \u00d7 Working Days',
-    note: 'Daily rates: Junior=5.6, Medior=6.8, Senior/IC=8',
+    note: 'Daily rates: Junior=4.5, Medior=6, Senior/IC=8',
   },
   workingDays: {
     label: 'Working Days',

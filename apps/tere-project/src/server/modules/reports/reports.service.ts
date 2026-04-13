@@ -14,7 +14,7 @@ import { calculateWorkingDays } from '@shared/utils/working-days.util';
 import * as repo from './reports.repository';
 
 const dailyTargetWPByLevel: Record<string, number> = {
-  junior: 5.6, medior: 6.8, senior: 8, 'individual contributor': 8,
+  junior: 4.5, medior: 6, senior: 8, 'individual contributor': 8,
 };
 
 function parseLocalDate(dateStr: string): Date {
@@ -38,7 +38,8 @@ async function getSprintDetails(sprintParam: string): Promise<{ startDate: strin
   try {
     const sprintIds = sprintParam.split(',').map(s => s.trim()).filter(Boolean);
     const boardIds = await boardsService.getBoardIds();
-    const allSprints = (await Promise.all(boardIds.map(boardId => sprintService.fetchAllSprint(boardId)))).flat();
+    const results = await Promise.allSettled(boardIds.map(boardId => sprintService.fetchAllSprint(boardId)));
+    const allSprints = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
     const matched = sprintIds
       .map(id => allSprints.find(s => String(s.id) === id))
       .filter((s): s is NonNullable<typeof s> => !!s?.startDate && !!s?.endDate);
