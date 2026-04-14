@@ -114,6 +114,7 @@
   left: 0;
   width: 100%;
   min-width: 320px;
+  max-height: 480px;
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -125,6 +126,8 @@
     0 0 0 1px rgba(124, 58, 237, 0.05);
   z-index: 1000;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   animation: sprintDropdownEnter 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -147,6 +150,7 @@
   padding: 10px 14px;
   border-bottom: 1px solid #f3f0ff;
   background: linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%);
+  flex-shrink: 0;
 }
 
 .sprint-select-search__icon {
@@ -180,7 +184,8 @@
 
 /* ── List ── */
 .sprint-select-list {
-  max-height: 360px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 6px;
   scroll-behavior: smooth;
@@ -373,9 +378,6 @@
 }
 
 /* ── Multi-Select Specific Styles ── */
-.sprint-select-list--multi {
-  max-height: 420px;
-}
 
 .sprint-select-item--multi {
   display: flex;
@@ -416,6 +418,7 @@
   border-top: 1px solid #f3f0ff;
   background: linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%);
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .sprint-select-footer__hint {

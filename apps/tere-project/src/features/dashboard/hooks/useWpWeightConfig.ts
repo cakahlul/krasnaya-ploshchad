@@ -13,17 +13,18 @@ const DEFAULT_WEIGHTS: WpWeights = {
   'High': 8,
 };
 
-async function fetchEffectiveWeights(): Promise<WpWeights> {
-  const today = new Date();
-  const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  const response = await axiosClient.get(`/wp-weight-config/effective?date=${dateStr}`);
+async function fetchEffectiveWeights(date: string): Promise<WpWeights> {
+  const response = await axiosClient.get(`/wp-weight-config/effective?date=${date}`);
   return response.data;
 }
 
-export function useWpWeightConfig() {
+export function useWpWeightConfig(referenceDate?: string) {
+  const dateStr = referenceDate?.split('T')[0];
+
   const { data } = useQuery({
-    queryKey: ['wp-weight-config-effective'],
-    queryFn: fetchEffectiveWeights,
+    queryKey: ['wp-weight-config-effective', dateStr],
+    queryFn: () => fetchEffectiveWeights(dateStr!),
+    enabled: !!dateStr,
     staleTime: 10 * 60 * 1000,
     placeholderData: DEFAULT_WEIGHTS,
   });

@@ -11,10 +11,11 @@ import { sprintService } from '@server/modules/sprint/sprint.service';
 import { boardsService } from '@server/modules/boards/boards.service';
 import { holidaysService } from '@server/modules/holidays/holidays.service';
 import { wpWeightConfigService } from '@server/modules/wp-weight-config/wp-weight-config.service';
+import { targetWpConfigService } from '@server/modules/target-wp-config/target-wp-config.service';
 import { calculateWorkingDays } from '@shared/utils/working-days.util';
 import * as repo from './reports.repository';
 
-const dailyTargetWPByLevel: Record<string, number> = {
+const DEFAULT_DAILY_TARGET_WP: Record<string, number> = {
   junior: 4.5, medior: 6, senior: 8, 'individual contributor': 8,
 };
 
@@ -82,6 +83,7 @@ function processRawData(
   nationalHolidays: string[] = [],
   isShowPlannedWP = false,
   wpWeights?: Parameters<typeof issueProcessingStrategyFactory.createStrategies>[1],
+  dailyTargetWPByLevel: Record<string, number> = DEFAULT_DAILY_TARGET_WP,
 ): JiraIssueReportResponseDto[] {
   // accountId (Jira) === memberId (Firestore doc ID)
   const accountIdMap = new Map<string, string>(
@@ -173,7 +175,9 @@ function summarizeTeamReport(issues: JiraIssueReportResponseDto[], sprintDetails
     issues, totalWeightPointsProduct, totalWeightPointsTechDebt,
     productPercentage: `${productPercentage.toFixed(2)}%`, techDebtPercentage: `${techDebtPercentage.toFixed(2)}%`,
     averageProductivity: `${averageProductivity.toFixed(2)}%`, totalWorkingDays, averageWorkingDays,
-    averageWpPerHour, totalWeightPoints, sprintStartDate: sprintDetails?.startDate, sprintEndDate: sprintDetails?.endDate,
+    averageWpPerHour, totalWeightPoints,
+    sprintStartDate: sprintDetails ? formatToYYYYMMDD(parseLocalDate(sprintDetails.startDate)) : undefined,
+    sprintEndDate: sprintDetails ? formatToYYYYMMDD(parseLocalDate(sprintDetails.endDate)) : undefined,
   };
 }
 
@@ -260,8 +264,10 @@ export async function generateReport(sprint: string, project: string, epicId?: s
     leaveData = await fetchLeaveData(sprintStartDateStr, end, members);
     nationalHolidays = await holidaysService.getNationalHolidays(parseLocalDate(sprintDetails.startDate), parseLocalDate(sprintDetails.endDate));
   }
-  const wpWeights = await wpWeightConfigService.getEffectiveWeights(sprintStartDateStr ?? formatToYYYYMMDD(new Date()));
-  const teamReport = processRawData(rawData, members, sprintDetails, leaveData, nationalHolidays, isShowPlannedWP, wpWeights);
+  const effectiveDateStr = sprintStartDateStr ?? formatToYYYYMMDD(new Date());
+  const wpWeights = await wpWeightConfigService.getEffectiveWeights(effectiveDateStr);
+  const dailyTargetWPByLevel = await targetWpConfigService.getEffectiveRates(effectiveDateStr);
+  const teamReport = processRawData(rawData, members, sprintDetails, leaveData, nationalHolidays, isShowPlannedWP, wpWeights, dailyTargetWPByLevel);
 
   const plannedWPShortNames = allBoards.filter(b => b.isShowPlannedWP).map(b => b.shortName);
   const plannedWPProjects = projectList.filter(p =>
@@ -295,7 +301,8 @@ export async function generateReportByDateRange(startDate: string, endDate: stri
   const leaveData = await fetchLeaveData(startDate, endDate, members);
   const nationalHolidays = await holidaysService.getNationalHolidays(parseLocalDate(startDate), parseLocalDate(endDate));
   const wpWeights = await wpWeightConfigService.getEffectiveWeights(startDate);
-  const teamReport = processRawData(rawData, members, { startDate, endDate }, leaveData, nationalHolidays, false, wpWeights);
+  const dailyTargetWPByLevel = await targetWpConfigService.getEffectiveRates(startDate);
+  const teamReport = processRawData(rawData, members, { startDate, endDate }, leaveData, nationalHolidays, false, wpWeights, dailyTargetWPByLevel);
   return summarizeTeamReport(teamReport, { startDate, endDate }, nationalHolidays);
 }
 
@@ -340,7 +347,8 @@ export async function generateOpenSprintReport(project: string): Promise<GetRepo
   const end = formatToYYYYMMDD(parseLocalDate(sprintDetails.endDate));
   const leaveData = await fetchLeaveData(start, end, members);
   const nationalHolidays = await holidaysService.getNationalHolidays(parseLocalDate(sprintDetails.startDate), parseLocalDate(sprintDetails.endDate));
-  const teamReport = processRawData(rawData, members, sprintDetails, leaveData, nationalHolidays);
+  const dailyTargetWPByLevel = await targetWpConfigService.getEffectiveRates(start);
+  const teamReport = processRawData(rawData, members, sprintDetails, leaveData, nationalHolidays, false, undefined, dailyTargetWPByLevel);
   const report = summarizeTeamReport(teamReport, sprintDetails, nationalHolidays);
   return { ...report, sprintName: activeSprint.name };
 }

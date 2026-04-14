@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { useTeamReportFilterStore } from '../store/teamReportFilterStore';
 import { useBoards } from '../hooks/useBoards';
 import { useWpWeightConfig } from '../hooks/useWpWeightConfig';
+import { useTargetWpConfig } from '../hooks/useTargetWpConfig';
 import { Info } from 'lucide-react';
 
 interface ColumnInfo {
@@ -81,8 +82,9 @@ const COLUMN_INFO: Record<string, ColumnInfo> = {
   },
 };
 
-function ColumnHeader({ columnKey }: { columnKey: string }) {
-  const wpWeights = useWpWeightConfig();
+function ColumnHeader({ columnKey, referenceDate }: { columnKey: string; referenceDate?: string }) {
+  const wpWeights = useWpWeightConfig(referenceDate);
+  const targetWpRates = useTargetWpConfig(referenceDate);
   const info = { ...COLUMN_INFO[columnKey] };
   if (!info) return <span>{columnKey}</span>;
 
@@ -91,6 +93,13 @@ function ColumnHeader({ columnKey }: { columnKey: string }) {
       .map(([k, v]) => `${k}=${v}`)
       .join(', ');
     info.note = `Complexity levels: ${levels}`;
+  }
+
+  if (columnKey === 'targetWeightPoints') {
+    const rates = Object.entries(targetWpRates)
+      .map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)}=${v}`)
+      .join(', ');
+    info.note = `Daily rates: ${rates}`;
   }
 
   const popoverContent = (
@@ -146,7 +155,10 @@ export default function TeamTable() {
   const [pageSize, setPageSize] = useState(5);
   const [selectedMember, setSelectedMember] = useState<WorkItem | null>(null);
   const selectedTeams = useTeamReportFilterStore(state => state.selectedTeams);
+  const { startDate: filterStartDate } = useTeamReportFilterStore(state => state.selectedFilter);
   const { boards } = useBoards();
+
+  const referenceDate = data?.sprintStartDate ?? filterStartDate;
 
   const hasAbadiBoard = selectedTeams.some(teamId => {
     const board = boards.find(b => b.boardId === teamId);
@@ -155,7 +167,7 @@ export default function TeamTable() {
 
   const columns: TableColumnsType<WorkItem> = [
     {
-      title: <ColumnHeader columnKey="member" />,
+      title: <ColumnHeader columnKey="member" referenceDate={referenceDate} />,
       dataIndex: 'member',
       key: 'member',
       render: (text: string, record: WorkItem) => (
@@ -168,61 +180,61 @@ export default function TeamTable() {
       ),
     },
     {
-      title: <ColumnHeader columnKey="spProduct" />,
+      title: <ColumnHeader columnKey="spProduct" referenceDate={referenceDate} />,
       dataIndex: 'spProduct',
       key: 'spProduct',
       render: (value: number | undefined) => value?.toFixed(2) ?? '-',
     },
     {
-      title: <ColumnHeader columnKey="spTechDebt" />,
+      title: <ColumnHeader columnKey="spTechDebt" referenceDate={referenceDate} />,
       dataIndex: 'spTechDebt',
       key: 'spTechDebt',
       render: (value: number | undefined) => value?.toFixed(2) ?? '-',
     },
     {
-      title: <ColumnHeader columnKey="spTotal" />,
+      title: <ColumnHeader columnKey="spTotal" referenceDate={referenceDate} />,
       dataIndex: 'spTotal',
       key: 'spTotal',
       render: (value: number | undefined) => value?.toFixed(2) ?? '-',
     },
     {
-      title: <ColumnHeader columnKey="productivityRate" />,
+      title: <ColumnHeader columnKey="productivityRate" referenceDate={referenceDate} />,
       dataIndex: 'productivityRate',
       key: 'productivityRate',
     },
     {
-      title: <ColumnHeader columnKey="weightPointsProduct" />,
+      title: <ColumnHeader columnKey="weightPointsProduct" referenceDate={referenceDate} />,
       dataIndex: 'weightPointsProduct',
       key: 'weightPointsProduct',
     },
     {
-      title: <ColumnHeader columnKey="weightPointsTechDebt" />,
+      title: <ColumnHeader columnKey="weightPointsTechDebt" referenceDate={referenceDate} />,
       dataIndex: 'weightPointsTechDebt',
       key: 'weightPointsTechDebt',
     },
     {
-      title: <ColumnHeader columnKey="totalWeightPoints" />,
+      title: <ColumnHeader columnKey="totalWeightPoints" referenceDate={referenceDate} />,
       dataIndex: 'totalWeightPoints',
       key: 'totalWeightPoints',
     },
     ...(hasAbadiBoard ? [{
-      title: <ColumnHeader columnKey="plannedWP" />,
+      title: <ColumnHeader columnKey="plannedWP" referenceDate={referenceDate} />,
       dataIndex: 'plannedWP',
       key: 'plannedWP',
       render: (value: number | undefined) => value?.toFixed(2) ?? '-',
     }] : []),
     {
-      title: <ColumnHeader columnKey="targetWeightPoints" />,
+      title: <ColumnHeader columnKey="targetWeightPoints" referenceDate={referenceDate} />,
       dataIndex: 'targetWeightPoints',
       key: 'targetWeightPoints',
     },
     {
-      title: <ColumnHeader columnKey="workingDays" />,
+      title: <ColumnHeader columnKey="workingDays" referenceDate={referenceDate} />,
       dataIndex: 'workingDays',
       key: 'workingDays',
     },
     {
-      title: <ColumnHeader columnKey="wpToHours" />,
+      title: <ColumnHeader columnKey="wpToHours" referenceDate={referenceDate} />,
       dataIndex: 'wpToHours',
       key: 'wpToHours',
       render: (value: number | undefined) => value?.toFixed(2) ?? '-',
