@@ -82,6 +82,7 @@ export interface JiraSearchRequestDto {
   assignees: string[];
   project: string;
   isSubtaskType?: boolean;
+  isShowPlannedWP?: boolean;
 }
 
 export interface EpicDto {

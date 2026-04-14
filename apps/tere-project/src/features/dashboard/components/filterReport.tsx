@@ -9,9 +9,14 @@ import dayjs from 'dayjs';
 import './FilterReport.css';
 
 export function FilterReport() {
-  const { sprints, isLoading } = useMultiSprintDataTransform();
   const { boards, isLoading: boardsLoading } = useBoards();
   const selectedTeams = useTeamReportFilterStore(state => state.selectedTeams);
+
+  const nonKanbanTeamIds = boardsLoading ? [] : selectedTeams.filter(id =>
+    !boards.find(b => b.boardId === id)?.isKanban
+  );
+
+  const { sprints, isLoading } = useMultiSprintDataTransform(nonKanbanTeamIds);
   const selectedSprints = useTeamReportFilterStore(state => state.selectedSprints);
   const setTeams = useTeamReportFilterStore(state => state.setTeams);
   const setSprints = useTeamReportFilterStore(state => state.setSprints);
@@ -61,6 +66,7 @@ export function FilterReport() {
   const isSprintMode = !!sprint;
   const isDateRangeMode = !!startDate && !!endDate;
   const hasTeamsSelected = selectedTeams.length > 0;
+  const showSprintFilter = nonKanbanTeamIds.length > 0;
 
   return (
     <div className="filter-bar">
@@ -83,8 +89,8 @@ export function FilterReport() {
 
         <div className="filter-bar__divider" />
 
-        {/* Multi-Select Sprints - Only show when teams are selected */}
-        {hasTeamsSelected && (
+        {/* Multi-Select Sprints - Only show when non-kanban teams are selected */}
+        {showSprintFilter && (
           <>
             <div className="filter-bar__group">
               <label className="filter-bar__label">

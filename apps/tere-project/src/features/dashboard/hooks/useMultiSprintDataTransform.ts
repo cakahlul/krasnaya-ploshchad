@@ -5,8 +5,8 @@ import { useMultiTeamSprintFetch } from './useMultiTeamSprintFetch';
 import { SprintDto } from '../types/dashboard';
 import { SprintOption } from './useSprintDataTransform';
 
-export function useMultiSprintDataTransform() {
-  const { data, isLoading, error } = useMultiTeamSprintFetch();
+export function useMultiSprintDataTransform(boardIds: number[]) {
+  const { data, isLoading, error } = useMultiTeamSprintFetch(boardIds);
 
   const transformedSprintData: SprintOption[] = useMemo(() => {
     if (!data) return [];

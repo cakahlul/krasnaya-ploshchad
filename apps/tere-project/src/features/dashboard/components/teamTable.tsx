@@ -141,7 +141,7 @@ export default function TeamTable() {
 
   const hasAbadiBoard = selectedTeams.some(teamId => {
     const board = boards.find(b => b.boardId === teamId);
-    return board?.name.startsWith('ABADI -') ?? false;
+    return board?.isShowPlannedWP === true;
   });
 
   const columns: TableColumnsType<WorkItem> = [
