@@ -7,6 +7,19 @@ export class HolidaysService {
     return this.repo.fetchHolidaysByYear(year);
   }
 
+  async createHoliday(date: string, name: string): Promise<Holiday> {
+    return this.repo.createHoliday(date, name);
+  }
+
+  async bulkCreateHolidays(holidays: { date: string; name: string }[]): Promise<{ count: number }> {
+    await Promise.all(holidays.map((h) => this.repo.createHoliday(h.date, h.name)));
+    return { count: holidays.length };
+  }
+
+  async deleteHoliday(id: string): Promise<void> {
+    return this.repo.deleteHoliday(id);
+  }
+
   async getNationalHolidays(startDate: Date, endDate: Date): Promise<string[]> {
     const startYear = startDate.getFullYear();
     const endYear = endDate.getFullYear();

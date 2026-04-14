@@ -10,6 +10,7 @@ import { talentLeaveService } from '@server/modules/talent-leave/talent-leave.se
 import { sprintService } from '@server/modules/sprint/sprint.service';
 import { boardsService } from '@server/modules/boards/boards.service';
 import { holidaysService } from '@server/modules/holidays/holidays.service';
+import { wpWeightConfigService } from '@server/modules/wp-weight-config/wp-weight-config.service';
 import { calculateWorkingDays } from '@shared/utils/working-days.util';
 import * as repo from './reports.repository';
 
@@ -20,7 +21,11 @@ const dailyTargetWPByLevel: Record<string, number> = {
 function parseLocalDate(dateStr: string): Date {
   if (dateStr.includes('T')) {
     const date = new Date(dateStr);
-    const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    // Sprint dates from Jira are in UTC but represent WIB (UTC+7) time.
+    // Use UTC+7 offset to extract the correct local date regardless of server timezone.
+    const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+    const wibDate = new Date(date.getTime() + WIB_OFFSET_MS);
+    const localDate = new Date(wibDate.getUTCFullYear(), wibDate.getUTCMonth(), wibDate.getUTCDate());
     localDate.setHours(0, 0, 0, 0);
     return localDate;
   }
@@ -76,6 +81,7 @@ function processRawData(
   leaveData?: Map<string, LeaveDateRange[]>,
   nationalHolidays: string[] = [],
   isShowPlannedWP = false,
+  wpWeights?: Parameters<typeof issueProcessingStrategyFactory.createStrategies>[1],
 ): JiraIssueReportResponseDto[] {
   // accountId (Jira) === memberId (Firestore doc ID)
   const accountIdMap = new Map<string, string>(
@@ -100,7 +106,7 @@ function processRawData(
       if (!accountId) return;
       const memberName = accountIdMap.get(accountId);
       if (!memberName) return;
-      const strategies = issueProcessingStrategyFactory.createStrategies(issue);
+      const strategies = issueProcessingStrategyFactory.createStrategies(issue, wpWeights);
       const weightPoints = strategies.issueCategorizer.getWeightPointsCategory(issue);
       const complexityWeight = strategies.complexityWeightStrategy.calculateWeight(issue);
       const report = reports.get(memberName);
@@ -185,6 +191,7 @@ async function buildPlannedWPMap(
   members: MemberResponse[],
   plannedWPProjects: string[],
   isSubtaskType: boolean,
+  wpWeights?: Parameters<typeof issueProcessingStrategyFactory.createStrategies>[1],
 ): Promise<Map<string, number>> {
   const accountIdToName = new Map<string, string>(members.map(m => [m.id.toLowerCase(), m.fullName]));
   const plannedWPMap = new Map<string, number>();
@@ -201,7 +208,7 @@ async function buildPlannedWPMap(
         if (!accountId) continue;
         const memberName = accountIdToName.get(accountId);
         if (!memberName) continue;
-        const strategies = issueProcessingStrategyFactory.createStrategies(issue);
+        const strategies = issueProcessingStrategyFactory.createStrategies(issue, wpWeights);
         const weight = strategies.complexityWeightStrategy.calculateWeight(issue);
         plannedWPMap.set(memberName, (plannedWPMap.get(memberName) ?? 0) + weight);
       }
@@ -246,20 +253,22 @@ export async function generateReport(sprint: string, project: string, epicId?: s
   const sprintDetails = await getSprintDetails(sprint);
   let leaveData: Map<string, LeaveDateRange[]> = new Map();
   let nationalHolidays: string[] = [];
+  let sprintStartDateStr: string | undefined;
   if (sprintDetails) {
-    const start = formatToYYYYMMDD(parseLocalDate(sprintDetails.startDate));
+    sprintStartDateStr = formatToYYYYMMDD(parseLocalDate(sprintDetails.startDate));
     const end = formatToYYYYMMDD(parseLocalDate(sprintDetails.endDate));
-    leaveData = await fetchLeaveData(start, end, members);
+    leaveData = await fetchLeaveData(sprintStartDateStr, end, members);
     nationalHolidays = await holidaysService.getNationalHolidays(parseLocalDate(sprintDetails.startDate), parseLocalDate(sprintDetails.endDate));
   }
-  const teamReport = processRawData(rawData, members, sprintDetails, leaveData, nationalHolidays, isShowPlannedWP);
+  const wpWeights = await wpWeightConfigService.getEffectiveWeights(sprintStartDateStr ?? formatToYYYYMMDD(new Date()));
+  const teamReport = processRawData(rawData, members, sprintDetails, leaveData, nationalHolidays, isShowPlannedWP, wpWeights);
 
   const plannedWPShortNames = allBoards.filter(b => b.isShowPlannedWP).map(b => b.shortName);
   const plannedWPProjects = projectList.filter(p =>
     plannedWPShortNames.map(n => n.toLowerCase()).includes(p.toLowerCase()),
   );
   if (plannedWPProjects.length > 0) {
-    const plannedWPMap = await buildPlannedWPMap(sprint, members, plannedWPProjects, isSubtaskType);
+    const plannedWPMap = await buildPlannedWPMap(sprint, members, plannedWPProjects, isSubtaskType, wpWeights);
     teamReport.forEach(report => {
       if (plannedWPMap.has(report.member)) {
         report.plannedWP = plannedWPMap.get(report.member);
@@ -285,7 +294,8 @@ export async function generateReportByDateRange(startDate: string, endDate: stri
   }
   const leaveData = await fetchLeaveData(startDate, endDate, members);
   const nationalHolidays = await holidaysService.getNationalHolidays(parseLocalDate(startDate), parseLocalDate(endDate));
-  const teamReport = processRawData(rawData, members, { startDate, endDate }, leaveData, nationalHolidays);
+  const wpWeights = await wpWeightConfigService.getEffectiveWeights(startDate);
+  const teamReport = processRawData(rawData, members, { startDate, endDate }, leaveData, nationalHolidays, false, wpWeights);
   return summarizeTeamReport(teamReport, { startDate, endDate }, nationalHolidays);
 }
 

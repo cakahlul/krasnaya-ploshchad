@@ -7,6 +7,7 @@ import MemberTaskModal from './MemberTaskModal';
 import { useState } from 'react';
 import { useTeamReportFilterStore } from '../store/teamReportFilterStore';
 import { useBoards } from '../hooks/useBoards';
+import { useWpWeightConfig } from '../hooks/useWpWeightConfig';
 import { Info } from 'lucide-react';
 
 interface ColumnInfo {
@@ -45,7 +46,7 @@ const COLUMN_INFO: Record<string, ColumnInfo> = {
   weightPointsProduct: {
     label: 'Weight Points Product',
     description:
-      'Sum of weight points from product-related Jira issues, based on appendix complexity levels (Very Low=1.5, Low=2, Medium=4, High=8).',
+      'Sum of weight points from product-related Jira issues, based on appendix complexity levels.',
   },
   weightPointsTechDebt: {
     label: 'Weight Points Tech Debt',
@@ -81,8 +82,16 @@ const COLUMN_INFO: Record<string, ColumnInfo> = {
 };
 
 function ColumnHeader({ columnKey }: { columnKey: string }) {
-  const info = COLUMN_INFO[columnKey];
+  const wpWeights = useWpWeightConfig();
+  const info = { ...COLUMN_INFO[columnKey] };
   if (!info) return <span>{columnKey}</span>;
+
+  if (columnKey === 'weightPointsProduct' || columnKey === 'weightPointsTechDebt') {
+    const levels = Object.entries(wpWeights)
+      .map(([k, v]) => `${k}=${v}`)
+      .join(', ');
+    info.note = `Complexity levels: ${levels}`;
+  }
 
   const popoverContent = (
     <div className="max-w-[280px]">
