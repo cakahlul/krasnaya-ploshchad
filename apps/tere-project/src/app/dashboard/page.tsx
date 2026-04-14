@@ -51,7 +51,7 @@ export default function Dashboard() {
   const { teams, isLoading: summaryLoading } = useDashboardSummary(
     isLead ? undefined : memberBoardIds,
   );
-  const { bugs } = useDashboardBugSummary();
+  const { bugs } = useDashboardBugSummary(177, isLead);
 
   const isBootstrapping = profileLoading || boardsLoading;
 

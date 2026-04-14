@@ -71,12 +71,13 @@ export function useDashboardSummary(filterBoardIds?: number[]) {
   };
 }
 
-export function useDashboardBugSummary(boardId: number = 177) {
+export function useDashboardBugSummary(boardId: number = 177, enabled = true) {
   const query = useQuery({
     queryKey: ['dashboard-bug-summary', boardId],
     queryFn: () => fetchDashboardBugSummary(boardId),
     staleTime: 5 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
+    refetchInterval: enabled ? 5 * 60 * 1000 : false,
+    enabled,
   });
 
   return {
