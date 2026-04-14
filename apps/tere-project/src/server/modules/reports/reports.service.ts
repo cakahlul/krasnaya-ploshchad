@@ -20,7 +20,11 @@ const dailyTargetWPByLevel: Record<string, number> = {
 function parseLocalDate(dateStr: string): Date {
   if (dateStr.includes('T')) {
     const date = new Date(dateStr);
-    const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    // Sprint dates from Jira are in UTC but represent WIB (UTC+7) time.
+    // Use UTC+7 offset to extract the correct local date regardless of server timezone.
+    const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+    const wibDate = new Date(date.getTime() + WIB_OFFSET_MS);
+    const localDate = new Date(wibDate.getUTCFullYear(), wibDate.getUTCMonth(), wibDate.getUTCDate());
     localDate.setHours(0, 0, 0, 0);
     return localDate;
   }

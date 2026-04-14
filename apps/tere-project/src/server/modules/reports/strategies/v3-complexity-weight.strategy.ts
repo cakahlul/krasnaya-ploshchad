@@ -3,7 +3,7 @@ import type { JiraIssueEntity } from '@shared/types/report.types';
 import { parseAppendixWeightPoints, type AppendixWeightPoint } from '@shared/utils/appendix-level';
 
 const appendixWeightPointsMapping: Record<AppendixWeightPoint, number> = {
-  'Very Low': 1.5,
+  'Very Low': 1,
   'Low': 2,
   'Medium': 4,
   'High': 8,

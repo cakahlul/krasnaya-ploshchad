@@ -51,4 +51,17 @@ export class HolidaysRepository {
       return [];
     }
   }
+
+  async createHoliday(date: string, name: string): Promise<Holiday> {
+    const ref = await firestore.collection(COLLECTION).add({
+      date,
+      name,
+      is_national_holiday: true,
+    });
+    return { id: ref.id, holiday_date: date, holiday_name: name, is_national_holiday: true };
+  }
+
+  async deleteHoliday(id: string): Promise<void> {
+    await firestore.collection(COLLECTION).doc(id).delete();
+  }
 }

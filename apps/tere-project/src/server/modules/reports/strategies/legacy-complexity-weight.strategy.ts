@@ -2,7 +2,7 @@ import type { IComplexityWeightStrategy } from './complexity-weight.strategy';
 import type { JiraIssueEntity } from '@shared/types/report.types';
 
 const complexityWeights: Record<string, number> = {
-  '10650': 1.5,
+  '10650': 1,
   '10651': 2,
   '10652': 4,
   '10653': 8,

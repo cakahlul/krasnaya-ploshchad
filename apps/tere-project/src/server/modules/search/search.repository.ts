@@ -16,7 +16,7 @@ async function getAllowedProjects(): Promise<{ allowed: string[]; boardProjects:
 }
 
 const appendixWeightMapping: Record<AppendixWeightPoint, number> = {
-  'Very Low': 1.5,
+  'Very Low': 1,
   Low: 2,
   Medium: 4,
   High: 8,
