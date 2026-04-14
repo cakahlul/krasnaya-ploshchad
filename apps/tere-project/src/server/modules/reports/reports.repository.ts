@@ -16,7 +16,7 @@ const BASE_RETRY_DELAY = 1000;
 const REPORT_FIELDS = [
   'summary', 'customfield_10005', 'customfield_10796', 'customfield_10865',
   'customfield_11015', 'customfield_11444', 'customfield_11312', 'customfield_11543',
-  'assignee', 'issuetype', 'parent',
+  'assignee', 'issuetype', 'parent', 'resolution',
 ].join(',');
 
 async function executeWithRetry<T>(operation: () => Promise<T>): Promise<T> {
@@ -82,7 +82,8 @@ export async function fetchRawData(dto: JiraSearchRequestDto): Promise<JiraIssue
     ? `sprint = ${sprintIds[0]}`
     : `sprint in (${sprintIds.join(',')})`;
   const issueTypeFilter = buildIssueTypeFilter(dto.isSubtaskType);
-  const jql = `${buildProjectFilter(dto.project)} AND ${sprintFilter} AND assignee IN (${dto.assignees.join(',')}) AND ${issueTypeFilter} AND resolution = Done ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
+  const resolutionFilter = dto.isShowPlannedWP ? '' : 'AND resolution = Done';
+  const jql = `${buildProjectFilter(dto.project)} AND ${sprintFilter} AND assignee IN (${dto.assignees.join(',')}) AND ${issueTypeFilter} ${resolutionFilter} ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
   return paginate(jql, REPORT_FIELDS);
 }
 
@@ -108,7 +109,7 @@ export async function fetchPlannedWPData(project: string, assignees: string[], s
     ? `sprint = ${sprintIds[0]}`
     : `sprint in (${sprintIds.join(',')})`;
   const issueTypeFilter = buildIssueTypeFilter(isSubtaskType);
-  const jql = `${buildProjectFilter(project)} AND ${sprintFilter} AND assignee IN (${assignees.join(',')}) AND ${issueTypeFilter} AND resolution is EMPTY ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
+  const jql = `${buildProjectFilter(project)} AND ${sprintFilter} AND assignee IN (${assignees.join(',')}) AND ${issueTypeFilter} ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
   return paginate(jql, REPORT_FIELDS);
 }
 

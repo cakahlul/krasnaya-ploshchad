@@ -4,6 +4,7 @@ export interface BoardEntity {
   shortName: string;
   isSubtaskType?: boolean;
   isKanban?: boolean;
+  isShowPlannedWP?: boolean;
 }
 
 export interface BoardResponse {
@@ -13,4 +14,5 @@ export interface BoardResponse {
   shortName: string;
   isSubtaskType?: boolean;
   isKanban?: boolean;
+  isShowPlannedWP?: boolean;
 }

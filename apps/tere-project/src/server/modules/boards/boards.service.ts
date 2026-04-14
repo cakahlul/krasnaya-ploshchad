@@ -13,6 +13,7 @@ class BoardsService {
       shortName: e.shortName,
       isSubtaskType: e.isSubtaskType,
       isKanban: e.isKanban,
+      isShowPlannedWP: e.isShowPlannedWP,
     }));
   }
 
@@ -32,12 +33,6 @@ class BoardsService {
     return boards.some(b => projectList.includes(b.shortName.toLowerCase()) && b.isSubtaskType === true);
   }
 
-  async getAbadiShortNames(): Promise<string[]> {
-    const boards = await this.repository.findAll();
-    return boards
-      .filter(b => b.name.startsWith('ABADI -'))
-      .map(b => b.shortName);
-  }
 }
 
 export const boardsService = new BoardsService(boardsRepository);

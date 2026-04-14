@@ -75,6 +75,7 @@ function processRawData(
   sprintDetails?: { startDate: string; endDate: string } | null,
   leaveData?: Map<string, LeaveDateRange[]>,
   nationalHolidays: string[] = [],
+  isShowPlannedWP = false,
 ): JiraIssueReportResponseDto[] {
   // accountId (Jira) === memberId (Firestore doc ID)
   const accountIdMap = new Map<string, string>(
@@ -104,11 +105,14 @@ function processRawData(
       const complexityWeight = strategies.complexityWeightStrategy.calculateWeight(issue);
       const report = reports.get(memberName);
       if (!report) return;
-      report[weightPoints] += complexityWeight;
       report.issueKeys.push(issue.key);
-      if (issue.fields.issuetype?.name === 'Bug') report.devDefect++;
-      const cData = complexityMap.get(memberName);
-      if (cData) { cData.totalComplexity += complexityWeight; cData.count++; }
+      const isDone = issue.fields.resolution?.name === 'Done';
+      if (!isShowPlannedWP || isDone) {
+        report[weightPoints] += complexityWeight;
+        if (issue.fields.issuetype?.name === 'Bug') report.devDefect++;
+        const cData = complexityMap.get(memberName);
+        if (cData) { cData.totalComplexity += complexityWeight; cData.count++; }
+      }
     } catch (error) { console.error('Error processing issue:', error); }
   });
 
@@ -179,19 +183,19 @@ function isBadRequestError(error: unknown): boolean {
 async function buildPlannedWPMap(
   sprint: string,
   members: MemberResponse[],
-  abadiProjects: string[],
+  plannedWPProjects: string[],
   isSubtaskType: boolean,
 ): Promise<Map<string, number>> {
   const accountIdToName = new Map<string, string>(members.map(m => [m.id.toLowerCase(), m.fullName]));
   const plannedWPMap = new Map<string, number>();
 
-  for (const abadiProject of abadiProjects) {
+  for (const plannedWPProject of plannedWPProjects) {
     const projectMembers = members.filter(m =>
-      m.teams.some(t => t.toLowerCase() === abadiProject.toLowerCase()),
+      m.teams.some(t => t.toLowerCase() === plannedWPProject.toLowerCase()),
     );
     const assignees = projectMembers.map(m => m.id);
     try {
-      const plannedData = await repo.fetchPlannedWPData(abadiProject, assignees, sprint, isSubtaskType);
+      const plannedData = await repo.fetchPlannedWPData(plannedWPProject, assignees, sprint, isSubtaskType);
       for (const issue of plannedData) {
         const accountId = issue.fields.assignee?.accountId?.toLowerCase();
         if (!accountId) continue;
@@ -203,7 +207,7 @@ async function buildPlannedWPMap(
       }
     } catch (error) {
       if (isBadRequestError(error)) {
-        console.warn(`[buildPlannedWPMap] Jira returned 400 for project=${abadiProject}, skipping planned WP`);
+        console.warn(`[buildPlannedWPMap] Jira returned 400 for project=${plannedWPProject}, skipping planned WP`);
       } else {
         throw error;
       }
@@ -218,9 +222,12 @@ export async function generateReport(sprint: string, project: string, epicId?: s
   const members = filterMembersByProject(allMembers, project);
   const assignees = members.map((m) => m.id);
   const isSubtaskType = await boardsService.hasSubtaskType(project);
+  const allBoards = await boardsService.findAll();
+  const projectList = project.split(',').map(p => p.trim()).filter(Boolean);
+  const isShowPlannedWP = allBoards.some(b => b.isShowPlannedWP && projectList.some(p => p.toLowerCase() === b.shortName.toLowerCase()));
   let rawData: Awaited<ReturnType<typeof repo.fetchRawData>>;
   try {
-    rawData = await repo.fetchRawData({ sprint, assignees, project, isSubtaskType });
+    rawData = await repo.fetchRawData({ sprint, assignees, project, isSubtaskType, isShowPlannedWP });
   } catch (error) {
     if (isBadRequestError(error)) {
       console.warn(`[generateReport] Jira returned 400 for project=${project} sprint=${sprint}, returning empty data`);
@@ -245,15 +252,14 @@ export async function generateReport(sprint: string, project: string, epicId?: s
     leaveData = await fetchLeaveData(start, end, members);
     nationalHolidays = await holidaysService.getNationalHolidays(parseLocalDate(sprintDetails.startDate), parseLocalDate(sprintDetails.endDate));
   }
-  const teamReport = processRawData(rawData, members, sprintDetails, leaveData, nationalHolidays);
+  const teamReport = processRawData(rawData, members, sprintDetails, leaveData, nationalHolidays, isShowPlannedWP);
 
-  const abadiShortNames = await boardsService.getAbadiShortNames();
-  const projectList = project.split(',').map(p => p.trim()).filter(Boolean);
-  const abadiProjects = projectList.filter(p =>
-    abadiShortNames.map(n => n.toLowerCase()).includes(p.toLowerCase()),
+  const plannedWPShortNames = allBoards.filter(b => b.isShowPlannedWP).map(b => b.shortName);
+  const plannedWPProjects = projectList.filter(p =>
+    plannedWPShortNames.map(n => n.toLowerCase()).includes(p.toLowerCase()),
   );
-  if (abadiProjects.length > 0) {
-    const plannedWPMap = await buildPlannedWPMap(sprint, members, abadiProjects, isSubtaskType);
+  if (plannedWPProjects.length > 0) {
+    const plannedWPMap = await buildPlannedWPMap(sprint, members, plannedWPProjects, isSubtaskType);
     teamReport.forEach(report => {
       if (plannedWPMap.has(report.member)) {
         report.plannedWP = plannedWPMap.get(report.member);
