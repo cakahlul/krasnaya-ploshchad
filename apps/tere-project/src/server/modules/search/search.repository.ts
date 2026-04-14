@@ -1,8 +1,10 @@
 import axios from 'axios'; // used for isAxiosError type guard only
 import { jiraClient } from '@server/lib/jira.client';
 import { SearchTicketDto, TicketDetailDto } from '@shared/types/search.types';
-import { parseAppendixWeightPoints, AppendixWeightPoint } from '@shared/utils/appendix-level';
+import { parseAppendixWeightPoints } from '@shared/utils/appendix-level';
 import { boardsService } from '@server/modules/boards/boards.service';
+import { wpWeightConfigService } from '@server/modules/wp-weight-config/wp-weight-config.service';
+import type { WpWeights } from '@server/modules/wp-weight-config/wp-weight-config.repository';
 
 const STATIC_ALLOWED_PROJECTS = ['ABB', 'BUZZ', 'REL', 'VUL', 'TAE', 'SRETASK'];
 
@@ -15,12 +17,10 @@ async function getAllowedProjects(): Promise<{ allowed: string[]; boardProjects:
   };
 }
 
-const appendixWeightMapping: Record<AppendixWeightPoint, number> = {
-  'Very Low': 1,
-  Low: 2,
-  Medium: 4,
-  High: 8,
-};
+function getTodayString(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 interface JiraSearchResponse {
   total?: number;
@@ -108,7 +108,8 @@ export class SearchRepository {
         },
         timeout: TIMEOUT,
       });
-      return this.mapToTicketDetail(response.data, boardProjects);
+      const weights = await wpWeightConfigService.getEffectiveWeights(getTodayString());
+      return this.mapToTicketDetail(response.data, boardProjects, weights);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) return null;
       throw new Error('Failed to fetch ticket detail');
@@ -145,7 +146,7 @@ export class SearchRepository {
     };
   }
 
-  private mapToTicketDetail(issue: JiraIssue, boardProjects: string[]): TicketDetailDto {
+  private mapToTicketDetail(issue: JiraIssue, boardProjects: string[], appendixWeightMapping: WpWeights): TicketDetailDto {
     const projectKey = issue.fields.project?.key ?? issue.key.split('-')[0];
     let resolution: string | undefined;
     if (boardProjects.includes(projectKey)) {
