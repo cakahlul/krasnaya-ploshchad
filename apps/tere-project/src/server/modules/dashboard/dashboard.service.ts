@@ -10,7 +10,8 @@ export async function getDashboardSummary(): Promise<DashboardSummaryResponseDto
   const cached = serverCache.get<DashboardSummaryResponseDto>(CACHE_KEY);
   if (cached) return cached;
 
-  const boards = await boardsService.findAll();
+  const allBoards = await boardsService.findAll();
+  const boards = allBoards.filter(b => !b.isBugMonitoring);
 
   const teams = await Promise.all(
     boards.map(async (board) => {

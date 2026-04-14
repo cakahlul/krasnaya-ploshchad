@@ -9,7 +9,7 @@ import {
 } from '@shared/types/bug-monitoring.types';
 import { BugSummaryDto } from '@shared/types/dashboard.types';
 
-const ACTIVE_STATUSES = ['To Do', 'In Progress', 'Ready to Test'];
+const ACTIVE_STATUSES = ['To Do', 'In Progress', 'Ready to Test', 'Detected', 'In Review'];
 const PRIORITY_ORDER = ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'None'];
 
 class BugMonitoringService {

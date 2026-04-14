@@ -14,6 +14,8 @@ class BoardsService {
       isSubtaskType: e.isSubtaskType,
       isKanban: e.isKanban,
       isShowPlannedWP: e.isShowPlannedWP,
+      isBugMonitoring: e.isBugMonitoring,
+      bugIssueType: e.bugIssueType,
     }));
   }
 

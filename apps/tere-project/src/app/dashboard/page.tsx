@@ -41,17 +41,17 @@ export default function Dashboard() {
   const LEAD_TEAMS = ['lead', 'circle lead'];
   const isLead = memberTeams.some(t => LEAD_TEAMS.includes(t.toLowerCase()));
 
-  // Map member's team shortNames → boardIds for non-leads
+  // Map member's team shortNames → boardIds for non-leads (exclude bug monitoring boards)
   const memberBoardIds: number[] | undefined = isLead
     ? undefined
     : boards
-        .filter(b => memberTeams.some(t => t.toLowerCase() === b.shortName.toLowerCase()))
+        .filter(b => !b.isBugMonitoring && memberTeams.some(t => t.toLowerCase() === b.shortName.toLowerCase()))
         .map(b => b.boardId);
 
   const { teams, isLoading: summaryLoading } = useDashboardSummary(
     isLead ? undefined : memberBoardIds,
   );
-  const { bugs } = useDashboardBugSummary(177, isLead);
+  const bugBoards = boards.filter(b => b.isBugMonitoring);
 
   const isBootstrapping = profileLoading || boardsLoading;
 
@@ -124,18 +124,43 @@ export default function Dashboard() {
         </div>
 
         {/* Bug Summary — leads only */}
-        {isLead && (
+        {isLead && bugBoards.length > 0 && (
           <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
             <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
               <BugOutlined className="text-red-500" />
               Open Bug Report Summary
             </h2>
-            <BugSummaryCard bugs={bugs} />
+            <div className={`grid grid-cols-1 ${bugBoards.length > 1 ? 'lg:grid-cols-2' : ''} gap-6`}>
+              {bugBoards.map((board) => {
+                const style = BUG_BOARD_STYLES[board.shortName] ?? { icon: '🐛', accent: 'gray' };
+                return (
+                  <DashboardBugSummary
+                    key={board.boardId}
+                    boardId={board.boardId}
+                    title={board.name}
+                    icon={style.icon}
+                    accentColor={style.accent}
+                  />
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
     </div>
   );
+}
+
+const BUG_BOARD_STYLES: Record<string, { icon: string; accent: string }> = {
+  BUZZ: { icon: '⚡', accent: 'violet' },
+  INCF: { icon: '🏦', accent: 'cyan' },
+};
+
+function DashboardBugSummary({ boardId, title, icon, accentColor }: {
+  boardId: number; title: string; icon: string; accentColor: string;
+}) {
+  const { bugs } = useDashboardBugSummary(boardId, true);
+  return <BugSummaryCard bugs={bugs} title={title} icon={icon} accentColor={accentColor} />;
 }
 
 const COLOR_THEMES = ['purple', 'cyan', 'green', 'orange'] as const;
@@ -239,12 +264,25 @@ function StatItem({ icon, label, value, iconColor, bgColor }: {
   );
 }
 
-function BugSummaryCard({ bugs }: { bugs: BugSummary & { isLoading: boolean; error: Error | null } }) {
+const ACCENT_STYLES: Record<string, { headerGradient: string; headerText: string; headerBorder: string }> = {
+  violet: { headerGradient: 'from-violet-500 to-purple-600', headerText: 'text-white', headerBorder: 'border-violet-200' },
+  cyan:   { headerGradient: 'from-cyan-500 to-blue-600',     headerText: 'text-white', headerBorder: 'border-cyan-200'   },
+};
+
+function BugSummaryCard({ bugs, title, icon, accentColor = 'violet' }: {
+  bugs: BugSummary & { isLoading: boolean; error: Error | null };
+  title?: string;
+  icon?: string;
+  accentColor?: string;
+}) {
+  const accent = ACCENT_STYLES[accentColor] ?? ACCENT_STYLES.violet;
+
   if (bugs.isLoading) {
     return (
-      <div className="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl p-6 animate-pulse shadow-sm">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {[...Array(6)].map((_, i) => <div key={i} className="h-24 bg-gray-100 rounded-xl" />)}
+      <div className="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl animate-pulse shadow-sm overflow-hidden">
+        <div className={`h-12 bg-gradient-to-r ${accent.headerGradient} opacity-60`} />
+        <div className="p-5 grid grid-cols-3 gap-3">
+          {[...Array(6)].map((_, i) => <div key={i} className="h-20 bg-gray-100 rounded-xl" />)}
         </div>
       </div>
     );
@@ -252,8 +290,14 @@ function BugSummaryCard({ bugs }: { bugs: BugSummary & { isLoading: boolean; err
 
   if (bugs.error) {
     return (
-      <div className="bg-white/80 backdrop-blur-sm border border-red-200 rounded-2xl p-6 shadow-sm">
-        <p className="text-red-500">Failed to load bug data</p>
+      <div className={`bg-white/80 backdrop-blur-sm border ${accent.headerBorder} rounded-2xl shadow-sm overflow-hidden`}>
+        <div className={`bg-gradient-to-r ${accent.headerGradient} px-5 py-3 flex items-center gap-2`}>
+          {icon && <span className="text-lg">{icon}</span>}
+          <span className={`font-bold ${accent.headerText}`}>{title}</span>
+        </div>
+        <div className="p-5">
+          <p className="text-red-500">Failed to load bug data</p>
+        </div>
       </div>
     );
   }
@@ -268,19 +312,30 @@ function BugSummaryCard({ bugs }: { bugs: BugSummary & { isLoading: boolean; err
   ];
 
   return (
-    <div className="bg-white/90 backdrop-blur-sm border border-gray-100 rounded-2xl p-6 shadow-sm">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {bugStats.map((stat, idx) => (
-          <div
-            key={stat.label}
-            className={`${stat.bg} ${stat.border} border rounded-xl p-4 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-lg animate-fade-in cursor-default`}
-            style={{ animationDelay: `${300 + idx * 50}ms`, animationFillMode: 'both' }}
-          >
-            <div className={`${stat.iconColor} text-2xl mb-2`}>{stat.icon}</div>
-            <p className={`text-2xl font-bold ${stat.textColor}`}>{stat.value}</p>
-            <p className="text-xs text-gray-500 mt-1 font-medium">{stat.label}</p>
-          </div>
-        ))}
+    <div className={`bg-white/90 backdrop-blur-sm border ${accent.headerBorder} rounded-2xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300`}>
+      {title && (
+        <div className={`bg-gradient-to-r ${accent.headerGradient} px-5 py-3 flex items-center gap-2`}>
+          {icon && <span className="text-lg">{icon}</span>}
+          <span className={`font-bold text-sm tracking-wide ${accent.headerText}`}>{title}</span>
+          <span className={`ml-auto text-xs font-semibold ${accent.headerText} opacity-80`}>
+            {bugs.totalBugs} active bug{bugs.totalBugs !== 1 ? 's' : ''}
+          </span>
+        </div>
+      )}
+      <div className="p-5">
+        <div className="grid grid-cols-3 gap-3">
+          {bugStats.map((stat, idx) => (
+            <div
+              key={stat.label}
+              className={`${stat.bg} ${stat.border} border rounded-xl p-3 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-lg animate-fade-in cursor-default`}
+              style={{ animationDelay: `${300 + idx * 50}ms`, animationFillMode: 'both' }}
+            >
+              <div className={`${stat.iconColor} text-xl mb-1`}>{stat.icon}</div>
+              <p className={`text-xl font-bold ${stat.textColor}`}>{stat.value}</p>
+              <p className="text-[10px] text-gray-500 mt-0.5 font-medium">{stat.label}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -60,6 +60,7 @@ export interface EpicDto {
   key: string;
   name: string;
   summary: string;
+  status?: string;
 }
 
 export interface SprintDto {

@@ -5,6 +5,8 @@ export interface BoardEntity {
   isSubtaskType?: boolean;
   isKanban?: boolean;
   isShowPlannedWP?: boolean;
+  isBugMonitoring?: boolean;
+  bugIssueType?: string;
 }
 
 export interface BoardResponse {
@@ -15,4 +17,6 @@ export interface BoardResponse {
   isSubtaskType?: boolean;
   isKanban?: boolean;
   isShowPlannedWP?: boolean;
+  isBugMonitoring?: boolean;
+  bugIssueType?: string;
 }
