@@ -325,7 +325,7 @@ export async function getEpics(sprint: string, project: string, startDate?: stri
   const epicsMap = new Map<string, EpicDto>();
   rawData.forEach((issue) => {
     if (issue.fields.parent && !epicsMap.has(issue.fields.parent.key)) {
-      epicsMap.set(issue.fields.parent.key, { id: issue.fields.parent.key, key: issue.fields.parent.key, name: issue.fields.parent.fields.summary, summary: issue.fields.parent.fields.summary });
+      epicsMap.set(issue.fields.parent.key, { id: issue.fields.parent.key, key: issue.fields.parent.key, name: issue.fields.parent.fields.summary, summary: issue.fields.parent.fields.summary, status: issue.fields.parent.fields.status?.name });
     }
   });
   return Array.from(epicsMap.values());

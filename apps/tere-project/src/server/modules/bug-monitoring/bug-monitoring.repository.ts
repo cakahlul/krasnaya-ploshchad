@@ -1,5 +1,6 @@
 import { jiraClient } from '@server/lib/jira.client';
 import { JiraBugEntity, JiraBugSearchResponseDto } from '@shared/types/bug-monitoring.types';
+import { boardsService } from '@server/modules/boards/boards.service';
 
 const MAX_RESULTS = parseInt(process.env.JIRA_MAX_RESULTS ?? '100', 10);
 const TIMEOUT = parseInt(process.env.JIRA_REQUEST_TIMEOUT ?? '30000', 10);
@@ -33,8 +34,13 @@ async function withRetry<T>(op: () => Promise<T>): Promise<T> {
 }
 
 export class BugMonitoringRepository {
-  async fetchBugsByBoard(_boardId: number): Promise<JiraBugEntity[]> {
-    const jql = 'project = BUZZ AND issuetype = BugProduction ORDER BY created DESC';
+  async fetchBugsByBoard(boardId: number): Promise<JiraBugEntity[]> {
+    const boards = await boardsService.findAll();
+    const board = boards.find(b => b.boardId === boardId && b.isBugMonitoring);
+    if (!board) throw new Error(`No bug monitoring board found for boardId ${boardId}`);
+
+    const issueTypeClause = board.bugIssueType ? ` AND issuetype = ${board.bugIssueType}` : '';
+    const jql = `project = ${board.shortName}${issueTypeClause} ORDER BY created DESC`;
     const searchUrl = '/rest/api/3/search/jql';
     const allBugs: JiraBugEntity[] = [];
     let startAt = 0;

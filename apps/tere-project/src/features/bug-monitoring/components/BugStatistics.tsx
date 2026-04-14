@@ -12,13 +12,14 @@ interface BugStatisticsProps {
 
 const STATUS_COLORS: Record<string, string> = {
   // Active statuses
-  'Detected': '#EF4444',      // Red
-  'Ready to test': '#3B82F6', // Blue
-  
-  // Other common statuses
   'To Do': '#6B7280',         // Gray
   'In Progress': '#F97316',   // Orange
-  'Testing': '#8B5CF6',       // Purple
+  'Ready to Test': '#3B82F6', // Blue
+  'Detected': '#EF4444',      // Red
+  'In Review': '#8B5CF6',     // Purple
+
+  // Other common statuses
+  'Testing': '#A855F7',       // Light Purple
   'Done': '#10B981',          // Green
   'Closed': '#059669',        // Dark Green
   'Resolved': '#10B981',      // Green

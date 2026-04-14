@@ -12,6 +12,8 @@ function mapDocToEntity(id: string, data: FirebaseFirestore.DocumentData): Board
     isSubtaskType: data.isSubtaskType === true,
     isKanban: data.isKanban === true,
     isShowPlannedWP: data.isShowPlannedWP === true,
+    isBugMonitoring: data.isBugMonitoring === true,
+    bugIssueType: (data.bugIssueType as string) || undefined,
   };
 }
 

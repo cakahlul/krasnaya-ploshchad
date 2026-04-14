@@ -13,7 +13,9 @@ const statusColors: Record<string, string> = {
   'To Do': 'gray',
   'In Progress': 'orange',
   'Ready to Test': 'blue',
-  'Ready Set Test': 'blue'
+  'Ready Set Test': 'blue',
+  'Detected': 'red',
+  'In Review': 'purple',
 };
 
 const priorityColors: Record<string, string> = {

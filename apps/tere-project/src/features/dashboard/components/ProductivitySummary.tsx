@@ -56,8 +56,9 @@ export default function ProductivitySummary() {
   const { boards, isLoading: boardsLoading } = useBoards();
   const [selectedTeams, setSelectedTeams] = useState<number[]>([]);
 
-  const teamOptions = boards.map(b => ({ value: b.boardId, label: b.name }));
-  const boardShortNameMap = new Map(boards.map(b => [b.boardId, b.shortName]));
+  const reportBoards = boards.filter(b => !b.isBugMonitoring);
+  const teamOptions = reportBoards.map(b => ({ value: b.boardId, label: b.name }));
+  const boardShortNameMap = new Map(reportBoards.map(b => [b.boardId, b.shortName]));
 
   const fetchData = async (month: number, year: number, teamIds: number[]) => {
     setLoading(true);

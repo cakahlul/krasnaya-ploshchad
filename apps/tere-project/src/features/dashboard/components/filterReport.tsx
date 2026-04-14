@@ -31,7 +31,7 @@ export function FilterReport() {
     boards.map(b => [b.boardId, b.shortName])
   );
 
-  const teamOptions = boards.map(b => ({ value: b.boardId, label: b.name }));
+  const teamOptions = boards.filter(b => !b.isBugMonitoring).map(b => ({ value: b.boardId, label: b.name }));
 
   const handleTeamChange = (values: number[]) => {
     setTeams(values);
