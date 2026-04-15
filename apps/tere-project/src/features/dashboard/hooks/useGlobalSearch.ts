@@ -4,8 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect, useCallback } from 'react';
 import axiosClient from '@src/lib/axiosClient';
 
-const apiUrl = process.env.NEXT_PUBLIC_AIOC_SERVICE;
-
 export interface SearchTicket {
   key: string;
   summary: string;
@@ -37,7 +35,7 @@ async function searchTickets(
   if (!query || query.trim().length === 0) {
     return { tickets: [], total: 0, hasMore: false };
   }
-  let url = `${apiUrl}/search/tickets?q=${encodeURIComponent(query)}&limit=${limit}`;
+  let url = `/search/tickets?q=${encodeURIComponent(query)}&limit=${limit}`;
   if (nextPageToken) {
     url += `&nextPageToken=${encodeURIComponent(nextPageToken)}`;
   }
