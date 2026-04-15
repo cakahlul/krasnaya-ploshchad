@@ -16,6 +16,7 @@ class BoardsService {
       isShowPlannedWP: e.isShowPlannedWP,
       isBugMonitoring: e.isBugMonitoring,
       bugIssueType: e.bugIssueType,
+      isStoryGrouping: e.isStoryGrouping,
     }));
   }
 

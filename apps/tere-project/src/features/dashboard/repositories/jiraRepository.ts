@@ -39,6 +39,21 @@ export const jiraRepository = {
     return response.data;
   },
 
+  fetchStories: async (
+    sprint: string,
+    project: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<any[]> => {
+    const params = new URLSearchParams();
+    params.append('project', project);
+    if (sprint) params.append('sprint', sprint);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const response = await axiosClient.get(`/report/stories?${params.toString()}`);
+    return response.data;
+  },
+
   fetchSprint: async (boardId: number): Promise<SprintDto[]> => {
     const response = await axiosClient.get(`/project/sprint?boardId=${boardId}`);
     return response.data;
