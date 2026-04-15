@@ -3,8 +3,6 @@
 import { useQuery } from '@tanstack/react-query';
 import axiosClient from '@src/lib/axiosClient';
 
-const apiUrl = process.env.NEXT_PUBLIC_AIOC_SERVICE;
-
 export interface TicketDetail {
   key: string;
   summary: string;
@@ -34,7 +32,7 @@ export interface TicketDetail {
 }
 
 async function fetchTicketDetail(key: string): Promise<TicketDetail> {
-  const response = await axiosClient.get(`${apiUrl}/search/tickets/${key}`);
+  const response = await axiosClient.get(`/search/tickets/${key}`);
   return response.data;
 }
 
