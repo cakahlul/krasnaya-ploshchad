@@ -138,7 +138,7 @@ export function FilterReport() {
 
         <div className="filter-bar__divider" />
 
-        <EpicSelect />
+        <EpicSelect isStoryGrouping={selectedTeams.some(id => boards.find(b => b.boardId === id)?.isStoryGrouping)} />
       </div>
 
       {/* Helper text */}

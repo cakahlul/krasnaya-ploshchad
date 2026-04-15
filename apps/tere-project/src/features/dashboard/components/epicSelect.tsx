@@ -35,16 +35,19 @@ function getEpicStatusConfig(status?: string): { color: string; bgColor: string;
   };
 }
 
-export function EpicSelect() {
+export function EpicSelect({ isStoryGrouping = false }: { isStoryGrouping?: boolean }) {
   const { sprint, project, startDate, endDate, epicId } = useTeamReportFilterStore(
     state => state.selectedFilter
   );
   const setEpicFilter = useTeamReportFilterStore(state => state.setEpicFilter);
+  const label = isStoryGrouping ? 'Story' : 'Epic';
 
-  // Fetch epics based on current filter context (sprint or date range)
+  // Fetch epics or stories based on board grouping type
   const { data: epics, isLoading } = useQuery({
-    queryKey: ['epics', sprint, startDate, endDate, project],
-    queryFn: () => jiraRepository.fetchEpics(sprint, project, startDate, endDate),
+    queryKey: [isStoryGrouping ? 'stories' : 'epics', sprint, startDate, endDate, project],
+    queryFn: () => isStoryGrouping
+      ? jiraRepository.fetchStories(sprint, project, startDate, endDate)
+      : jiraRepository.fetchEpics(sprint, project, startDate, endDate),
     enabled: !!project && (!!sprint || (!!startDate && !!endDate)),
   });
 
@@ -70,8 +73,8 @@ export function EpicSelect() {
   }, {});
 
   const options = [
-    { value: 'all', label: 'All Epics', title: 'Show all epics', status: undefined as string | undefined },
-    { value: 'null', label: 'No Epic', title: 'Show issues with no epic', status: undefined as string | undefined },
+    { value: 'all', label: `All ${label}s`, title: `Show all ${label.toLowerCase()}s`, status: undefined as string | undefined },
+    { value: 'null', label: `No ${label}`, title: `Show issues with no ${label.toLowerCase()}`, status: undefined as string | undefined },
     ...epicItems.map((epic) => ({
       value: epic.key,
       label: epic.summary,
@@ -88,7 +91,7 @@ export function EpicSelect() {
       <div className="flex items-center justify-between">
         <label className="flex items-center gap-2 text-sm font-medium text-gray-600">
           <TagOutlined />
-          Filter by Epic
+          Filter by {label}
           {isAnyActive && (
             <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full animate-pulse">
               Filtered ({currentEpics.length})
@@ -134,8 +137,8 @@ export function EpicSelect() {
               ? currentEpics.length === 0
               : currentEpics.includes(option.value);
 
-            const isEpic = option.value !== 'all' && option.value !== 'null';
-            const statusConfig = isEpic ? getEpicStatusConfig(option.status) : null;
+            const isItem = option.value !== 'all' && option.value !== 'null';
+            const statusConfig = isItem ? getEpicStatusConfig(option.status) : null;
 
             return (
               <button
@@ -152,13 +155,13 @@ export function EpicSelect() {
                 `}
               >
                 <span className="truncate max-w-[180px]">{option.label}</span>
-                {isEpic && statusConfig && !isActive && (
+                {isItem && statusConfig && !isActive && (
                   <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${statusConfig.bgColor} ${statusConfig.borderColor} ${statusConfig.color}`}>
                     {statusConfig.icon}
                     {statusConfig.label}
                   </span>
                 )}
-                {isEpic && statusConfig && isActive && (
+                {isItem && statusConfig && isActive && (
                   <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-500 text-blue-100 border border-blue-400">
                     {statusConfig.label}
                   </span>

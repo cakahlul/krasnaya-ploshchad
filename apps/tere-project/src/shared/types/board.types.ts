@@ -7,6 +7,7 @@ export interface BoardEntity {
   isShowPlannedWP?: boolean;
   isBugMonitoring?: boolean;
   bugIssueType?: string;
+  isStoryGrouping?: boolean;
 }
 
 export interface BoardResponse {
@@ -19,4 +20,5 @@ export interface BoardResponse {
   isShowPlannedWP?: boolean;
   isBugMonitoring?: boolean;
   bugIssueType?: string;
+  isStoryGrouping?: boolean;
 }
