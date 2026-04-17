@@ -4,6 +4,7 @@ import type {
 } from '@shared/types/report.types';
 import type { MemberResponse } from '@shared/types/member.types';
 import type { LeaveDateRange } from '@shared/types/talent-leave.types';
+import { isMeetingAppendixValue, parseMeetingSP } from '@shared/utils/appendix-level';
 import { membersService } from '@server/modules/members/members.service';
 import { issueProcessingStrategyFactory } from './strategies/issue-processing-strategy.factory';
 import { talentLeaveService } from '@server/modules/talent-leave/talent-leave.service';
@@ -75,6 +76,20 @@ function calculateDefectRate(defectCount: number): string {
   return '0%';
 }
 
+/**
+ * Extracts the total meeting SP from an issue's customfield_11543 options.
+ * Sums SP values from all "ALL-Meeting" prefixed entries.
+ */
+function extractMeetingSPFromIssue(issue: JiraIssueEntity): number {
+  const selectedOptions = issue.fields.customfield_11543 || [];
+  return selectedOptions.reduce((total: number, option: any) => {
+    const value = option?.value;
+    if (!value || !isMeetingAppendixValue(value)) return total;
+    const sp = parseMeetingSP(value);
+    return sp !== null ? total + sp : total;
+  }, 0);
+}
+
 function processRawData(
   rawData: JiraIssueEntity[],
   members: MemberResponse[],
@@ -94,7 +109,7 @@ function processRawData(
   const reports = new Map<string, JiraIssueReportResponseDto>(
     members.map((m) => [
       m.fullName,
-      { member: m.fullName, team: m.teams[0] ?? '', productivityRate: '', totalWeightPoints: 0, devDefect: 0, devDefectRate: '', level: m.level, weightPointsProduct: 0, weightPointsTechDebt: 0, targetWeightPoints: (dailyTargetWPByLevel[m.level] ?? 8) * 10, issueKeys: [] },
+      { member: m.fullName, team: m.teams[0] ?? '', productivityRate: '', totalWeightPoints: 0, devDefect: 0, devDefectRate: '', level: m.level, weightPointsProduct: 0, weightPointsTechDebt: 0, targetWeightPoints: (dailyTargetWPByLevel[m.level] ?? 8) * 10, issueKeys: [], spMeeting: 0 },
     ]),
   );
 
@@ -116,10 +131,18 @@ function processRawData(
       report.issueKeys.push(issue.key);
       const isDone = issue.fields.resolution?.name === 'Done';
       if (!isShowPlannedWP || isDone) {
-        report[weightPoints] += complexityWeight;
+        // Extract meeting SP from ALL-Meeting appendix options before adding WP
+        const meetingSP = extractMeetingSPFromIssue(issue);
+        if (meetingSP > 0) {
+          // Meeting tickets: accumulate direct SP, do not add to WP
+          report.spMeeting = (report.spMeeting ?? 0) + meetingSP;
+        } else {
+          // Regular tickets: accumulate weight points as usual
+          report[weightPoints] += complexityWeight;
+          const cData = complexityMap.get(memberName);
+          if (cData) { cData.totalComplexity += complexityWeight; cData.count++; }
+        }
         if (issue.fields.issuetype?.name === 'Bug') report.devDefect++;
-        const cData = complexityMap.get(memberName);
-        if (cData) { cData.totalComplexity += complexityWeight; cData.count++; }
       }
     } catch (error) { console.error('Error processing issue:', error); }
   });
@@ -143,11 +166,15 @@ function processRawData(
     const spBase = report.targetWeightPoints > 0 ? (8 * effectiveWorkingDays) / report.targetWeightPoints : 0;
     report.spProduct = report.weightPointsProduct * spBase;
     report.spTechDebt = report.weightPointsTechDebt * spBase;
-    report.spTotal = report.spProduct + report.spTechDebt;
+    // spMeeting is a direct SP value — not converted through WP/spBase
+    const spMeeting = report.spMeeting ?? 0;
+    report.spTotal = report.spProduct + report.spTechDebt + spMeeting;
     if (report.totalWeightPoints === 0) {
       report.weightPointsProduct = 0; report.weightPointsTechDebt = 0; report.devDefect = 0;
       report.devDefectRate = '0%'; report.productivityRate = '0%'; report.wpToHours = 0;
-      report.spProduct = 0; report.spTechDebt = 0; report.spTotal = 0;
+      report.spProduct = 0; report.spTechDebt = 0;
+      // spMeeting is preserved even when WP is zero — meeting tickets are independent of WP
+      report.spTotal = report.spMeeting ?? 0;
     }
   });
 
