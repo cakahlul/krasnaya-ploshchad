@@ -34,10 +34,14 @@ const COLUMN_INFO: Record<string, ColumnInfo> = {
     description: 'Story Points contributed from tech debt work.',
     formula: '(WP Tech Debt \u00d7 8 \u00d7 Working Days) / Target WP',
   },
+  spMeeting: {
+    label: 'SP Meeting',
+    description: 'Story Points contributed from meeting-related work.',
+  },
   spTotal: {
     label: 'SP Total',
     description: 'Total Story Points across all work types.',
-    formula: 'SP Product + SP Tech Debt',
+    formula: 'SP Product + SP Tech Debt + SP Meeting',
   },
   productivityRate: {
     label: 'Productivity Rate',
@@ -189,6 +193,12 @@ export default function TeamTable() {
       title: <ColumnHeader columnKey="spTechDebt" referenceDate={referenceDate} />,
       dataIndex: 'spTechDebt',
       key: 'spTechDebt',
+      render: (value: number | undefined) => value?.toFixed(2) ?? '-',
+    },
+    {
+      title: <ColumnHeader columnKey="spMeeting" referenceDate={referenceDate} />,
+      dataIndex: 'spMeeting',
+      key: 'spMeeting',
       render: (value: number | undefined) => value?.toFixed(2) ?? '-',
     },
     {
