@@ -1,11 +1,21 @@
 import { MembersRepository, membersRepository } from './members.repository';
 import type { MemberEntity, MemberResponse, CreateMemberRequest, UpdateMemberRequest } from '@shared/types/member.types';
 import type { TalentResponse } from '@shared/types/talent-leave.types';
+import { MemoryCache } from '@server/lib/cache';
+
+const CACHE_KEY = 'all_members';
 
 class MembersService {
+  private cache = new MemoryCache(60 * 60 * 1000); // 60 minutes
+
   constructor(private readonly repository: MembersRepository) {}
 
+  private invalidateCache(): void {
+    this.cache.invalidate();
+  }
+
   async create(dto: CreateMemberRequest): Promise<MemberResponse> {
+    this.invalidateCache();
     const now = new Date();
     const entity: MemberEntity = {
       name: dto.name,
@@ -36,8 +46,13 @@ class MembersService {
   }
 
   async findAll(): Promise<MemberResponse[]> {
+    const cached = this.cache.get<MemberResponse[]>(CACHE_KEY);
+    if (cached) return cached;
+
     const entities = await this.repository.findAll();
-    return entities.map((e) => this.entityToDto(e));
+    const result = entities.map((e) => this.entityToDto(e));
+    this.cache.set(CACHE_KEY, result);
+    return result;
   }
 
   async findOne(id: string): Promise<MemberResponse> {
@@ -47,6 +62,7 @@ class MembersService {
   }
 
   async update(id: string, dto: UpdateMemberRequest): Promise<MemberResponse> {
+    this.invalidateCache();
     const updateData: Partial<MemberEntity> = { updatedAt: new Date() };
     if (dto.name !== undefined) updateData.name = dto.name;
     if (dto.fullName !== undefined) updateData.fullName = dto.fullName;
@@ -59,6 +75,7 @@ class MembersService {
   }
 
   async remove(id: string): Promise<void> {
+    this.invalidateCache();
     const entity = await this.repository.findById(id);
     if (!entity) throw new Error(`Member with ID '${id}' not found`);
     await this.repository.delete(id);
