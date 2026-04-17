@@ -13,6 +13,8 @@ export interface WorkItem {
   wpToHours?: number;
   spProduct?: number;
   spTechDebt?: number;
+  /** Direct Story Points from meeting tickets (ALL-Meeting prefix). Not converted via WP. */
+  spMeeting?: number;
   spTotal?: number;
   plannedWP?: number;
 }
