@@ -156,7 +156,7 @@ function ColumnHeader({ columnKey, referenceDate }: { columnKey: string; referen
 
 export default function TeamTable() {
   const { data } = useTeamReportTransform();
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(10);
   const [selectedMember, setSelectedMember] = useState<WorkItem | null>(null);
   const selectedTeams = useTeamReportFilterStore(state => state.selectedTeams);
   const { startDate: filterStartDate } = useTeamReportFilterStore(state => state.selectedFilter);
