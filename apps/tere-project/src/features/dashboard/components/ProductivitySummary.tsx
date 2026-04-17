@@ -32,6 +32,7 @@ interface ProductivitySummaryMemberDto {
   expectedAverageWp: number;
   spProduct: number;
   spTechDebt: number;
+  spMeeting: number;
   spTotal: number;
 }
 
@@ -230,6 +231,14 @@ export default function ProductivitySummary() {
       align: 'center' as const,
       render: (val: number) => <span className="font-semibold text-indigo-600">{val.toFixed(2)}</span>,
       sorter: (a: any, b: any) => a.spTechDebt - b.spTechDebt,
+    },
+    {
+      title: 'SP Meeting',
+      dataIndex: 'spMeeting',
+      key: 'spMeeting',
+      align: 'center' as const,
+      render: (val: number) => <span className="font-semibold text-indigo-600">{(val ?? 0).toFixed(2)}</span>,
+      sorter: (a: any, b: any) => (a.spMeeting ?? 0) - (b.spMeeting ?? 0),
     },
     {
       title: 'SP Total',
