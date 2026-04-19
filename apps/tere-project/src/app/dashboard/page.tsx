@@ -35,11 +35,10 @@ export default function Dashboard() {
     "Ready to rock this day? Let's code and conquer 💻🔥",
   );
 
-  const { teams: memberTeams, isLoading: profileLoading } = useMemberProfile();
+  const { member, teams: memberTeams, isLoading: profileLoading } = useMemberProfile();
   const { boards, isLoading: boardsLoading } = useBoards();
 
-  const LEAD_TEAMS = ['lead', 'circle lead'];
-  const isLead = memberTeams.some(t => LEAD_TEAMS.includes(t.toLowerCase()));
+  const isLead = member?.isLead ?? false;
 
   // Map member's team shortNames → boardIds for non-leads (exclude bug monitoring boards)
   const memberBoardIds: number[] | undefined = isLead

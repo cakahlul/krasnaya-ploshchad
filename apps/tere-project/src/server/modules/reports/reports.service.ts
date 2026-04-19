@@ -210,7 +210,7 @@ function summarizeTeamReport(issues: JiraIssueReportResponseDto[], sprintDetails
 
 function filterMembersByProject(members: MemberResponse[], project: string): MemberResponse[] {
   const projectList = project.split(',').map(p => p.trim().toLowerCase()).filter(Boolean);
-  return members.filter((m) => m.teams.some(t => projectList.includes(t.toLowerCase())));
+  return members.filter((m) => !m.isLead && m.teams.some(t => projectList.includes(t.toLowerCase())));
 }
 
 function isBadRequestError(error: unknown): boolean {
@@ -365,7 +365,7 @@ export async function generateOpenSprintReport(project: string): Promise<GetRepo
   const activeSprint = sprints.find((s) => s.state === 'active');
   if (!activeSprint) return null;
   const allMembers = await membersService.findAll();
-  const members = allMembers.filter((m) => m.teams.some(t => t.toLowerCase() === project.toLowerCase()));
+  const members = allMembers.filter((m) => !m.isLead && m.teams.some(t => t.toLowerCase() === project.toLowerCase()));
   const assignees = members.map((m) => m.id);
   const isSubtaskType = await boardsService.hasSubtaskType(project);
   const rawData = await repo.fetchOpenSprintData(project, assignees, activeSprint.id, isSubtaskType);

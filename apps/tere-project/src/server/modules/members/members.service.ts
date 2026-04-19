@@ -22,6 +22,7 @@ class MembersService {
       fullName: dto.fullName,
       email: dto.email,
       level: dto.level,
+      isLead: dto.isLead,
       teams: dto.teams,
       createdAt: now,
       updatedAt: now,
@@ -37,6 +38,7 @@ class MembersService {
       fullName: dto.fullName,
       email: dto.email,
       level: dto.level,
+      isLead: dto.isLead,
       teams: dto.teams,
       createdAt: now,
       updatedAt: now,
@@ -68,6 +70,7 @@ class MembersService {
     if (dto.fullName !== undefined) updateData.fullName = dto.fullName;
     if (dto.email !== undefined) updateData.email = dto.email;
     if (dto.level !== undefined) updateData.level = dto.level;
+    if (dto.isLead !== undefined) updateData.isLead = dto.isLead;
     if (dto.teams !== undefined) updateData.teams = dto.teams;
     const updated = await this.repository.update(id, updateData);
     if (!updated) throw new Error(`Member with ID '${id}' not found`);
@@ -104,6 +107,7 @@ class MembersService {
       fullName: entity.fullName,
       email: entity.email,
       level: entity.level,
+      isLead: entity.isLead,
       teams: entity.teams,
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),

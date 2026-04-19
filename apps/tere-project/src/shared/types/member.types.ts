@@ -6,6 +6,7 @@ export interface MemberEntity {
   fullName: string;
   email: string;
   level: Level;
+  isLead: boolean;
   teams: string[];
   createdAt: Date;
   updatedAt: Date;
@@ -17,6 +18,7 @@ export interface MemberResponse {
   fullName: string;
   email: string;
   level: Level;
+  isLead: boolean;
   teams: string[];
   createdAt: string;
   updatedAt: string;
@@ -27,6 +29,7 @@ export interface CreateMemberRequest {
   fullName: string;
   email: string;
   level: Level;
+  isLead: boolean;
   teams: string[];
 }
 
@@ -35,5 +38,6 @@ export interface UpdateMemberRequest {
   fullName?: string;
   email?: string;
   level?: Level;
+  isLead?: boolean;
   teams?: string[];
 }
