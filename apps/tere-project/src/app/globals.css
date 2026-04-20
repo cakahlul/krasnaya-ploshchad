@@ -7,13 +7,31 @@
     --color-primary: #011d4d;
     --color-secondary: #034078;
     --color-accent: #1282a2;
+    --color-accent-light: #22b8d4;
     --color-muted: #e4dfda;
     --color-darkBrown: #63372c;
+    --font-sans: var(--font-space-grotesk), 'Space Grotesk', sans-serif;
+    --font-mono: var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace;
   }
+
+  /* TERE 2.0 Theme: Crimson (Krasnaya) */
+  html.crimson {
+    --color-accent: #e53935;
+    --color-accent-light: #ff6659;
+  }
+
+  *,*::before,*::after { box-sizing: border-box; }
 
   body {
     @apply antialiased;
+    font-family: var(--font-sans);
   }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(1,29,77,0.15); border-radius: 99px; }
+  .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); }
 }
 
 @layer components {
@@ -59,13 +77,8 @@
 
 @layer utilities {
   @keyframes bounce-up-down {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-8%);
-    }
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-8%); }
   }
 
   .animate-bounce-up-down {
@@ -77,18 +90,9 @@
   }
 
   @keyframes slide-up {
-    0% {
-      transform: translateY(100%);
-      opacity: 0;
-    }
-    50% {
-      transform: translateY(-10%);
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(0);
-      opacity: 1;
-    }
+    0% { transform: translateY(100%); opacity: 0; }
+    50% { transform: translateY(-10%); opacity: 1; }
+    100% { transform: translateY(0); opacity: 1; }
   }
 
   .animate-slot-in {
@@ -96,18 +100,9 @@
   }
 
   @keyframes floatDrop {
-    0% {
-      transform: translateY(-100%) scale(0.8);
-      opacity: 0;
-    }
-    50% {
-      transform: translateY(-40%) scale(1.2);
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(0) scale(1);
-      opacity: 1;
-    }
+    0% { transform: translateY(-100%) scale(0.8); opacity: 0; }
+    50% { transform: translateY(-40%) scale(1.2); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
   }
 
   .animate-floatDrop {
@@ -115,13 +110,8 @@
   }
 
   @keyframes bounce-left-right {
-    0%,
-    100% {
-      transform: translateX(0);
-    }
-    50% {
-      transform: translateX(6px);
-    }
+    0%,100% { transform: translateX(0); }
+    50% { transform: translateX(6px); }
   }
 
   .animate-bounce-left-right {
@@ -129,30 +119,17 @@
   }
 
   @keyframes fade-in {
-    0% {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    0% { opacity: 0; transform: translateY(-10px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
 
   .animate-fade-in {
     animation: fade-in 0.4s ease-in-out forwards;
   }
 
-  /* Fade in with upward motion */
   @keyframes fade-in-up {
-    0% {
-      opacity: 0;
-      transform: translateY(20px) scale(0.95);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
+    0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
   }
 
   .animate-fade-in-up {
@@ -162,43 +139,20 @@
 
   /* Dashboard floating orb animations */
   @keyframes float {
-    0%, 100% {
-      transform: translate(0, 0) scale(1);
-    }
-    50% {
-      transform: translate(20px, -20px) scale(1.05);
-    }
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(20px, -20px) scale(1.05); }
   }
 
-  .animate-float {
-    animation: float 15s ease-in-out infinite;
-  }
+  .animate-float { animation: float 15s ease-in-out infinite; }
+  .animate-float-delayed { animation: float 18s ease-in-out infinite; animation-delay: -5s; }
+  .animate-float-slow { animation: float 20s ease-in-out infinite; animation-delay: -10s; }
 
-  .animate-float-delayed {
-    animation: float 18s ease-in-out infinite;
-    animation-delay: -5s;
-  }
-
-  .animate-float-slow {
-    animation: float 20s ease-in-out infinite;
-    animation-delay: -10s;
-  }
-
-  /* Slide in from left */
   @keyframes slide-in {
-    0% {
-      opacity: 0;
-      transform: translateX(-30px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateX(0);
-    }
+    0% { opacity: 0; transform: translateX(-30px); }
+    100% { opacity: 1; transform: translateX(0); }
   }
 
-  .animate-slide-in {
-    animation: slide-in 0.6s ease-out forwards;
-  }
+  .animate-slide-in { animation: slide-in 0.6s ease-out forwards; }
 
   /* Wave hand animation */
   @keyframes wave {
@@ -218,36 +172,24 @@
     animation: wave 2.5s infinite;
   }
 
-  /* Airdrop-like animation for search dropdown */
+  .animate-topbar-wave {
+    display: inline-block;
+    transform-origin: 70% 70%;
+    animation: wave 2.5s ease-in-out infinite;
+  }
+
+  /* Airdrop animation */
   @keyframes airdrop {
-    0% {
-      transform: translateY(-15px) scale(0.96);
-      opacity: 0;
-    }
-    60% {
-      transform: translateY(4px) scale(1.01);
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(0) scale(1);
-      opacity: 1;
-    }
+    0% { transform: translateY(-15px) scale(0.96); opacity: 0; }
+    60% { transform: translateY(4px) scale(1.01); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
   }
 
-  .animate-airdrop {
-    animation: airdrop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-  }
+  .animate-airdrop { animation: airdrop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 
-  /* Staggered airdrop for list items */
   @keyframes airdrop-item {
-    0% {
-      transform: translateY(-10px) scale(0.97);
-      opacity: 0;
-    }
-    100% {
-      transform: translateY(0) scale(1);
-      opacity: 1;
-    }
+    0% { transform: translateY(-10px) scale(0.97); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
   }
 
   .animate-airdrop-item {
@@ -255,25 +197,26 @@
     opacity: 0;
   }
 
-  /* Glassmorphism shimmer effect */
+  /* Shimmer effect */
   @keyframes shimmer {
-    0% {
-      background-position: -200% 0;
-    }
-    100% {
-      background-position: 200% 0;
-    }
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
   }
 
   .animate-shimmer {
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.3) 50%,
-      transparent 100%
-    );
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
     background-size: 200% 100%;
     animation: shimmer 2s infinite;
+  }
+
+  /* Skeleton shimmer for page transitions */
+  @keyframes skelShim {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .animate-skel-shim {
+    animation: skelShim 1.2s ease-in-out infinite;
   }
 
   /* Login Page Custom CSS */
@@ -281,10 +224,12 @@
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
+
   .input-group:focus-within .input-label {
     color: var(--color-primary);
     transform: translateY(-1.5rem) scale(0.85);
   }
+
   .floating-shape {
     position: absolute;
     border-radius: 50%;
@@ -292,18 +237,28 @@
     z-index: 0;
     opacity: 0.6;
   }
+
   .animated-mesh {
     background-color: #0f4c81;
-    background-image: 
-        radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-        radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+    background-image:
+        radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%),
+        radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%),
         radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
     background-size: 200% 200%;
     animation: gradient-flow 15s ease infinite;
   }
+
   @keyframes gradient-flow {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
+  }
+
+  /* TERE 2.0 Grid background pattern */
+  .tere-grid-bg {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
   }
 }

@@ -132,14 +132,7 @@ export default function BugMonitoringPage() {
 
   return (
     <RoleBasedRoute allowedRoles={['Lead']}>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 p-8">
-        {/* Animated background orbs */}
-        <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-purple-200/40 rounded-full blur-3xl animate-float" />
-          <div className="absolute top-40 right-20 w-96 h-96 bg-cyan-200/40 rounded-full blur-3xl animate-float-delayed" />
-          <div className="absolute bottom-20 left-1/3 w-80 h-80 bg-pink-200/40 rounded-full blur-3xl animate-float-slow" />
-        </div>
-
+      <div className="min-h-screen p-8">
         <div className="relative z-10 max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8 flex items-start justify-between animate-slide-in">

@@ -22,7 +22,7 @@ export default function HolidayManagementPage() {
   if (role !== 'Lead') return null;
 
   return (
-    <div className="p-8 max-w-[1400px] mx-auto min-h-screen bg-gray-50/30">
+    <div className="p-8 max-w-[1400px] mx-auto min-h-screen">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 animate-fade-in-down">
         <div>

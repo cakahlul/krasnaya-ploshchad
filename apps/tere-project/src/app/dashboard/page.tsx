@@ -7,21 +7,7 @@ import { useEffect, useState } from 'react';
 import { useDashboardSummary, useDashboardBugSummary, TeamSummary, BugSummary } from '@src/features/dashboard/hooks/useDashboardSummary';
 import { useMemberProfile } from '@src/features/dashboard/hooks/useMemberProfile';
 import { useBoards } from '@src/features/dashboard/hooks/useBoards';
-import {
-  RocketOutlined,
-  TeamOutlined,
-  BugOutlined,
-  ThunderboltOutlined,
-  RiseOutlined,
-  CalendarOutlined,
-  WarningOutlined,
-  ExclamationCircleOutlined,
-  InfoCircleOutlined,
-  CheckCircleOutlined,
-  ClockCircleOutlined,
-} from '@ant-design/icons';
-import LoadingBounce from '@src/components/loadingBounce';
-import { ThemeToggle } from '@src/components/ThemeToggle';
+import { useThemeColors } from '@src/hooks/useTheme';
 import dynamic from 'next/dynamic';
 
 const GlobalSearch = dynamic(
@@ -29,18 +15,21 @@ const GlobalSearch = dynamic(
   { ssr: false }
 );
 
+const mono = "var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace";
+const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
+
 export default function Dashboard() {
   const { getDisplayName } = useUser();
   const [message, setMessage] = useState(
-    "Ready to rock this day? Let's code and conquer 💻🔥",
+    "Ready to rock this day? Let's code and conquer",
   );
+  const T = useThemeColors();
 
   const { member, teams: memberTeams, isLoading: profileLoading } = useMemberProfile();
   const { boards, isLoading: boardsLoading } = useBoards();
 
   const isLead = member?.isLead ?? false;
 
-  // Map member's team shortNames → boardIds for non-leads (exclude bug monitoring boards)
   const memberBoardIds: number[] | undefined = isLead
     ? undefined
     : boards
@@ -60,282 +49,296 @@ export default function Dashboard() {
     });
   }, []);
 
-  if (isBootstrapping) return <LoadingBounce />;
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 dark:text-gray-100 p-8 transition-colors duration-300">
-      {/* Animated background orbs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-200/40 rounded-full blur-3xl animate-float" />
-        <div className="absolute top-40 right-20 w-96 h-96 bg-cyan-200/40 rounded-full blur-3xl animate-float-delayed" />
-        <div className="absolute bottom-20 left-1/3 w-80 h-80 bg-pink-200/40 rounded-full blur-3xl animate-float-slow" />
+  if (isBootstrapping) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4">
+          <div
+            className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
+            style={{ borderColor: T.cardBrd, borderTopColor: T.accent }}
+          />
+          <p style={{ color: T.subCol, fontFamily: sans, fontSize: 13 }}>Loading dashboard...</p>
+        </div>
       </div>
+    );
+  }
 
-      <div className="relative z-10 max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-6 animate-slide-in flex justify-between items-start">
-          <div>
-            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-3">
-              <span className="text-5xl animate-wave">👋</span>
-              <span>Yo! {getDisplayName()}!</span>
-            </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-400 font-medium">
-              {message}
-            </p>
-          </div>
-          <ThemeToggle />
-        </div>
-
-        {/* Global Search */}
-        <div className="flex justify-center mb-10">
-          <GlobalSearch />
-        </div>
-
-        {/* Sprint Overview */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <RocketOutlined className="text-purple-600" />
-            Current Sprint Overview
-          </h2>
-
-          {summaryLoading ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {[...Array(isLead ? 4 : Math.max(memberBoardIds?.length ?? 2, 1))].map((_, i) => (
-                <TeamCardSkeleton key={i} delay={i * 100} />
-              ))}
-            </div>
-          ) : teams.length === 0 ? (
-            <div className="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl p-10 text-center text-gray-400 shadow-sm">
-              No active sprint data found.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {teams.map((team, index) => (
-                <TeamCard
-                  key={team.boardId}
-                  team={team}
-                  colorTheme={COLOR_THEMES[index % COLOR_THEMES.length]}
-                  delay={index * 100}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Bug Summary — leads only */}
-        {isLead && bugBoards.length > 0 && (
-          <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
-              <BugOutlined className="text-red-500" />
-              Open Bug Report Summary
-            </h2>
-            <div className={`grid grid-cols-1 ${bugBoards.length > 1 ? 'lg:grid-cols-2' : ''} gap-6`}>
-              {bugBoards.map((board) => {
-                const style = BUG_BOARD_STYLES[board.shortName] ?? { icon: '🐛', accent: 'gray' };
-                return (
-                  <DashboardBugSummary
-                    key={board.boardId}
-                    boardId={board.boardId}
-                    title={board.name}
-                    icon={style.icon}
-                    accentColor={style.accent}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  return isLead
+    ? <LeadDashboard teams={teams} bugBoards={bugBoards} summaryLoading={summaryLoading} displayName={getDisplayName() ?? 'User'} message={message} />
+    : <MemberDashboard teams={teams} summaryLoading={summaryLoading} displayName={getDisplayName() ?? 'User'} message={message} />;
 }
 
-const BUG_BOARD_STYLES: Record<string, { icon: string; accent: string }> = {
-  BUZZ: { icon: '⚡', accent: 'violet' },
-  INCF: { icon: '🏦', accent: 'cyan' },
-};
-
-function DashboardBugSummary({ boardId, title, icon, accentColor }: {
-  boardId: number; title: string; icon: string; accentColor: string;
+/* ── Gradient KPI Card ── */
+function GradCard({ label, value, vibe, gradient, shadow, delay }: {
+  label: string; value: string | number; vibe: string;
+  gradient: string; shadow: string; delay: number;
 }) {
-  const { bugs } = useDashboardBugSummary(boardId, true);
-  return <BugSummaryCard bugs={bugs} title={title} icon={icon} accentColor={accentColor} />;
-}
-
-const COLOR_THEMES = ['purple', 'cyan', 'green', 'orange'] as const;
-type ColorTheme = typeof COLOR_THEMES[number];
-
-const THEME_STYLES: Record<ColorTheme, { gradient: string; accent: string; bgAccent: string; border: string; shadow: string }> = {
-  purple: { gradient: 'from-purple-500 to-indigo-600', accent: 'text-purple-600', bgAccent: 'bg-purple-50', border: 'border-purple-100', shadow: 'shadow-purple-100' },
-  cyan:   { gradient: 'from-cyan-500 to-blue-600',     accent: 'text-cyan-600',   bgAccent: 'bg-cyan-50',   border: 'border-cyan-100',   shadow: 'shadow-cyan-100'   },
-  green:  { gradient: 'from-green-500 to-teal-600',    accent: 'text-green-600',  bgAccent: 'bg-green-50',  border: 'border-green-100',  shadow: 'shadow-green-100'  },
-  orange: { gradient: 'from-orange-500 to-amber-600',  accent: 'text-orange-600', bgAccent: 'bg-orange-50', border: 'border-orange-100', shadow: 'shadow-orange-100' },
-};
-
-function TeamCardSkeleton({ delay }: { delay: number }) {
+  const [hov, setHov] = useState(false);
   return (
     <div
-      className="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl p-6 animate-pulse shadow-sm"
-      style={{ animationDelay: `${delay}ms` }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        background: gradient,
+        borderRadius: 16,
+        padding: '18px',
+        boxShadow: hov ? `0 16px 40px ${shadow}` : `0 4px 20px ${shadow}88`,
+        transform: hov ? 'translateY(-4px) scale(1.02)' : 'none',
+        transition: 'all 0.25s cubic-bezier(0.34,1.4,0.64,1)',
+        position: 'relative',
+        overflow: 'hidden',
+        cursor: 'default',
+      }}
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="space-y-2">
-          <div className="h-5 bg-gray-200 rounded w-28" />
-          <div className="h-3 bg-gray-100 rounded w-40" />
-        </div>
-        <div className="w-12 h-12 bg-gray-200 rounded-xl" />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-20 bg-gray-100 rounded-xl" />
-        ))}
+      <div style={{ position: 'absolute', top: -18, right: -18, width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', filter: 'blur(18px)' }} />
+      <div style={{ position: 'relative' }}>
+        <div style={{ fontSize: 30, fontWeight: 800, color: '#fff', fontFamily: mono, lineHeight: 1, letterSpacing: -1, marginBottom: 3 }}>{value}</div>
+        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.6)', fontFamily: sans, fontWeight: 500, marginBottom: 2 }}>{label}</div>
+        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.92)', fontFamily: sans, fontWeight: 700 }}>{vibe}</div>
       </div>
     </div>
   );
 }
 
-interface TeamCardProps {
-  team: TeamSummary & { isLoading: boolean; error: Error | null };
-  colorTheme: ColorTheme;
-  delay: number;
-}
-
-function TeamCard({ team, colorTheme, delay }: TeamCardProps) {
-  const colors = THEME_STYLES[colorTheme];
-
-  if (team.error) {
-    return (
-      <div className="bg-white/80 backdrop-blur-sm border border-red-200 rounded-2xl p-6 shadow-sm">
-        <p className="text-red-500">Failed to load {team.teamName} data</p>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={`bg-white/90 backdrop-blur-sm border ${colors.border} rounded-2xl p-6 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:${colors.shadow} shadow-sm animate-fade-in`}
-      style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className={`text-xl font-bold ${colors.accent}`}>{team.teamName}</h3>
-          <p className="text-gray-500 text-sm font-medium">
-            {team.sprintName || 'No active sprint'}
-          </p>
-        </div>
-        <div className={`bg-gradient-to-br ${colors.gradient} p-3 rounded-xl shadow-md`}>
-          <TeamOutlined className="text-white text-xl" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <StatItem icon={<RiseOutlined />}         label="Productivity"   value={team.averageProductivity || '-'}                             iconColor={colors.accent} bgColor={colors.bgAccent} />
-        <StatItem icon={<ThunderboltOutlined />}  label="WP/Hour"        value={team.averageWpPerHour?.toFixed(2) || '-'}                    iconColor={colors.accent} bgColor={colors.bgAccent} />
-        <StatItem icon={<ClockCircleOutlined />}  label="Avg Hours Open" value={team.averageHoursOpen ? `${team.averageHoursOpen.toFixed(1)}h` : '-'} iconColor={colors.accent} bgColor={colors.bgAccent} />
-        <StatItem icon={<CheckCircleOutlined />}  label="Work Items"     value={team.totalWorkItems ? `${team.closedWorkItems}/${team.totalWorkItems}` : '-'} iconColor={colors.accent} bgColor={colors.bgAccent} />
-      </div>
-
-      {team.productPercentage && team.techDebtPercentage && (
-        <div className="mt-5 bg-gray-50 p-3 rounded-xl border border-gray-100">
-          <div className="flex justify-between text-xs font-semibold text-gray-500 mb-2">
-            <span>Product: {team.productPercentage}</span>
-            <span>Tech Debt: {team.techDebtPercentage}</span>
-          </div>
-          <div className="h-3 bg-gray-200 rounded-full overflow-hidden flex shadow-inner">
-            <div className="h-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-500" style={{ width: team.productPercentage }} />
-            <div className="h-full bg-gradient-to-r from-orange-400 to-amber-500 transition-all duration-500" style={{ width: team.techDebtPercentage }} />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function StatItem({ icon, label, value, iconColor, bgColor }: {
-  icon: React.ReactNode; label: string; value: string; iconColor: string; bgColor: string;
+/* ── LEAD DASHBOARD ── */
+function LeadDashboard({ teams, bugBoards, summaryLoading, displayName, message }: {
+  teams: (TeamSummary & { isLoading: boolean; error: Error | null })[];
+  bugBoards: { boardId: number; name: string; shortName: string }[];
+  summaryLoading: boolean;
+  displayName: string;
+  message: string;
 }) {
-  return (
-    <div className={`${bgColor} rounded-xl p-3 transition-all duration-200 hover:scale-105 cursor-default border border-transparent hover:border-gray-100 shadow-sm hover:shadow-md`}>
-      <div className={`${iconColor} text-lg mb-1`}>{icon}</div>
-      <p className="text-xs text-gray-500 font-medium">{label}</p>
-      <p className="text-lg font-bold text-gray-800">{value}</p>
-    </div>
-  );
-}
+  const T = useThemeColors();
 
-const ACCENT_STYLES: Record<string, { headerGradient: string; headerText: string; headerBorder: string }> = {
-  violet: { headerGradient: 'from-violet-500 to-purple-600', headerText: 'text-white', headerBorder: 'border-violet-200' },
-  cyan:   { headerGradient: 'from-cyan-500 to-blue-600',     headerText: 'text-white', headerBorder: 'border-cyan-200'   },
-};
+  const totalBoards = teams.length;
+  const aboveTarget = teams.filter(t => {
+    const prod = parseFloat(t.averageProductivity || '0');
+    return prod >= 100;
+  }).length;
 
-function BugSummaryCard({ bugs, title, icon, accentColor = 'violet' }: {
-  bugs: BugSummary & { isLoading: boolean; error: Error | null };
-  title?: string;
-  icon?: string;
-  accentColor?: string;
-}) {
-  const accent = ACCENT_STYLES[accentColor] ?? ACCENT_STYLES.violet;
-
-  if (bugs.isLoading) {
-    return (
-      <div className="bg-white/80 backdrop-blur-sm border border-gray-100 rounded-2xl animate-pulse shadow-sm overflow-hidden">
-        <div className={`h-12 bg-gradient-to-r ${accent.headerGradient} opacity-60`} />
-        <div className="p-5 grid grid-cols-3 gap-3">
-          {[...Array(6)].map((_, i) => <div key={i} className="h-20 bg-gray-100 rounded-xl" />)}
-        </div>
-      </div>
-    );
-  }
-
-  if (bugs.error) {
-    return (
-      <div className={`bg-white/80 backdrop-blur-sm border ${accent.headerBorder} rounded-2xl shadow-sm overflow-hidden`}>
-        <div className={`bg-gradient-to-r ${accent.headerGradient} px-5 py-3 flex items-center gap-2`}>
-          {icon && <span className="text-lg">{icon}</span>}
-          <span className={`font-bold ${accent.headerText}`}>{title}</span>
-        </div>
-        <div className="p-5">
-          <p className="text-red-500">Failed to load bug data</p>
-        </div>
-      </div>
-    );
-  }
-
-  const bugStats = [
-    { label: 'Total Bugs',    value: bugs.totalBugs,                    icon: <BugOutlined />,              bg: 'bg-red-50',     border: 'border-red-100',     textColor: 'text-red-600',     iconColor: 'text-red-500'     },
-    { label: 'Critical',      value: bugs.criticalCount,                icon: <ExclamationCircleOutlined />, bg: 'bg-rose-50',    border: 'border-rose-100',    textColor: 'text-rose-600',    iconColor: 'text-rose-500'    },
-    { label: 'High',          value: bugs.highCount,                    icon: <WarningOutlined />,           bg: 'bg-orange-50',  border: 'border-orange-100',  textColor: 'text-orange-600',  iconColor: 'text-orange-500'  },
-    { label: 'Medium',        value: bugs.mediumCount,                  icon: <InfoCircleOutlined />,        bg: 'bg-amber-50',   border: 'border-amber-100',   textColor: 'text-amber-600',   iconColor: 'text-amber-500'   },
-    { label: 'Low',           value: bugs.lowCount,                     icon: <CheckCircleOutlined />,       bg: 'bg-emerald-50', border: 'border-emerald-100', textColor: 'text-emerald-600', iconColor: 'text-emerald-500' },
-    { label: 'Avg Days Open', value: bugs.averageDaysOpen.toFixed(1),   icon: <CalendarOutlined />,          bg: 'bg-slate-50',   border: 'border-slate-100',   textColor: 'text-slate-600',   iconColor: 'text-slate-500'   },
+  const boardColors = [
+    { gradient: 'linear-gradient(135deg,#0f766e,#0891b2)', shadow: 'rgba(8,145,178,0.3)', color: T.accent, colorL: T.accentL },
+    { gradient: 'linear-gradient(135deg,#4f46e5,#7c3aed)', shadow: 'rgba(124,58,237,0.3)', color: '#7c3aed', colorL: '#a78bfa' },
+    { gradient: 'linear-gradient(135deg,#059669,#0d9488)', shadow: 'rgba(5,150,105,0.3)', color: '#059669', colorL: '#34d399' },
+    { gradient: 'linear-gradient(135deg,#d97706,#ea580c)', shadow: 'rgba(217,119,6,0.3)', color: '#d97706', colorL: '#fbbf24' },
   ];
 
   return (
-    <div className={`bg-white/90 backdrop-blur-sm border ${accent.headerBorder} rounded-2xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300`}>
-      {title && (
-        <div className={`bg-gradient-to-r ${accent.headerGradient} px-5 py-3 flex items-center gap-2`}>
-          {icon && <span className="text-lg">{icon}</span>}
-          <span className={`font-bold text-sm tracking-wide ${accent.headerText}`}>{title}</span>
-          <span className={`ml-auto text-xs font-semibold ${accent.headerText} opacity-80`}>
-            {bugs.totalBugs} active bug{bugs.totalBugs !== 1 ? 's' : ''}
-          </span>
-        </div>
-      )}
-      <div className="p-5">
-        <div className="grid grid-cols-3 gap-3">
-          {bugStats.map((stat, idx) => (
-            <div
-              key={stat.label}
-              className={`${stat.bg} ${stat.border} border rounded-xl p-3 text-center transform transition-all duration-300 hover:scale-105 hover:shadow-lg animate-fade-in cursor-default`}
-              style={{ animationDelay: `${300 + idx * 50}ms`, animationFillMode: 'both' }}
-            >
-              <div className={`${stat.iconColor} text-xl mb-1`}>{stat.icon}</div>
-              <p className={`text-xl font-bold ${stat.textColor}`}>{stat.value}</p>
-              <p className="text-[10px] text-gray-500 mt-0.5 font-medium">{stat.label}</p>
+    <div style={{ paddingBottom: 24 }}>
+      {/* Welcome */}
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: T.titleCol, margin: 0, fontFamily: sans, letterSpacing: -0.5 }}>
+          Team at a Glance
+        </h1>
+        <p style={{ color: T.subCol, margin: '4px 0 0', fontSize: 12.5, fontFamily: sans }}>{message}</p>
+      </div>
+
+      {/* Global Search */}
+      <div className="flex justify-center mb-6">
+        <GlobalSearch />
+      </div>
+
+      {/* Top KPI row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 14 }}>
+        <GradCard label="Total Boards" value={totalBoards} vibe={`${aboveTarget} above target`} gradient="linear-gradient(135deg,#0f766e,#0891b2)" shadow="rgba(8,145,178,0.35)" delay={0} />
+        <GradCard label="Teams Tracked" value={teams.length} vibe="all boards" gradient="linear-gradient(135deg,#4f46e5,#7c3aed)" shadow="rgba(124,58,237,0.35)" delay={60} />
+        <GradCard label="Bug Boards" value={bugBoards.length} vibe="monitoring active" gradient="linear-gradient(135deg,#059669,#0d9488)" shadow="rgba(5,150,105,0.35)" delay={120} />
+        <GradCard label="Active Members" value="-" vibe="across all boards" gradient="linear-gradient(135deg,#d97706,#ea580c)" shadow="rgba(217,119,6,0.35)" delay={180} />
+      </div>
+
+      {/* Board summary cards */}
+      {summaryLoading ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+          {[0, 1].map(i => (
+            <div key={i} style={{ background: T.cardBg, borderRadius: 16, border: `1px solid ${T.cardBrd}`, padding: 24, minHeight: 200 }}>
+              <div className="animate-pulse" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ height: 20, width: 140, background: T.rowBrd, borderRadius: 6 }} />
+                <div style={{ height: 40, width: 100, background: T.rowBrd, borderRadius: 6 }} />
+                <div style={{ height: 16, width: '100%', background: T.rowBrd, borderRadius: 6 }} />
+                <div style={{ height: 16, width: '80%', background: T.rowBrd, borderRadius: 6 }} />
+              </div>
             </div>
           ))}
         </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: teams.length > 1 ? '1fr 1fr' : '1fr', gap: 12, marginBottom: 14 }}>
+          {teams.map((team, bi) => {
+            const bc = boardColors[bi % boardColors.length];
+            const prod = parseFloat(team.averageProductivity || '0');
+            return (
+              <div key={team.boardId} style={{ background: T.cardBg, borderRadius: 16, border: `1px solid ${T.cardBrd}`, overflow: 'hidden' }}>
+                {/* Board header */}
+                <div style={{ background: bc.gradient, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: sans }}>{team.teamName}</div>
+                    <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.65)', fontFamily: mono, marginTop: 2 }}>{team.sprintName || 'No active sprint'}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', fontFamily: mono, lineHeight: 1 }}>{team.averageProductivity || '-'}</div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', fontFamily: sans }}>avg productivity</div>
+                  </div>
+                </div>
+                {/* Stats */}
+                <div style={{ padding: '12px 16px', display: 'flex', gap: 16 }}>
+                  <div>
+                    <div style={{ fontSize: 9.5, color: T.subCol, fontFamily: sans, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2 }}>WP/Hour</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: T.titleCol, fontFamily: mono }}>{team.averageWpPerHour?.toFixed(2) || '-'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 9.5, color: T.subCol, fontFamily: sans, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2 }}>Work Items</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: T.titleCol, fontFamily: mono }}>{team.totalWorkItems ? `${team.closedWorkItems}/${team.totalWorkItems}` : '-'}</div>
+                  </div>
+                  {team.averageHoursOpen != null && (
+                    <div>
+                      <div style={{ fontSize: 9.5, color: T.subCol, fontFamily: sans, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2 }}>Avg Hours Open</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: T.titleCol, fontFamily: mono }}>{team.averageHoursOpen.toFixed(1)}h</div>
+                    </div>
+                  )}
+                </div>
+                {/* Progress bar */}
+                {team.productPercentage && team.techDebtPercentage && (
+                  <div style={{ padding: '0 16px 14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: T.subCol, fontFamily: sans, marginBottom: 4 }}>
+                      <span>Product: {team.productPercentage}</span>
+                      <span>Tech Debt: {team.techDebtPercentage}</span>
+                    </div>
+                    <div style={{ height: 5, background: T.isVoid ? 'rgba(255,255,255,0.06)' : '#f0f2f8', borderRadius: 99, overflow: 'hidden', display: 'flex' }}>
+                      <div style={{ height: '100%', width: team.productPercentage, background: `linear-gradient(90deg, #10b981, #059669)`, borderRadius: 99 }} />
+                      <div style={{ height: '100%', width: team.techDebtPercentage, background: `linear-gradient(90deg, #f59e0b, #d97706)`, borderRadius: 99 }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Bug Summary — leads only */}
+      {bugBoards.length > 0 && (
+        <div style={{ background: T.cardBg, borderRadius: 16, border: `1px solid ${T.cardBrd}`, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 18px', borderBottom: `1px solid ${T.cardBrd}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: T.titleCol, fontFamily: sans }}>Bug Board Summary</span>
+              <div style={{ fontSize: 11, color: T.subCol, fontFamily: sans, marginTop: 1 }}>{bugBoards.length} board{bugBoards.length !== 1 ? 's' : ''} monitored</div>
+            </div>
+          </div>
+          <div style={{ padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {bugBoards.map(board => (
+              <DashboardBugRow key={board.boardId} boardId={board.boardId} title={board.name} shortName={board.shortName} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Bug Row for Lead Dashboard ── */
+function DashboardBugRow({ boardId, title, shortName }: { boardId: number; title: string; shortName: string }) {
+  const T = useThemeColors();
+  const { bugs } = useDashboardBugSummary(boardId, true);
+
+  if (bugs.isLoading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0' }}>
+        <div className="animate-pulse" style={{ height: 16, width: 200, background: T.rowBrd, borderRadius: 4 }} />
       </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: `1px solid ${T.rowBrd}` }}>
+      <span style={{ background: `${T.accent}15`, color: T.accent, fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 5, fontFamily: sans }}>{shortName}</span>
+      <span style={{ fontSize: 12.5, color: T.rowCol, fontFamily: sans, fontWeight: 500, flex: 1 }}>{title}</span>
+      <div style={{ display: 'flex', gap: 12, fontSize: 11, fontFamily: mono }}>
+        <span style={{ color: '#ef4444', fontWeight: 600 }}>{bugs.criticalCount} critical</span>
+        <span style={{ color: '#f59e0b', fontWeight: 600 }}>{bugs.highCount} high</span>
+        <span style={{ color: T.subCol }}>{bugs.totalBugs} total</span>
+      </div>
+    </div>
+  );
+}
+
+/* ── MEMBER DASHBOARD ── */
+function MemberDashboard({ teams, summaryLoading, displayName, message }: {
+  teams: (TeamSummary & { isLoading: boolean; error: Error | null })[];
+  summaryLoading: boolean;
+  displayName: string;
+  message: string;
+}) {
+  const T = useThemeColors();
+
+  return (
+    <div style={{ paddingBottom: 24 }}>
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: T.titleCol, margin: 0, fontFamily: sans, letterSpacing: -0.5 }}>
+          My Sprint Dashboard
+        </h1>
+        <p style={{ color: T.subCol, margin: '4px 0 0', fontSize: 12.5, fontFamily: sans }}>{message}</p>
+      </div>
+
+      {/* Global Search */}
+      <div className="flex justify-center mb-6">
+        <GlobalSearch />
+      </div>
+
+      {/* Sprint Overview */}
+      {summaryLoading ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+          {[0, 1].map(i => (
+            <div key={i} style={{ background: T.cardBg, borderRadius: 16, border: `1px solid ${T.cardBrd}`, padding: 24, minHeight: 160 }}>
+              <div className="animate-pulse" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ height: 20, width: 140, background: T.rowBrd, borderRadius: 6 }} />
+                <div style={{ height: 40, width: 100, background: T.rowBrd, borderRadius: 6 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : teams.length === 0 ? (
+        <div style={{ background: T.cardBg, borderRadius: 16, border: `1px solid ${T.cardBrd}`, padding: 40, textAlign: 'center' }}>
+          <p style={{ color: T.subCol, fontFamily: sans }}>No active sprint data found.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: teams.length > 1 ? '1fr 1fr' : '1fr', gap: 12 }}>
+          {teams.map((team, bi) => {
+            const gradients = [
+              'linear-gradient(135deg,#0f766e,#0891b2)',
+              'linear-gradient(135deg,#4f46e5,#7c3aed)',
+              'linear-gradient(135deg,#059669,#0d9488)',
+              'linear-gradient(135deg,#d97706,#ea580c)',
+            ];
+            const grad = gradients[bi % gradients.length];
+            return (
+              <div key={team.boardId} style={{ background: T.cardBg, borderRadius: 16, border: `1px solid ${T.cardBrd}`, overflow: 'hidden' }}>
+                <div style={{ background: grad, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: sans }}>{team.teamName}</div>
+                    <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.65)', fontFamily: mono, marginTop: 2 }}>{team.sprintName || 'No active sprint'}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', fontFamily: mono, lineHeight: 1 }}>{team.averageProductivity || '-'}</div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', fontFamily: sans }}>productivity</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 p-4">
+                  {[
+                    { label: 'WP/Hour', value: team.averageWpPerHour?.toFixed(2) || '-' },
+                    { label: 'Work Items', value: team.totalWorkItems ? `${team.closedWorkItems}/${team.totalWorkItems}` : '-' },
+                    { label: 'Avg Hours Open', value: team.averageHoursOpen ? `${team.averageHoursOpen.toFixed(1)}h` : '-' },
+                    { label: 'Product %', value: team.productPercentage || '-' },
+                  ].map((stat, si) => (
+                    <div key={si} style={{ background: T.isVoid ? 'rgba(255,255,255,0.04)' : '#f5f6fb', borderRadius: 10, padding: '10px 12px' }}>
+                      <div style={{ fontSize: 9.5, color: T.subCol, fontFamily: sans, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>{stat.label}</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: T.titleCol, fontFamily: mono }}>{stat.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
