@@ -8,6 +8,7 @@ export interface MemberEntity {
   level: Level;
   isLead: boolean;
   teams: string[];
+  isLead?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -20,6 +21,7 @@ export interface MemberResponse {
   level: Level;
   isLead: boolean;
   teams: string[];
+  isLead?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +33,7 @@ export interface CreateMemberRequest {
   level: Level;
   isLead: boolean;
   teams: string[];
+  isLead?: boolean;
 }
 
 export interface UpdateMemberRequest {
@@ -40,4 +43,5 @@ export interface UpdateMemberRequest {
   level?: Level;
   isLead?: boolean;
   teams?: string[];
+  isLead?: boolean;
 }

@@ -24,6 +24,7 @@ class MembersService {
       level: dto.level,
       isLead: dto.isLead,
       teams: dto.teams,
+      isLead: dto.isLead ?? false,
       createdAt: now,
       updatedAt: now,
     };
@@ -40,6 +41,7 @@ class MembersService {
       level: dto.level,
       isLead: dto.isLead,
       teams: dto.teams,
+      isLead: dto.isLead ?? false,
       createdAt: now,
       updatedAt: now,
     };
@@ -72,6 +74,7 @@ class MembersService {
     if (dto.level !== undefined) updateData.level = dto.level;
     if (dto.isLead !== undefined) updateData.isLead = dto.isLead;
     if (dto.teams !== undefined) updateData.teams = dto.teams;
+    if (dto.isLead !== undefined) updateData.isLead = dto.isLead;
     const updated = await this.repository.update(id, updateData);
     if (!updated) throw new Error(`Member with ID '${id}' not found`);
     return this.entityToDto(updated);
@@ -109,6 +112,7 @@ class MembersService {
       level: entity.level,
       isLead: entity.isLead,
       teams: entity.teams,
+      isLead: entity.isLead ?? false,
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),
     };
