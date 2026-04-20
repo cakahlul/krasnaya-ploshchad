@@ -133,4 +133,5 @@ export interface GetReportResponseDto {
   sprintStartDate?: string;
   sprintEndDate?: string;
   sprintName?: string;
+  sprintId?: number;
 }

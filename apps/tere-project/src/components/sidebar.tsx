@@ -6,6 +6,9 @@ import clsx from 'clsx';
 import { useUserAccess } from '@src/hooks/useUserAccess';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useThemeColors } from '@src/hooks/useTheme';
+import { useDashboardSummary } from '@src/features/dashboard/hooks/useDashboardSummary';
+import { useMemberProfile } from '@src/features/dashboard/hooks/useMemberProfile';
+import { useBoards } from '@src/features/dashboard/hooks/useBoards';
 
 /* ------------------------------------------------------------------ */
 /*  SVG Icons – chunky hand-drawn stroke style                        */
@@ -186,6 +189,16 @@ export default function Sidebar({
   const { role } = useUserAccess();
   const { isDark, accent, accentL } = useThemeColors();
 
+  // Subscribe reactively to dashboard data filtered by user's managed teams
+  const { teams: memberTeams } = useMemberProfile();
+  const { boards } = useBoards();
+  const managedBoardIds = boards
+    .filter(b => !b.isBugMonitoring && memberTeams.some(t => t.toLowerCase() === b.shortName.toLowerCase()))
+    .map(b => b.boardId);
+  const { teams: dashTeams } = useDashboardSummary(
+    managedBoardIds.length > 0 ? managedBoardIds : undefined,
+  );
+
   const [quote, setQuote] = useState('');
 
   useEffect(() => {
@@ -217,36 +230,48 @@ export default function Sidebar({
     : `${accent}12`;
   const quoteColor = isDark ? 'rgba(255,255,255,0.3)' : '#9ca3af';
 
-  /* ---- Header chip for Lead ---- */
-  const TeamHealthChip = () => (
-    <div className="flex gap-1.5 mt-2">
-      <div
-        className="flex-1 rounded-lg px-2 py-1 text-center"
-        style={{ background: 'rgba(255,255,255,0.12)' }}
-      >
-        <div className="text-[11px] text-white/50 leading-tight">Above Target</div>
-        <div className="text-sm font-bold text-white leading-tight">3/6</div>
+  /* ---- Header chip for Lead — dynamic from dashboard summary ---- */
+  const TeamHealthChip = () => {
+    const allMembers = dashTeams.flatMap(t => t.memberSummaries ?? []);
+    const totalMembers = allMembers.length;
+    const aboveTarget = allMembers.filter(m => parseFloat(m.wpProductivity) >= 100).length;
+    const avgProd = dashTeams.length > 0
+      ? (dashTeams.reduce((s, t) => s + parseFloat(t.averageProductivity || '0'), 0) / dashTeams.length).toFixed(1)
+      : '-';
+    return (
+      <div className="flex gap-1.5 mt-2">
+        <div
+          className="flex-1 rounded-lg px-2 py-1 text-center"
+          style={{ background: 'rgba(255,255,255,0.12)' }}
+        >
+          <div className="text-[11px] text-white/50 leading-tight">Meet Target</div>
+          <div className="text-sm font-bold text-white leading-tight">{aboveTarget}/{totalMembers}</div>
+        </div>
+        <div
+          className="flex-1 rounded-lg px-2 py-1 text-center"
+          style={{ background: 'rgba(255,255,255,0.12)' }}
+        >
+          <div className="text-[11px] text-white/50 leading-tight">Avg Productivity</div>
+          <div className="text-sm font-bold text-white leading-tight">{avgProd}%</div>
+        </div>
       </div>
-      <div
-        className="flex-1 rounded-lg px-2 py-1 text-center"
-        style={{ background: 'rgba(255,255,255,0.12)' }}
-      >
-        <div className="text-[11px] text-white/50 leading-tight">Open Bugs</div>
-        <div className="text-sm font-bold text-white leading-tight">4</div>
-      </div>
-    </div>
-  );
+    );
+  };
 
-  /* ---- Header chip for Member ---- */
+  /* ---- Header chip for Member — dynamic from dashboard summary ---- */
   const SprintProgressChip = () => {
-    const pct = 64;
-    const day = 7;
-    const total = 10;
+    const firstTeam = dashTeams[0];
+    if (!firstTeam) return null;
+    const sprintName = firstTeam.sprintName || 'No active sprint';
+    const totalDays = firstTeam.totalWorkingDays || 0;
+    const closedItems = firstTeam.closedWorkItems;
+    const totalItems = firstTeam.totalWorkItems;
+    const pct = totalItems > 0 ? Math.round((closedItems / totalItems) * 100) : 0;
     return (
       <div className="mt-2">
         <div className="flex justify-between text-[11px] text-white/60 mb-1">
-          <span>Sprint 24.2</span>
-          <span>Day {day} of {total}</span>
+          <span>{sprintName}</span>
+          <span>{totalDays} working days</span>
         </div>
         <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.15)' }}>
           <div
@@ -257,7 +282,7 @@ export default function Sidebar({
             }}
           />
         </div>
-        <div className="text-[11px] text-white/50 mt-0.5 text-right">{pct}%</div>
+        <div className="text-[11px] text-white/50 mt-0.5 text-right">{closedItems}/{totalItems} items ({pct}%)</div>
       </div>
     );
   };

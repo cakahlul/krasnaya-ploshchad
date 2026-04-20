@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@src/components/sidebar';
 import Topbar from '@src/components/topbar';
 import PageSkeleton from '@src/components/PageSkeleton';
+import LoadingScreen from '@src/components/LoadingScreen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App } from 'antd';
 import AxiosErrorInterceptor from '@src/components/AxiosErrorInterceptor';
@@ -25,6 +26,17 @@ export default function DashboardLayout({
   const prevPathnameRef = useRef(pathname);
   const { pageBg, isDark, theme } = useThemeColors();
 
+  // Show animated loading screen on first load (once per browser tab)
+  const [animationDone, setAnimationDone] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return sessionStorage.getItem('tere_loaded_v2') === '1';
+  });
+
+  const handleLoadingComplete = () => {
+    setAnimationDone(true);
+    sessionStorage.setItem('tere_loaded_v2', '1');
+  };
+
   useEffect(() => {
     if (!loading && !user) {
       router.push('/sign-in');
@@ -41,23 +53,14 @@ export default function DashboardLayout({
     }
   }, [pathname]);
 
+  // First load: show animated loading screen
+  if (!animationDone) {
+    return <LoadingScreen onComplete={handleLoadingComplete} theme={theme} />;
+  }
+
+  // Subsequent loads: show loading screen while auth resolves
   if (loading) {
-    return (
-      <div
-        className="flex items-center justify-center min-h-screen transition-colors duration-300"
-        style={{ background: pageBg }}
-      >
-        <div className="flex flex-col items-center gap-4">
-          <div
-            className="w-12 h-12 rounded-full border-2 border-t-transparent animate-spin"
-            style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#ebedf5', borderTopColor: isDark ? '#22b8d4' : '#1282a2' }}
-          />
-          <p className="text-sm font-medium" style={{ color: isDark ? 'rgba(255,255,255,0.4)' : '#9ca3af', fontFamily: "'Space Grotesk', sans-serif" }}>
-            Loading workspace...
-          </p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen onComplete={() => {}} theme={theme} />;
   }
   if (!user) return null;
 

@@ -4,7 +4,8 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserAccess } from '@src/hooks/useUserAccess';
 import { UserRole } from '@src/types/user-access.types';
-import LoadingBounce from './loadingBounce';
+import LoadingScreen from './LoadingScreen';
+import { useTheme } from '@src/hooks/useTheme';
 
 interface RoleBasedRouteProps {
   children: React.ReactNode;
@@ -19,6 +20,7 @@ export default function RoleBasedRoute({
 }: RoleBasedRouteProps) {
   const { role, isLoading } = useUserAccess();
   const router = useRouter();
+  const { theme } = useTheme();
 
   useEffect(() => {
     if (!isLoading && role && !allowedRoles.includes(role)) {
@@ -27,7 +29,7 @@ export default function RoleBasedRoute({
   }, [role, isLoading, allowedRoles, redirectTo, router]);
 
   if (isLoading) {
-    return <LoadingBounce />;
+    return <LoadingScreen onComplete={() => {}} theme={theme} />;
   }
 
   if (!role || !allowedRoles.includes(role)) {

@@ -8,6 +8,9 @@ import { Dropdown, message } from 'antd';
 import type { MenuProps } from 'antd';
 import useUser from '../hooks/useUser';
 import { useIsFetching } from '@tanstack/react-query';
+import { useDashboardSummary } from '@src/features/dashboard/hooks/useDashboardSummary';
+import { useMemberProfile } from '@src/features/dashboard/hooks/useMemberProfile';
+import { useBoards } from '@src/features/dashboard/hooks/useBoards';
 import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -61,6 +64,21 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const { isDark, accent, accentL, titleCol, subCol } = useThemeColors();
   const isFetching = useIsFetching();
   const pathname = usePathname();
+
+  // Subscribe reactively to dashboard data filtered by user's managed teams
+  const { teams: memberTeams } = useMemberProfile();
+  const { boards } = useBoards();
+  const managedBoardIds = boards
+    .filter(b => !b.isBugMonitoring && memberTeams.some(t => t.toLowerCase() === b.shortName.toLowerCase()))
+    .map(b => b.boardId);
+  const { teams: dashTeams } = useDashboardSummary(
+    managedBoardIds.length > 0 ? managedBoardIds : undefined,
+  );
+  const sprints = dashTeams
+    .filter(t => t.sprintName)
+    .map(t => ({ board: t.teamName, sprint: t.sprintName! }));
+
+  const [sprintHover, setSprintHover] = useState(false);
 
   const [firstName, setFirstName] = useState('');
 
@@ -161,7 +179,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           className="text-[11px] mt-0.5 whitespace-nowrap"
           style={{ color: subCol }}
         >
-          {dateStr} &middot; Project Manager
+          {dateStr}
         </span>
       </div>
 
@@ -196,19 +214,102 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           })}
         </div>
 
-        {/* Sprint live badge */}
-        <div
-          className="hidden md:flex items-center gap-2 rounded-full px-3 py-1.5 text-white text-[11px] font-bold tracking-wider uppercase"
-          style={{
-            background: `linear-gradient(135deg, ${accent}, ${accentL})`,
-          }}
-        >
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
-          </span>
-          Sprint 24
-        </div>
+        {/* Sprint live badge — stacked with hover overlay */}
+        {sprints.length > 0 && (
+          <div
+            className="hidden md:block relative"
+            onMouseEnter={() => setSprintHover(true)}
+            onMouseLeave={() => setSprintHover(false)}
+          >
+            {/* Stacked badges */}
+            <div style={{ position: 'relative', cursor: 'pointer' }}>
+              {sprints.slice(0, 3).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 rounded-full px-3 py-1.5 text-white text-[11px] font-bold tracking-wider uppercase"
+                  style={{
+                    background: `linear-gradient(135deg, ${accent}, ${accentL})`,
+                    position: i === 0 ? 'relative' : 'absolute',
+                    top: i === 0 ? 0 : i * 3,
+                    left: i === 0 ? 0 : i * 3,
+                    zIndex: sprints.length - i,
+                    opacity: i === 0 ? 1 : 0.4 - i * 0.15,
+                  }}
+                >
+                  {i === 0 && (
+                    <>
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+                      </span>
+                      {sprints[0].sprint}
+                      {sprints.length > 1 && (
+                        <span style={{ opacity: 0.7, fontSize: 10 }}>+{sprints.length - 1}</span>
+                      )}
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Hover dropdown showing all sprints */}
+            {sprintHover && sprints.length > 1 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: 8,
+                  background: isDark ? '#101e32' : '#fff',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#ebedf5'}`,
+                  borderRadius: 12,
+                  padding: '6px 0',
+                  boxShadow: isDark ? '0 12px 40px rgba(0,0,0,0.5)' : '0 12px 40px rgba(1,29,77,0.12)',
+                  zIndex: 100,
+                  minWidth: 240,
+                }}
+              >
+                {sprints.map((s, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      padding: '8px 14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      borderBottom: i < sprints.length - 1 ? `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#f5f6fb'}` : 'none',
+                    }}
+                  >
+                    <span
+                      style={{
+                        background: `${accent}18`,
+                        color: accent,
+                        fontSize: 9.5,
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: 5,
+                        flexShrink: 0,
+                        fontFamily: "'Space Grotesk', sans-serif",
+                      }}
+                    >
+                      {s.board}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 12,
+                        color: isDark ? '#e8edf5' : '#011d4d',
+                        fontWeight: 500,
+                        fontFamily: "'Space Grotesk', sans-serif",
+                      }}
+                    >
+                      {s.sprint}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Notification bell */}
         <button

@@ -681,7 +681,7 @@ export async function generateOpenSprintReport(
     sprintDetails,
     nationalHolidays,
   );
-  return { ...report, sprintName: activeSprint.name };
+  return { ...report, sprintName: activeSprint.name, sprintId: activeSprint.id };
 }
 
 export async function getSprintWorkItemStats(
