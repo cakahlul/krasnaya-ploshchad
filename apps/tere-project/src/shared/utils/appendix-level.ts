@@ -1,7 +1,7 @@
 export type AppendixWeightPoint = 'Very Low' | 'Low' | 'Medium' | 'High';
 
 export function parseAppendixWeightPoints(appendixText: string): AppendixWeightPoint | null {
-  const match = appendixText.match(/-(Very Low|Low|Medium|High)$/);
+  const match = appendixText.match(/\s*-\s*(Very Low|Low|Medium|High)$/);
   return match ? (match[1] as AppendixWeightPoint) : null;
 }
 
