@@ -262,7 +262,7 @@ async function buildPlannedWPMap(
 
 export async function generateReport(sprint: string, project: string, epicId?: string): Promise<GetReportResponseDto> {
   const allMembers = await membersService.findAll();
-  const members = filterMembersByProject(allMembers, project);
+  const members = filterMembersByProject(allMembers, project).filter(m => !m.isLead);
   const assignees = members.map((m) => m.id);
   const isSubtaskType = await boardsService.hasSubtaskType(project);
   const allBoards = await boardsService.findAll();
@@ -319,7 +319,7 @@ export async function generateReport(sprint: string, project: string, epicId?: s
 
 export async function generateReportByDateRange(startDate: string, endDate: string, project: string, epicId?: string): Promise<GetReportResponseDto> {
   const allMembers = await membersService.findAll();
-  const members = filterMembersByProject(allMembers, project);
+  const members = filterMembersByProject(allMembers, project).filter(m => !m.isLead);
   const assignees = members.map((m) => m.id);
   const isSubtaskType = await boardsService.hasSubtaskType(project);
   let rawData = await repo.fetchRawDataByDateRange(project, assignees, startDate, endDate, isSubtaskType);
@@ -370,7 +370,7 @@ export async function generateOpenSprintReport(project: string): Promise<GetRepo
   const activeSprint = sprints.find((s) => s.state === 'active');
   if (!activeSprint) return null;
   const allMembers = await membersService.findAll();
-  const members = allMembers.filter((m) => m.teams.some(t => t.toLowerCase() === project.toLowerCase()));
+  const members = allMembers.filter((m) => m.teams.some(t => t.toLowerCase() === project.toLowerCase()) && !m.isLead);
   const assignees = members.map((m) => m.id);
   const isSubtaskType = await boardsService.hasSubtaskType(project);
   const rawData = await repo.fetchOpenSprintData(project, assignees, activeSprint.id, isSubtaskType);

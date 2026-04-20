@@ -22,6 +22,7 @@ function mapDocToEntity(id: string, data: FirebaseFirestore.DocumentData): Membe
     email: data.email,
     level: data.level as Level,
     teams: data.teams ?? [],
+    isLead: data.isLead ?? false,
     createdAt: toDate(data.createdAt),
     updatedAt: toDate(data.updatedAt),
   };
