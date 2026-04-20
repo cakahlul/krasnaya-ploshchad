@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import useUser from '@src/hooks/useUser';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@src/components/sidebar';
@@ -22,7 +22,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [queryClient] = useState(() => new QueryClient());
   const [pageLoading, setPageLoading] = useState(false);
-  const [prevPathname, setPrevPathname] = useState(pathname);
+  const prevPathnameRef = useRef(pathname);
   const { pageBg, isDark, theme } = useThemeColors();
 
   useEffect(() => {
@@ -33,13 +33,13 @@ export default function DashboardLayout({
 
   // Page transition skeleton
   useEffect(() => {
-    if (pathname !== prevPathname) {
+    if (pathname !== prevPathnameRef.current) {
+      prevPathnameRef.current = pathname;
       setPageLoading(true);
-      setPrevPathname(pathname);
       const timer = setTimeout(() => setPageLoading(false), 380);
       return () => clearTimeout(timer);
     }
-  }, [pathname, prevPathname]);
+  }, [pathname]);
 
   if (loading) {
     return (

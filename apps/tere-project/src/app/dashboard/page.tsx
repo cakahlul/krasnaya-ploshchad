@@ -30,14 +30,12 @@ export default function Dashboard() {
 
   const isLead = member?.isLead ?? false;
 
-  const memberBoardIds: number[] | undefined = isLead
-    ? undefined
-    : boards
-        .filter(b => !b.isBugMonitoring && memberTeams.some(t => t.toLowerCase() === b.shortName.toLowerCase()))
-        .map(b => b.boardId);
+  const memberBoardIds: number[] | undefined = boards
+    .filter(b => !b.isBugMonitoring && memberTeams.some(t => t.toLowerCase() === b.shortName.toLowerCase()))
+    .map(b => b.boardId);
 
   const { teams, isLoading: summaryLoading } = useDashboardSummary(
-    isLead ? undefined : memberBoardIds,
+    memberBoardIds,
   );
   const bugBoards = boards.filter(b => b.isBugMonitoring);
 
