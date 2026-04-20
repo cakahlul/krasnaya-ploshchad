@@ -45,8 +45,9 @@ const COLUMN_INFO: Record<string, ColumnInfo> = {
   },
   productivityRate: {
     label: 'Productivity Rate',
-    description: 'How much of the target weight points the member achieved.',
-    formula: '(Total WP / Target WP) \u00d7 100%',
+    description: 'SP-based productivity comparing actual SP output against available working hours.',
+    formula: '(SP Total / (Working Days \u00d7 8)) \u00d7 100%',
+    note: '1 SP = 1 hour, 1 working day = 8 hours',
   },
   weightPointsProduct: {
     label: 'Weight Points Product',
@@ -174,6 +175,8 @@ export default function TeamTable() {
       title: <ColumnHeader columnKey="member" referenceDate={referenceDate} />,
       dataIndex: 'member',
       key: 'member',
+      fixed: 'left',
+      width: 160,
       render: (text: string, record: WorkItem) => (
         <button
           className="text-purple-600 hover:text-purple-800 font-medium hover:underline cursor-pointer bg-transparent border-none p-0 text-left"
@@ -187,66 +190,90 @@ export default function TeamTable() {
       title: <ColumnHeader columnKey="spProduct" referenceDate={referenceDate} />,
       dataIndex: 'spProduct',
       key: 'spProduct',
+      width: 110,
+      align: 'center',
       render: (value: number | undefined) => value?.toFixed(2) ?? '-',
     },
     {
       title: <ColumnHeader columnKey="spTechDebt" referenceDate={referenceDate} />,
       dataIndex: 'spTechDebt',
       key: 'spTechDebt',
+      width: 120,
+      align: 'center',
       render: (value: number | undefined) => value?.toFixed(2) ?? '-',
     },
     {
       title: <ColumnHeader columnKey="spMeeting" referenceDate={referenceDate} />,
       dataIndex: 'spMeeting',
       key: 'spMeeting',
+      width: 115,
+      align: 'center',
       render: (value: number | undefined) => value?.toFixed(2) ?? '-',
     },
     {
       title: <ColumnHeader columnKey="spTotal" referenceDate={referenceDate} />,
       dataIndex: 'spTotal',
       key: 'spTotal',
+      width: 100,
+      align: 'center',
       render: (value: number | undefined) => value?.toFixed(2) ?? '-',
     },
     {
       title: <ColumnHeader columnKey="productivityRate" referenceDate={referenceDate} />,
       dataIndex: 'productivityRate',
       key: 'productivityRate',
+      width: 145,
+      align: 'center',
     },
     {
       title: <ColumnHeader columnKey="weightPointsProduct" referenceDate={referenceDate} />,
       dataIndex: 'weightPointsProduct',
       key: 'weightPointsProduct',
+      width: 130,
+      align: 'center',
     },
     {
       title: <ColumnHeader columnKey="weightPointsTechDebt" referenceDate={referenceDate} />,
       dataIndex: 'weightPointsTechDebt',
       key: 'weightPointsTechDebt',
+      width: 140,
+      align: 'center',
     },
     {
       title: <ColumnHeader columnKey="totalWeightPoints" referenceDate={referenceDate} />,
       dataIndex: 'totalWeightPoints',
       key: 'totalWeightPoints',
+      width: 120,
+      align: 'center',
     },
     ...(hasAbadiBoard ? [{
       title: <ColumnHeader columnKey="plannedWP" referenceDate={referenceDate} />,
       dataIndex: 'plannedWP',
       key: 'plannedWP',
+      width: 110,
+      align: 'center' as const,
       render: (value: number | undefined) => value?.toFixed(2) ?? '-',
     }] : []),
     {
       title: <ColumnHeader columnKey="targetWeightPoints" referenceDate={referenceDate} />,
       dataIndex: 'targetWeightPoints',
       key: 'targetWeightPoints',
+      width: 110,
+      align: 'center',
     },
     {
       title: <ColumnHeader columnKey="workingDays" referenceDate={referenceDate} />,
       dataIndex: 'workingDays',
       key: 'workingDays',
+      width: 120,
+      align: 'center',
     },
     {
       title: <ColumnHeader columnKey="wpToHours" referenceDate={referenceDate} />,
       dataIndex: 'wpToHours',
       key: 'wpToHours',
+      width: 115,
+      align: 'center',
       render: (value: number | undefined) => value?.toFixed(2) ?? '-',
     },
   ];
@@ -275,6 +302,8 @@ export default function TeamTable() {
               <Table
                 columns={columns}
                 dataSource={items.map((item, index) => ({ ...item, key: `${shortName}-${index}` }))}
+                scroll={{ x: 'max-content' }}
+                size="small"
                 pagination={{
                   pageSize,
                   showSizeChanger: true,
@@ -296,6 +325,8 @@ export default function TeamTable() {
           <Table
             columns={columns}
             dataSource={data?.workItems.map((item, index) => ({ ...item, key: index }))}
+            scroll={{ x: 'max-content' }}
+            size="small"
             pagination={{
               pageSize,
               showSizeChanger: true,

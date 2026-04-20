@@ -327,7 +327,7 @@ export default function MemberTaskModal({ open, onClose, member }: MemberTaskMod
                 Total WP: {member?.totalWeightPoints ?? 0}
               </span>
               <span className="text-xs font-medium px-2.5 py-1 bg-blue-100/80 text-blue-700 rounded-lg transition-transform duration-200 hover:scale-105">
-                Productivity: {member?.productivityRate}
+                Productivity Rate: {member?.productivityRate}
               </span>
             </div>
           </div>

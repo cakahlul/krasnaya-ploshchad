@@ -1,7 +1,10 @@
 export interface WorkItem {
   member: string;
   team: string;
+  /** SP-based productivity: (SP Total / (Working Days × 8)) × 100% */
   productivityRate: string;
+  /** WP-based productivity: (Total WP / Target WP) × 100% */
+  wpProductivity: string;
   devDefect: number;
   devDefectRate: string;
   totalWeightPoints: number;
