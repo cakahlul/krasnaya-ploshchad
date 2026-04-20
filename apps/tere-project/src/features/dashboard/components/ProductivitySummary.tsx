@@ -34,6 +34,8 @@ interface ProductivitySummaryMemberDto {
   spTechDebt: number;
   spMeeting: number;
   spTotal: number;
+  wpProductivity: string;
+  productivityRate: string;
 }
 
 interface ProductivitySummaryData {
@@ -247,6 +249,18 @@ export default function ProductivitySummary() {
       align: 'center' as const,
       render: (val: number) => <span className="font-bold text-indigo-700">{val.toFixed(2)}</span>,
       sorter: (a: any, b: any) => a.spTotal - b.spTotal,
+    },
+    {
+      title: 'Productivity Rate',
+      dataIndex: 'productivityRate',
+      key: 'productivityRate',
+      align: 'center' as const,
+      render: (val: string) => {
+        const num = parseFloat(val);
+        const color = num >= 100 ? 'text-emerald-600' : 'text-rose-500';
+        return <span className={`font-semibold ${color}`}>{val}</span>;
+      },
+      sorter: (a: any, b: any) => parseFloat(a.productivityRate) - parseFloat(b.productivityRate),
     },
     {
       title: 'Working Days',

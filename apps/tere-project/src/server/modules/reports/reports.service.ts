@@ -109,7 +109,7 @@ function processRawData(
   const reports = new Map<string, JiraIssueReportResponseDto>(
     members.map((m) => [
       m.fullName,
-      { member: m.fullName, team: m.teams[0] ?? '', productivityRate: '', totalWeightPoints: 0, devDefect: 0, devDefectRate: '', level: m.level, weightPointsProduct: 0, weightPointsTechDebt: 0, targetWeightPoints: (dailyTargetWPByLevel[m.level] ?? 8) * 10, issueKeys: [], spMeeting: 0 },
+      { member: m.fullName, team: m.teams[0] ?? '', productivityRate: '', wpProductivity: '', totalWeightPoints: 0, devDefect: 0, devDefectRate: '', level: m.level, weightPointsProduct: 0, weightPointsTechDebt: 0, targetWeightPoints: (dailyTargetWPByLevel[m.level] ?? 8) * 10, issueKeys: [], spMeeting: 0 },
     ]),
   );
 
@@ -159,7 +159,7 @@ function processRawData(
     const cData = complexityMap.get(report.member);
     report.totalWeightPoints = cData?.totalComplexity ?? 0;
     const targetWP = report.targetWeightPoints;
-    report.productivityRate = targetWP > 0 ? `${((report.totalWeightPoints / targetWP) * 100).toFixed(2)}%` : '0.00%';
+    report.wpProductivity = targetWP > 0 ? `${((report.totalWeightPoints / targetWP) * 100).toFixed(2)}%` : '0.00%';
     report.devDefectRate = calculateDefectRate(report.devDefect);
     const targetSP = report.workingDays ? report.workingDays * 8 : 80;
     report.wpToHours = report.totalWeightPoints / targetSP;
@@ -169,12 +169,17 @@ function processRawData(
     // spMeeting is a direct SP value — not converted through WP/spBase
     const spMeeting = report.spMeeting ?? 0;
     report.spTotal = report.spProduct + report.spTechDebt + spMeeting;
+    // Productivity Rate: SP-based — (SP Total / (Working Days × 8)) × 100%
+    const totalAvailableHours = effectiveWorkingDays * 8;
+    report.productivityRate = totalAvailableHours > 0 ? `${((report.spTotal / totalAvailableHours) * 100).toFixed(2)}%` : '0.00%';
     if (report.totalWeightPoints === 0) {
       report.weightPointsProduct = 0; report.weightPointsTechDebt = 0; report.devDefect = 0;
-      report.devDefectRate = '0%'; report.productivityRate = '0%'; report.wpToHours = 0;
+      report.devDefectRate = '0%'; report.wpProductivity = '0%'; report.wpToHours = 0;
       report.spProduct = 0; report.spTechDebt = 0;
       // spMeeting is preserved even when WP is zero — meeting tickets are independent of WP
       report.spTotal = report.spMeeting ?? 0;
+      // Recalculate SP-based productivity rate with meeting-only SP
+      report.productivityRate = totalAvailableHours > 0 ? `${((report.spTotal / totalAvailableHours) * 100).toFixed(2)}%` : '0.00%';
     }
   });
 
