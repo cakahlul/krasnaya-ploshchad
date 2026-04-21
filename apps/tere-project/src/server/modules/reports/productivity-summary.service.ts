@@ -96,8 +96,8 @@ export async function generateProductivitySummary(month: number, year: number, t
   return { summary: { totalDaysOfWorks, totalWpExpected, averageWpExpected, productivityExpected, totalWpProduced, averageWpProduced, productivityProduced, productivityProduceVsExpected }, details };
 }
 
-export async function exportProductivitySummaryToSpreadsheet(month: number, year: number, accessToken: string) {
-  const data = await generateProductivitySummary(month, year);
+export async function exportProductivitySummaryToSpreadsheet(month: number, year: number, accessToken: string, teams?: string[]) {
+  const data = await generateProductivitySummary(month, year, teams);
   const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const monthName = monthNames[month - 1] || month.toString();
   const title = `Productivity Summary - ${monthName} ${year}`;

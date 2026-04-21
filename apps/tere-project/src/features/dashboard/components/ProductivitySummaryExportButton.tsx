@@ -8,11 +8,12 @@ import { motion } from 'framer-motion';
 interface ProductivitySummaryExportButtonProps {
   month: number;
   year: number;
+  teams?: string[];
   onSuccess?: (spreadsheetUrl: string) => void;
   onError?: () => void;
 }
 
-export function ProductivitySummaryExportButton({ month, year, onSuccess, onError }: ProductivitySummaryExportButtonProps) {
+export function ProductivitySummaryExportButton({ month, year, teams, onSuccess, onError }: ProductivitySummaryExportButtonProps) {
   const { startExportFlow, isExporting } = useExportProductivitySummary();
   const [isHovered, setIsHovered] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -20,7 +21,7 @@ export function ProductivitySummaryExportButton({ month, year, onSuccess, onErro
 
   const handleExport = async () => {
     try {
-      const result = await startExportFlow(month, year);
+      const result = await startExportFlow(month, year, teams);
 
       // Show success animation
       setShowSuccess(true);
