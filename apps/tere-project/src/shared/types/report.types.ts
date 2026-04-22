@@ -116,6 +116,8 @@ export interface JiraIssueReportResponseDto {
   spMeeting?: number;
   spTotal?: number;
   plannedWP?: number;
+  leaveDays?: number;
+  sickDays?: number;
   epic?: EpicDto | null;
 }
 
@@ -130,6 +132,14 @@ export interface GetReportResponseDto {
   averageWorkingDays?: number;
   averageWpPerHour?: number;
   totalWeightPoints?: number;
+  totalSP?: number;
+  targetSP?: number;
+  spProductPercentage?: string;
+  spTechDebtPercentage?: string;
+  spMeetingPercentage?: string;
+  totalLeave?: number;
+  totalSick?: number;
+  totalMemberWorkingDays?: number;
   sprintStartDate?: string;
   sprintEndDate?: string;
   sprintName?: string;
