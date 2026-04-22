@@ -20,6 +20,8 @@ export interface WorkItem {
   spMeeting?: number;
   spTotal?: number;
   plannedWP?: number;
+  leaveDays?: number;
+  sickDays?: number;
 }
 
 export interface DashboardDto {
@@ -33,6 +35,14 @@ export interface DashboardDto {
   averageWorkingDays?: number;
   averageWpPerHour?: number;
   totalWeightPoints?: number;
+  totalSP?: number;
+  targetSP?: number;
+  spProductPercentage?: string;
+  spTechDebtPercentage?: string;
+  spMeetingPercentage?: string;
+  totalLeave?: number;
+  totalSick?: number;
+  totalMemberWorkingDays?: number;
   sprintStartDate?: string;
   sprintEndDate?: string;
 }
@@ -48,6 +58,14 @@ export interface DashhboardEntity {
   averageWorkingDays?: number;
   averageWpPerHour?: number;
   totalWeightPoints?: number;
+  totalSP?: number;
+  targetSP?: number;
+  spProductPercentage?: string;
+  spTechDebtPercentage?: string;
+  spMeetingPercentage?: string;
+  totalLeave?: number;
+  totalSick?: number;
+  totalMemberWorkingDays?: number;
   sprintStartDate?: string;
   sprintEndDate?: string;
 }
