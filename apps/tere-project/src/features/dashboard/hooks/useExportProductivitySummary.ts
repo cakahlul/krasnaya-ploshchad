@@ -40,6 +40,7 @@ export function useExportProductivitySummary() {
     month: number,
     year: number,
     accessToken: string,
+    teams?: string[],
   ): Promise<ExportResponse> => {
     setIsExporting(true);
 
@@ -48,6 +49,7 @@ export function useExportProductivitySummary() {
         month: month.toString(),
         year: year.toString(),
         accessToken,
+        ...(teams && teams.length > 0 ? { teams: teams.join(',') } : {}),
       });
 
       return response.data;
@@ -62,7 +64,7 @@ export function useExportProductivitySummary() {
   /**
    * Complete export flow: Get auth URL → User authorizes → Extract token → Export
    */
-  const startExportFlow = async (month: number, year: number) => {
+  const startExportFlow = async (month: number, year: number, teams?: string[]) => {
     try {
       // Get authorization URL
       const url = await getAuthUrl();
@@ -100,7 +102,7 @@ export function useExportProductivitySummary() {
               window.removeEventListener('message', handleMessage);
 
               // Proceed with export
-              exportToSpreadsheet(month, year, accessToken)
+              exportToSpreadsheet(month, year, accessToken, teams)
                 .then(resolve)
                 .catch(reject);
             }

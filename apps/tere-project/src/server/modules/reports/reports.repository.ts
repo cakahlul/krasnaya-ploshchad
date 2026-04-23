@@ -75,6 +75,12 @@ function buildIssueTypeFilter(isSubtaskType?: boolean): string {
     : 'type IN standardIssueTypes()';
 }
 
+function getNextDay(dateStr: string): string {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day + 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 export async function fetchRawData(dto: JiraSearchRequestDto): Promise<JiraIssueEntity[]> {
   if (dto.assignees.length === 0) return [];
   const sprintIds = dto.sprint.split(',').map(s => s.trim()).filter(Boolean);
@@ -90,7 +96,7 @@ export async function fetchRawData(dto: JiraSearchRequestDto): Promise<JiraIssue
 export async function fetchRawDataByDateRange(project: string, assignees: string[], startDate: string, endDate: string, isSubtaskType?: boolean): Promise<JiraIssueEntity[]> {
   if (assignees.length === 0) return [];
   const issueTypeFilter = buildIssueTypeFilter(isSubtaskType);
-  const jql = `${buildProjectFilter(project)} AND assignee IN (${assignees.join(',')}) AND ${issueTypeFilter} AND resolution = Done AND resolutiondate >= "${startDate}" AND resolutiondate <= "${endDate}" ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
+  const jql = `${buildProjectFilter(project)} AND assignee IN (${assignees.join(',')}) AND ${issueTypeFilter} AND resolution = Done AND resolutiondate >= "${startDate}" AND resolutiondate < "${getNextDay(endDate)}" ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
   return paginate(jql, REPORT_FIELDS);
 }
 

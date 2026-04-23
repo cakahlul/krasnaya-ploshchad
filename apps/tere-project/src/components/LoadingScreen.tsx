@@ -336,8 +336,8 @@ function LaunchScene({ accent }: { accent: string }) {
         {/* Fins */}
         <polygon points="225,140 210,160 225,155" fill={accent} opacity={0.8} />
         <polygon points="255,140 270,160 255,155" fill={accent} opacity={0.8} />
-        {/* Flame */}
-        <g className="anim-flame">
+        {/* Flame — transform-origin anchored to flame center */}
+        <g className="anim-flame" style={{ transformOrigin: '240px 170px' }}>
           <ellipse cx={240} cy={168} rx={10} ry={18} fill="#ff9800" opacity={0.9} />
           <ellipse cx={240} cy={172} rx={6} ry={14} fill="#ffd54f" opacity={0.8} />
           <ellipse cx={240} cy={175} rx={3} ry={10} fill="#fff" opacity={0.6} />
@@ -543,7 +543,7 @@ interface LoadingScreenProps {
 
 export default function LoadingScreen({ onComplete, theme = 'void' }: LoadingScreenProps) {
   const colors = useMemo(() => getThemeColors(theme), [theme]);
-  const scene = useMemo<SceneVariant>(() => SCENES[Math.floor(Math.random() * SCENES.length)], []);
+  const [scene] = useState<SceneVariant>(() => SCENES[Math.floor(Math.random() * SCENES.length)]);
 
   const [progress, setProgress] = useState(0);
   const [tipIndex, setTipIndex] = useState(() => Math.floor(Math.random() * FUN_TIPS.length));

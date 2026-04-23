@@ -109,6 +109,39 @@ async function fetchLeaveData(
   }
 }
 
+function countLeaveDaysByStatus(
+  startDate: Date,
+  endDate: Date,
+  leaveDates: LeaveDateRange[],
+  status: 'Confirmed' | 'Sick',
+  nationalHolidays: string[] = [],
+): number {
+  const filtered = leaveDates.filter(l => l.status === status);
+  if (filtered.length === 0) return 0;
+  let count = 0;
+  const current = new Date(startDate);
+  current.setHours(0, 0, 0, 0);
+  const end = new Date(endDate);
+  end.setHours(0, 0, 0, 0);
+  while (current <= end) {
+    const dateStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`;
+    const day = current.getDay();
+    const isWeekend = day === 0 || day === 6;
+    if (!isWeekend && !nationalHolidays.includes(dateStr)) {
+      const checkDate = new Date(current);
+      checkDate.setHours(0, 0, 0, 0);
+      const onLeave = filtered.some(l => {
+        const from = parseLocalDate(l.dateFrom);
+        const to = parseLocalDate(l.dateTo);
+        return checkDate >= from && checkDate <= to;
+      });
+      if (onLeave) count++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  return count;
+}
+
 function calculateDefectRate(defectCount: number): string {
   if (defectCount <= 2) return '100%';
   if (defectCount <= 5) return '80%';
@@ -220,10 +253,26 @@ function processRawData(
     if (sprintDetails && leaveData) {
       const memberId = nameToId.get(report.member) ?? '';
       const memberLeaveDates = leaveData.get(memberId) ?? [];
+      const start = parseLocalDate(sprintDetails.startDate);
+      const end = parseLocalDate(sprintDetails.endDate);
       report.workingDays = calculateWorkingDays(
-        parseLocalDate(sprintDetails.startDate),
-        parseLocalDate(sprintDetails.endDate),
+        start,
+        end,
         memberLeaveDates,
+        nationalHolidays,
+      );
+      report.leaveDays = countLeaveDaysByStatus(
+        start,
+        end,
+        memberLeaveDates,
+        'Confirmed',
+        nationalHolidays,
+      );
+      report.sickDays = countLeaveDaysByStatus(
+        start,
+        end,
+        memberLeaveDates,
+        'Sick',
         nationalHolidays,
       );
     }
@@ -282,7 +331,7 @@ function summarizeTeamReport(
   sprintDetails?: { startDate: string; endDate: string } | null,
   nationalHolidays: string[] = [],
 ): GetReportResponseDto {
-  const activeMembers = issues.filter(i => i.totalWeightPoints > 0);
+  const activeMembers = issues.filter(i => (i.spTotal ?? 0) > 0);
   const totalWeightPointsProduct = activeMembers.reduce(
     (s, i) => s + i.weightPointsProduct,
     0,
@@ -296,13 +345,13 @@ function summarizeTeamReport(
     totalWP > 0 ? (totalWeightPointsProduct / totalWP) * 100 : 0;
   const techDebtPercentage =
     totalWP > 0 ? (totalWeightPointsTechDebt / totalWP) * 100 : 0;
-  const sumTotalWP = activeMembers.reduce((s, i) => s + i.totalWeightPoints, 0);
-  const sumTargetWP = activeMembers.reduce(
-    (s, i) => s + i.targetWeightPoints,
+  const sumSpTotal = activeMembers.reduce((s, i) => s + (i.spTotal ?? 0), 0);
+  const sumAvailableHours = activeMembers.reduce(
+    (s, i) => s + (i.workingDays ?? 10) * 8,
     0,
   );
   const averageProductivity =
-    sumTargetWP > 0 ? (sumTotalWP / sumTargetWP) * 100 : 0;
+    sumAvailableHours > 0 ? (sumSpTotal / sumAvailableHours) * 100 : 0;
   let totalWorkingDays: number | undefined;
   if (sprintDetails)
     totalWorkingDays = calculateWorkingDays(
@@ -327,6 +376,35 @@ function summarizeTeamReport(
   );
   const averageWpPerHour =
     teamTotalWD > 0 ? totalWeightPoints / teamTotalWD / 8 : 0;
+
+  // SP aggregations
+  const totalSP = sumSpTotal;
+  const targetSP = sumAvailableHours; // sum of (workingDays × 8) per active member
+  const sumSpProduct = activeMembers.reduce(
+    (s, i) => s + (i.spProduct ?? 0),
+    0,
+  );
+  const sumSpTechDebt = activeMembers.reduce(
+    (s, i) => s + (i.spTechDebt ?? 0),
+    0,
+  );
+  const sumSpMeeting = activeMembers.reduce(
+    (s, i) => s + (i.spMeeting ?? 0),
+    0,
+  );
+  const spProductPercentage = totalSP > 0 ? (sumSpProduct / totalSP) * 100 : 0;
+  const spTechDebtPercentage =
+    totalSP > 0 ? (sumSpTechDebt / totalSP) * 100 : 0;
+  const spMeetingPercentage = totalSP > 0 ? (sumSpMeeting / totalSP) * 100 : 0;
+
+  // Leave & sick aggregations (across all members, not just active)
+  const totalLeave = issues.reduce((s, i) => s + (i.leaveDays ?? 0), 0);
+  const totalSick = issues.reduce((s, i) => s + (i.sickDays ?? 0), 0);
+  const totalMemberWorkingDays = issues.reduce(
+    (s, i) => s + (i.workingDays ?? 0),
+    0,
+  );
+
   return {
     issues,
     totalWeightPointsProduct,
@@ -338,6 +416,14 @@ function summarizeTeamReport(
     averageWorkingDays,
     averageWpPerHour,
     totalWeightPoints,
+    totalSP: parseFloat(totalSP.toFixed(2)),
+    targetSP: parseFloat(targetSP.toFixed(2)),
+    spProductPercentage: `${spProductPercentage.toFixed(2)}%`,
+    spTechDebtPercentage: `${spTechDebtPercentage.toFixed(2)}%`,
+    spMeetingPercentage: `${spMeetingPercentage.toFixed(2)}%`,
+    totalLeave,
+    totalSick,
+    totalMemberWorkingDays,
     sprintStartDate: sprintDetails
       ? formatToYYYYMMDD(parseLocalDate(sprintDetails.startDate))
       : undefined,
@@ -681,12 +767,14 @@ export async function generateOpenSprintReport(
     sprintDetails,
     nationalHolidays,
   );
-  return { ...report, sprintName: activeSprint.name, sprintId: activeSprint.id };
+  return {
+    ...report,
+    sprintName: activeSprint.name,
+    sprintId: activeSprint.id,
+  };
 }
 
-export async function getSprintWorkItemStats(
-  project: string,
-): Promise<{
+export async function getSprintWorkItemStats(project: string): Promise<{
   totalWorkItems: number;
   closedWorkItems: number;
   averageHoursOpen: number | null;

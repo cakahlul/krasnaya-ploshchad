@@ -16,7 +16,16 @@ import { useBoards } from '@src/features/dashboard/hooks/useBoards';
 
 function IconDashboard({ color }: { color: string }) {
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke={color}
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <rect x="2" y="2" width="7" height="7" rx="1.5" />
       <rect x="11" y="2" width="7" height="7" rx="1.5" />
       <rect x="2" y="11" width="7" height="7" rx="1.5" />
@@ -27,7 +36,16 @@ function IconDashboard({ color }: { color: string }) {
 
 function IconTeamReporting({ color }: { color: string }) {
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke={color}
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <rect x="2" y="12" width="3.5" height="6" rx="0.8" />
       <rect x="8" y="8" width="3.5" height="10" rx="0.8" />
       <rect x="14" y="4" width="3.5" height="14" rx="0.8" />
@@ -39,7 +57,16 @@ function IconTeamReporting({ color }: { color: string }) {
 
 function IconProductivity({ color }: { color: string }) {
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke={color}
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M10 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" />
       <path d="M10 10 L6 13" strokeWidth="2" />
       <path d="M10 10 L13 6" strokeWidth="1.5" />
@@ -50,7 +77,16 @@ function IconProductivity({ color }: { color: string }) {
 
 function IconBug({ color }: { color: string }) {
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke={color}
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <ellipse cx="10" cy="12" rx="5" ry="5.5" />
       <path d="M8 7.5c0-1.5 1-2.5 2-2.5s2 1 2 2.5" />
       <circle cx="8.5" cy="6" r="0.8" fill={color} stroke="none" />
@@ -67,7 +103,16 @@ function IconBug({ color }: { color: string }) {
 
 function IconTalentLeave({ color }: { color: string }) {
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke={color}
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <circle cx="7" cy="6" r="2.8" />
       <path d="M2 16.5c0-3 2.2-5.2 5-5.2s5 2.2 5 5.2" />
       <rect x="13" y="10" width="5" height="7" rx="1" />
@@ -78,7 +123,16 @@ function IconTalentLeave({ color }: { color: string }) {
 
 function IconTeamMembers({ color }: { color: string }) {
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke={color}
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <circle cx="7" cy="6" r="2.5" />
       <path d="M2 16c0-2.8 2.2-5 5-5s5 2.2 5 5" />
       <circle cx="14" cy="7" r="2" />
@@ -89,7 +143,16 @@ function IconTeamMembers({ color }: { color: string }) {
 
 function IconHoliday({ color }: { color: string }) {
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke={color}
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <rect x="2" y="4" width="16" height="14" rx="2" />
       <line x1="2" y1="9" x2="18" y2="9" />
       <line x1="6" y1="2" x2="6" y2="6" />
@@ -116,43 +179,43 @@ const menuItems: MenuItem[] = [
   {
     key: '/dashboard',
     label: 'Main Dashboard',
-    icon: (c) => <IconDashboard color={c} />,
+    icon: c => <IconDashboard color={c} />,
     roles: ['Lead', 'Member'],
   },
   {
     key: '/dashboard/reports',
     label: 'Team Reporting',
-    icon: (c) => <IconTeamReporting color={c} />,
+    icon: c => <IconTeamReporting color={c} />,
     roles: ['Lead', 'Member'],
   },
   {
     key: '/dashboard/productivity-summary',
-    label: 'Productivity',
-    icon: (c) => <IconProductivity color={c} />,
+    label: 'Productivity Summary',
+    icon: c => <IconProductivity color={c} />,
     roles: ['Lead'],
   },
   {
     key: '/dashboard/bug-monitoring',
     label: 'Bug Monitoring',
-    icon: (c) => <IconBug color={c} />,
+    icon: c => <IconBug color={c} />,
     roles: ['Lead'],
   },
   {
     key: '/dashboard/talent-leave',
     label: 'Talent Leave',
-    icon: (c) => <IconTalentLeave color={c} />,
+    icon: c => <IconTalentLeave color={c} />,
     roles: ['Lead', 'Member'],
   },
   {
     key: '/dashboard/team-members',
     label: 'Team Members',
-    icon: (c) => <IconTeamMembers color={c} />,
+    icon: c => <IconTeamMembers color={c} />,
     roles: ['Lead'],
   },
   {
     key: '/dashboard/holiday-management',
     label: 'Holidays',
-    icon: (c) => <IconHoliday color={c} />,
+    icon: c => <IconHoliday color={c} />,
     roles: ['Lead'],
   },
 ];
@@ -190,10 +253,14 @@ export default function Sidebar({
   const { isDark, accent, accentL } = useThemeColors();
 
   // Subscribe reactively to dashboard data filtered by user's managed teams
-  const { teams: memberTeams } = useMemberProfile();
+  const { member, teams: memberTeams } = useMemberProfile();
   const { boards } = useBoards();
   const managedBoardIds = boards
-    .filter(b => !b.isBugMonitoring && memberTeams.some(t => t.toLowerCase() === b.shortName.toLowerCase()))
+    .filter(
+      b =>
+        !b.isBugMonitoring &&
+        memberTeams.some(t => t.toLowerCase() === b.shortName.toLowerCase()),
+    )
     .map(b => b.boardId);
   const { teams: dashTeams } = useDashboardSummary(
     managedBoardIds.length > 0 ? managedBoardIds : undefined,
@@ -207,7 +274,7 @@ export default function Sidebar({
 
   const filteredMenuItems = useMemo(() => {
     if (!role) return [];
-    return menuItems.filter((item) => item.roles.includes(role));
+    return menuItems.filter(item => item.roles.includes(role));
   }, [role]);
 
   const handleClick = useCallback(
@@ -225,75 +292,65 @@ export default function Sidebar({
   const navTextColor = isDark ? 'rgba(255,255,255,0.7)' : '#4b5563';
   const navTextActive = isDark ? '#ffffff' : '#011d4d';
   const hoverBg = isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6';
-  const activeBg = isDark
-    ? `${accent}22`
-    : `${accent}12`;
+  const activeBg = isDark ? `${accent}22` : `${accent}12`;
   const quoteColor = isDark ? 'rgba(255,255,255,0.3)' : '#9ca3af';
 
-  /* ---- Header chip for Lead — dynamic from dashboard summary ---- */
-  const TeamHealthChip = () => {
-    const allMembers = dashTeams.flatMap(t => t.memberSummaries ?? []);
-    const totalMembers = allMembers.length;
-    const aboveTarget = allMembers.filter(m => parseFloat(m.wpProductivity) >= 100).length;
-    const avgProd = dashTeams.length > 0
-      ? (dashTeams.reduce((s, t) => s + parseFloat(t.averageProductivity || '0'), 0) / dashTeams.length).toFixed(1)
-      : '-';
-    return (
-      <div className="flex gap-1.5 mt-2">
-        <div
-          className="flex-1 rounded-lg px-2 py-1 text-center"
-          style={{ background: 'rgba(255,255,255,0.12)' }}
-        >
-          <div className="text-[11px] text-white/50 leading-tight">Meet Target</div>
-          <div className="text-sm font-bold text-white leading-tight">{aboveTarget}/{totalMembers}</div>
-        </div>
-        <div
-          className="flex-1 rounded-lg px-2 py-1 text-center"
-          style={{ background: 'rgba(255,255,255,0.12)' }}
-        >
-          <div className="text-[11px] text-white/50 leading-tight">Avg Productivity</div>
-          <div className="text-sm font-bold text-white leading-tight">{avgProd}%</div>
-        </div>
-      </div>
-    );
-  };
+  /* ---- Header chip: Lead = Team Health, Member = personal progress ---- */
+  const allChipMembers = dashTeams.flatMap(t => t.memberSummaries ?? []);
+  const chipMeetTarget = allChipMembers.filter(m => parseFloat(m.wpProductivity) >= 100).length;
+  const chipAvgProd = dashTeams.length > 0
+    ? (dashTeams.reduce((s, t) => s + parseFloat(t.averageProductivity || '0'), 0) / dashTeams.length).toFixed(1)
+    : '-';
 
-  /* ---- Header chip for Member — dynamic from dashboard summary ---- */
-  const SprintProgressChip = () => {
-    const firstTeam = dashTeams[0];
-    if (!firstTeam) return null;
-    const sprintName = firstTeam.sprintName || 'No active sprint';
-    const totalDays = firstTeam.totalWorkingDays || 0;
-    const closedItems = firstTeam.closedWorkItems;
-    const totalItems = firstTeam.totalWorkItems;
-    const pct = totalItems > 0 ? Math.round((closedItems / totalItems) * 100) : 0;
-    return (
-      <div className="mt-2">
-        <div className="flex justify-between text-[11px] text-white/60 mb-1">
-          <span>{sprintName}</span>
-          <span>{totalDays} working days</span>
+  const myChipName = member?.fullName;
+  const myChipBoards = dashTeams
+    .filter(t => t.sprintName && myChipName && t.memberSummaries?.some(m => m.name === myChipName))
+    .map(t => ({
+      sprintName: t.sprintName!,
+      totalDays: t.totalWorkingDays || 0,
+      summary: t.memberSummaries.find(m => m.name === myChipName)!,
+    }));
+
+  const teamHealthChip = allChipMembers.length > 0 ? (
+    <div className="mt-3">
+      <div className="text-[9px] font-semibold tracking-[1.2px] uppercase mb-1.5" style={{ color: `${accent}cc` }}>Team Health</div>
+      <div className="flex gap-1.5">
+        <div className="flex-1 rounded-md py-1.5 px-2" style={{ background: 'rgba(255,255,255,0.08)' }}>
+          <div className="text-[17px] font-bold text-white leading-none">{chipMeetTarget}/{allChipMembers.length}</div>
+          <div className="text-[9px] text-white/40 mt-0.5">meet target</div>
         </div>
-        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.15)' }}>
-          <div
-            className="h-full rounded-full transition-all"
-            style={{
-              width: `${pct}%`,
-              background: `linear-gradient(90deg, ${accent}, ${accentL})`,
-            }}
-          />
+        <div className="flex-1 rounded-md py-1.5 px-2" style={{ background: 'rgba(255,255,255,0.08)' }}>
+          <div className="text-[17px] font-bold leading-none" style={{ color: parseFloat(chipAvgProd) >= 100 ? '#34d399' : '#fbbf24' }}>{chipAvgProd}%</div>
+          <div className="text-[9px] text-white/40 mt-0.5">avg prod</div>
         </div>
-        <div className="text-[11px] text-white/50 mt-0.5 text-right">{closedItems}/{totalItems} items ({pct}%)</div>
       </div>
-    );
-  };
+    </div>
+  ) : null;
+
+  const sprintProgressChip = myChipBoards.length > 0 ? (
+    <div className="mt-3 flex flex-col gap-2">
+      {myChipBoards.map((b, i) => {
+        const pct = Math.round(parseFloat(b.summary.wpProductivity) || 0);
+        return (
+          <div key={i}>
+            <div className="flex justify-between items-baseline mb-1">
+              <span className="text-[10px] font-medium text-white/60 truncate" style={{ maxWidth: 120 }}>{b.sprintName}</span>
+              <span className="text-[10px] font-bold text-white/80">{pct}%</span>
+            </div>
+            <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.12)' }}>
+              <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, background: `linear-gradient(90deg, ${accent}, ${accentL})`, transition: 'width 0.5s ease' }} />
+            </div>
+            <div className="text-[9px] text-white/35 mt-0.5">WP {b.summary.totalWeightPoints}/{b.summary.targetWeightPoints.toFixed(0)} · {b.totalDays} days</div>
+          </div>
+        );
+      })}
+    </div>
+  ) : null;
 
   /* ---- Sidebar inner content ---- */
-  const SidebarContent = () => (
+  const sidebarContent = (
     <div
-      className={clsx(
-        'flex flex-col h-full',
-        isDesktop && 'rounded-[20px]',
-      )}
+      className={clsx('flex flex-col h-full', isDesktop && 'rounded-[20px]')}
       style={{
         width: 224,
         background: sidebarBg,
@@ -304,7 +361,7 @@ export default function Sidebar({
     >
       {/* ---- Header ---- */}
       <div
-        className="px-4 pt-5 pb-4 rounded-t-[20px]"
+        className="px-4 pt-4 pb-3 rounded-t-[20px]"
         style={{
           background: `linear-gradient(135deg, #0b1a2e 0%, #0f2b3d 60%, ${accent}44 100%)`,
         }}
@@ -318,28 +375,49 @@ export default function Sidebar({
             }}
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <rect x="2" y="10" width="3" height="6" rx="0.8" fill="white" opacity="0.9" />
+              <rect
+                x="2"
+                y="10"
+                width="3"
+                height="6"
+                rx="0.8"
+                fill="white"
+                opacity="0.9"
+              />
               <rect x="7.5" y="6" width="3" height="10" rx="0.8" fill="white" />
-              <rect x="13" y="2" width="3" height="14" rx="0.8" fill="white" opacity="0.9" />
+              <rect
+                x="13"
+                y="2"
+                width="3"
+                height="14"
+                rx="0.8"
+                fill="white"
+                opacity="0.9"
+              />
             </svg>
           </div>
           <div>
-            <div className="text-white font-bold text-lg leading-tight">TERE</div>
+            <div className="text-white font-bold text-lg leading-tight">
+              TERE
+            </div>
             <div className="text-[11px] text-white/50 leading-tight">
-              v2.0 &middot; {role ?? '...'}
+              v2.0 &middot; {member?.isLead ? 'Lead' : member?.level ? member.level.charAt(0).toUpperCase() + member.level.slice(1) : '...'}
             </div>
           </div>
         </div>
 
-        {role === 'Lead' && <TeamHealthChip />}
-        {role === 'Member' && <SprintProgressChip />}
+        {member?.isLead ? teamHealthChip : member ? sprintProgressChip : null}
       </div>
 
       {/* ---- Navigation ---- */}
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-        {filteredMenuItems.map((item) => {
+        {filteredMenuItems.map(item => {
           const isActive = pathname === item.key;
-          const iconColor = isActive ? accent : (isDark ? 'rgba(255,255,255,0.45)' : '#6b7280');
+          const iconColor = isActive
+            ? accent
+            : isDark
+              ? 'rgba(255,255,255,0.45)'
+              : '#6b7280';
 
           return (
             <button
@@ -352,14 +430,16 @@ export default function Sidebar({
                 background: isActive ? activeBg : undefined,
                 color: isActive ? navTextActive : navTextColor,
                 fontWeight: isActive ? 600 : 400,
-                borderLeft: isActive ? `3px solid ${accent}` : '3px solid transparent',
+                borderLeft: isActive
+                  ? `3px solid ${accent}`
+                  : '3px solid transparent',
               }}
-              onMouseEnter={(e) => {
+              onMouseEnter={e => {
                 if (!isActive) {
                   (e.currentTarget as HTMLElement).style.background = hoverBg;
                 }
               }}
-              onMouseLeave={(e) => {
+              onMouseLeave={e => {
                 if (!isActive) {
                   (e.currentTarget as HTMLElement).style.background = '';
                 }
@@ -382,14 +462,19 @@ export default function Sidebar({
         })}
       </nav>
 
-      {/* ---- Fun quote footer ---- */}
+      {/* ---- Footer ---- */}
       <div className="px-4 pb-4 pt-2">
         <p
-          className="text-[11px] italic leading-snug"
+          className="text-[10px] leading-snug"
           style={{ color: quoteColor }}
         >
           {quote}
         </p>
+        <div className="mt-2 pt-2" style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#f0f0f0'}` }}>
+          <p className="text-[9px] leading-relaxed" style={{ color: isDark ? 'rgba(255,255,255,0.2)' : '#c0c0c0' }}>
+            Made with caffeine & chaos by <span style={{ fontWeight: 600 }}>Esasjana</span> — proudly assisted by AI that never sleeps (but sometimes hallucinates)
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -406,7 +491,7 @@ export default function Sidebar({
           width: 224,
         }}
       >
-        <SidebarContent />
+        {sidebarContent}
       </div>
     );
   }
@@ -423,7 +508,7 @@ export default function Sidebar({
           width: 224,
         }}
       >
-        <SidebarContent />
+        {sidebarContent}
       </div>
       {isOpen && (
         <div

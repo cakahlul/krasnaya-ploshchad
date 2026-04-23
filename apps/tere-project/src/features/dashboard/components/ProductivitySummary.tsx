@@ -346,24 +346,30 @@ export default function ProductivitySummary() {
         </div>
 
         <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-          <ProductivitySummaryExportButton 
+          <ProductivitySummaryExportButton
             month={selectedDate.month() + 1}
             year={selectedDate.year()}
-          />
-          <Calendar className="text-purple-500 ml-2" size={20} />
-          <DatePicker
-            picker="month"
-            value={selectedDate}
-            onChange={handleDateChange}
-            format="MMMM YYYY"
-            allowClear={false}
-            className="border-none shadow-none focus:ring-0 text-sm font-medium min-w-[150px]"
+            teams={selectedTeams.map(id => boardShortNameMap.get(id)).filter((s): s is string => !!s)}
           />
         </div>
       </div>
 
       {/* Filter & Calculate Row */}
       <div className="flex flex-wrap items-end gap-3 mb-8 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1">
+            <Calendar size={12} />
+            Month
+          </label>
+          <DatePicker
+            picker="month"
+            value={selectedDate}
+            onChange={handleDateChange}
+            format="MMMM YYYY"
+            allowClear={false}
+            className="text-sm font-medium min-w-[180px]"
+          />
+        </div>
         <div className="flex flex-col gap-1">
           <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1">
             <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12">
@@ -450,7 +456,7 @@ export default function ProductivitySummary() {
           </div>
 
           {/* Detailed Table */}
-          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm transition-shadow hover:shadow-md" style={{ animationDelay: '600ms' }}>
+          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm transition-shadow hover:shadow-md overflow-hidden" style={{ animationDelay: '600ms' }}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-800">Member Breakdown</h2>
             </div>
@@ -459,6 +465,7 @@ export default function ProductivitySummary() {
               columns={columns}
               rowKey="name"
               pagination={{ pageSize: 20 }}
+              scroll={{ x: 'max-content' }}
               className="custom-tailwind-table"
               rowClassName="hover:bg-purple-50/30 transition-colors"
             />

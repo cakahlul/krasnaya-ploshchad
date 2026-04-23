@@ -1,5 +1,10 @@
 import { MembersRepository, membersRepository } from './members.repository';
-import type { MemberEntity, MemberResponse, CreateMemberRequest, UpdateMemberRequest } from '@shared/types/member.types';
+import type {
+  MemberEntity,
+  MemberResponse,
+  CreateMemberRequest,
+  UpdateMemberRequest,
+} from '@shared/types/member.types';
 import type { TalentResponse } from '@shared/types/talent-leave.types';
 import { MemoryCache } from '@server/lib/cache';
 
@@ -22,7 +27,6 @@ class MembersService {
       fullName: dto.fullName,
       email: dto.email,
       level: dto.level,
-      isLead: dto.isLead,
       teams: dto.teams,
       isLead: dto.isLead ?? false,
       createdAt: now,
@@ -32,14 +36,16 @@ class MembersService {
     return this.entityToDto(created);
   }
 
-  async createWithId(id: string, dto: CreateMemberRequest): Promise<MemberResponse> {
+  async createWithId(
+    id: string,
+    dto: CreateMemberRequest,
+  ): Promise<MemberResponse> {
     const now = new Date();
     const entity: MemberEntity = {
       name: dto.name,
       fullName: dto.fullName,
       email: dto.email,
       level: dto.level,
-      isLead: dto.isLead,
       teams: dto.teams,
       isLead: dto.isLead ?? false,
       createdAt: now,
@@ -54,7 +60,7 @@ class MembersService {
     if (cached) return cached;
 
     const entities = await this.repository.findAll();
-    const result = entities.map((e) => this.entityToDto(e));
+    const result = entities.map(e => this.entityToDto(e));
     this.cache.set(CACHE_KEY, result);
     return result;
   }
@@ -96,7 +102,7 @@ class MembersService {
 
   async findAllAsTalents(): Promise<TalentResponse[]> {
     const members = await this.repository.findAll();
-    return members.map((m) => ({
+    return members.map(m => ({
       id: m.id!,
       name: m.name,
       team: m.teams.join(', '),
@@ -110,7 +116,6 @@ class MembersService {
       fullName: entity.fullName,
       email: entity.email,
       level: entity.level,
-      isLead: entity.isLead,
       teams: entity.teams,
       isLead: entity.isLead ?? false,
       createdAt: entity.createdAt.toISOString(),

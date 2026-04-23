@@ -24,7 +24,7 @@ export default function DashboardLayout({
   const [queryClient] = useState(() => new QueryClient());
   const [pageLoading, setPageLoading] = useState(false);
   const prevPathnameRef = useRef(pathname);
-  const { pageBg, isDark, theme } = useThemeColors();
+  const { pageBg, theme } = useThemeColors();
 
   // Show animated loading screen on first load (once per browser tab)
   const [animationDone, setAnimationDone] = useState(() => {
@@ -32,10 +32,20 @@ export default function DashboardLayout({
     return sessionStorage.getItem('tere_loaded_v2') === '1';
   });
 
+  // Track when LoadingScreen animation finishes
+  const [animFinished, setAnimFinished] = useState(animationDone);
+
   const handleLoadingComplete = () => {
-    setAnimationDone(true);
+    setAnimFinished(true);
     sessionStorage.setItem('tere_loaded_v2', '1');
   };
+
+  // Only mark fully done when animation finished AND auth resolved
+  useEffect(() => {
+    if (animFinished && !loading && user) {
+      setAnimationDone(true);
+    }
+  }, [animFinished, loading, user]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -53,50 +63,56 @@ export default function DashboardLayout({
     }
   }, [pathname]);
 
-  // First load: show animated loading screen
-  if (!animationDone) {
-    return <LoadingScreen onComplete={handleLoadingComplete} theme={theme} />;
-  }
+  if (!loading && !user) return null;
 
-  // Subsequent loads: show loading screen while auth resolves
-  if (loading) {
-    return <LoadingScreen onComplete={() => {}} theme={theme} />;
-  }
-  if (!user) return null;
+  // Show loading screen: first visit animation OR auth still loading
+  const showLoading = !animationDone || loading;
+  // Only render app shell once user is authenticated (prevents 401 from hooks)
+  const canRenderApp = !!user;
 
   return (
     <QueryClientProvider client={queryClient}>
       <App>
         <AxiosErrorInterceptor />
-        <div
-          className="min-h-screen overflow-hidden transition-colors duration-300"
-          style={{ background: pageBg }}
-        >
-          <Sidebar
-            isOpen={sidebarOpen}
-            onClose={() => setSidebarOpen(false)}
-          />
-          <Topbar onMenuClick={() => setSidebarOpen(true)} />
-
-          {/* Main content area - offset for floating sidebar + topbar */}
+        {showLoading && (
+          <LoadingScreen onComplete={handleLoadingComplete} theme={theme} />
+        )}
+        {canRenderApp && (
           <div
-            className="absolute top-0 bottom-0 overflow-y-auto"
+            className="min-h-screen overflow-hidden transition-colors duration-300"
             style={{
-              left: 252,
-              right: 0,
-              paddingTop: 88,
-              paddingLeft: 14,
-              paddingRight: 14,
-              paddingBottom: 14,
+              background: pageBg,
+              visibility: showLoading ? 'hidden' : 'visible',
+              position: showLoading ? 'fixed' : undefined,
+              inset: showLoading ? 0 : undefined,
             }}
           >
-            {pageLoading ? (
-              <PageSkeleton theme={theme} />
-            ) : (
-              children
-            )}
+            <Sidebar
+              isOpen={sidebarOpen}
+              onClose={() => setSidebarOpen(false)}
+            />
+            <Topbar onMenuClick={() => setSidebarOpen(true)} />
+
+            {/* Main content area - offset for floating sidebar + topbar */}
+            <div
+              className="absolute top-0 bottom-0 overflow-y-auto"
+              style={{
+                left: 252,
+                right: 0,
+                paddingTop: 88,
+                paddingLeft: 14,
+                paddingRight: 14,
+                paddingBottom: 14,
+              }}
+            >
+              {pageLoading ? (
+                <PageSkeleton theme={theme} />
+              ) : (
+                children
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </App>
     </QueryClientProvider>
   );

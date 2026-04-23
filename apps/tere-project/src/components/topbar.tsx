@@ -79,15 +79,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
     .map(t => ({ board: t.teamName, sprint: t.sprintName! }));
 
   const [sprintHover, setSprintHover] = useState(false);
-
-  const [firstName, setFirstName] = useState('');
-
-  useEffect(() => {
-    const name = getDisplayName();
-    if (name) {
-      setFirstName(name.split(' ')[0]);
-    }
-  }, [getDisplayName]);
+  const { member } = useMemberProfile();
 
   const pageTitle = useMemo(() => {
     const segments = pathname.split('/').filter(Boolean);
@@ -131,9 +123,9 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
 
   const displayGreeting = isFetching > 0
     ? `Loading...`
-    : `Hey, ${firstName || 'User'}!`;
+    : `Hey, ${member?.name || getDisplayName()?.split(' ')[0] || 'User'}!`;
 
-  const userInitial = firstName ? firstName.charAt(0).toUpperCase() : 'U';
+  const userInitial = (member?.name || getDisplayName() || 'U').charAt(0).toUpperCase();
   const photoUrl = getUserPhoto();
 
   return (
@@ -310,21 +302,6 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
             )}
           </div>
         )}
-
-        {/* Notification bell */}
-        <button
-          className="relative flex items-center justify-center w-9 h-9 rounded-[10px] cursor-pointer transition-colors duration-200"
-          style={{
-            backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.04)',
-          }}
-          aria-label="Notifications"
-        >
-          <BellIcon stroke={isDark ? 'rgba(255,255,255,0.6)' : '#6b7280'} />
-          <span
-            className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
-            style={{ backgroundColor: accent }}
-          />
-        </button>
 
         {/* User avatar dropdown */}
         <Dropdown
