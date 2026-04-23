@@ -216,9 +216,10 @@ function TicketItem({ ticket, index }: { ticket: TicketDetail; index: number }) 
           {ticket.description && (
             <div className="mb-3">
               <p className="text-xs text-gray-500 mb-1">Description</p>
-              <div className="bg-white rounded-xl p-3 text-xs text-gray-700 max-h-28 overflow-y-auto">
-                {ticket.description}
-              </div>
+              <div
+                className="jira-description bg-white rounded-xl p-3 text-xs text-gray-700 max-h-60 overflow-y-auto"
+                dangerouslySetInnerHTML={{ __html: ticket.description }}
+              />
             </div>
           )}
 

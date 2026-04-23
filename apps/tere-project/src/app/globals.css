@@ -306,4 +306,127 @@
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
+
+  /* Jira ADF description rendering */
+  .jira-description p {
+    margin-bottom: 0.5em;
+  }
+  .jira-description p:last-child {
+    margin-bottom: 0;
+  }
+  .jira-description h1 {
+    font-size: 1.25em;
+    font-weight: 700;
+    margin: 0.75em 0 0.25em;
+  }
+  .jira-description h2 {
+    font-size: 1.1em;
+    font-weight: 700;
+    margin: 0.75em 0 0.25em;
+  }
+  .jira-description h3 {
+    font-size: 1em;
+    font-weight: 700;
+    margin: 0.5em 0 0.25em;
+  }
+  .jira-description ul {
+    list-style-type: disc;
+    padding-left: 1.5em;
+    margin: 0.25em 0;
+  }
+  .jira-description ol {
+    list-style-type: decimal;
+    padding-left: 1.5em;
+    margin: 0.25em 0;
+  }
+  .jira-description li {
+    margin-bottom: 0.15em;
+  }
+  .jira-description blockquote {
+    border-left: 3px solid #d1d5db;
+    padding-left: 0.75em;
+    margin: 0.5em 0;
+    color: #6b7280;
+  }
+  .jira-description pre {
+    background: #f3f4f6;
+    border-radius: 6px;
+    padding: 0.5em 0.75em;
+    margin: 0.5em 0;
+    overflow-x: auto;
+    font-size: 0.9em;
+  }
+  .jira-description code {
+    background: #f3f4f6;
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+    font-size: 0.9em;
+  }
+  .jira-description pre code {
+    background: none;
+    padding: 0;
+  }
+  .jira-description a {
+    color: #7c3aed;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .jira-description a:hover {
+    color: #6d28d9;
+  }
+  .jira-description hr {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 0.75em 0;
+  }
+  .jira-description table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.5em 0;
+  }
+  .jira-description th,
+  .jira-description td {
+    border: 1px solid #e5e7eb;
+    padding: 0.35em 0.5em;
+    text-align: left;
+  }
+  .jira-description th {
+    background: #f9fafb;
+    font-weight: 600;
+  }
+  .jira-description [data-panel-type="info"] {
+    background: #eff6ff;
+    border-left: 3px solid #3b82f6;
+    padding: 0.5em 0.75em;
+    border-radius: 4px;
+    margin: 0.5em 0;
+  }
+  .jira-description [data-panel-type="warning"] {
+    background: #fffbeb;
+    border-left: 3px solid #f59e0b;
+    padding: 0.5em 0.75em;
+    border-radius: 4px;
+    margin: 0.5em 0;
+  }
+  .jira-description [data-panel-type="error"] {
+    background: #fef2f2;
+    border-left: 3px solid #ef4444;
+    padding: 0.5em 0.75em;
+    border-radius: 4px;
+    margin: 0.5em 0;
+  }
+  .jira-description [data-panel-type="success"] {
+    background: #f0fdf4;
+    border-left: 3px solid #22c55e;
+    padding: 0.5em 0.75em;
+    border-radius: 4px;
+    margin: 0.5em 0;
+  }
+  .jira-description [data-panel-type="note"] {
+    background: #faf5ff;
+    border-left: 3px solid #a855f7;
+    padding: 0.5em 0.75em;
+    border-radius: 4px;
+    margin: 0.5em 0;
+  }
 }

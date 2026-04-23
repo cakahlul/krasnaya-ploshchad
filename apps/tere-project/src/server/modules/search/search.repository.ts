@@ -225,22 +225,118 @@ export class SearchRepository {
     if (!description) return null;
     if (typeof description === 'string') return description;
     if (typeof description === 'object' && description !== null) {
-      const doc = description as { content?: unknown[] };
-      if (Array.isArray(doc.content)) return this.extractTextFromContent(doc.content);
+      const doc = description as { type?: string; content?: unknown[] };
+      if (doc.type === 'doc' && Array.isArray(doc.content)) {
+        return this.convertAdfNodesToHtml(doc.content);
+      }
+      if (Array.isArray(doc.content)) {
+        return this.convertAdfNodesToHtml(doc.content);
+      }
     }
     return null;
   }
 
-  private extractTextFromContent(content: unknown[]): string {
-    return content
-      .flatMap((node) => {
-        if (typeof node !== 'object' || node === null) return [];
-        const n = node as { type?: string; text?: string; content?: unknown[] };
-        if (n.type === 'text' && n.text) return [n.text];
-        if (Array.isArray(n.content)) return [this.extractTextFromContent(n.content)];
-        return [];
-      })
-      .join(' ')
-      .trim();
+  private convertAdfNodesToHtml(nodes: unknown[]): string {
+    return nodes.map((node) => this.convertAdfNodeToHtml(node)).join('');
+  }
+
+  private convertAdfNodeToHtml(node: unknown): string {
+    if (typeof node !== 'object' || node === null) return '';
+    const n = node as {
+      type?: string;
+      text?: string;
+      content?: unknown[];
+      attrs?: Record<string, unknown>;
+      marks?: Array<{ type: string; attrs?: Record<string, unknown> }>;
+    };
+
+    const children = Array.isArray(n.content) ? this.convertAdfNodesToHtml(n.content) : '';
+
+    switch (n.type) {
+      case 'text': {
+        let text = this.escapeHtml(n.text ?? '');
+        if (n.marks) {
+          for (const mark of n.marks) {
+            switch (mark.type) {
+              case 'strong':
+                text = `<strong>${text}</strong>`;
+                break;
+              case 'em':
+                text = `<em>${text}</em>`;
+                break;
+              case 'code':
+                text = `<code>${text}</code>`;
+                break;
+              case 'underline':
+                text = `<u>${text}</u>`;
+                break;
+              case 'strike':
+                text = `<s>${text}</s>`;
+                break;
+              case 'link':
+                text = `<a href="${this.escapeHtml(String(mark.attrs?.href ?? ''))}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+                break;
+              case 'textColor':
+                text = `<span style="color:${this.escapeHtml(String(mark.attrs?.color ?? ''))}">${text}</span>`;
+                break;
+            }
+          }
+        }
+        return text;
+      }
+      case 'paragraph':
+        return `<p>${children}</p>`;
+      case 'heading': {
+        const level = Math.min(Math.max(Number(n.attrs?.level) || 1, 1), 6);
+        return `<h${level}>${children}</h${level}>`;
+      }
+      case 'bulletList':
+        return `<ul>${children}</ul>`;
+      case 'orderedList':
+        return `<ol>${children}</ol>`;
+      case 'listItem':
+        return `<li>${children}</li>`;
+      case 'blockquote':
+        return `<blockquote>${children}</blockquote>`;
+      case 'codeBlock':
+        return `<pre><code>${children}</code></pre>`;
+      case 'rule':
+        return '<hr />';
+      case 'hardBreak':
+        return '<br />';
+      case 'table':
+        return `<table>${children}</table>`;
+      case 'tableRow':
+        return `<tr>${children}</tr>`;
+      case 'tableHeader':
+        return `<th>${children}</th>`;
+      case 'tableCell':
+        return `<td>${children}</td>`;
+      case 'mediaSingle':
+      case 'mediaGroup':
+        return children;
+      case 'media':
+        return '';
+      case 'mention':
+        return `<span>@${this.escapeHtml(String(n.attrs?.text ?? ''))}</span>`;
+      case 'emoji':
+        return n.attrs?.text ? String(n.attrs.text) : '';
+      case 'inlineCard':
+        return `<a href="${this.escapeHtml(String(n.attrs?.url ?? ''))}" target="_blank" rel="noopener noreferrer">${this.escapeHtml(String(n.attrs?.url ?? ''))}</a>`;
+      case 'panel': {
+        const panelType = n.attrs?.panelType ?? 'info';
+        return `<div data-panel-type="${this.escapeHtml(String(panelType))}">${children}</div>`;
+      }
+      default:
+        return children;
+    }
+  }
+
+  private escapeHtml(str: string): string {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 }
