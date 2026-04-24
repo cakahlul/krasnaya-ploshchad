@@ -390,7 +390,7 @@ function BoardSummaryCard({ team, members: boardMembers, bc }: {
   const T = useThemeColors();
 
   return (
-    <div style={{ background: T.cardBg, borderRadius: 16, border: `1px solid ${T.cardBrd}`, overflow: 'hidden' }}>
+    <div style={{ background: T.cardBg, borderRadius: 16, border: `1px solid ${T.cardBrd}`, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       {/* Board header with gradient */}
       <div style={{ background: bc.gradient, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ minWidth: 0 }}>
@@ -406,7 +406,7 @@ function BoardSummaryCard({ team, members: boardMembers, bc }: {
       </div>
 
       {/* Members list with productivity */}
-      <div style={{ padding: '10px 0' }}>
+      <div style={{ padding: '10px 0', flex: 1 }}>
         {team.memberSummaries.length > 0 ? (
           team.memberSummaries.map((ms, mi) => {
             const prodVal = parseFloat(ms.wpProductivity) || 0;
@@ -478,8 +478,8 @@ function BoardSummaryCard({ team, members: boardMembers, bc }: {
         )}
       </div>
 
-      {/* Board footer stats */}
-      <div style={{ padding: '10px 16px', borderTop: `1px solid ${T.cardBrd}`, display: 'flex', gap: 16 }}>
+      {/* Board footer stats — always at bottom */}
+      <div style={{ padding: '10px 16px', borderTop: `1px solid ${T.cardBrd}`, display: 'flex', gap: 16, marginTop: 'auto' }}>
         <div>
           <div style={{ fontSize: 9.5, color: T.subCol, fontFamily: sans, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2 }}>WP/Hour</div>
           <div style={{ fontSize: 18, fontWeight: 700, color: T.titleCol, fontFamily: mono }}>{team.averageWpPerHour?.toFixed(2) || '-'}</div>

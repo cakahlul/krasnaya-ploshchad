@@ -78,7 +78,7 @@ export default function TeamMembersPage() {
       ),
     },
     {
-      title: 'Lead',
+      title: 'Role',
       dataIndex: 'isLead',
       key: 'isLead',
       render: (isLead: boolean) =>
@@ -94,7 +94,7 @@ export default function TeamMembersPage() {
       key: 'teams',
       render: (teams: string[]) => (
         <div className="flex flex-wrap gap-1">
-          {teams.map((team) => (
+          {teams.map(team => (
             <Tag key={team} color="cyan">
               {team}
             </Tag>

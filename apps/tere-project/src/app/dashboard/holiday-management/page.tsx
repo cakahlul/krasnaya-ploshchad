@@ -1,6 +1,6 @@
 'use client';
 
-import { useUserAccess } from '@src/hooks/useUserAccess';
+import { useMemberProfile } from '@src/features/dashboard/hooks/useMemberProfile';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import LoadingBounce from '@src/components/loadingBounce';
@@ -9,17 +9,18 @@ import BulkInsert from '@src/features/holiday-management/components/BulkInsert';
 import { Calendar } from 'lucide-react';
 
 export default function HolidayManagementPage() {
-  const { role, isLoading } = useUserAccess();
+  const { member, isLoading } = useMemberProfile();
   const router = useRouter();
+  const isLead = member?.isLead ?? false;
 
   useEffect(() => {
-    if (!isLoading && role !== 'Lead') {
+    if (!isLoading && !isLead) {
       router.push('/dashboard');
     }
-  }, [role, isLoading, router]);
+  }, [isLead, isLoading, router]);
 
   if (isLoading) return <LoadingBounce />;
-  if (role !== 'Lead') return null;
+  if (!isLead) return null;
 
   return (
     <div className="p-8 max-w-[1400px] mx-auto min-h-screen">

@@ -3,8 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useMediaQuery } from 'react-responsive';
 import clsx from 'clsx';
-import { useUserAccess } from '@src/hooks/useUserAccess';
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useThemeColors } from '@src/hooks/useTheme';
 import { useDashboardSummary } from '@src/features/dashboard/hooks/useDashboardSummary';
 import { useMemberProfile } from '@src/features/dashboard/hooks/useMemberProfile';
@@ -214,7 +213,7 @@ const menuItems: MenuItem[] = [
   },
   {
     key: '/dashboard/holiday-management',
-    label: 'Holidays',
+    label: 'Holiday',
     icon: c => <IconHoliday color={c} />,
     roles: ['Lead'],
   },
@@ -249,7 +248,6 @@ export default function Sidebar({
   const isDesktop = useMediaQuery({ minWidth: 1024 });
   const pathname = usePathname();
   const router = useRouter();
-  const { role } = useUserAccess();
   const { isDark, accent, accentL } = useThemeColors();
 
   // Subscribe reactively to dashboard data filtered by user's managed teams
@@ -266,16 +264,19 @@ export default function Sidebar({
     managedBoardIds.length > 0 ? managedBoardIds : undefined,
   );
 
-  const [quote, setQuote] = useState('');
+  const [quote] = useState(
+    () => FUN_QUOTES[Math.floor(Math.random() * FUN_QUOTES.length)],
+  );
 
-  useEffect(() => {
-    setQuote(FUN_QUOTES[Math.floor(Math.random() * FUN_QUOTES.length)]);
-  }, []);
-
+  const effectiveRole = member
+    ? member.isLead
+      ? 'Lead'
+      : 'Member'
+    : undefined;
   const filteredMenuItems = useMemo(() => {
-    if (!role) return [];
-    return menuItems.filter(item => item.roles.includes(role));
-  }, [role]);
+    if (!effectiveRole) return [];
+    return menuItems.filter(item => item.roles.includes(effectiveRole));
+  }, [effectiveRole]);
 
   const handleClick = useCallback(
     (path: string) => {
@@ -297,55 +298,98 @@ export default function Sidebar({
 
   /* ---- Header chip: Lead = Team Health, Member = personal progress ---- */
   const allChipMembers = dashTeams.flatMap(t => t.memberSummaries ?? []);
-  const chipMeetTarget = allChipMembers.filter(m => parseFloat(m.wpProductivity) >= 100).length;
-  const chipAvgProd = dashTeams.length > 0
-    ? (dashTeams.reduce((s, t) => s + parseFloat(t.averageProductivity || '0'), 0) / dashTeams.length).toFixed(1)
-    : '-';
+  const chipMeetTarget = allChipMembers.filter(
+    m => parseFloat(m.wpProductivity) >= 100,
+  ).length;
+  const chipAvgProd =
+    dashTeams.length > 0
+      ? (
+          dashTeams.reduce(
+            (s, t) => s + parseFloat(t.averageProductivity || '0'),
+            0,
+          ) / dashTeams.length
+        ).toFixed(1)
+      : '-';
 
   const myChipName = member?.fullName;
   const myChipBoards = dashTeams
-    .filter(t => t.sprintName && myChipName && t.memberSummaries?.some(m => m.name === myChipName))
+    .filter(
+      t =>
+        t.sprintName &&
+        myChipName &&
+        t.memberSummaries?.some(m => m.name === myChipName),
+    )
     .map(t => ({
       sprintName: t.sprintName!,
       totalDays: t.totalWorkingDays || 0,
       summary: t.memberSummaries.find(m => m.name === myChipName)!,
     }));
 
-  const teamHealthChip = allChipMembers.length > 0 ? (
-    <div className="mt-3">
-      <div className="text-[9px] font-semibold tracking-[1.2px] uppercase mb-1.5" style={{ color: `${accent}cc` }}>Team Health</div>
-      <div className="flex gap-1.5">
-        <div className="flex-1 rounded-md py-1.5 px-2" style={{ background: 'rgba(255,255,255,0.08)' }}>
-          <div className="text-[17px] font-bold text-white leading-none">{chipMeetTarget}/{allChipMembers.length}</div>
-          <div className="text-[9px] text-white/40 mt-0.5">meet target</div>
-        </div>
-        <div className="flex-1 rounded-md py-1.5 px-2" style={{ background: 'rgba(255,255,255,0.08)' }}>
-          <div className="text-[17px] font-bold leading-none" style={{ color: parseFloat(chipAvgProd) >= 100 ? '#34d399' : '#fbbf24' }}>{chipAvgProd}%</div>
-          <div className="text-[9px] text-white/40 mt-0.5">avg prod</div>
+  const teamHealthChip =
+    allChipMembers.length > 0 ? (
+      <div>
+        <div className="flex gap-4">
+          <div>
+            <div className="text-[17px] font-bold text-white leading-none">
+              {chipMeetTarget}/{allChipMembers.length}
+            </div>
+            <div className="text-[9px] text-white/35 mt-1">meet target</div>
+          </div>
+          <div>
+            <div
+              className="text-[17px] font-bold leading-none"
+              style={{
+                color: parseFloat(chipAvgProd) >= 100 ? '#34d399' : '#fbbf24',
+              }}
+            >
+              {chipAvgProd}%
+            </div>
+            <div className="text-[9px] text-white/35 mt-1">avg prod</div>
+          </div>
         </div>
       </div>
-    </div>
-  ) : null;
+    ) : null;
 
-  const sprintProgressChip = myChipBoards.length > 0 ? (
-    <div className="mt-3 flex flex-col gap-2">
-      {myChipBoards.map((b, i) => {
-        const pct = Math.round(parseFloat(b.summary.wpProductivity) || 0);
-        return (
-          <div key={i}>
-            <div className="flex justify-between items-baseline mb-1">
-              <span className="text-[10px] font-medium text-white/60 truncate" style={{ maxWidth: 120 }}>{b.sprintName}</span>
-              <span className="text-[10px] font-bold text-white/80">{pct}%</span>
+  const sprintProgressChip =
+    myChipBoards.length > 0 ? (
+      <div className="flex flex-col gap-2">
+        {myChipBoards.map((b, i) => {
+          const pct = Math.round(parseFloat(b.summary.wpProductivity) || 0);
+          return (
+            <div key={i}>
+              <div className="flex justify-between items-baseline mb-1">
+                <span
+                  className="text-[10px] font-medium text-white/60 truncate"
+                  style={{ maxWidth: 120 }}
+                >
+                  {b.sprintName}
+                </span>
+                <span className="text-[10px] font-bold text-white/80">
+                  {pct}%
+                </span>
+              </div>
+              <div
+                className="h-1 rounded-full overflow-hidden"
+                style={{ background: 'rgba(255,255,255,0.12)' }}
+              >
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${Math.min(pct, 100)}%`,
+                    background: `linear-gradient(90deg, ${accent}, ${accentL})`,
+                    transition: 'width 0.5s ease',
+                  }}
+                />
+              </div>
+              <div className="text-[9px] text-white/35 mt-0.5">
+                WP {b.summary.totalWeightPoints}/
+                {b.summary.targetWeightPoints.toFixed(0)} · {b.totalDays} days
+              </div>
             </div>
-            <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.12)' }}>
-              <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, background: `linear-gradient(90deg, ${accent}, ${accentL})`, transition: 'width 0.5s ease' }} />
-            </div>
-            <div className="text-[9px] text-white/35 mt-0.5">WP {b.summary.totalWeightPoints}/{b.summary.targetWeightPoints.toFixed(0)} · {b.totalDays} days</div>
-          </div>
-        );
-      })}
-    </div>
-  ) : null;
+          );
+        })}
+      </div>
+    ) : null;
 
   /* ---- Sidebar inner content ---- */
   const sidebarContent = (
@@ -361,12 +405,12 @@ export default function Sidebar({
     >
       {/* ---- Header ---- */}
       <div
-        className="px-4 pt-4 pb-3 rounded-t-[20px]"
+        className="px-3 pt-4 pb-3 rounded-t-[20px]"
         style={{
-          background: `linear-gradient(135deg, #0b1a2e 0%, #0f2b3d 60%, ${accent}44 100%)`,
+          background: `linear-gradient(160deg, #0b1a2e 0%, #0f2b3d 50%, ${accent}30 100%)`,
         }}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 px-1">
           {/* Logo icon */}
           <div
             className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -401,12 +445,32 @@ export default function Sidebar({
               TERE
             </div>
             <div className="text-[11px] text-white/50 leading-tight">
-              v2.0 &middot; {member?.isLead ? 'Lead' : member?.level ? member.level.charAt(0).toUpperCase() + member.level.slice(1) : '...'}
+              v2.0 &middot;{' '}
+              {member?.isLead
+                ? 'Lead'
+                : member?.level
+                  ? member.level.charAt(0).toUpperCase() + member.level.slice(1)
+                  : '...'}
             </div>
           </div>
         </div>
 
-        {member?.isLead ? teamHealthChip : member ? sprintProgressChip : null}
+        {/* Chip card */}
+        {(member?.isLead
+          ? teamHealthChip
+          : member
+            ? sprintProgressChip
+            : null) && (
+          <div
+            className="mt-3 rounded-xl px-3 py-2.5"
+            style={{
+              background: 'rgba(0,0,0,0.25)',
+              border: '1px solid rgba(255,255,255,0.06)',
+            }}
+          >
+            {member?.isLead ? teamHealthChip : sprintProgressChip}
+          </div>
+        )}
       </div>
 
       {/* ---- Navigation ---- */}
@@ -464,15 +528,22 @@ export default function Sidebar({
 
       {/* ---- Footer ---- */}
       <div className="px-4 pb-4 pt-2">
-        <p
-          className="text-[10px] leading-snug"
-          style={{ color: quoteColor }}
-        >
+        <p className="text-[10px] leading-snug" style={{ color: quoteColor }}>
           {quote}
         </p>
-        <div className="mt-2 pt-2" style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#f0f0f0'}` }}>
-          <p className="text-[9px] leading-relaxed" style={{ color: isDark ? 'rgba(255,255,255,0.2)' : '#c0c0c0' }}>
-            Made with caffeine & chaos by <span style={{ fontWeight: 600 }}>Esasjana</span> — proudly assisted by AI that never sleeps (but sometimes hallucinates)
+        <div
+          className="mt-2 pt-2"
+          style={{
+            borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#f0f0f0'}`,
+          }}
+        >
+          <p
+            className="text-[9px] leading-relaxed"
+            style={{ color: isDark ? 'rgba(255,255,255,0.2)' : '#c0c0c0' }}
+          >
+            Made with caffeine & chaos by{' '}
+            <span style={{ fontWeight: 600 }}>Esasjana</span> — proudly assisted
+            by AI that never sleeps (but sometimes hallucinates)
           </p>
         </div>
       </div>

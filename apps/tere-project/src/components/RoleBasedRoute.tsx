@@ -2,14 +2,13 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUserAccess } from '@src/hooks/useUserAccess';
-import { UserRole } from '@src/types/user-access.types';
+import { useMemberProfile } from '@src/features/dashboard/hooks/useMemberProfile';
 import LoadingScreen from './LoadingScreen';
 import { useTheme } from '@src/hooks/useTheme';
 
 interface RoleBasedRouteProps {
   children: React.ReactNode;
-  allowedRoles: UserRole[];
+  allowedRoles: ('Lead' | 'Member')[];
   redirectTo?: string;
 }
 
@@ -18,9 +17,11 @@ export default function RoleBasedRoute({
   allowedRoles,
   redirectTo = '/dashboard/reports',
 }: RoleBasedRouteProps) {
-  const { role, isLoading } = useUserAccess();
+  const { member, isLoading } = useMemberProfile();
   const router = useRouter();
   const { theme } = useTheme();
+
+  const role = member ? (member.isLead ? 'Lead' : 'Member') : undefined;
 
   useEffect(() => {
     if (!isLoading && role && !allowedRoles.includes(role)) {

@@ -35,8 +35,8 @@ export default function MemberFormModal({
   const isSubmitting = isCreating || isUpdating;
 
   const teamOptions = boards
-    .filter((board) => !board.isBugMonitoring)
-    .map((board) => ({
+    .filter(board => !board.isBugMonitoring)
+    .map(board => ({
       label: board.shortName,
       value: board.shortName,
     }));
@@ -57,6 +57,7 @@ export default function MemberFormModal({
   }, [isOpen, member, form]);
 
   const handleSubmit = async (values: {
+    jiraId?: string;
     name: string;
     fullName: string;
     email: string;
@@ -65,16 +66,17 @@ export default function MemberFormModal({
     teams: string[];
   }) => {
     try {
+      const { jiraId, ...rest } = values;
       const payload = {
-        ...values,
-        isLead: values.isLead ?? false,
+        ...rest,
+        isLead: rest.isLead ?? false,
       };
 
       if (isEditMode) {
         await updateMember({ id: member.id, ...payload });
         message.success('Member updated successfully');
       } else {
-        await createMember(payload);
+        await createMember({ ...(jiraId ? { id: jiraId } : {}), ...payload });
         message.success('Member created successfully');
       }
 
@@ -106,6 +108,23 @@ export default function MemberFormModal({
         initialValues={{ isLead: false }}
         className="mt-4"
       >
+        {!isEditMode && (
+          <Form.Item
+            name="jiraId"
+            label={<span className="font-medium text-gray-700">Jira ID</span>}
+            rules={[
+              { required: true, message: 'Please enter the Jira Account ID' },
+            ]}
+            tooltip="Ask author if you don't know how to get the ID"
+          >
+            <Input
+              placeholder="e.g. 5f2b3c4d5e6f7a8b9c0d1e2f"
+              size="large"
+              className="rounded-xl border-gray-200 hover:border-purple-400 focus:border-purple-500"
+            />
+          </Form.Item>
+        )}
+
         <Form.Item
           name="name"
           label={<span className="font-medium text-gray-700">Name</span>}
@@ -121,9 +140,7 @@ export default function MemberFormModal({
         <Form.Item
           name="fullName"
           label={<span className="font-medium text-gray-700">Full Name</span>}
-          rules={[
-            { required: true, message: 'Please enter the full name' },
-          ]}
+          rules={[{ required: true, message: 'Please enter the full name' }]}
         >
           <Input
             placeholder="e.g. John Doe"
@@ -168,11 +185,15 @@ export default function MemberFormModal({
           <Switch />
         </Form.Item>
 
-        <Form.Item noStyle shouldUpdate={(prev, cur) => prev.isLead !== cur.isLead}>
+        <Form.Item
+          noStyle
+          shouldUpdate={(prev, cur) => prev.isLead !== cur.isLead}
+        >
           {({ getFieldValue }) =>
             getFieldValue('isLead') ? (
               <div className="mb-4 rounded-xl bg-purple-50 border border-purple-100 px-4 py-3 text-sm text-purple-700">
-                This member has lead access to view all teams and bug monitoring.
+                This member has lead access to view all teams and bug
+                monitoring.
               </div>
             ) : null
           }

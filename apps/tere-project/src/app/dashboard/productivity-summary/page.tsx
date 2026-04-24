@@ -1,10 +1,12 @@
+'use client';
+
+import RoleBasedRoute from '@src/components/RoleBasedRoute';
 import ProductivitySummary from '@src/features/dashboard/components/ProductivitySummary';
 
-export const metadata = {
-  title: 'Productivity Summary',
-  description: 'Monthly report of performance productivity for all teams.',
-};
-
 export default function ProductivitySummaryPage() {
-  return <ProductivitySummary />;
+  return (
+    <RoleBasedRoute allowedRoles={['Lead']} redirectTo="/dashboard">
+      <ProductivitySummary />
+    </RoleBasedRoute>
+  );
 }

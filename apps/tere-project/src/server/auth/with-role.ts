@@ -1,16 +1,13 @@
 import { withAuth, type AuthedHandler } from './with-auth';
+import { membersService } from '@server/modules/members/members.service';
 
-// Composes with withAuth. Requires Phase 3: user-access.service.ts.
 export function withRole(role: string, handler: AuthedHandler) {
   return withAuth(async (req, context) => {
-    // Dynamic import avoids a hard compile dependency before Phase 3 is complete.
-    const { userAccessService } = await import(
-      '@server/modules/user-access/user-access.service'
-    );
+    const member = await membersService.findByEmail(context.user.email!);
 
-    const userRole = await userAccessService.getUserRole(context.user.email!);
+    const memberRole = member?.isLead ? 'Lead' : 'Member';
 
-    if (userRole !== role) {
+    if (memberRole !== role) {
       return Response.json({ message: 'Forbidden' }, { status: 403 });
     }
 

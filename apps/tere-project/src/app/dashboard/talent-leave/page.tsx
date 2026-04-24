@@ -7,7 +7,7 @@ import { ExportButton } from '@src/features/talent-leave/components/ExportButton
 import { ExportToast } from '@src/features/talent-leave/components/ExportToast';
 import { useTalentLeaveStore } from '@src/features/talent-leave/store/talentLeaveStore';
 import { useTalentLeave } from '@src/features/talent-leave/hooks/useTalentLeave';
-import { useUserAccess } from '@src/hooks/useUserAccess';
+import { useMemberProfile } from '@src/features/dashboard/hooks/useMemberProfile';
 import RoleBasedRoute from '@src/components/RoleBasedRoute';
 import { Button } from 'antd';
 import { useMemo, useState } from 'react';
@@ -15,7 +15,7 @@ import { useMemo, useState } from 'react';
 export default function TalentLeavePage() {
   const { openCreateModal, modalState } = useTalentLeaveStore();
   const { isLoading, data: leaveRecords } = useTalentLeave();
-  const { role } = useUserAccess();
+  const { member } = useMemberProfile();
   const [toast, setToast] = useState<{
     show: boolean;
     type: 'success' | 'error';
@@ -25,7 +25,7 @@ export default function TalentLeavePage() {
     type: 'success',
   });
 
-  const canEdit = role === 'Lead' || role === 'Member';
+  const canEdit = !!member;
 
   // Find the leave record for edit mode
   const leaveRecord = useMemo(() => {
