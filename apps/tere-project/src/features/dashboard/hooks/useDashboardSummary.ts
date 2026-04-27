@@ -3,14 +3,27 @@
 import { useQuery } from '@tanstack/react-query';
 import axiosClient from '@src/lib/axiosClient';
 
+export interface MemberSummary {
+  name: string;
+  wpProductivity: string;
+  totalWeightPoints: number;
+  targetWeightPoints: number;
+  spTotal: number;
+}
+
 export interface TeamSummary {
   teamName: string;
   boardId: number;
   sprintName: string | null;
   sprintState: string | null;
+  sprintStartDate: string | null;
+  sprintEndDate: string | null;
   averageProductivity: string | null;
   averageWpPerHour: number | null;
   teamMembers: number;
+  memberSummaries: MemberSummary[];
+  totalEpics: number;
+  isStoryGrouping: boolean;
   productPercentage: string | null;
   techDebtPercentage: string | null;
   totalWorkingDays: number | null;

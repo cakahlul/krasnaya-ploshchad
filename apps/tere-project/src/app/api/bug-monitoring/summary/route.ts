@@ -1,9 +1,9 @@
-import { withRole } from '@server/auth/with-role';
+import { withAuth } from '@server/auth/with-auth';
 import { bugMonitoringService } from '@server/modules/bug-monitoring/bug-monitoring.service';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withRole('Lead', async (req) => {
+export const GET = withAuth(async (req) => {
   const boardId = new URL(req.url).searchParams.get('boardId');
   if (!boardId) {
     return Response.json({ message: 'boardId is required' }, { status: 400 });

@@ -1,5 +1,10 @@
 import { MembersRepository, membersRepository } from './members.repository';
-import type { MemberEntity, MemberResponse, CreateMemberRequest, UpdateMemberRequest } from '@shared/types/member.types';
+import type {
+  MemberEntity,
+  MemberResponse,
+  CreateMemberRequest,
+  UpdateMemberRequest,
+} from '@shared/types/member.types';
 import type { TalentResponse } from '@shared/types/talent-leave.types';
 import { MemoryCache } from '@server/lib/cache';
 
@@ -31,7 +36,10 @@ class MembersService {
     return this.entityToDto(created);
   }
 
-  async createWithId(id: string, dto: CreateMemberRequest): Promise<MemberResponse> {
+  async createWithId(
+    id: string,
+    dto: CreateMemberRequest,
+  ): Promise<MemberResponse> {
     const now = new Date();
     const entity: MemberEntity = {
       name: dto.name,
@@ -52,7 +60,7 @@ class MembersService {
     if (cached) return cached;
 
     const entities = await this.repository.findAll();
-    const result = entities.map((e) => this.entityToDto(e));
+    const result = entities.map(e => this.entityToDto(e));
     this.cache.set(CACHE_KEY, result);
     return result;
   }
@@ -70,6 +78,7 @@ class MembersService {
     if (dto.fullName !== undefined) updateData.fullName = dto.fullName;
     if (dto.email !== undefined) updateData.email = dto.email;
     if (dto.level !== undefined) updateData.level = dto.level;
+    if (dto.isLead !== undefined) updateData.isLead = dto.isLead;
     if (dto.teams !== undefined) updateData.teams = dto.teams;
     if (dto.isLead !== undefined) updateData.isLead = dto.isLead;
     const updated = await this.repository.update(id, updateData);
@@ -93,7 +102,7 @@ class MembersService {
 
   async findAllAsTalents(): Promise<TalentResponse[]> {
     const members = await this.repository.findAll();
-    return members.map((m) => ({
+    return members.map(m => ({
       id: m.id!,
       name: m.name,
       team: m.teams.join(', '),

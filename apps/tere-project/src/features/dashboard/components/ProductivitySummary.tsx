@@ -1,25 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { DatePicker, Table, Spin, Tooltip } from 'antd';
+import { DatePicker, Table, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import axiosClient from '@src/lib/axiosClient';
-import {
-  TrendingUp,
-  TrendingDown,
-  Calendar,
-  Zap,
-  Briefcase,
-  Layers,
-  Award,
-  BarChart2,
-  PieChart,
-  Activity,
-  Clock,
-} from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import { ProductivitySummaryExportButton } from './ProductivitySummaryExportButton';
 import { MultiSelectTeam } from './MultiSelectTeam';
 import { useBoards } from '../hooks/useBoards';
+import { useThemeColors } from '@src/hooks/useTheme';
+
+const mono = "var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace";
+const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
 
 interface ProductivitySummaryMemberDto {
   name: string;
@@ -58,6 +50,7 @@ export default function ProductivitySummary() {
   const [loading, setLoading] = useState(false);
   const { boards, isLoading: boardsLoading } = useBoards();
   const [selectedTeams, setSelectedTeams] = useState<number[]>([]);
+  const T = useThemeColors();
 
   const reportBoards = boards.filter(b => !b.isBugMonitoring);
   const teamOptions = reportBoards.map(b => ({ value: b.boardId, label: b.name }));
@@ -90,126 +83,36 @@ export default function ProductivitySummary() {
     }
   };
 
-  // --- UI Components ---
-  const StatCard = ({
-    title,
-    value,
-    icon,
-    subtitle,
-    isHighlight = false,
-    highlightValue = 0,
-    delay = 0,
-    colorTheme = 'default',
-  }: {
-    title: string;
-    value: string | number;
-    icon: React.ReactNode;
-    subtitle?: React.ReactNode;
-    isHighlight?: boolean;
-    highlightValue?: number;
-    delay?: number;
-    colorTheme?: 'default' | 'success' | 'danger' | 'purple' | 'amber' | 'blue';
-  }) => {
-    let bgClass = 'bg-white border border-gray-100 shadow-sm hover:border-purple-200';
-    let textClass = 'text-gray-900';
-    let titleClass = 'text-gray-500';
-    let iconClass = 'bg-purple-50 text-purple-600';
-    let subtitleClass = 'text-gray-400';
-
-    if (isHighlight) {
-        if (highlightValue >= 0) colorTheme = 'success';
-        else colorTheme = 'danger';
-    }
-
-    if (colorTheme === 'success') {
-      bgClass = 'bg-gradient-to-br from-emerald-500 to-teal-400 text-white shadow-emerald-500/30 border-transparent';
-      textClass = 'text-white';
-      titleClass = 'text-emerald-50/80';
-      iconClass = 'bg-white/20 text-white';
-      subtitleClass = 'text-white/80';
-    } else if (colorTheme === 'danger') {
-      bgClass = 'bg-gradient-to-br from-red-500 to-rose-400 text-white shadow-rose-500/30 border-transparent';
-      textClass = 'text-white';
-      titleClass = 'text-rose-50/80';
-      iconClass = 'bg-white/20 text-white';
-      subtitleClass = 'text-white/80';
-    } else if (colorTheme === 'purple') {
-      bgClass = 'bg-gradient-to-br from-purple-600 to-indigo-500 text-white shadow-purple-500/30 border-transparent hover:shadow-purple-500/50 hover:border-transparent';
-      textClass = 'text-white';
-      titleClass = 'text-purple-100/80';
-      iconClass = 'bg-white/20 text-white';
-      subtitleClass = 'text-purple-100/80';
-    } else if (colorTheme === 'amber') {
-      bgClass = 'bg-gradient-to-br from-orange-500 to-amber-400 text-white shadow-orange-500/30 border-transparent hover:shadow-orange-500/50 hover:border-transparent';
-      textClass = 'text-white';
-      titleClass = 'text-orange-50/80';
-      iconClass = 'bg-white/20 text-white';
-      subtitleClass = 'text-orange-50/80';
-    } else if (colorTheme === 'blue') {
-      bgClass = 'bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-blue-500/30 border-transparent hover:shadow-blue-500/50 hover:border-transparent';
-      textClass = 'text-white';
-      titleClass = 'text-blue-100/80';
-      iconClass = 'bg-white/20 text-white';
-      subtitleClass = 'text-blue-100/80';
-    }
-
-    return (
-      <div
-        className={`relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${bgClass}`}
-        style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
-      >
-        <div className="flex justify-between items-start mb-4">
-          <div className={`p-3 rounded-xl flex items-center justify-center ${iconClass}`}>
-            {icon}
-          </div>
-          {isHighlight && (
-            <span className="flex items-center gap-1 text-sm font-semibold bg-white/20 px-2 py-1 rounded-lg backdrop-blur-sm text-white">
-              {highlightValue >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-              {Math.abs(highlightValue).toFixed(2)}%
-            </span>
-          )}
-        </div>
-        <div>
-          <h3 className={`text-sm font-medium mb-1 ${titleClass}`}>
-            {title}
-          </h3>
-          <p className={`text-3xl font-bold tracking-tight ${textClass}`}>
-            {value}
-          </p>
-          {subtitle && (
-            <div className={`text-xs mt-2 ${subtitleClass}`}>
-              {subtitle}
-            </div>
-          )}
-        </div>
-        <div className="absolute -bottom-6 -right-6 w-24 h-24 rounded-full bg-gradient-to-br from-white/5 to-white/20 blur-2xl pointer-events-none" />
-      </div>
-    );
-  };
-
   const columns = [
     {
       title: 'Name',
       dataIndex: 'name',
       key: 'name',
-      render: (text: string) => <span className="font-medium text-gray-800">{text}</span>,
+      render: (text: string) => (
+        <span style={{ fontWeight: 600, color: T.rowCol, fontFamily: sans, fontSize: 13 }}>{text}</span>
+      ),
       sorter: (a: any, b: any) => a.name.localeCompare(b.name),
     },
     {
       title: 'Team',
       dataIndex: 'team',
       key: 'team',
-      render: (team: string, _: any, index: number) => {
-        const palette = [
-          'bg-blue-50 text-blue-600 border border-blue-100',
-          'bg-purple-50 text-purple-600 border border-purple-100',
-          'bg-teal-50 text-teal-600 border border-teal-100',
-          'bg-orange-50 text-orange-600 border border-orange-100',
-        ];
+      render: (team: string) => {
         const uniqueTeams = Array.from(new Set((data?.details ?? []).map(d => d.team)));
-        const colorClass = palette[uniqueTeams.indexOf(team) % palette.length];
+        const teamIdx = uniqueTeams.indexOf(team) % 4;
+        const teamColors = [
+          { bg: `${T.accent}15`, color: T.accent, border: `${T.accent}30` },
+          { bg: '#7c3aed15', color: '#7c3aed', border: '#7c3aed30' },
+          { bg: '#05966915', color: '#059669', border: '#05966930' },
+          { bg: '#d9770615', color: '#d97706', border: '#d9770630' },
+        ];
+        const tc = teamColors[teamIdx];
         return (
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${colorClass}`}>
+          <span style={{
+            background: tc.bg, color: tc.color, border: `1px solid ${tc.border}`,
+            padding: '2px 10px', borderRadius: 6, fontSize: 10.5, fontWeight: 700,
+            fontFamily: sans, letterSpacing: 0.3,
+          }}>
             {team}
           </span>
         );
@@ -223,7 +126,9 @@ export default function ProductivitySummary() {
       dataIndex: 'spProduct',
       key: 'spProduct',
       align: 'center' as const,
-      render: (val: number) => <span className="font-semibold text-indigo-600">{val.toFixed(2)}</span>,
+      render: (val: number) => (
+        <span style={{ fontWeight: 600, color: T.accent, fontFamily: mono, fontSize: 13 }}>{val.toFixed(2)}</span>
+      ),
       sorter: (a: any, b: any) => a.spProduct - b.spProduct,
     },
     {
@@ -231,7 +136,9 @@ export default function ProductivitySummary() {
       dataIndex: 'spTechDebt',
       key: 'spTechDebt',
       align: 'center' as const,
-      render: (val: number) => <span className="font-semibold text-indigo-600">{val.toFixed(2)}</span>,
+      render: (val: number) => (
+        <span style={{ fontWeight: 600, color: T.accent, fontFamily: mono, fontSize: 13 }}>{val.toFixed(2)}</span>
+      ),
       sorter: (a: any, b: any) => a.spTechDebt - b.spTechDebt,
     },
     {
@@ -239,7 +146,9 @@ export default function ProductivitySummary() {
       dataIndex: 'spMeeting',
       key: 'spMeeting',
       align: 'center' as const,
-      render: (val: number) => <span className="font-semibold text-indigo-600">{(val ?? 0).toFixed(2)}</span>,
+      render: (val: number) => (
+        <span style={{ fontWeight: 600, color: T.accent, fontFamily: mono, fontSize: 13 }}>{(val ?? 0).toFixed(2)}</span>
+      ),
       sorter: (a: any, b: any) => (a.spMeeting ?? 0) - (b.spMeeting ?? 0),
     },
     {
@@ -247,7 +156,9 @@ export default function ProductivitySummary() {
       dataIndex: 'spTotal',
       key: 'spTotal',
       align: 'center' as const,
-      render: (val: number) => <span className="font-bold text-indigo-700">{val.toFixed(2)}</span>,
+      render: (val: number) => (
+        <span style={{ fontWeight: 700, color: T.titleCol, fontFamily: mono, fontSize: 13 }}>{val.toFixed(2)}</span>
+      ),
       sorter: (a: any, b: any) => a.spTotal - b.spTotal,
     },
     {
@@ -257,8 +168,8 @@ export default function ProductivitySummary() {
       align: 'center' as const,
       render: (val: string) => {
         const num = parseFloat(val);
-        const color = num >= 100 ? 'text-emerald-600' : 'text-rose-500';
-        return <span className={`font-semibold ${color}`}>{val}</span>;
+        const color = num >= 100 ? '#10b981' : '#ef4444';
+        return <span style={{ fontWeight: 700, color, fontFamily: mono, fontSize: 13 }}>{val}</span>;
       },
       sorter: (a: any, b: any) => parseFloat(a.productivityRate) - parseFloat(b.productivityRate),
     },
@@ -267,6 +178,9 @@ export default function ProductivitySummary() {
       dataIndex: 'workingDays',
       key: 'workingDays',
       align: 'center' as const,
+      render: (val: number) => (
+        <span style={{ color: T.rowCol, fontFamily: mono, fontSize: 13 }}>{val}</span>
+      ),
       sorter: (a: any, b: any) => a.workingDays - b.workingDays,
     },
     {
@@ -274,6 +188,9 @@ export default function ProductivitySummary() {
       dataIndex: 'wpProduct',
       key: 'wpProduct',
       align: 'center' as const,
+      render: (val: number) => (
+        <span style={{ color: T.rowCol, fontFamily: mono, fontSize: 13 }}>{val}</span>
+      ),
       sorter: (a: any, b: any) => a.wpProduct - b.wpProduct,
     },
     {
@@ -281,6 +198,9 @@ export default function ProductivitySummary() {
       dataIndex: 'wpTech',
       key: 'wpTech',
       align: 'center' as const,
+      render: (val: number) => (
+        <span style={{ color: T.rowCol, fontFamily: mono, fontSize: 13 }}>{val}</span>
+      ),
       sorter: (a: any, b: any) => a.wpTech - b.wpTech,
     },
     {
@@ -289,7 +209,11 @@ export default function ProductivitySummary() {
       key: 'wpTotal',
       align: 'center' as const,
       render: (val: number) => (
-        <span className="font-bold text-gray-900 bg-gray-50 px-2.5 py-1 rounded-md">
+        <span style={{
+          fontWeight: 700, color: T.titleCol, fontFamily: mono, fontSize: 13,
+          background: T.isDark ? 'rgba(255,255,255,0.06)' : '#f5f6fb',
+          padding: '3px 8px', borderRadius: 6,
+        }}>
           {val.toFixed(2)}
         </span>
       ),
@@ -304,14 +228,14 @@ export default function ProductivitySummary() {
         const isAboveTarget = val >= record.expectedAverageWp;
         return (
           <Tooltip title={`Target: ${record.expectedAverageWp.toFixed(2)}`}>
-            <div className="flex flex-col items-center gap-1">
-              <span
-                className={`text-sm font-semibold flex items-center gap-1 ${
-                  isAboveTarget ? 'text-emerald-600' : 'text-rose-500'
-                }`}
-              >
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <span style={{
+                fontSize: 13, fontWeight: 700, fontFamily: mono,
+                color: isAboveTarget ? '#10b981' : '#ef4444',
+                display: 'flex', alignItems: 'center', gap: 4,
+              }}>
                 {val.toFixed(2)}
-                {isAboveTarget ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                {isAboveTarget ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
               </span>
             </div>
           </Tooltip>
@@ -325,40 +249,63 @@ export default function ProductivitySummary() {
       key: 'expectedAverageWp',
       align: 'center' as const,
       render: (val: number) => (
-        <span className="text-gray-500">{val.toFixed(2)}</span>
+        <span style={{ color: T.subCol, fontFamily: mono, fontSize: 13 }}>{val.toFixed(2)}</span>
       ),
       sorter: (a: any, b: any) => a.expectedAverageWp - b.expectedAverageWp,
     },
   ];
 
+  // Derived values for productivity cards
+  const vsExpected = data ? data.summary.productivityProduceVsExpected * 100 : 0;
+  const isPositiveDiff = vsExpected >= 0;
+
+  // Color map for KPI card tinting
+  const colorMap = {
+    default: { bg: T.cardBg, val: T.titleCol, border: T.cardBrd },
+    success: { bg: T.isDark ? '#0a2a1e' : '#f0fdf7', val: '#10b981', border: T.isDark ? '#10b98130' : '#d1fae5' },
+    danger: { bg: T.isDark ? '#2a0f10' : '#fff5f5', val: '#ef4444', border: T.isDark ? '#ef444430' : '#fecaca' },
+  };
+
+  // KPI cards configuration
+  const kpiCards = data ? [
+    { label: 'Working Days', value: data.summary.totalDaysOfWorks, unit: 'days', theme: 'default' as const },
+    { label: 'Avg WP Expected', value: data.summary.averageWpExpected.toFixed(2), unit: '/ day', theme: 'default' as const },
+    { label: 'Avg WP Produced', value: data.summary.averageWpProduced.toFixed(2), unit: '/ day', theme: 'default' as const },
+    { label: 'Total WP Expected', value: data.summary.totalWpExpected.toFixed(1), unit: 'WP', theme: 'default' as const },
+    { label: 'Total WP Produced', value: data.summary.totalWpProduced.toFixed(1), unit: 'WP', theme: isPositiveDiff ? 'success' as const : 'danger' as const },
+    { label: 'vs Expected', value: `${vsExpected >= 0 ? '+' : ''}${vsExpected.toFixed(2)}%`, unit: 'diff', theme: isPositiveDiff ? 'success' as const : 'danger' as const },
+  ] : [];
+
   return (
-    <div className="p-8 max-w-[1400px] mx-auto min-h-screen bg-gray-50/30">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 animate-fade-in-down">
+    <div className="tere-table tere-input" style={{ padding: 24, fontFamily: sans }}>
+      {/* Page Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
         <div>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-cyan-500 flex items-center gap-3">
-            <Activity className="text-purple-600" size={32} />
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: T.titleCol, margin: 0, fontFamily: sans, letterSpacing: -0.3 }}>
             Productivity Summary
-          </h1>
-          <p className="text-gray-500 mt-2">
-            Comprehensive team performance overview across all teams.
+          </h2>
+          <p style={{ color: T.subCol, margin: '4px 0 0', fontSize: 12.5, fontFamily: sans }}>
+            Comprehensive team performance overview · All teams
           </p>
         </div>
-
-        <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-          <ProductivitySummaryExportButton
-            month={selectedDate.month() + 1}
-            year={selectedDate.year()}
-            teams={selectedTeams.map(id => boardShortNameMap.get(id)).filter((s): s is string => !!s)}
-          />
-        </div>
+        <ProductivitySummaryExportButton
+          month={selectedDate.month() + 1}
+          year={selectedDate.year()}
+          teams={selectedTeams.map(id => boardShortNameMap.get(id)).filter((s): s is string => !!s)}
+        />
       </div>
 
-      {/* Filter & Calculate Row */}
-      <div className="flex flex-wrap items-end gap-3 mb-8 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1">
-            <Calendar size={12} />
+      {/* Filter Row */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 12,
+        background: T.cardBg, borderRadius: 12, padding: '14px 16px',
+        border: `1px solid ${T.cardBrd}`, marginBottom: 20,
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <label style={{
+            fontSize: 9.5, fontWeight: 600, color: T.subCol,
+            textTransform: 'uppercase', letterSpacing: 1, fontFamily: sans,
+          }}>
             Month
           </label>
           <DatePicker
@@ -370,11 +317,11 @@ export default function ProductivitySummary() {
             className="text-sm font-medium min-w-[180px]"
           />
         </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1">
-            <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12">
-              <path d="M7 8a3 3 0 100-6 3 3 0 000 6zM14.5 9a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM1.615 16.428a1.224 1.224 0 01-.569-1.175 6.002 6.002 0 0111.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 017 18a9.953 9.953 0 01-5.385-1.572zM14.5 16h-.106c.07-.297.088-.611.048-.933a7.47 7.47 0 00-1.588-3.755 4.502 4.502 0 015.874 2.636.818.818 0 01-.36.98A7.465 7.465 0 0114.5 16z" />
-            </svg>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <label style={{
+            fontSize: 9.5, fontWeight: 600, color: T.subCol,
+            textTransform: 'uppercase', letterSpacing: 1, fontFamily: sans,
+          }}>
             Teams
           </label>
           <MultiSelectTeam
@@ -389,76 +336,105 @@ export default function ProductivitySummary() {
           type="button"
           onClick={handleCalculate}
           disabled={loading}
-          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-500 text-white font-semibold text-sm shadow-md hover:shadow-purple-500/30 hover:from-purple-700 hover:to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '7px 20px', borderRadius: 10,
+            background: T.accent, color: '#fff',
+            fontWeight: 700, fontSize: 13, fontFamily: sans,
+            border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
+            opacity: loading ? 0.5 : 1,
+            transition: 'opacity 0.2s',
+          }}
         >
-          <Zap size={16} />
           Calculate
         </button>
       </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-3xl border border-gray-100 shadow-sm">
-          <Spin size="large" />
-          <p className="text-gray-500 mt-4 animate-pulse">Calculating metrics...</p>
+        /* Loading State */
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          minHeight: 400, background: T.cardBg, borderRadius: 14,
+          border: `1px solid ${T.cardBrd}`,
+        }}>
+          <div
+            className="animate-spin"
+            style={{
+              width: 36, height: 36, borderRadius: '50%',
+              border: `3px solid ${T.cardBrd}`, borderTopColor: T.accent,
+            }}
+          />
+          <p style={{ color: T.subCol, marginTop: 16, fontFamily: sans, fontSize: 13 }}>
+            Calculating metrics...
+          </p>
         </div>
       ) : data ? (
-        <div className="space-y-8 animate-fade-in-up">
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard
-              title="Total Working Days"
-              value={data.summary.totalDaysOfWorks}
-              icon={<Briefcase />}
-              delay={0}
-            />
-            <StatCard
-              title="Avg WP Expected"
-              value={data.summary.averageWpExpected.toFixed(2)}
-              icon={<BarChart2 />}
-              subtitle={`Total Expected WP: ${data.summary.totalWpExpected.toFixed(2)}`}
-              delay={100}
-            />
-            <StatCard
-              title="Avg WP Produced"
-              value={data.summary.averageWpProduced.toFixed(2)}
-              icon={<Zap />}
-              subtitle={`Total Produced WP: ${data.summary.totalWpProduced.toFixed(2)}`}
-              delay={200}
-            />
-            <StatCard
-              title="vs. Expected"
-              value={`${(data.summary.productivityProduceVsExpected * 100).toFixed(2)}%`}
-              icon={<Award />}
-              isHighlight={true}
-              highlightValue={data.summary.productivityProduceVsExpected * 100}
-              subtitle="Overall Productivity Diff"
-              delay={300}
-            />
+        <div>
+          {/* KPI Stat Cards - 6 columns */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10, marginBottom: 16 }}>
+            {kpiCards.map((card) => {
+              const colors = colorMap[card.theme];
+              return (
+                <KpiCard
+                  key={card.label}
+                  label={card.label}
+                  value={card.value}
+                  unit={card.unit}
+                  T={T}
+                  bgColor={colors.bg}
+                  borderColor={colors.border}
+                  valueColor={colors.val}
+                />
+              );
+            })}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <StatCard
-              title="Productivity Expected"
-              value={data.summary.productivityExpected.toFixed(2)}
-              icon={<Layers />}
-              subtitle={<span className="flex items-center gap-1.5 opacity-90 font-medium"><Clock size={12} /> Calculation is per hour</span>}
-              delay={400}
-              colorTheme="purple"
-            />
-            <StatCard
-              title="Productivity Produced"
-              value={data.summary.productivityProduced.toFixed(2)}
-              icon={<PieChart />}
-              subtitle={<span className="flex items-center gap-1.5 opacity-90 font-medium"><Clock size={12} /> Calculation is per hour</span>}
-              delay={500}
-              colorTheme="blue"
-            />
+          {/* Two Large Productivity Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+            {/* Expected */}
+            <div style={{
+              background: T.cardBg, borderRadius: 14, padding: '20px 22px',
+              border: `1px solid ${T.cardBrd}`,
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: T.subCol, fontFamily: sans, letterSpacing: 0.8, marginBottom: 10 }}>
+                Productivity Expected
+              </div>
+              <div style={{ fontSize: 36, fontWeight: 700, fontFamily: mono, color: T.accent, letterSpacing: -1, lineHeight: 1 }}>
+                {data.summary.productivityExpected.toFixed(3)}
+              </div>
+              <div style={{ fontSize: 11, color: T.subCol, fontFamily: sans, marginTop: 6 }}>
+                WP per hour
+              </div>
+            </div>
+            {/* Produced */}
+            <div style={{
+              background: T.cardBg, borderRadius: 14, padding: '20px 22px',
+              border: `1px solid ${T.cardBrd}`,
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: T.subCol, fontFamily: sans, letterSpacing: 0.8, marginBottom: 10 }}>
+                Productivity Produced
+              </div>
+              <div style={{
+                fontSize: 36, fontWeight: 700, fontFamily: mono, letterSpacing: -1, lineHeight: 1,
+                color: isPositiveDiff ? '#10b981' : '#ef4444',
+              }}>
+                {data.summary.productivityProduced.toFixed(3)}
+              </div>
+              <div style={{ fontSize: 11, color: T.subCol, fontFamily: sans, marginTop: 6 }}>
+                WP per hour
+              </div>
+            </div>
           </div>
 
-          {/* Detailed Table */}
-          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm transition-shadow hover:shadow-md overflow-hidden" style={{ animationDelay: '600ms' }}>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-800">Member Breakdown</h2>
+          {/* Member Breakdown Table */}
+          <div style={{
+            background: T.cardBg, borderRadius: 14,
+            border: `1px solid ${T.cardBrd}`, overflow: 'hidden',
+          }}>
+            <div style={{ padding: '16px 20px', borderBottom: `1px solid ${T.cardBrd}` }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: T.titleCol, margin: 0, fontFamily: sans }}>
+                Member Breakdown
+              </h3>
             </div>
             <Table
               dataSource={data.details}
@@ -466,52 +442,68 @@ export default function ProductivitySummary() {
               rowKey="name"
               pagination={{ pageSize: 20 }}
               scroll={{ x: 'max-content' }}
-              className="custom-tailwind-table"
-              rowClassName="hover:bg-purple-50/30 transition-colors"
+              className="tere-table"
             />
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-gray-100 p-12 flex flex-col items-center justify-center gap-3">
-          <Activity size={48} className="text-purple-200" />
-          <p className="text-gray-400 text-lg font-medium">Select teams and click Calculate to view productivity data</p>
+        /* Empty State */
+        <div style={{
+          background: T.cardBg, borderRadius: 14,
+          border: `1px solid ${T.cardBrd}`,
+          padding: '60px 24px', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 8,
+        }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: 12,
+            background: T.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={T.iconStr} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+          </div>
+          <p style={{ color: T.subCol, fontSize: 13, fontWeight: 500, fontFamily: sans, margin: 0 }}>
+            Select teams and click Calculate to view productivity data
+          </p>
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* Tailwind specific animations for smooth entrance */}
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes fade-in-down {
-          0% { opacity: 0; transform: translateY(-10px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fade-in-up {
-          0% { opacity: 0; transform: translateY(20px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in-down { animation: fade-in-down 0.5s ease-out forwards; }
-        .animate-fade-in-up { animation: fade-in-up 0.5s ease-out forwards; }
-        
-        /* Custom AntD Table overrides for more modern look */
-        .custom-tailwind-table .ant-table-thead > tr > th {
-          background-color: #f9fafb;
-          color: #4b5563;
-          font-weight: 600;
-          text-transform: uppercase;
-          font-size: 0.75rem;
-          letter-spacing: 0.05em;
-          border-bottom: 1px solid #f3f4f6;
-        }
-        .custom-tailwind-table .ant-table-tbody > tr > td {
-          border-bottom: 1px solid #f3f4f6;
-          font-size: 0.875rem;
-        }
-        .custom-tailwind-table .ant-pagination-item-active {
-          border-color: #a855f7;
-        }
-        .custom-tailwind-table .ant-pagination-item-active a {
-          color: #a855f7;
-        }
-      `}} />
+/* ── KPI Stat Card ── */
+function KpiCard({ label, value, T, unit, valueColor, bgColor, borderColor }: {
+  label: string;
+  value: string | number;
+  T: ReturnType<typeof useThemeColors>;
+  unit?: string;
+  valueColor?: string;
+  bgColor?: string;
+  borderColor?: string;
+}) {
+  return (
+    <div style={{
+      background: bgColor ?? T.cardBg, borderRadius: 12, padding: '16px 14px',
+      border: `1px solid ${borderColor ?? T.cardBrd}`,
+    }}>
+      <div style={{
+        fontSize: 9.5, fontWeight: 600, color: T.subCol,
+        textTransform: 'uppercase', letterSpacing: 1, fontFamily: sans,
+        marginBottom: 6,
+      }}>
+        {label}
+      </div>
+      <div style={{
+        fontSize: 24, fontWeight: 700, color: valueColor ?? T.titleCol,
+        fontFamily: mono, letterSpacing: -0.5, lineHeight: 1,
+      }}>
+        {value}
+      </div>
+      {unit && (
+        <div style={{ fontSize: 10, color: T.subCol, fontFamily: sans, marginTop: 4 }}>
+          {unit}
+        </div>
+      )}
     </div>
   );
 }

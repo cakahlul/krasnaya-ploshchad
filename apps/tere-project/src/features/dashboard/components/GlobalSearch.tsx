@@ -1,17 +1,22 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { SearchOutlined, CloseCircleFilled, LoadingOutlined, TagOutlined, UserOutlined, ClockCircleOutlined, ExperimentOutlined, CheckCircleOutlined, SyncOutlined, LinkOutlined } from '@ant-design/icons';
 import { Modal } from 'antd';
 import { useGlobalSearch, SearchTicket } from '../hooks/useGlobalSearch';
 import { useTicketDetail, TicketDetail } from '../hooks/useTicketDetail';
+import { useThemeColors } from '@src/hooks/useTheme';
 
 export default function GlobalSearch() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTicketKey, setSelectedTicketKey] = useState<string | null>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [jiraHovered, setJiraHovered] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
-  
+
+  const { isDark, accent, accentL, cardBg, cardBrd, titleCol, subCol, rowCol, headBg } = useThemeColors();
+
   const {
     query,
     setQuery,
@@ -82,64 +87,136 @@ export default function GlobalSearch() {
     });
   };
 
-  const getStatusBadgeColor = (status: string) => {
+  const getStatusBadgeStyle = (status: string): React.CSSProperties => {
     const statusLower = status.toLowerCase();
     if (statusLower.includes('done') || statusLower.includes('closed')) {
-      return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
+      return {
+        background: isDark ? '#0a2a1e' : '#f0fdf7',
+        color: '#10b981',
+        border: '1px solid #10b98130',
+        fontSize: 12,
+        fontWeight: 500,
+        padding: '2px 8px',
+        borderRadius: 6,
+      };
     }
     if (statusLower.includes('progress') || statusLower.includes('review')) {
-      return 'bg-blue-100 text-blue-700 border border-blue-200';
+      return {
+        background: isDark ? '#0f2030' : '#f0f7ff',
+        color: accent,
+        border: `1px solid ${accent}30`,
+        fontSize: 12,
+        fontWeight: 500,
+        padding: '2px 8px',
+        borderRadius: 6,
+      };
     }
     if (statusLower.includes('blocked')) {
-      return 'bg-red-100 text-red-700 border border-red-200';
+      return {
+        background: isDark ? '#2a0f10' : '#fff5f5',
+        color: '#ef4444',
+        border: '1px solid #ef444430',
+        fontSize: 12,
+        fontWeight: 500,
+        padding: '2px 8px',
+        borderRadius: 6,
+      };
     }
-    return 'bg-gray-100 text-gray-700 border border-gray-200';
+    return {
+      background: isDark ? 'rgba(255,255,255,0.06)' : '#f5f6fb',
+      color: subCol,
+      border: `1px solid ${cardBrd}`,
+      fontSize: 12,
+      fontWeight: 500,
+      padding: '2px 8px',
+      borderRadius: 6,
+    };
   };
 
-  const getResolutionColor = (resolution: string) => {
+  const getResolutionStyle = (resolution: string): React.CSSProperties => {
     const resLower = resolution.toLowerCase();
     if (resLower.includes('done') || resLower.includes('fixed') || resLower.includes('resolved')) {
-      return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
+      return {
+        background: isDark ? '#0a2a1e' : '#f0fdf7',
+        color: '#10b981',
+        border: '1px solid #10b98130',
+        fontSize: 12,
+        fontWeight: 500,
+        padding: '2px 8px',
+        borderRadius: 6,
+      };
     }
     if (resLower.includes('in progress') || resLower.includes('review')) {
-      return 'bg-amber-100 text-amber-700 border border-amber-200';
+      return {
+        background: isDark ? '#0f2030' : '#fff8f0',
+        color: isDark ? '#f59e0b' : '#d97706',
+        border: `1px solid ${isDark ? '#f59e0b30' : '#d9770630'}`,
+        fontSize: 12,
+        fontWeight: 500,
+        padding: '2px 8px',
+        borderRadius: 6,
+      };
     }
     if (resLower.includes('to do') || resLower.includes('open')) {
-      return 'bg-gray-100 text-gray-700 border border-gray-200';
+      return {
+        background: isDark ? 'rgba(255,255,255,0.06)' : '#f5f6fb',
+        color: subCol,
+        border: `1px solid ${cardBrd}`,
+        fontSize: 12,
+        fontWeight: 500,
+        padding: '2px 8px',
+        borderRadius: 6,
+      };
     }
-    return 'bg-purple-100 text-purple-700 border border-purple-200';
+    return {
+      background: isDark ? '#0f2030' : '#f0f7ff',
+      color: accent,
+      border: `1px solid ${accent}30`,
+      fontSize: 12,
+      fontWeight: 500,
+      padding: '2px 8px',
+      borderRadius: 6,
+    };
   };
-  
+
   const getSafeResolution = (ticket: SearchTicket | TicketDetail) => {
     if (!ticket.resolution) return '';
-    return typeof ticket.resolution === 'object' 
-      ? (ticket.resolution as any).name || (ticket.resolution as any).value || 'Resolved' 
+    return typeof ticket.resolution === 'object'
+      ? (ticket.resolution as any).name || (ticket.resolution as any).value || 'Resolved'
       : ticket.resolution;
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityStyle = (priority: string): React.CSSProperties => {
     const priorityLower = priority.toLowerCase();
     if (priorityLower.includes('highest') || priorityLower.includes('critical')) {
-      return 'text-red-500';
+      return { color: '#ef4444' };
     }
     if (priorityLower.includes('high')) {
-      return 'text-orange-500';
+      return { color: '#f97316' };
     }
     if (priorityLower.includes('medium')) {
-      return 'text-amber-500';
+      return { color: '#f59e0b' };
     }
-    return 'text-gray-500';
+    return { color: subCol };
   };
 
   return (
     <>
       <div id="global-search-container" className="relative w-full max-w-xl">
-        {/* Glassmorphism Search Input - Spotlight Style */}
+        {/* Search Input */}
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/30 via-cyan-500/30 to-pink-500/30 rounded-2xl blur-2xl opacity-70" />
-          <div className="relative backdrop-blur-2xl bg-white/50 border border-white/60 rounded-2xl shadow-2xl shadow-purple-500/20 overflow-hidden">
+          <div
+            style={{
+              background: isDark ? 'rgba(16,30,50,0.9)' : 'rgba(255,255,255,0.9)',
+              backdropFilter: 'blur(16px)',
+              border: `1px solid ${cardBrd}`,
+              borderRadius: 16,
+              boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.3)' : '0 4px 24px rgba(1,29,77,0.08)',
+            }}
+            className="overflow-hidden"
+          >
             <div className="flex items-center px-5 py-4">
-              <SearchOutlined className="text-gray-500 text-xl mr-4" />
+              <SearchOutlined className="text-xl mr-4" style={{ color: subCol }} />
               <input
                 ref={inputRef}
                 type="text"
@@ -147,36 +224,50 @@ export default function GlobalSearch() {
                 onChange={handleInputChange}
                 onFocus={handleInputFocus}
                 placeholder="Search tickets, PRs, docs..."
-                className="flex-1 bg-transparent outline-none text-gray-800 placeholder-gray-400 text-base font-medium"
+                className="flex-1 bg-transparent outline-none text-base font-medium"
+                style={{ color: rowCol }}
               />
+              {/* Placeholder color via inline style sheet */}
+              <style>{`
+                #global-search-container input::placeholder {
+                  color: ${subCol};
+                }
+              `}</style>
               {query && (
                 <button
                   onClick={handleClear}
-                  className="ml-3 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="ml-3 transition-colors"
+                  style={{ color: subCol }}
                 >
                   <CloseCircleFilled className="text-xl" />
                 </button>
               )}
               {isLoading && (
-                <LoadingOutlined className="ml-3 text-purple-500 text-xl animate-spin" />
+                <LoadingOutlined className="ml-3 text-xl animate-spin" style={{ color: accent }} />
               )}
             </div>
           </div>
         </div>
 
-        {/* Glassmorphism Results Dropdown */}
+        {/* Results Dropdown */}
         {isOpen && query.length > 0 && (
           <div className="absolute top-full left-0 right-0 mt-2 z-50">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-cyan-500/10 to-pink-500/10 rounded-2xl blur-xl" />
-            <div 
+            <div
               ref={resultsRef}
               onScroll={handleScroll}
-              className="relative backdrop-blur-2xl bg-white/70 border border-white/50 rounded-2xl shadow-2xl shadow-purple-500/20 max-h-[360px] overflow-y-auto animate-airdrop"
+              className="max-h-[360px] overflow-y-auto animate-airdrop"
+              style={{
+                background: isDark ? 'rgba(16,30,50,0.96)' : 'rgba(255,255,255,0.96)',
+                backdropFilter: 'blur(16px)',
+                border: `1px solid ${cardBrd}`,
+                borderRadius: 16,
+                boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.4)' : '0 16px 48px rgba(1,29,77,0.12)',
+              }}
             >
               {results.length === 0 && !isLoading ? (
-                <div className="p-6 text-center text-gray-500">
-                  <SearchOutlined className="text-3xl mb-2 opacity-50" />
-                  <p className="text-sm">No results found</p>
+                <div className="p-6 text-center">
+                  <SearchOutlined className="text-3xl mb-2 opacity-50" style={{ color: subCol }} />
+                  <p className="text-sm" style={{ color: subCol }}>No results found</p>
                 </div>
               ) : (
                 <div className="p-2">
@@ -186,47 +277,66 @@ export default function GlobalSearch() {
                     <div
                       key={ticket.key}
                       onClick={() => handleTicketClick(ticket)}
-                      className="p-3 rounded-xl cursor-pointer transition-all duration-200 hover:bg-white/60 hover:shadow-md group animate-airdrop-item"
-                      style={{ animationDelay: `${index * 50}ms` }}
+                      onMouseEnter={() => setHoveredIndex(index)}
+                      onMouseLeave={() => setHoveredIndex(null)}
+                      className="p-3 rounded-xl cursor-pointer transition-all duration-200 group animate-airdrop-item"
+                      style={{
+                        animationDelay: `${index * 50}ms`,
+                        background: hoveredIndex === index
+                          ? (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)')
+                          : 'transparent',
+                      }}
                     >
                       <div className="flex items-start gap-3">
                         {/* Issue Type Icon */}
-                        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-cyan-500/20 flex items-center justify-center">
+                        <div
+                          className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
+                          style={{ background: accent + '15' }}
+                        >
                           {ticket.issueTypeIcon ? (
                             <img src={ticket.issueTypeIcon} alt={ticket.issueType} className="w-4 h-4" />
                           ) : (
-                            <TagOutlined className="text-purple-600 text-sm" />
+                            <TagOutlined className="text-sm" style={{ color: accent }} />
                           )}
                         </div>
-                        
+
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className="text-xs font-bold text-purple-600 bg-purple-100/60 px-2 py-0.5 rounded-md">
+                            <span
+                              style={{
+                                color: accent,
+                                background: accent + '15',
+                                fontWeight: 700,
+                                fontSize: 12,
+                                padding: '2px 8px',
+                                borderRadius: 6,
+                              }}
+                            >
                               {ticket.key}
                             </span>
                             {!(ticket.key.startsWith('SLS-') || ticket.key.startsWith('DS-')) && (
-                              <span className={`text-xs font-medium px-2 py-0.5 rounded-md ${getStatusBadgeColor(ticket.status)}`}>
+                              <span style={getStatusBadgeStyle(ticket.status)}>
                                 {ticket.status}
                               </span>
                             )}
                             {ticket.resolution && (
-                              <span className={`text-xs font-medium px-2 py-0.5 rounded-md ${getResolutionColor(resolutionVal)}`}>
+                              <span style={getResolutionStyle(resolutionVal)}>
                                 {resolutionVal}
                               </span>
                             )}
                           </div>
-                          <p className="text-sm font-medium text-gray-800 line-clamp-1 group-hover:text-purple-700 transition-colors">
+                          <p className="text-sm font-medium line-clamp-1 transition-colors" style={{ color: rowCol }}>
                             {ticket.summary}
                           </p>
-                          <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
+                          <div className="flex items-center gap-3 mt-1.5 text-xs" style={{ color: subCol }}>
                             {ticket.assignee && (
                               <span className="flex items-center gap-1">
-                                <UserOutlined className="text-gray-400" />
+                                <UserOutlined style={{ color: subCol }} />
                                 {ticket.assignee}
                               </span>
                             )}
-                            <span className={`flex items-center gap-1 ${getPriorityColor(ticket.priority)}`}>
+                            <span className="flex items-center gap-1" style={getPriorityStyle(ticket.priority)}>
                               {ticket.priority}
                             </span>
                           </div>
@@ -235,17 +345,17 @@ export default function GlobalSearch() {
                     </div>
                   );
                   })}
-                  
+
                   {/* Loading more indicator */}
                   {isFetching && results.length > 0 && (
                     <div className="p-3 text-center">
-                      <LoadingOutlined className="text-purple-500 text-lg animate-spin" />
+                      <LoadingOutlined className="text-lg animate-spin" style={{ color: accent }} />
                     </div>
                   )}
-                  
+
                   {/* Has more indicator */}
                   {hasMore && !isFetching && (
-                    <div className="p-2 text-center text-xs text-gray-400">
+                    <div className="p-2 text-center text-xs" style={{ color: subCol }}>
                       Scroll for more • {total} total results
                     </div>
                   )}
@@ -273,19 +383,32 @@ export default function GlobalSearch() {
             },
             mask: {
               backdropFilter: 'blur(8px)',
-              background: 'rgba(0, 0, 0, 0.3)',
+              background: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.3)',
             },
           }}
         >
           {isLoadingDetail ? (
-            <TicketDetailSkeleton />
+            <TicketDetailSkeleton
+              isDark={isDark}
+              cardBg={cardBg}
+              cardBrd={cardBrd}
+            />
           ) : selectedTicket ? (
-            <TicketDetailCard 
-              ticket={selectedTicket} 
-              formatDate={formatDate} 
-              getStatusBadgeColor={getStatusBadgeColor}
-              getResolutionColor={getResolutionColor}
+            <TicketDetailCard
+              ticket={selectedTicket}
+              formatDate={formatDate}
+              getStatusBadgeStyle={getStatusBadgeStyle}
+              getResolutionStyle={getResolutionStyle}
               getSafeResolution={getSafeResolution}
+              isDark={isDark}
+              accent={accent}
+              accentL={accentL}
+              cardBg={cardBg}
+              cardBrd={cardBrd}
+              titleCol={titleCol}
+              subCol={subCol}
+              rowCol={rowCol}
+              headBg={headBg}
             />
           ) : null}
         </Modal>
@@ -293,15 +416,33 @@ export default function GlobalSearch() {
   );
 }
 
-function TicketDetailSkeleton() {
+interface TicketDetailSkeletonProps {
+  isDark: boolean;
+  cardBg: string;
+  cardBrd: string;
+}
+
+function TicketDetailSkeleton({ isDark, cardBg, cardBrd }: TicketDetailSkeletonProps) {
+  const shimmer = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
+  const shimmerLight = isDark ? 'rgba(255,255,255,0.03)' : '#f3f4f6';
+
   return (
-    <div className="backdrop-blur-2xl bg-white/80 rounded-3xl border border-white/50 shadow-2xl shadow-purple-500/20 p-6 animate-pulse">
-      <div className="h-6 bg-gray-200 rounded w-1/3 mb-4" />
-      <div className="h-8 bg-gray-200 rounded w-full mb-6" />
+    <div
+      className="p-6 animate-pulse"
+      style={{
+        background: isDark ? 'rgba(16,30,50,0.95)' : 'rgba(255,255,255,0.92)',
+        backdropFilter: 'blur(24px)',
+        borderRadius: 20,
+        border: `1px solid ${cardBrd}`,
+        boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.4)' : '0 16px 48px rgba(1,29,77,0.12)',
+      }}
+    >
+      <div style={{ background: shimmer, height: 24, borderRadius: 6, width: '33%', marginBottom: 16 }} />
+      <div style={{ background: shimmer, height: 32, borderRadius: 6, width: '100%', marginBottom: 24 }} />
       <div className="space-y-3">
-        <div className="h-4 bg-gray-100 rounded w-full" />
-        <div className="h-4 bg-gray-100 rounded w-3/4" />
-        <div className="h-4 bg-gray-100 rounded w-1/2" />
+        <div style={{ background: shimmerLight, height: 16, borderRadius: 6, width: '100%' }} />
+        <div style={{ background: shimmerLight, height: 16, borderRadius: 6, width: '75%' }} />
+        <div style={{ background: shimmerLight, height: 16, borderRadius: 6, width: '50%' }} />
       </div>
     </div>
   );
@@ -310,12 +451,38 @@ function TicketDetailSkeleton() {
 interface TicketDetailCardProps {
   ticket: TicketDetail;
   formatDate: (date: string) => string;
-  getStatusBadgeColor: (status: string) => string;
-  getResolutionColor: (resolution: string) => string;
+  getStatusBadgeStyle: (status: string) => React.CSSProperties;
+  getResolutionStyle: (resolution: string) => React.CSSProperties;
   getSafeResolution: (ticket: SearchTicket | TicketDetail) => string;
+  isDark: boolean;
+  accent: string;
+  accentL: string;
+  cardBg: string;
+  cardBrd: string;
+  titleCol: string;
+  subCol: string;
+  rowCol: string;
+  headBg: string;
 }
 
-function TicketDetailCard({ ticket, formatDate, getStatusBadgeColor, getResolutionColor, getSafeResolution }: TicketDetailCardProps) {
+function TicketDetailCard({
+  ticket,
+  formatDate,
+  getStatusBadgeStyle,
+  getResolutionStyle,
+  getSafeResolution,
+  isDark,
+  accent,
+  accentL,
+  cardBg,
+  cardBrd,
+  titleCol,
+  subCol,
+  rowCol,
+  headBg,
+}: TicketDetailCardProps) {
+  const [jiraHovered, setJiraHovered] = useState(false);
+
   // Helper for safe rendering
   const safeRender = (val: any) => {
     if (typeof val === 'object' && val !== null) {
@@ -325,44 +492,88 @@ function TicketDetailCard({ ticket, formatDate, getStatusBadgeColor, getResoluti
   };
 
   const resolutionVal = getSafeResolution(ticket);
-  
+
   return (
-    <div className="backdrop-blur-2xl bg-white/90 rounded-3xl border border-white/50 shadow-2xl shadow-purple-500/20 overflow-hidden animate-airdrop">
-      
+    <div
+      className="overflow-hidden animate-airdrop"
+      style={{
+        background: isDark ? 'rgba(16,30,50,0.95)' : 'rgba(255,255,255,0.92)',
+        backdropFilter: 'blur(24px)',
+        borderRadius: 20,
+        border: `1px solid ${cardBrd}`,
+        boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.4)' : '0 16px 48px rgba(1,29,77,0.12)',
+      }}
+    >
+
       {/* Header with gradient */}
       <div className="relative px-6 pt-6 pb-4">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-cyan-500/10 to-pink-500/10" />
+        <div
+          className="absolute inset-0"
+          style={{ background: `linear-gradient(135deg, ${accent}15, ${accentL}10)` }}
+        />
         <div className="relative">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-sm font-bold text-purple-600 bg-purple-100/80 px-3 py-1 rounded-lg">
+              <span
+                style={{
+                  color: accent,
+                  background: accent + '15',
+                  fontWeight: 700,
+                  fontSize: 14,
+                  padding: '4px 12px',
+                  borderRadius: 8,
+                }}
+              >
                 {ticket.key}
               </span>
               {!(ticket.key.startsWith('SLS-') || ticket.key.startsWith('DS-')) && (
-                <span className={`text-sm font-medium px-3 py-1 rounded-lg ${getStatusBadgeColor(ticket.status)}`}>
+                <span
+                  className="flex items-center"
+                  style={{
+                    ...getStatusBadgeStyle(ticket.status),
+                    fontSize: 14,
+                    padding: '4px 12px',
+                    borderRadius: 8,
+                  }}
+                >
                   {safeRender(ticket.status)}
                 </span>
               )}
               {ticket.resolution && (
-                <span className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1 rounded-lg ${getResolutionColor(resolutionVal)}`}>
+                <span
+                  className="flex items-center gap-1.5"
+                  style={{
+                    ...getResolutionStyle(resolutionVal),
+                    fontSize: 14,
+                    padding: '4px 12px',
+                    borderRadius: 8,
+                  }}
+                >
                   <CheckCircleOutlined />
                   {resolutionVal}
                 </span>
               )}
             </div>
             {ticket.webUrl && (
-              <a 
-                href={ticket.webUrl} 
-                target="_blank" 
+              <a
+                href={ticket.webUrl}
+                target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-purple-600 transition-colors bg-white/50 hover:bg-white px-3 py-1.5 rounded-lg border border-gray-200 hover:border-purple-200"
+                className="flex items-center gap-2 text-sm font-medium transition-colors px-3 py-1.5 rounded-lg"
+                style={{
+                  color: jiraHovered ? accent : subCol,
+                  background: cardBg,
+                  border: `1px solid ${cardBrd}`,
+                }}
+                onMouseEnter={() => setJiraHovered(true)}
+                onMouseLeave={() => setJiraHovered(false)}
               >
                 <LinkOutlined />
                 Open in Jira
               </a>
             )}
           </div>
-          <h2 className="text-xl font-bold text-gray-800">{ticket.summary}</h2>
+          <h2 className="text-xl font-bold" style={{ color: titleCol }}>{ticket.summary}</h2>
         </div>
       </div>
 
@@ -370,84 +581,127 @@ function TicketDetailCard({ ticket, formatDate, getStatusBadgeColor, getResoluti
       <div className="px-6 pb-6">
         {/* Meta info grid */}
         <div className="grid grid-cols-2 gap-4 mb-5">
-          <div className="bg-gray-50/80 rounded-xl p-3">
-            <p className="text-xs text-gray-500 mb-1">Assignee</p>
+          <div className="p-3" style={{ background: headBg, borderRadius: 10 }}>
+            <p className="text-xs mb-1" style={{ color: subCol }}>Assignee</p>
             <div className="flex items-center gap-2">
               {ticket.assigneeAvatar ? (
                 <img src={ticket.assigneeAvatar} alt="" className="w-6 h-6 rounded-full" />
               ) : (
-                <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center">
-                  <UserOutlined className="text-purple-500 text-xs" />
+                <div
+                  className="w-6 h-6 rounded-full flex items-center justify-center"
+                  style={{ background: accent + '15' }}
+                >
+                  <UserOutlined className="text-xs" style={{ color: accent }} />
                 </div>
               )}
-              <span className="text-sm font-medium text-gray-800">
+              <span className="text-sm font-medium" style={{ color: rowCol }}>
                 {ticket.assignee || 'Unassigned'}
               </span>
             </div>
           </div>
-          <div className="bg-gray-50/80 rounded-xl p-3">
-            <p className="text-xs text-gray-500 mb-1">Reporter</p>
+          <div className="p-3" style={{ background: headBg, borderRadius: 10 }}>
+            <p className="text-xs mb-1" style={{ color: subCol }}>Reporter</p>
             <div className="flex items-center gap-2">
               {ticket.reporterAvatar ? (
                 <img src={ticket.reporterAvatar} alt="" className="w-6 h-6 rounded-full" />
               ) : (
-                <div className="w-6 h-6 rounded-full bg-cyan-100 flex items-center justify-center">
-                  <UserOutlined className="text-cyan-500 text-xs" />
+                <div
+                  className="w-6 h-6 rounded-full flex items-center justify-center"
+                  style={{ background: accent + '15' }}
+                >
+                  <UserOutlined className="text-xs" style={{ color: accent }} />
                 </div>
               )}
-              <span className="text-sm font-medium text-gray-800">
+              <span className="text-sm font-medium" style={{ color: rowCol }}>
                 {ticket.reporter || 'Unknown'}
               </span>
             </div>
           </div>
-          <div className="bg-gray-50/80 rounded-xl p-3">
-            <p className="text-xs text-gray-500 mb-1">Priority</p>
+          <div className="p-3" style={{ background: headBg, borderRadius: 10 }}>
+            <p className="text-xs mb-1" style={{ color: subCol }}>Priority</p>
             <div className="flex items-center gap-2">
               {ticket.priorityIcon && (
                 <img src={ticket.priorityIcon} alt="" className="w-4 h-4" />
               )}
-              <span className="text-sm font-medium text-gray-800">{ticket.priority}</span>
+              <span className="text-sm font-medium" style={{ color: rowCol }}>{ticket.priority}</span>
             </div>
           </div>
-          <div className="bg-gray-50/80 rounded-xl p-3">
-            <p className="text-xs text-gray-500 mb-1">Type</p>
+          <div className="p-3" style={{ background: headBg, borderRadius: 10 }}>
+            <p className="text-xs mb-1" style={{ color: subCol }}>Type</p>
             <div className="flex items-center gap-2">
               {ticket.issueTypeIcon && (
                 <img src={ticket.issueTypeIcon} alt="" className="w-4 h-4" />
               )}
-              <span className="text-sm font-medium text-gray-800">{ticket.issueType}</span>
+              <span className="text-sm font-medium" style={{ color: rowCol }}>{ticket.issueType}</span>
             </div>
           </div>
         </div>
 
-        {/* Complexity & Weight (New Section) */}
+        {/* Complexity & Weight */}
         {(ticket.spType || ticket.appendixV3 !== undefined) && (
           <div className="space-y-4 mb-5">
             {/* SP Type Row */}
             {ticket.spType && (
-              <div className="bg-purple-50/50 rounded-xl p-3 border border-purple-100/50">
-                <p className="text-xs text-purple-600/80 mb-1 font-semibold uppercase tracking-wider">Story Point Type</p>
-                <span className="text-sm font-bold text-purple-700">
+              <div
+                className="p-3"
+                style={{
+                  background: accent + '10',
+                  borderRadius: 10,
+                  border: `1px solid ${accent}20`,
+                }}
+              >
+                <p
+                  className="text-xs mb-1 font-semibold uppercase tracking-wider"
+                  style={{ color: accent }}
+                >
+                  Story Point Type
+                </p>
+                <span className="text-sm font-bold" style={{ color: accent }}>
                   {ticket.spType}
                 </span>
               </div>
             )}
-            
+
             {ticket.appendixV3 !== undefined && (
-              <div className="bg-orange-50/50 rounded-xl p-3 border border-orange-100/50">
-                <p className="text-xs text-orange-600/80 mb-2 font-semibold uppercase tracking-wider flex items-center gap-1.5">
+              <div
+                className="p-3"
+                style={{
+                  background: isDark ? 'rgba(245,158,11,0.08)' : '#fff8f0',
+                  borderRadius: 10,
+                  border: `1px solid ${isDark ? 'rgba(245,158,11,0.15)' : '#fed7aa60'}`,
+                }}
+              >
+                <p
+                  className="text-xs mb-2 font-semibold uppercase tracking-wider flex items-center gap-1.5"
+                  style={{ color: isDark ? '#f59e0b' : '#d97706' }}
+                >
                   <ExperimentOutlined />
                   Weight Complexity
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {Array.isArray(ticket.appendixV3) ? (
                     ticket.appendixV3.map((val, idx) => (
-                      <span key={idx} className="text-sm font-medium text-orange-700 bg-white px-3 py-1 rounded-lg border border-orange-200 shadow-sm">
+                      <span
+                        key={idx}
+                        className="text-sm font-medium px-3 py-1 rounded-lg shadow-sm"
+                        style={{
+                          color: isDark ? '#f59e0b' : '#d97706',
+                          background: isDark ? 'rgba(245,158,11,0.1)' : '#fff',
+                          border: `1px solid ${isDark ? 'rgba(245,158,11,0.2)' : '#fed7aa'}`,
+                        }}
+                      >
                         {safeRender(val)}
                       </span>
                     ))
                   ) : (
-                    <span className="text-sm font-medium text-orange-700 bg-white px-3 py-1 rounded-lg border border-orange-200 shadow-sm">
+                    <span
+                      className="text-sm font-medium px-3 py-1 rounded-lg shadow-sm"
+                      style={{
+                        color: isDark ? '#f59e0b' : '#d97706',
+                        background: isDark ? 'rgba(245,158,11,0.1)' : '#fff',
+                        border: `1px solid ${isDark ? 'rgba(245,158,11,0.2)' : '#fed7aa'}`,
+                      }}
+                    >
                       {safeRender(ticket.appendixV3)}
                     </span>
                   )}
@@ -460,18 +714,26 @@ function TicketDetailCard({ ticket, formatDate, getStatusBadgeColor, getResoluti
         {/* Sprint */}
         {ticket.sprint && (
           <div className="mb-4">
-            <p className="text-xs text-gray-500 mb-1">Sprint</p>
-            <p className="text-sm font-medium text-gray-800">{ticket.sprint}</p>
+            <p className="text-xs mb-1" style={{ color: subCol }}>Sprint</p>
+            <p className="text-sm font-medium" style={{ color: rowCol }}>{ticket.sprint}</p>
           </div>
         )}
 
         {/* Labels */}
         {ticket.labels.length > 0 && (
           <div className="mb-4">
-            <p className="text-xs text-gray-500 mb-2">Labels</p>
+            <p className="text-xs mb-2" style={{ color: subCol }}>Labels</p>
             <div className="flex flex-wrap gap-2">
               {ticket.labels.map((label) => (
-                <span key={label} className="text-xs font-medium px-2 py-1 bg-gray-100 text-gray-600 rounded-md">
+                <span
+                  key={label}
+                  className="text-xs font-medium px-2 py-1 rounded-md"
+                  style={{
+                    background: headBg,
+                    color: rowCol,
+                    border: `1px solid ${cardBrd}`,
+                  }}
+                >
                   {label}
                 </span>
               ))}
@@ -482,15 +744,28 @@ function TicketDetailCard({ ticket, formatDate, getStatusBadgeColor, getResoluti
         {/* Description */}
         {ticket.description && (
           <div className="mb-4">
-            <p className="text-xs text-gray-500 mb-2">Description</p>
-            <div className="bg-gray-50/80 rounded-xl p-4 text-sm text-gray-700 max-h-40 overflow-y-auto">
+            <p className="text-xs mb-2" style={{ color: subCol }}>Description</p>
+            <div
+              className="p-4 text-sm max-h-40 overflow-y-auto"
+              style={{
+                background: headBg,
+                borderRadius: 10,
+                color: rowCol,
+              }}
+            >
               {ticket.description}
             </div>
           </div>
         )}
 
         {/* Dates */}
-        <div className="flex items-center gap-4 text-xs text-gray-400 pt-3 border-t border-gray-100">
+        <div
+          className="flex items-center gap-4 text-xs pt-3"
+          style={{
+            color: subCol,
+            borderTop: `1px solid ${cardBrd}`,
+          }}
+        >
           <span className="flex items-center gap-1">
             <ClockCircleOutlined />
             Created: {formatDate(ticket.created)}

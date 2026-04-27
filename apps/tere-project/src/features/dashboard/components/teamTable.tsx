@@ -10,6 +10,7 @@ import { useBoards } from '../hooks/useBoards';
 import { useWpWeightConfig } from '../hooks/useWpWeightConfig';
 import { useTargetWpConfig } from '../hooks/useTargetWpConfig';
 import { Info } from 'lucide-react';
+import { useThemeColors } from '@src/hooks/useTheme';
 
 interface ColumnInfo {
   label: string;
@@ -87,9 +88,13 @@ const COLUMN_INFO: Record<string, ColumnInfo> = {
   },
 };
 
+const mono = "var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace";
+const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
+
 function ColumnHeader({ columnKey, referenceDate }: { columnKey: string; referenceDate?: string }) {
   const wpWeights = useWpWeightConfig(referenceDate);
   const targetWpRates = useTargetWpConfig(referenceDate);
+  const { accent, isDark, rowCol, subCol } = useThemeColors();
   const info = { ...COLUMN_INFO[columnKey] };
   if (!info) return <span>{columnKey}</span>;
 
@@ -108,29 +113,43 @@ function ColumnHeader({ columnKey, referenceDate }: { columnKey: string; referen
   }
 
   const popoverContent = (
-    <div className="max-w-[280px]">
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 -mx-3 -mt-3 px-4 py-2.5 rounded-t-lg mb-3">
-        <span className="text-white font-semibold text-sm tracking-wide">
+    <div style={{ maxWidth: 280 }}>
+      <div
+        style={{
+          background: accent,
+          padding: '8px 14px',
+          borderRadius: '8px 8px 0 0',
+          margin: '-12px -12px 12px',
+        }}
+      >
+        <span style={{ color: '#fff', fontWeight: 600, fontSize: 13, letterSpacing: '0.025em' }}>
           {info.label}
         </span>
       </div>
-      <p className="text-gray-700 text-xs leading-relaxed m-0 mb-2">
+      <p style={{ color: rowCol, fontSize: 12, lineHeight: 1.6, margin: '0 0 8px' }}>
         {info.description}
       </p>
       {info.formula && (
-        <div className="mt-2">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+        <div style={{ marginTop: 8 }}>
+          <span style={{ color: subCol, fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Formula
           </span>
-          <div className="mt-1 rounded-md bg-gray-900 px-3 py-2">
-            <code className="text-emerald-400 text-xs font-mono whitespace-pre-wrap">
+          <div
+            style={{
+              background: isDark ? 'rgba(255,255,255,0.06)' : '#f5f6fb',
+              borderRadius: 6,
+              padding: '6px 10px',
+              marginTop: 4,
+            }}
+          >
+            <code style={{ color: accent, fontFamily: mono, fontSize: 12, whiteSpace: 'pre-wrap' }}>
               {info.formula}
             </code>
           </div>
         </div>
       )}
       {info.note && (
-        <p className="text-[11px] text-indigo-500 mt-2 mb-0 italic leading-snug">
+        <p style={{ color: subCol, fontSize: 11, marginTop: 8, marginBottom: 0, fontStyle: 'italic', lineHeight: 1.4 }}>
           {info.note}
         </p>
       )}
@@ -138,7 +157,7 @@ function ColumnHeader({ columnKey, referenceDate }: { columnKey: string; referen
   );
 
   return (
-    <span className="inline-flex items-center gap-1.5">
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
       <span>{info.label}</span>
       <Popover
         content={popoverContent}
@@ -148,7 +167,7 @@ function ColumnHeader({ columnKey, referenceDate }: { columnKey: string; referen
       >
         <Info
           size={13}
-          className="text-indigo-400 hover:text-indigo-600 cursor-help transition-colors duration-150 shrink-0"
+          style={{ color: subCol, cursor: 'help', flexShrink: 0, transition: 'color 150ms' }}
         />
       </Popover>
     </span>
@@ -162,6 +181,7 @@ export default function TeamTable() {
   const selectedTeams = useTeamReportFilterStore(state => state.selectedTeams);
   const { startDate: filterStartDate } = useTeamReportFilterStore(state => state.selectedFilter);
   const { boards } = useBoards();
+  const { accent, cardBg, cardBrd, titleCol, subCol } = useThemeColors();
 
   const referenceDate = data?.sprintStartDate ?? filterStartDate;
 
@@ -176,10 +196,18 @@ export default function TeamTable() {
       dataIndex: 'member',
       key: 'member',
       fixed: 'left',
-      width: 160,
+      width: 200,
       render: (text: string, record: WorkItem) => (
         <button
-          className="text-purple-600 hover:text-purple-800 font-medium hover:underline cursor-pointer bg-transparent border-none p-0 text-left"
+          style={{
+            color: accent,
+            fontWeight: 500,
+            background: 'transparent',
+            border: 'none',
+            padding: 0,
+            textAlign: 'left',
+            cursor: 'pointer',
+          }}
           onClick={() => setSelectedMember(record)}
         >
           {text}
@@ -293,12 +321,20 @@ export default function TeamTable() {
 
   return (
     <div className="relative flex-1">
-      <div className="p-4">
-        {!!data && <TeamPerformance />}
+      {!!data && <TeamPerformance />}
 
-        {isMultiTeam ? (
-          groupedItems.map(({ boardId, label, shortName, items }) => (
-            <div key={boardId} className="mb-6">
+      {isMultiTeam ? (
+        groupedItems.map(({ boardId, label, shortName, items }) => (
+          <div key={boardId} style={{ marginBottom: 24 }}>
+            <div
+              className="tere-table"
+              style={{
+                background: cardBg,
+                borderRadius: 14,
+                border: '1px solid ' + cardBrd,
+                overflow: 'hidden',
+              }}
+            >
               <Table
                 columns={columns}
                 dataSource={items.map((item, index) => ({ ...item, key: `${shortName}-${index}` }))}
@@ -311,17 +347,37 @@ export default function TeamTable() {
                 }}
                 onChange={pagination => setPageSize(pagination.pageSize || 5)}
                 title={() => (
-                  <h2>
-                    <strong>{label}</strong>
-                    <span className="ml-2 text-sm font-normal text-gray-500">
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: titleCol,
+                      fontFamily: sans,
+                      padding: '12px 16px',
+                      borderBottom: '1px solid ' + cardBrd,
+                      background: cardBg,
+                    }}
+                  >
+                    {label}
+                    <span style={{ color: subCol, marginLeft: 8, fontSize: 13, fontWeight: 400 }}>
                       ({items.length} member{items.length !== 1 ? 's' : ''})
                     </span>
-                  </h2>
+                  </div>
                 )}
               />
             </div>
-          ))
-        ) : (
+          </div>
+        ))
+      ) : (
+        <div
+          className="tere-table"
+          style={{
+            background: cardBg,
+            borderRadius: 14,
+            border: '1px solid ' + cardBrd,
+            overflow: 'hidden',
+          }}
+        >
           <Table
             columns={columns}
             dataSource={data?.workItems.map((item, index) => ({ ...item, key: index }))}
@@ -334,17 +390,35 @@ export default function TeamTable() {
             }}
             onChange={pagination => setPageSize(pagination.pageSize || 5)}
             title={() => (
-              <h2>
-                <strong>Team Performance Metrics</strong>
-              </h2>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: titleCol,
+                  fontFamily: sans,
+                  padding: '12px 16px',
+                  borderBottom: '1px solid ' + cardBrd,
+                  background: cardBg,
+                }}
+              >
+                Team Performance Metrics
+              </div>
             )}
           />
-        )}
-      </div>
+        </div>
+      )}
 
       {!!data && (
         <div>
-          <p className="text-red-500 text-xs">
+          <p
+            style={{
+              fontSize: 11,
+              color: '#ef4444',
+              fontFamily: sans,
+              padding: '10px 16px',
+              borderTop: '1px solid ' + cardBrd,
+            }}
+          >
             **The shown data is collected based on the actual working days per sprint. There is a chance about inaccurate joint holidays and personal leaves.
           </p>
         </div>

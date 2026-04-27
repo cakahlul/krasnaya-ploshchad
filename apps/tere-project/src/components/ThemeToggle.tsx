@@ -1,51 +1,41 @@
 'use client';
 
 import { useTheme } from '@src/hooks/useTheme';
+import type { Theme } from '@src/hooks/useTheme';
+
+const THEME_SWATCHES: { val: Theme; color: string; label: string }[] = [
+  { val: 'light', color: '#1282a2', label: 'Atlas' },
+  { val: 'void', color: '#22b8d4', label: 'Void' },
+  { val: 'crimson', color: '#e53935', label: 'Krasnaya' },
+];
 
 export function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
+  const isVoid = theme === 'void' || theme === 'crimson';
 
   return (
-    <button
-      type="button"
-      onClick={toggleTheme}
-      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 text-text-sub-light dark:text-text-sub-dark"
-      title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-      aria-label="Toggle dark mode"
+    <div
+      className="flex items-center gap-1.5 rounded-[10px] px-2 py-1.5"
+      style={{ background: isVoid ? 'rgba(255,255,255,0.06)' : '#f2f4f8' }}
     >
-      {theme === 'dark' ? (
-        // Sun icon
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          className="h-6 w-6" 
-          fill="none" 
-          viewBox="0 0 24 24" 
-          stroke="currentColor"
-        >
-          <path 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            strokeWidth={2} 
-            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" 
-          />
-        </svg>
-      ) : (
-        // Moon icon
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          className="h-6 w-6" 
-          fill="none" 
-          viewBox="0 0 24 24" 
-          stroke="currentColor"
-        >
-          <path 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            strokeWidth={2} 
-            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" 
-          />
-        </svg>
-      )}
-    </button>
+      {THEME_SWATCHES.map(t => (
+        <button
+          key={t.val}
+          onClick={() => setTheme(t.val)}
+          title={t.label}
+          className="transition-all duration-200 rounded-full border-none cursor-pointer p-0"
+          style={{
+            width: theme === t.val ? 22 : 14,
+            height: 14,
+            background: t.color,
+            outline: theme === t.val
+              ? `2px solid ${isVoid ? 'rgba(255,255,255,0.4)' : 'rgba(1,29,77,0.25)'}`
+              : '2px solid transparent',
+            outlineOffset: 2,
+            boxShadow: theme === t.val ? `0 0 8px ${t.color}80` : 'none',
+          }}
+        />
+      ))}
+    </div>
   );
 }

@@ -1,12 +1,12 @@
 'use client';
 
 import RoleBasedRoute from '@src/components/RoleBasedRoute';
-import ProductivitySummary from '@src/features/dashboard/components/ProductivitySummary';
+import TeamMembersPage from '@src/features/team-members/components/TeamMembersPage';
 
-export default function ProductivitySummaryPage() {
+export default function Page() {
   return (
     <RoleBasedRoute allowedRoles={['Lead']} redirectTo="/dashboard">
-      <ProductivitySummary />
+      <TeamMembersPage />
     </RoleBasedRoute>
   );
 }
