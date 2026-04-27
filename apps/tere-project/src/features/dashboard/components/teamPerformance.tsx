@@ -1,20 +1,11 @@
 'use client';
 
-import {
-  PieChartOutlined,
-  RiseOutlined,
-  RocketOutlined,
-  ThunderboltOutlined,
-  ToolOutlined,
-  AimOutlined,
-  BarChartOutlined,
-  TeamOutlined,
-  FieldTimeOutlined,
-  MedicineBoxOutlined,
-  CoffeeOutlined,
-} from '@ant-design/icons';
 import { Tooltip } from 'antd';
 import { useTeamReportTransform } from '../hooks/useTeamReportTransform';
+import { useThemeColors } from '@src/hooks/useTheme';
+
+const mono = "var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace";
+const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
 
 function parsePercent(val?: string): number {
   if (!val) return 0;
@@ -29,102 +20,247 @@ function formatDateRange(startDate?: string, endDate?: string): string | undefin
   return `${fmt(startDate)} — ${fmt(endDate)}`;
 }
 
-/* ── Compact Stat Card ────────────────────────────────────────────────────── */
+/* ── Gradient Stat Card ──────────────────────────────────────────────────── */
 
-function StatCard({
+function GradientCard({
   label,
   value,
   subtitle,
   tooltip,
-  icon,
   gradient,
-  delay,
 }: {
   label: string;
   value: string | number | undefined;
   subtitle?: string;
   tooltip: string;
-  icon: React.ReactNode;
   gradient: string;
-  delay: number;
 }) {
   return (
-    <Tooltip title={tooltip} placement="bottom" mouseEnterDelay={0.4}>
+    <Tooltip
+      title={<span style={{ fontFamily: sans, fontSize: 11 }}>{tooltip}</span>}
+      placement="bottom"
+      mouseEnterDelay={0.4}
+    >
       <div
-        className={`relative overflow-hidden rounded-xl p-3 ${gradient} hover:scale-[1.03] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/15 transition-all duration-200 cursor-default group animate-fade-in-up`}
-        style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
+        style={{
+          background: gradient,
+          borderRadius: 14,
+          padding: '14px 16px',
+          position: 'relative',
+          overflow: 'hidden',
+          cursor: 'default',
+          transition: 'transform 0.2s, box-shadow 0.2s',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = '';
+          e.currentTarget.style.boxShadow = '';
+        }}
       >
-        <div className="absolute -right-6 -top-6 w-16 h-16 rounded-full bg-white/10 blur-xl group-hover:bg-white/20 transition-all duration-300" />
-        <div className="relative flex items-center gap-2 mb-1.5">
-          <span className="text-white/80 text-sm">{icon}</span>
-          <span className="text-white/80 text-[11px] font-medium tracking-wide">{label}</span>
+        {/* Decorative circle */}
+        <div
+          style={{
+            position: 'absolute',
+            right: -20,
+            top: -20,
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.1)',
+          }}
+        />
+        <div
+          style={{
+            fontSize: 9.5,
+            color: 'rgba(255,255,255,0.7)',
+            fontWeight: 600,
+            letterSpacing: 1,
+            textTransform: 'uppercase',
+            fontFamily: sans,
+            marginBottom: 6,
+          }}
+        >
+          {label}
         </div>
-        <p className="relative text-xl font-bold text-white leading-tight">{value ?? '-'}</p>
-        {subtitle && <p className="relative text-white/60 text-[10px] mt-0.5">{subtitle}</p>}
+        <div
+          style={{
+            fontSize: 22,
+            fontWeight: 700,
+            color: '#fff',
+            fontFamily: mono,
+            letterSpacing: -0.5,
+            position: 'relative',
+          }}
+        >
+          {value ?? '-'}
+        </div>
+        {subtitle && (
+          <div
+            style={{
+              fontSize: 10,
+              color: 'rgba(255,255,255,0.55)',
+              fontFamily: sans,
+              marginTop: 2,
+              position: 'relative',
+            }}
+          >
+            {subtitle}
+          </div>
+        )}
       </div>
     </Tooltip>
   );
 }
 
-/* ── Mini Progress Bar ────────────────────────────────────────────────────── */
+/* ── Enhanced Gradient Card (with breakdown rows) ────────────────────────── */
 
-function MiniBar({ percent, color }: { percent: number; color: string }) {
-  return (
-    <div className="h-1 w-full rounded-full bg-white/15 overflow-hidden">
-      <div
-        className={`h-full rounded-full ${color} transition-all duration-500`}
-        style={{ width: `${percent}%` }}
-      />
-    </div>
-  );
-}
-
-/* ── Enhanced Card (with breakdown rows) ──────────────────────────────────── */
-
-function EnhancedCard({
+function EnhancedGradientCard({
   label,
   value,
   wpLabel,
   tooltip,
-  icon,
-  gradient,
-  delay,
   rows,
+  gradient,
 }: {
   label: string;
   value: string | number | undefined;
   wpLabel?: string;
   tooltip: string;
-  icon: React.ReactNode;
+  rows: { label: string; value?: string; barPercent?: number }[];
   gradient: string;
-  delay: number;
-  rows: { label: string; value?: string; barColor: string; barPercent?: number }[];
 }) {
   return (
-    <Tooltip title={tooltip} placement="bottom" mouseEnterDelay={0.4}>
+    <Tooltip
+      title={<span style={{ fontFamily: sans, fontSize: 11 }}>{tooltip}</span>}
+      placement="bottom"
+      mouseEnterDelay={0.4}
+    >
       <div
-        className={`relative overflow-hidden rounded-xl p-3 ${gradient} hover:scale-[1.03] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/15 transition-all duration-200 cursor-default group animate-fade-in-up`}
-        style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
+        style={{
+          background: gradient,
+          borderRadius: 14,
+          padding: '14px 16px',
+          position: 'relative',
+          overflow: 'hidden',
+          cursor: 'default',
+          transition: 'transform 0.2s, box-shadow 0.2s',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = '';
+          e.currentTarget.style.boxShadow = '';
+        }}
       >
-        <div className="absolute -right-6 -top-6 w-16 h-16 rounded-full bg-white/10 blur-xl group-hover:bg-white/20 transition-all duration-300" />
-        <div className="relative flex items-center gap-2 mb-1.5">
-          <span className="text-white/80 text-sm">{icon}</span>
-          <span className="text-white/80 text-[11px] font-medium tracking-wide">{label}</span>
+        {/* Decorative circle */}
+        <div
+          style={{
+            position: 'absolute',
+            right: -20,
+            top: -20,
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.1)',
+          }}
+        />
+        <div
+          style={{
+            fontSize: 9.5,
+            color: 'rgba(255,255,255,0.7)',
+            fontWeight: 600,
+            letterSpacing: 1,
+            textTransform: 'uppercase',
+            fontFamily: sans,
+            marginBottom: 6,
+          }}
+        >
+          {label}
         </div>
-        <div className="relative flex items-baseline gap-1.5 mb-2">
-          <p className="text-xl font-bold text-white leading-tight">{value ?? '-'}</p>
-          {wpLabel && <span className="text-white/40 text-[9px] uppercase font-semibold">{wpLabel}</span>}
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
+          <div
+            style={{
+              fontSize: 22,
+              fontWeight: 700,
+              color: '#fff',
+              fontFamily: mono,
+              letterSpacing: -0.5,
+              position: 'relative',
+            }}
+          >
+            {value ?? '-'}
+          </div>
+          {wpLabel && (
+            <span
+              style={{
+                fontSize: 9,
+                fontWeight: 600,
+                color: 'rgba(255,255,255,0.6)',
+                textTransform: 'uppercase',
+                fontFamily: sans,
+                position: 'relative',
+              }}
+            >
+              {wpLabel}
+            </span>
+          )}
         </div>
-        <div className="relative space-y-1.5">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, position: 'relative' }}>
           {rows.map((row) => {
             const pct = row.barPercent ?? parsePercent(row.value);
             return (
               <div key={row.label}>
-                <div className="flex items-center justify-between text-[10px] mb-0.5">
-                  <span className="text-white/60">{row.label}</span>
-                  <span className="text-white/90 font-semibold">{row.value ?? '-'}</span>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: 2,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 10,
+                      color: 'rgba(255,255,255,0.65)',
+                      fontFamily: sans,
+                    }}
+                  >
+                    {row.label}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: 'rgba(255,255,255,0.9)',
+                      fontFamily: mono,
+                    }}
+                  >
+                    {row.value ?? '-'}
+                  </span>
                 </div>
-                <MiniBar percent={pct} color={row.barColor} />
+                <div
+                  style={{
+                    height: 4,
+                    borderRadius: 99,
+                    background: 'rgba(255,255,255,0.15)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      height: '100%',
+                      borderRadius: 99,
+                      width: `${pct}%`,
+                      background: 'rgba(255,255,255,0.9)',
+                      transition: 'width 0.5s ease',
+                    }}
+                  />
+                </div>
               </div>
             );
           })}
@@ -134,94 +270,142 @@ function EnhancedCard({
   );
 }
 
-/* ── Main Component ───────────────────────────────────────────────────────── */
+/* ── Gradient Palette ────────────────────────────────────────────────────── */
+
+const GRADIENTS = {
+  // Row 1 — Key Metrics
+  totalSP: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+  targetSP: 'linear-gradient(135deg, #0ea5e9, #2563eb)',
+  avgProductivity: 'linear-gradient(135deg, #8b5cf6, #d946ef)',
+  avgWpHour: 'linear-gradient(135deg, #d946ef, #f43f5e)',
+  // Row 2 — Composition
+  product: 'linear-gradient(135deg, #10b981, #14b8a6)',
+  techDebt: 'linear-gradient(135deg, #f59e0b, #ea580c)',
+  totalWP: 'linear-gradient(135deg, #06b6d4, #0284c7)',
+  // Row 3 — Capacity
+  selectedDays: 'linear-gradient(135deg, #64748b, #475569)',
+  totalDays: 'linear-gradient(135deg, #6b7280, #4b5563)',
+  totalLeave: 'linear-gradient(135deg, #3b82f6, #6366f1)',
+  totalSick: 'linear-gradient(135deg, #f43f5e, #e11d48)',
+} as const;
+
+/* ── Main Component ──────────────────────────────────────────────────────── */
 
 export default function TeamPerformance() {
   const { data } = useTeamReportTransform();
+  const { titleCol } = useThemeColors();
   const dateSubtitle = formatDateRange(data?.sprintStartDate, data?.sprintEndDate);
 
   const wpTotal = (data?.totalWeightPointsProduct ?? 0) + (data?.totalWeightPointsTechDebt ?? 0);
 
   return (
-    <div className="py-4 space-y-3">
-      <div className="flex items-center gap-2.5">
-        <div className="h-6 w-1 bg-gradient-to-b from-indigo-500 to-fuchsia-500 rounded-full" />
-        <h2 className="text-lg font-bold text-gray-800">Sprint Performance</h2>
+    <div style={{ paddingTop: 16, paddingBottom: 16 }}>
+      {/* Section Header */}
+      <div style={{ marginBottom: 14 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: titleCol, fontFamily: sans }}>
+          Sprint Performance
+        </span>
       </div>
 
       {/* Row 1 — Key Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-        <StatCard
-          label="Total SP" value={data?.totalSP} icon={<BarChartOutlined />}
-          gradient="bg-gradient-to-br from-indigo-500 to-violet-600" delay={0}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+        <GradientCard
+          label="Total SP"
+          value={data?.totalSP}
           tooltip="Sum of all Story Points (SP Product + SP Tech Debt + SP Meeting) across active members. Only members with SP > 0 are included."
+          gradient={GRADIENTS.totalSP}
         />
-        <StatCard
-          label="Target SP" value={data?.targetSP} icon={<AimOutlined />}
-          gradient="bg-gradient-to-br from-sky-500 to-blue-600" delay={60}
+        <GradientCard
+          label="Target SP"
+          value={data?.targetSP}
           tooltip="Sum of (Working Days x 8) for each active member. Represents total available hours as SP capacity. Working days exclude weekends, leaves, sick days, and national holidays."
+          gradient={GRADIENTS.targetSP}
         />
-        <StatCard
-          label="Avg Productivity" value={data?.averageProductivity} icon={<RiseOutlined />}
-          gradient="bg-gradient-to-br from-violet-500 to-fuchsia-600" delay={120}
+        <GradientCard
+          label="Avg Productivity"
+          value={data?.averageProductivity}
           tooltip="(Total SP / Target SP) x 100%. Measures how much of the team's SP capacity was actually delivered."
+          gradient={GRADIENTS.avgProductivity}
         />
-        <StatCard
-          label="Avg WP / Hour" value={data?.averageWpPerHour?.toFixed(2)} icon={<RocketOutlined />}
-          gradient="bg-gradient-to-br from-fuchsia-500 to-rose-600" delay={180}
+        <GradientCard
+          label="Avg WP / Hour"
+          value={data?.averageWpPerHour?.toFixed(2)}
           tooltip="Total WP / (Total Working Days x 8). Average weight points delivered per available hour across all active members."
+          gradient={GRADIENTS.avgWpHour}
         />
       </div>
 
       {/* Row 2 — Composition */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-        <EnhancedCard
-          label="Product %" value={data?.productPercentage} wpLabel="wp" icon={<PieChartOutlined />}
-          gradient="bg-gradient-to-br from-emerald-500 to-teal-600" delay={240}
+      <div
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 10 }}
+      >
+        <EnhancedGradientCard
+          label="Product %"
+          value={data?.productPercentage}
+          wpLabel="wp"
           tooltip="WP: Product WP / (Product WP + Tech Debt WP) x 100%. SP Product: same ratio calculated from story points. Shows how much effort goes to product work vs tech debt."
-          rows={[{ label: 'SP Product', value: data?.spProductPercentage, barColor: 'bg-emerald-300' }]}
+          rows={[{ label: 'SP Product', value: data?.spProductPercentage }]}
+          gradient={GRADIENTS.product}
         />
-        <EnhancedCard
-          label="Tech Debt %" value={data?.techDebtPercentage} wpLabel="wp" icon={<ToolOutlined />}
-          gradient="bg-gradient-to-br from-amber-500 to-orange-600" delay={300}
+        <EnhancedGradientCard
+          label="Tech Debt %"
+          value={data?.techDebtPercentage}
+          wpLabel="wp"
           tooltip="WP: Tech Debt WP / (Product WP + Tech Debt WP) x 100%. SP Tech Debt: tech debt SP / Total SP. SP Meeting: meeting SP / Total SP. Meeting SP comes directly from ALL-Meeting tickets."
           rows={[
-            { label: 'SP Tech Debt', value: data?.spTechDebtPercentage, barColor: 'bg-amber-300' },
-            { label: 'SP Meeting', value: data?.spMeetingPercentage, barColor: 'bg-orange-300' },
+            { label: 'SP Tech Debt', value: data?.spTechDebtPercentage },
+            { label: 'SP Meeting', value: data?.spMeetingPercentage },
           ]}
+          gradient={GRADIENTS.techDebt}
         />
-        <EnhancedCard
-          label="Total Weight Points" value={data?.totalWeightPoints} icon={<ThunderboltOutlined />}
-          gradient="bg-gradient-to-br from-cyan-500 to-sky-600" delay={360}
+        <EnhancedGradientCard
+          label="Total Weight Points"
+          value={data?.totalWeightPoints}
           tooltip="Sum of all weight points across active members. Product WP comes from product tickets, Tech Debt WP from tech debt tickets. WP is calculated from issue complexity and weight config."
           rows={[
-            { label: 'Product', value: String(data?.totalWeightPointsProduct ?? 0), barColor: 'bg-cyan-300', barPercent: wpTotal > 0 ? ((data?.totalWeightPointsProduct ?? 0) / wpTotal) * 100 : 0 },
-            { label: 'Tech Debt', value: String(data?.totalWeightPointsTechDebt ?? 0), barColor: 'bg-sky-300', barPercent: wpTotal > 0 ? ((data?.totalWeightPointsTechDebt ?? 0) / wpTotal) * 100 : 0 },
+            {
+              label: 'Product',
+              value: String(data?.totalWeightPointsProduct ?? 0),
+              barPercent: wpTotal > 0 ? ((data?.totalWeightPointsProduct ?? 0) / wpTotal) * 100 : 0,
+            },
+            {
+              label: 'Tech Debt',
+              value: String(data?.totalWeightPointsTechDebt ?? 0),
+              barPercent: wpTotal > 0 ? ((data?.totalWeightPointsTechDebt ?? 0) / wpTotal) * 100 : 0,
+            },
           ]}
+          gradient={GRADIENTS.totalWP}
         />
       </div>
 
       {/* Row 3 — Team Capacity */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-        <StatCard
-          label="Selected Working Days" value={data?.totalWorkingDays} subtitle={dateSubtitle} icon={<FieldTimeOutlined />}
-          gradient="bg-gradient-to-br from-slate-500 to-gray-600" delay={420}
+      <div
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 10 }}
+      >
+        <GradientCard
+          label="Selected Working Days"
+          value={data?.totalWorkingDays}
+          subtitle={dateSubtitle}
           tooltip="Calendar working days within the sprint date range. Excludes weekends and national holidays. This is the sprint-level count, not per-member."
+          gradient={GRADIENTS.selectedDays}
         />
-        <StatCard
-          label="Total Working Days" value={data?.totalMemberWorkingDays} icon={<TeamOutlined />}
-          gradient="bg-gradient-to-br from-gray-500 to-zinc-600" delay={480}
+        <GradientCard
+          label="Total Working Days"
+          value={data?.totalMemberWorkingDays}
           tooltip="Sum of effective working days across all members. Each member's working days exclude their personal leaves, sick days, weekends, and national holidays."
+          gradient={GRADIENTS.totalDays}
         />
-        <StatCard
-          label="Total Leave" value={data?.totalLeave} icon={<CoffeeOutlined />}
-          gradient="bg-gradient-to-br from-blue-400 to-indigo-500" delay={540}
+        <GradientCard
+          label="Total Leave"
+          value={data?.totalLeave}
           tooltip="Sum of confirmed leave days (status: Confirmed) across all members within the sprint period. Only counts weekdays that are not national holidays."
+          gradient={GRADIENTS.totalLeave}
         />
-        <StatCard
-          label="Total Sick" value={data?.totalSick} icon={<MedicineBoxOutlined />}
-          gradient="bg-gradient-to-br from-rose-400 to-red-500" delay={600}
+        <GradientCard
+          label="Total Sick"
+          value={data?.totalSick}
           tooltip="Sum of sick leave days (status: Sick) across all members within the sprint period. Only counts weekdays that are not national holidays."
+          gradient={GRADIENTS.totalSick}
         />
       </div>
     </div>

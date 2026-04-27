@@ -1,6 +1,6 @@
 {
   "name": "tere-project",
-  "version": "1.6.5",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",

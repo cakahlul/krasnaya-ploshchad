@@ -18,6 +18,7 @@ export const POST = withAuth(async () => {
         fullName: member.fullName,
         email: member.email,
         level: member.level,
+        isLead: false,
         teams: member.team,
       })
     )

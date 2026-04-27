@@ -4,15 +4,18 @@ import { useTalentLeaveStore } from '../store/talentLeaveStore';
 import { useTalentLeave } from '../hooks/useTalentLeave';
 import { useHolidays } from '../hooks/useHolidays';
 import { generateDateRange } from '../utils/dateUtils';
-import { groupByTeam, getCellColorClass } from '../utils/calendarUtils';
+import { groupByTeam } from '../utils/calendarUtils';
 import { getSprintNameWithDateRange } from '../utils/sprintUtils';
+import { useThemeColors } from '@src/hooks/useTheme';
 import { Spin, Alert, Badge, Tooltip } from 'antd';
 import {
-  CalendarOutlined,
   TeamOutlined,
   CheckCircleFilled,
   EditOutlined,
 } from '@ant-design/icons';
+
+const mono = "var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace";
+const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
 
 type CalendarCell = {
   date: string;
@@ -26,6 +29,10 @@ type CalendarCell = {
 export function LeaveCalendarSimple() {
   const { dateRangeStart, dateRangeEnd, openEditModal } = useTalentLeaveStore();
   const [isMounted, setIsMounted] = useState(false);
+  const {
+    isDark, accent, accentL,
+    cardBg, cardBrd, titleCol, subCol, rowCol, headBg,
+  } = useThemeColors();
 
   useEffect(() => {
     setIsMounted(true);
@@ -108,13 +115,28 @@ export function LeaveCalendarSimple() {
     return groupByTeam(leaveRecords, holidayDates, startDate, endDate);
   }, [leaveRecords, holidayDates, startDate, endDate]);
 
+  // Theme-aware cell background
+  const getCellBg = (cell: CalendarCell, isLeaveDate: boolean, leaveStatus?: string) => {
+    if (cell.isNationalHoliday) return isDark ? '#2a0f10' : '#fee2e2';
+    if (cell.isWeekend) return isDark ? 'rgba(255,255,255,0.03)' : '#f1f5f9';
+    if (isLeaveDate) {
+      if (leaveStatus === 'Draft') return isDark ? '#2e1f08' : '#fef3c7';
+      if (leaveStatus === 'Sick') return isDark ? '#1a0f2e' : '#ede9fe';
+      return isDark ? '#0a2a1e' : '#d1fae5'; // Confirmed
+    }
+    return cardBg;
+  };
+
   // Loading state (including hydration guard)
   if (!isMounted || isLeaveLoading || isHolidaysLoading) {
     return (
-      <div className="flex justify-center items-center p-12 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
+      <div
+        className="flex justify-center items-center p-12"
+        style={{ background: cardBg, borderRadius: 12, border: '1px solid ' + cardBrd }}
+      >
         <div className="text-center">
           <Spin size="large" />
-          <p className="mt-4 text-gray-600 font-medium">
+          <p className="mt-4 font-medium" style={{ color: subCol }}>
             Loading calendar data...
           </p>
         </div>
@@ -137,8 +159,28 @@ export function LeaveCalendarSimple() {
     );
   }
 
+  // Shared sticky header cell style
+  const stickyHeaderBase: React.CSSProperties = {
+    background: headBg,
+    borderColor: cardBrd,
+    borderWidth: 1,
+    borderStyle: 'solid',
+  };
+
+  const headerLabelStyle: React.CSSProperties = {
+    color: titleCol,
+    fontFamily: sans,
+    fontSize: 9.5,
+    fontWeight: 600,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  };
+
+  // Team header tinted background
+  const teamBg = isDark ? accent + '15' : accent + '08';
+
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+    <div style={{ background: cardBg, borderRadius: 14, border: '1px solid ' + cardBrd }}>
       <div
         className="overflow-x-auto overflow-y-auto custom-scrollbar max-w-full max-h-[calc(10*3.5rem+8rem)]"
         role="region"
@@ -146,50 +188,74 @@ export function LeaveCalendarSimple() {
       >
         <table className="w-full border-collapse text-sm">
           {/* Table Header */}
-          <thead className="bg-white shadow-md sticky top-0 z-30">
+          <thead className="sticky top-0 z-30" style={{ background: cardBg }}>
             <tr>
               {/* Static columns */}
-              <th className="sticky left-0 z-40 bg-gradient-to-r from-indigo-50 to-blue-50 border border-gray-200 px-3 py-2 text-left shadow-lg" style={{ width: 60, minWidth: 60 }}>
-                <div className="font-semibold text-gray-700">No</div>
+              <th
+                className="sticky left-0 z-40 px-3 py-2 text-left"
+                style={{ ...stickyHeaderBase, width: 60, minWidth: 60 }}
+              >
+                <div style={headerLabelStyle}>No</div>
               </th>
-              <th className="sticky z-40 bg-gradient-to-r from-indigo-50 to-blue-50 border border-gray-200 px-3 py-2 text-left shadow-lg" style={{ left: 60, width: 150, minWidth: 150 }}>
-                <div className="font-semibold text-gray-700">Nama</div>
+              <th
+                className="sticky z-40 px-3 py-2 text-left"
+                style={{ ...stickyHeaderBase, left: 60, width: 150, minWidth: 150 }}
+              >
+                <div style={headerLabelStyle}>Nama</div>
               </th>
-              <th className="sticky z-40 bg-gradient-to-r from-indigo-50 to-blue-50 border border-gray-200 px-3 py-2 text-center shadow-lg" style={{ left: 210, width: 80, minWidth: 80 }}>
-                <div className="font-semibold text-gray-700">Jumlah</div>
+              <th
+                className="sticky z-40 px-3 py-2 text-center"
+                style={{ ...stickyHeaderBase, left: 210, width: 80, minWidth: 80 }}
+              >
+                <div style={headerLabelStyle}>Jumlah</div>
               </th>
-              <th className="sticky z-40 bg-gradient-to-r from-indigo-50 to-blue-50 border border-gray-200 px-3 py-2 text-left shadow-lg" style={{ left: 290, width: 180, minWidth: 180 }}>
-                <div className="font-semibold text-gray-700 flex items-center gap-1">
+              <th
+                className="sticky z-40 px-3 py-2 text-left"
+                style={{ ...stickyHeaderBase, left: 290, width: 180, minWidth: 180 }}
+              >
+                <div className="flex items-center gap-1" style={headerLabelStyle}>
                   <span>Tanggal Cuti Terdekat</span>
                 </div>
               </th>
 
               {/* Date columns */}
               {dateColumnsWithHolidays.map(cell => {
-                const headerBgColor = cell.isNationalHoliday
-                  ? 'bg-gradient-to-br from-red-50 to-red-100'
+                const dateBg = cell.isNationalHoliday
+                  ? (isDark ? '#2a0f10' : '#fff5f5')
                   : cell.isWeekend
-                    ? 'bg-gradient-to-br from-slate-50 to-slate-100'
-                    : 'bg-gradient-to-br from-gray-50 to-white';
-
-                const holidayTextColor = cell.isNationalHoliday
-                  ? 'text-red-700'
-                  : 'text-gray-700';
+                    ? (isDark ? 'rgba(255,255,255,0.03)' : '#fafbfd')
+                    : headBg;
 
                 const date = new Date(cell.date);
                 const day = date.getDate();
 
                 const content = (
-                  <div className={`${headerBgColor} p-2 rounded-md min-w-[70px]`}>
-                    <div className={`text-lg font-bold ${holidayTextColor}`}>
+                  <div className="p-2 rounded-md min-w-[70px]" style={{ background: dateBg }}>
+                    <div
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 700,
+                        fontFamily: mono,
+                        color: cell.isNationalHoliday ? '#ef4444' : titleCol,
+                      }}
+                    >
                       {day}
                     </div>
-                    <div className="text-[10px] font-medium text-gray-500 uppercase">
+                    <div
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 500,
+                        color: subCol,
+                        textTransform: 'uppercase',
+                        fontFamily: sans,
+                      }}
+                    >
                       {cell.dayName}
                     </div>
                     {cell.isHoliday && (
                       <div
-                        className={`text-[9px] font-semibold ${holidayTextColor} mt-1 truncate`}
+                        className="mt-1 truncate"
+                        style={{ fontSize: 9, fontWeight: 600, color: '#ef4444' }}
                       >
                         {cell.holidayName}
                       </div>
@@ -198,7 +264,11 @@ export function LeaveCalendarSimple() {
                 );
 
                 return (
-                  <th key={cell.date} className="border border-gray-200 px-1 py-1" style={{ minWidth: 70 }}>
+                  <th
+                    key={cell.date}
+                    className="px-1 py-1"
+                    style={{ minWidth: 70, borderWidth: 1, borderStyle: 'solid', borderColor: cardBrd }}
+                  >
                     {cell.isHoliday ? (
                       <Tooltip title={cell.holidayName}>{content}</Tooltip>
                     ) : (
@@ -215,21 +285,26 @@ export function LeaveCalendarSimple() {
             {teamGroups.map((group) => (
               <React.Fragment key={group.teamName}>
                 {/* Team Header Row */}
-                <tr className="bg-gradient-to-r from-blue-100 to-indigo-100">
-                  <td className="border border-indigo-200 px-4 py-3 sticky left-0 z-10 bg-gradient-to-r from-blue-100 to-indigo-100 shadow-md">
+                <tr style={{ background: teamBg }}>
+                  <td
+                    className="px-4 py-3 sticky left-0 z-10 shadow-md"
+                    style={{ background: teamBg, borderWidth: 1, borderStyle: 'solid', borderColor: cardBrd }}
+                  >
                     {/* Empty */}
                   </td>
                   <td
                     colSpan={3}
-                    className="border border-indigo-200 px-4 py-3 sticky z-10 bg-gradient-to-r from-blue-100 to-indigo-100 shadow-md"
-                    style={{ left: 60 }}
+                    className="px-4 py-3 sticky z-10 shadow-md"
+                    style={{ left: 60, background: teamBg, borderWidth: 1, borderStyle: 'solid', borderColor: cardBrd }}
                   >
-                    <div className="flex items-center gap-2 font-bold text-indigo-900">
-                      <TeamOutlined className="text-lg" />
-                      <span>{group.teamName}</span>
+                    <div className="flex items-center gap-2">
+                      <TeamOutlined className="text-lg" style={{ color: accent }} />
+                      <span style={{ color: titleCol, fontFamily: sans, fontWeight: 700 }}>
+                        {group.teamName}
+                      </span>
                       <Badge
                         count={group.members.length}
-                        style={{ backgroundColor: '#4f46e5' }}
+                        style={{ backgroundColor: accent }}
                       />
                     </div>
                   </td>
@@ -251,10 +326,22 @@ export function LeaveCalendarSimple() {
                           <td
                             key={`sprint-${sprintName}`}
                             colSpan={sprintDates.length}
-                            className="border border-indigo-200 px-2 py-1"
+                            className="px-2 py-1"
+                            style={{ borderWidth: 1, borderStyle: 'solid', borderColor: cardBrd }}
                           >
-                            <div className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold text-center py-2 px-3 rounded-lg shadow-md">
-                              <div className="text-sm">{sprintName}</div>
+                            <div
+                              style={{
+                                background: 'linear-gradient(135deg, ' + accent + ', ' + accentL + ')',
+                                color: '#fff',
+                                fontWeight: 700,
+                                textAlign: 'center',
+                                padding: '8px 12px',
+                                borderRadius: 8,
+                                fontFamily: sans,
+                                fontSize: 12,
+                              }}
+                            >
+                              <div>{sprintName}</div>
                             </div>
                           </td>
                         );
@@ -267,22 +354,32 @@ export function LeaveCalendarSimple() {
 
                 {/* Member Rows */}
                 {group.members.map((member, memberIdx) => (
-                  <tr key={member.id} className="hover:bg-blue-50 transition-colors duration-150">
+                  <tr key={member.id} className="transition-colors duration-150">
                     {/* Static columns */}
-                    <td className="border border-gray-200 px-3 py-2 sticky left-0 z-10 bg-white shadow-sm" style={{ width: 60 }}>
-                      <div className="text-center text-gray-600 font-medium">
+                    <td
+                      className="px-3 py-2 sticky left-0 z-10 shadow-sm"
+                      style={{ width: 60, background: cardBg, borderWidth: 1, borderStyle: 'solid', borderColor: cardBrd }}
+                    >
+                      <div className="text-center" style={{ color: subCol, fontFamily: sans, fontWeight: 500 }}>
                         {memberIdx + 1}
                       </div>
                     </td>
-                    <td className="border border-gray-200 px-3 py-2 sticky z-10 bg-white shadow-sm" style={{ left: 60, width: 150 }}>
+                    <td
+                      className="px-3 py-2 sticky z-10 shadow-sm"
+                      style={{ left: 60, width: 150, background: cardBg, borderWidth: 1, borderStyle: 'solid', borderColor: cardBrd }}
+                    >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-indigo-900 font-medium truncate flex-1">
+                        <span
+                          className="truncate flex-1"
+                          style={{ color: rowCol, fontFamily: sans, fontWeight: 500 }}
+                        >
                           {member.name}
                         </span>
                         {hasFutureLeaveDates(member) && (
                           <button
                             onClick={() => openEditModal(member.id)}
-                            className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 p-1 rounded transition-all duration-150 flex-shrink-0"
+                            className="p-1 rounded transition-all duration-150 flex-shrink-0"
+                            style={{ color: accent }}
                             title="Edit leave record"
                           >
                             <EditOutlined className="text-base" />
@@ -290,7 +387,10 @@ export function LeaveCalendarSimple() {
                         )}
                       </div>
                     </td>
-                    <td className="border border-gray-200 px-3 py-2 sticky z-10 bg-white shadow-sm" style={{ left: 210, width: 80 }}>
+                    <td
+                      className="px-3 py-2 sticky z-10 shadow-sm"
+                      style={{ left: 210, width: 80, background: cardBg, borderWidth: 1, borderStyle: 'solid', borderColor: cardBrd }}
+                    >
                       <div className="text-center">
                         <Badge
                           count={member.leaveCount}
@@ -302,8 +402,15 @@ export function LeaveCalendarSimple() {
                         />
                       </div>
                     </td>
-                    <td className="border border-gray-200 px-3 py-2 sticky z-10 bg-white shadow-sm" style={{ left: 290, width: 180 }}>
-                      <div className="text-xs text-gray-600 truncate" title={member.dateRange}>
+                    <td
+                      className="px-3 py-2 sticky z-10 shadow-sm"
+                      style={{ left: 290, width: 180, background: cardBg, borderWidth: 1, borderStyle: 'solid', borderColor: cardBrd }}
+                    >
+                      <div
+                        className="truncate"
+                        style={{ color: subCol, fontSize: 12, fontFamily: sans }}
+                        title={member.dateRange}
+                      >
                         {member.dateRange || '-'}
                       </div>
                     </td>
@@ -314,13 +421,7 @@ export function LeaveCalendarSimple() {
                       const leaveStatus = isLeaveDate
                         ? member.leaveDatesWithStatus[cell.date]
                         : undefined;
-                      const colorClass = getCellColorClass(
-                        cell.isWeekend,
-                        cell.isHoliday,
-                        cell.isNationalHoliday,
-                        isLeaveDate,
-                        leaveStatus as 'Draft' | 'Confirmed' | 'Sick' | undefined,
-                      );
+                      const cellBg = getCellBg(cell, isLeaveDate, leaveStatus);
                       const showCheckmark = isLeaveDate && !cell.isWeekend && !cell.isNationalHoliday;
                       const isDraft = leaveStatus === 'Draft';
                       const isSick = leaveStatus === 'Sick';
@@ -328,8 +429,8 @@ export function LeaveCalendarSimple() {
                       return (
                         <td
                           key={cell.date}
-                          className={`border border-gray-200 ${colorClass} relative overflow-hidden`}
-                          style={{ minWidth: 70, maxWidth: 70, padding: 0 }}
+                          className="relative overflow-hidden"
+                          style={{ minWidth: 70, maxWidth: 70, padding: 0, background: cellBg, borderWidth: 1, borderStyle: 'solid', borderColor: cardBrd }}
                         >
                           <div className="h-full flex items-center justify-center py-2 px-2">
                             {showCheckmark && (
@@ -365,18 +466,18 @@ export function LeaveCalendarSimple() {
           width: 12px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f5f9;
+          background: ${isDark ? 'rgba(255,255,255,0.04)' : '#f1f5f9'};
           border-radius: 6px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+          background: ${accent};
           border-radius: 6px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+          background: ${accentL};
         }
         .custom-scrollbar::-webkit-scrollbar-corner {
-          background: #f1f5f9;
+          background: ${isDark ? 'rgba(255,255,255,0.04)' : '#f1f5f9'};
         }
       `}</style>
     </div>

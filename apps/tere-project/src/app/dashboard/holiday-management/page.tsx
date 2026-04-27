@@ -1,58 +1,129 @@
 'use client';
 
-import { useUserAccess } from '@src/hooks/useUserAccess';
+import { useMemberProfile } from '@src/features/dashboard/hooks/useMemberProfile';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import LoadingBounce from '@src/components/loadingBounce';
 import HolidayCalendar from '@src/features/holiday-management/components/HolidayCalendar';
 import BulkInsert from '@src/features/holiday-management/components/BulkInsert';
-import { Calendar } from 'lucide-react';
+import HolidayListView from '@src/features/holiday-management/components/HolidayListView';
+import { useThemeColors } from '@src/hooks/useTheme';
+
+const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
+
+type ViewMode = 'list' | 'calendar';
 
 export default function HolidayManagementPage() {
-  const { role, isLoading } = useUserAccess();
+  const { member, isLoading } = useMemberProfile();
   const router = useRouter();
+  const isLead = member?.isLead ?? false;
+  const { accent, titleCol, subCol, iconBg } = useThemeColors();
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
 
   useEffect(() => {
-    if (!isLoading && role !== 'Lead') {
+    if (!isLoading && !isLead) {
       router.push('/dashboard');
     }
-  }, [role, isLoading, router]);
+  }, [isLead, isLoading, router]);
 
   if (isLoading) return <LoadingBounce />;
-  if (role !== 'Lead') return null;
+  if (!isLead) return null;
 
   return (
-    <div className="p-8 max-w-[1400px] mx-auto min-h-screen bg-gray-50/30">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 animate-fade-in-down">
+    <div className="p-8 max-w-[1400px] mx-auto min-h-screen">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
         <div>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-cyan-500 flex items-center gap-3">
-            <Calendar className="text-purple-600" size={32} />
+          <h2 style={{
+            fontSize: 22,
+            fontWeight: 700,
+            color: titleCol,
+            margin: 0,
+            fontFamily: sans,
+            letterSpacing: -0.3,
+          }}>
             Holiday Management
-          </h1>
-          <p className="text-gray-500 mt-2">
-            Configure system-wide national holidays for productivity tracking.
+          </h2>
+          <p style={{
+            color: subCol,
+            margin: '4px 0 0',
+            fontSize: 12.5,
+            fontFamily: sans,
+          }}>
+            Configure system-wide national holidays for productivity tracking
           </p>
+        </div>
+
+        {/* View Toggle */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          background: iconBg,
+          borderRadius: 10,
+          padding: 3,
+          gap: 2,
+        }}>
+          <button
+            onClick={() => setViewMode('list')}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 8,
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 12,
+              fontWeight: 600,
+              fontFamily: sans,
+              background: viewMode === 'list' ? accent : 'transparent',
+              color: viewMode === 'list' ? '#fff' : subCol,
+              transition: 'all 0.15s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              <line x1="2" y1="4" x2="14" y2="4" />
+              <line x1="2" y1="8" x2="14" y2="8" />
+              <line x1="2" y1="12" x2="14" y2="12" />
+            </svg>
+            List
+          </button>
+          <button
+            onClick={() => setViewMode('calendar')}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 8,
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 12,
+              fontWeight: 600,
+              fontFamily: sans,
+              background: viewMode === 'calendar' ? accent : 'transparent',
+              color: viewMode === 'calendar' ? '#fff' : subCol,
+              transition: 'all 0.15s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="1.5" y="3" width="13" height="11" rx="1.5" />
+              <line x1="1.5" y1="7" x2="14.5" y2="7" />
+              <line x1="5" y1="1.5" x2="5" y2="4.5" />
+              <line x1="11" y1="1.5" x2="11" y2="4.5" />
+            </svg>
+            Calendar
+          </button>
         </div>
       </div>
 
-      <div className="animate-fade-in-up space-y-8">
-        <HolidayCalendar />
-        <BulkInsert />
-      </div>
-
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes fade-in-down {
-          0% { opacity: 0; transform: translateY(-10px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fade-in-up {
-          0% { opacity: 0; transform: translateY(20px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in-down { animation: fade-in-down 0.5s ease-out forwards; }
-        .animate-fade-in-up { animation: fade-in-up 0.5s ease-out forwards; }
-      `}} />
+      {viewMode === 'list' ? (
+        <HolidayListView />
+      ) : (
+        <div className="space-y-8">
+          <HolidayCalendar />
+          <BulkInsert />
+        </div>
+      )}
     </div>
   );
 }
