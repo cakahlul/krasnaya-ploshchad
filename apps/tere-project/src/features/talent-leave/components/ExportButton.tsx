@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useExportTalentLeave } from '../hooks/useExportTalentLeave';
 import { useTalentLeaveStore } from '../store/talentLeaveStore';
 import { motion } from 'framer-motion';
+import { useThemeColors } from '@src/hooks/useTheme';
 
 interface ExportButtonProps {
   onSuccess?: (spreadsheetUrl: string) => void;
@@ -17,6 +18,7 @@ export function ExportButton({ onSuccess, onError }: ExportButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const { notification } = App.useApp();
+  const { accent } = useThemeColors();
 
   const formatDate = (date: Date): string => {
     const year = date.getFullYear();
@@ -43,11 +45,11 @@ export function ExportButton({ onSuccess, onError }: ExportButtonProps) {
           description: (
             <span>
               The Talent Leave details have been exported to Google Drive.{' '}
-              <a 
-                href={result.spreadsheetUrl} 
-                target="_blank" 
+              <a
+                href={result.spreadsheetUrl}
+                target="_blank"
                 rel="noopener noreferrer"
-                className="text-purple-600 underline font-medium hover:text-purple-700"
+                style={{ color: accent, textDecoration: 'underline', fontWeight: 500 }}
               >
                 Open Spreadsheet
               </a>

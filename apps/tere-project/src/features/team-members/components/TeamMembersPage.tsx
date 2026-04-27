@@ -7,6 +7,7 @@ import { Pencil, Trash2, UserPlus } from 'lucide-react';
 
 import { useMembers, useDeleteMember } from '../hooks/useMembers';
 import { useBoards } from '@src/features/dashboard/hooks/useBoards';
+import { useThemeColors } from '@src/hooks/useTheme';
 import MemberFormModal from './MemberFormModal';
 import type { MemberResponse } from '@shared/types/member.types';
 import { Level } from '@shared/types/common.types';
@@ -22,6 +23,8 @@ export default function TeamMembersPage() {
   const { members, isLoading } = useMembers();
   const { boards } = useBoards();
   const deleteMember = useDeleteMember();
+  const { accent, accentL, cardBg, cardBrd, titleCol, subCol, rowCol } =
+    useThemeColors();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<MemberResponse | null>(
@@ -59,8 +62,10 @@ export default function TeamMembersPage() {
       key: 'fullName',
       render: (_, record) => (
         <div>
-          <div className="font-medium text-gray-800">{record.fullName}</div>
-          <div className="text-sm text-gray-400">{record.name}</div>
+          <div style={{ fontWeight: 500, color: rowCol }}>
+            {record.fullName}
+          </div>
+          <div style={{ fontSize: 13, color: subCol }}>{record.name}</div>
         </div>
       ),
     },
@@ -134,11 +139,32 @@ export default function TeamMembersPage() {
   ];
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
+    <div className="relative p-6 tere-table tere-modal">
+      <div
+        style={{ marginBottom: 18 }}
+        className="flex justify-between items-center"
+      >
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Team Members</h1>
-          <p className="text-gray-500 mt-1">
+          <h2
+            style={{
+              fontSize: 22,
+              fontWeight: 700,
+              color: titleCol,
+              margin: 0,
+              fontFamily: "'Space Grotesk',sans-serif",
+              letterSpacing: -0.3,
+            }}
+          >
+            Team Members
+          </h2>
+          <p
+            style={{
+              color: subCol,
+              margin: '4px 0 0',
+              fontSize: 12.5,
+              fontFamily: "'Space Grotesk',sans-serif",
+            }}
+          >
             Manage your team members and their roles
           </p>
         </div>
@@ -147,8 +173,9 @@ export default function TeamMembersPage() {
           icon={<UserPlus size={16} />}
           onClick={handleAdd}
           style={{
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            background: `linear-gradient(135deg, ${accent}, ${accentL})`,
             border: 'none',
+            borderRadius: 8,
           }}
           size="large"
         >
@@ -156,7 +183,14 @@ export default function TeamMembersPage() {
         </Button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div
+        style={{
+          background: cardBg,
+          borderRadius: 14,
+          border: `1px solid ${cardBrd}`,
+          overflow: 'hidden',
+        }}
+      >
         <Table
           columns={columns}
           dataSource={members}

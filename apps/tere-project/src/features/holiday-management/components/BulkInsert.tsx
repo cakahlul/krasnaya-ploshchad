@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useBulkCreateHolidays } from '../hooks/useHolidayQueries';
 import { Button, message } from 'antd';
 import { Database, FileJson } from 'lucide-react';
+import { useThemeColors } from '@src/hooks/useTheme';
 
 export default function BulkInsert() {
   const [jsonText, setJsonText] = useState('');
   const { mutateAsync: bulkCreate, isPending } = useBulkCreateHolidays();
+  const T = useThemeColors();
 
   const handleInsert = async () => {
     try {
@@ -35,27 +37,50 @@ export default function BulkInsert() {
     }
   };
 
+  const accentTint = `${T.accent}15`;
+
   return (
-    <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm transition-shadow hover:shadow-md">
+    <div
+      style={{
+        background: T.cardBg,
+        border: `1px solid ${T.cardBrd}`,
+        borderRadius: 14,
+      }}
+      className="p-8 transition-shadow hover:shadow-md"
+    >
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+        <div
+          style={{ background: accentTint, color: T.accent, borderRadius: 10 }}
+          className="p-3"
+        >
           <Database size={24} />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Bulk Insert Holidays</h2>
-          <p className="text-sm text-gray-500 mt-1">Paste a JSON array of dates to quickly import multiple holidays.</p>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: T.titleCol, margin: 0, fontFamily: "'Space Grotesk',sans-serif" }}>
+            Bulk Insert Holidays
+          </h2>
+          <p style={{ color: T.subCol, margin: '2px 0 0', fontSize: 12.5, fontFamily: "'Space Grotesk',sans-serif" }}>
+            Paste a JSON array of dates to quickly import multiple holidays.
+          </p>
         </div>
       </div>
 
       <div className="relative">
-        <div className="absolute top-4 right-4 text-gray-400 pointer-events-none">
+        <div style={{ color: T.subCol }} className="absolute top-4 right-4 pointer-events-none">
           <FileJson size={20} />
         </div>
         <textarea
           value={jsonText}
           onChange={(e) => setJsonText(e.target.value)}
-          placeholder="[\n  {\n    &quot;date&quot;: &quot;2026-01-01&quot;,\n    &quot;name&quot;: &quot;Tahun Baru 2026 Masehi&quot;\n  }\n]"
-          className="w-full h-48 p-5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all resize-none placeholder:text-gray-300"
+          placeholder={'[\n  {\n    "date": "2026-01-01",\n    "name": "Tahun Baru 2026 Masehi"\n  }\n]'}
+          style={{
+            background: T.headBg,
+            border: `1px solid ${T.cardBrd}`,
+            color: T.rowCol,
+            borderRadius: 12,
+            fontFamily: "var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace",
+          }}
+          className="w-full h-48 p-5 text-sm focus:outline-none transition-all resize-none placeholder:opacity-40"
         />
       </div>
 
@@ -64,7 +89,16 @@ export default function BulkInsert() {
           type="primary"
           onClick={handleInsert}
           loading={isPending}
-          className="h-11 px-8 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 border-none font-semibold shadow-md shadow-blue-500/20"
+          style={{
+            background: `linear-gradient(135deg, ${T.accent}, ${T.accentL})`,
+            border: 'none',
+            borderRadius: 10,
+            height: 42,
+            paddingInline: 28,
+            fontWeight: 600,
+            fontFamily: "'Space Grotesk',sans-serif",
+            boxShadow: `0 4px 12px ${T.accent}30`,
+          }}
         >
           Run Bulk Insert
         </Button>
