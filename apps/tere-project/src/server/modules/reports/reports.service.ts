@@ -174,7 +174,10 @@ function processRawData(
     typeof issueProcessingStrategyFactory.createStrategies
   >[1],
   dailyTargetWPByLevel: Record<string, number> = DEFAULT_DAILY_TARGET_WP,
+  projectList?: string[],
 ): JiraIssueReportResponseDto[] {
+  const isMultiProject = projectList && projectList.length > 1;
+
   // accountId (Jira) === memberId (Firestore doc ID)
   const accountIdMap = new Map<string, string>(
     members.map(m => [m.id.toLowerCase(), m.fullName]),
@@ -183,31 +186,47 @@ function processRawData(
     members.map(m => [m.fullName, m.id]),
   );
 
-  const reports = new Map<string, JiraIssueReportResponseDto>(
-    members.map(m => [
-      m.fullName,
-      {
-        member: m.fullName,
-        team: m.teams[0] ?? '',
-        productivityRate: '',
-        wpProductivity: '',
-        totalWeightPoints: 0,
-        devDefect: 0,
-        devDefectRate: '',
-        level: m.level,
-        weightPointsProduct: 0,
-        weightPointsTechDebt: 0,
-        targetWeightPoints: (dailyTargetWPByLevel[m.level] ?? 8) * 10,
-        issueKeys: [],
-        spMeeting: 0,
-      },
-    ]),
-  );
+  function makeReportEntry(m: MemberResponse, team: string): JiraIssueReportResponseDto {
+    return {
+      member: m.fullName,
+      team,
+      productivityRate: '',
+      wpProductivity: '',
+      totalWeightPoints: 0,
+      devDefect: 0,
+      devDefectRate: '',
+      level: m.level,
+      weightPointsProduct: 0,
+      weightPointsTechDebt: 0,
+      targetWeightPoints: (dailyTargetWPByLevel[m.level] ?? 8) * 10,
+      issueKeys: [],
+      spMeeting: 0,
+    };
+  }
+
+  // For multi-project: key = "memberName::PROJECT", team = project key from issue
+  // For single project: key = "memberName", team = member's first team (existing behavior)
+  const reports = new Map<string, JiraIssueReportResponseDto>();
+  if (isMultiProject) {
+    for (const m of members) {
+      for (const proj of projectList) {
+        if (!m.teams.some(t => t.toLowerCase() === proj.toLowerCase())) continue;
+        reports.set(`${m.fullName}::${proj.toUpperCase()}`, makeReportEntry(m, proj.toUpperCase()));
+      }
+    }
+  } else {
+    for (const m of members) {
+      reports.set(m.fullName, makeReportEntry(m, m.teams[0] ?? ''));
+    }
+  }
 
   const complexityMap = new Map<
     string,
     { totalComplexity: number; count: number }
-  >(members.map(m => [m.fullName, { totalComplexity: 0, count: 0 }]));
+  >();
+  for (const key of reports.keys()) {
+    complexityMap.set(key, { totalComplexity: 0, count: 0 });
+  }
 
   rawData.forEach(issue => {
     try {
@@ -215,6 +234,11 @@ function processRawData(
       if (!accountId) return;
       const memberName = accountIdMap.get(accountId);
       if (!memberName) return;
+
+      const reportKey = isMultiProject
+        ? `${memberName}::${issue.key.split('-')[0].toUpperCase()}`
+        : memberName;
+
       const strategies = issueProcessingStrategyFactory.createStrategies(
         issue,
         wpWeights,
@@ -223,7 +247,7 @@ function processRawData(
         strategies.issueCategorizer.getWeightPointsCategory(issue);
       const complexityWeight =
         strategies.complexityWeightStrategy.calculateWeight(issue);
-      const report = reports.get(memberName);
+      const report = reports.get(reportKey);
       if (!report) return;
       report.issueKeys.push(issue.key);
       const isDone = issue.fields.resolution?.name === 'Done';
@@ -236,7 +260,7 @@ function processRawData(
         } else {
           // Regular tickets: accumulate weight points as usual
           report[weightPoints] += complexityWeight;
-          const cData = complexityMap.get(memberName);
+          const cData = complexityMap.get(reportKey);
           if (cData) {
             cData.totalComplexity += complexityWeight;
             cData.count++;
@@ -249,7 +273,7 @@ function processRawData(
     }
   });
 
-  Array.from(reports.values()).forEach(report => {
+  Array.from(reports.entries()).forEach(([reportKey, report]) => {
     if (sprintDetails && leaveData) {
       const memberId = nameToId.get(report.member) ?? '';
       const memberLeaveDates = leaveData.get(memberId) ?? [];
@@ -279,7 +303,7 @@ function processRawData(
     const dailyRate = dailyTargetWPByLevel[report.level] ?? 8;
     const effectiveWorkingDays = report.workingDays ?? 10;
     report.targetWeightPoints = dailyRate * effectiveWorkingDays;
-    const cData = complexityMap.get(report.member);
+    const cData = complexityMap.get(reportKey);
     report.totalWeightPoints = cData?.totalComplexity ?? 0;
     const targetWP = report.targetWeightPoints;
     report.wpProductivity =
@@ -460,6 +484,7 @@ async function buildPlannedWPMap(
   members: MemberResponse[],
   plannedWPProjects: string[],
   isSubtaskType: boolean,
+  isMultiProject: boolean,
   wpWeights?: Parameters<
     typeof issueProcessingStrategyFactory.createStrategies
   >[1],
@@ -492,9 +517,12 @@ async function buildPlannedWPMap(
         );
         const weight =
           strategies.complexityWeightStrategy.calculateWeight(issue);
+        const mapKey = isMultiProject
+          ? `${memberName}::${plannedWPProject.toUpperCase()}`
+          : memberName;
         plannedWPMap.set(
-          memberName,
-          (plannedWPMap.get(memberName) ?? 0) + weight,
+          mapKey,
+          (plannedWPMap.get(mapKey) ?? 0) + weight,
         );
       }
     } catch (error) {
@@ -589,6 +617,7 @@ export async function generateReport(
     isShowPlannedWP,
     wpWeights,
     dailyTargetWPByLevel,
+    projectList,
   );
 
   const plannedWPShortNames = allBoards
@@ -598,16 +627,21 @@ export async function generateReport(
     plannedWPShortNames.map(n => n.toLowerCase()).includes(p.toLowerCase()),
   );
   if (plannedWPProjects.length > 0) {
+    const isMultiProject = projectList.length > 1;
     const plannedWPMap = await buildPlannedWPMap(
       sprint,
       members,
       plannedWPProjects,
       isSubtaskType,
+      isMultiProject,
       wpWeights,
     );
     teamReport.forEach(report => {
-      if (plannedWPMap.has(report.member)) {
-        report.plannedWP = plannedWPMap.get(report.member);
+      const mapKey = isMultiProject
+        ? `${report.member}::${report.team}`
+        : report.member;
+      if (plannedWPMap.has(mapKey)) {
+        report.plannedWP = plannedWPMap.get(mapKey);
       }
     });
   }
@@ -651,6 +685,10 @@ export async function generateReportByDateRange(
   const wpWeights = await wpWeightConfigService.getEffectiveWeights(startDate);
   const dailyTargetWPByLevel =
     await targetWpConfigService.getEffectiveRates(startDate);
+  const dateRangeProjectList = project
+    .split(',')
+    .map(p => p.trim())
+    .filter(Boolean);
   const teamReport = processRawData(
     rawData,
     members,
@@ -660,6 +698,7 @@ export async function generateReportByDateRange(
     false,
     wpWeights,
     dailyTargetWPByLevel,
+    dateRangeProjectList,
   );
   return summarizeTeamReport(
     teamReport,
