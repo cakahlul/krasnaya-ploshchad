@@ -323,7 +323,7 @@ function processRawData(
     }
   });
 
-  return Array.from(reports.values()).filter(r => r.issueKeys.length > 0);
+  return Array.from(reports.values());
 }
 
 function summarizeTeamReport(
