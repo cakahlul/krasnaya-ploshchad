@@ -52,6 +52,15 @@ export class ApiKeysRepository {
     return mapDocToEntity(doc.id, data);
   }
 
+  async findByEmail(email: string): Promise<ApiKeyEntity[]> {
+    const snapshot = await firestore
+      .collection(COLLECTION)
+      .where('createdBy', '==', email)
+      .orderBy('createdAt', 'desc')
+      .get();
+    return snapshot.docs.map((doc) => mapDocToEntity(doc.id, doc.data()));
+  }
+
   async findByHashedKey(hashedKey: string): Promise<ApiKeyEntity | null> {
     const snapshot = await firestore
       .collection(COLLECTION)

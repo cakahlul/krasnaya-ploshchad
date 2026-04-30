@@ -1,9 +1,9 @@
-import { withAuth } from '@server/auth/with-auth';
+import { withAuthOrApiKey } from '@server/auth/with-auth-or-api-key';
 import { sprintService } from '@server/modules/sprint/sprint.service';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withAuth(async (req) => {
+export const GET = withAuthOrApiKey(async (req) => {
   const boardIdsParam = new URL(req.url).searchParams.get('boardIds');
   if (!boardIdsParam) {
     return Response.json({ message: 'boardIds is required' }, { status: 400 });
