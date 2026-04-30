@@ -140,6 +140,27 @@ function IconTeamMembers({ color }: { color: string }) {
   );
 }
 
+function IconApiKey({ color }: { color: string }) {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke={color}
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="7" cy="10" r="4" />
+      <circle cx="7" cy="10" r="1.5" fill={color} stroke="none" />
+      <line x1="11" y1="10" x2="18" y2="10" />
+      <line x1="15" y1="7.5" x2="15" y2="10" />
+      <line x1="17" y1="8.5" x2="17" y2="10" />
+    </svg>
+  );
+}
+
 function IconHoliday({ color }: { color: string }) {
   return (
     <svg
@@ -215,6 +236,12 @@ const menuItems: MenuItem[] = [
     key: '/dashboard/holiday-management',
     label: 'Holiday',
     icon: c => <IconHoliday color={c} />,
+    roles: ['Lead'],
+  },
+  {
+    key: '/dashboard/mcp-connection',
+    label: 'MCP Connection',
+    icon: c => <IconApiKey color={c} />,
     roles: ['Lead'],
   },
 ];
