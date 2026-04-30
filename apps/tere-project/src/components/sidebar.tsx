@@ -242,7 +242,7 @@ const menuItems: MenuItem[] = [
     key: '/dashboard/mcp-connection',
     label: 'MCP Connection',
     icon: c => <IconApiKey color={c} />,
-    roles: ['Lead'],
+    roles: ['Lead', 'Member'],
   },
 ];
 

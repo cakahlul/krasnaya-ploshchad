@@ -62,9 +62,15 @@ class ApiKeysService {
     return entities.map(toResponse);
   }
 
-  async revoke(id: string): Promise<boolean> {
+  async findByEmail(email: string): Promise<ApiKeyResponse[]> {
+    const entities = await apiKeysRepository.findByEmail(email);
+    return entities.map(toResponse);
+  }
+
+  async revoke(id: string, ownerEmail?: string): Promise<boolean> {
     const entity = await apiKeysRepository.findById(id);
     if (!entity) return false;
+    if (ownerEmail && entity.createdBy !== ownerEmail) return false;
     await apiKeysRepository.update(id, { isActive: false });
     return true;
   }
