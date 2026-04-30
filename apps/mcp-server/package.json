@@ -1,0 +1,43 @@
+{
+  "name": "@esjn/mcp-tere-report",
+  "version": "1.0.0",
+  "description": "MCP server for Tere team performance reports",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-tere-report": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "release": "npm version patch && npm run build && npm publish",
+    "release:minor": "npm version minor && npm run build && npm publish",
+    "release:major": "npm version major && npm run build && npm publish"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5.8.2"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "tere",
+    "team-report",
+    "jira"
+  ],
+  "license": "MIT"
+}

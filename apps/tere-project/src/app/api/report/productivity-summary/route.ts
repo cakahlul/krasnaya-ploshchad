@@ -1,9 +1,9 @@
-import { withAuth } from '@server/auth/with-auth';
+import { withAuthOrApiKey } from '@server/auth/with-auth-or-api-key';
 import { generateProductivitySummary } from '@server/modules/reports/productivity-summary.service';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withAuth(async (req) => {
+export const GET = withAuthOrApiKey(async (req) => {
   const { searchParams } = new URL(req.url);
   const month = parseInt(searchParams.get('month') ?? '0', 10);
   const year = parseInt(searchParams.get('year') ?? '0', 10);
