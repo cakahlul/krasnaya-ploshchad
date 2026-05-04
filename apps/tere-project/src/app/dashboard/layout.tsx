@@ -11,49 +11,75 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App } from 'antd';
 import AxiosErrorInterceptor from '@src/components/AxiosErrorInterceptor';
 import { useThemeColors } from '@src/hooks/useTheme';
+import type { Theme } from '@src/hooks/useTheme';
+import { useMemberProfile } from '@src/features/dashboard/hooks/useMemberProfile';
+import { logout } from '@src/lib/auth';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, loading } = useUser();
+function NotRegisteredScreen({ email }: { email: string | null }) {
+  const { isDark } = useThemeColors();
   const router = useRouter();
-  const pathname = usePathname();
-  const [queryClient] = useState(() => new QueryClient());
-  const [pageLoading, setPageLoading] = useState(false);
-  const prevPathnameRef = useRef(pathname);
-  const { pageBg, theme } = useThemeColors();
 
-  // Show animated loading screen on first load (once per browser tab)
-  const [animationDone, setAnimationDone] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return sessionStorage.getItem('tere_loaded_v2') === '1';
-  });
-
-  // Track when LoadingScreen animation finishes
-  const [animFinished, setAnimFinished] = useState(animationDone);
-
-  const handleLoadingComplete = () => {
-    setAnimFinished(true);
-    sessionStorage.setItem('tere_loaded_v2', '1');
+  const handleSignOut = async () => {
+    await logout();
+    router.push('/sign-in');
   };
 
-  // Only mark fully done when animation finished AND auth resolved
-  useEffect(() => {
-    if (animFinished && !loading && user) {
-      setAnimationDone(true);
-    }
-  }, [animFinished, loading, user]);
+  return (
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ background: isDark ? 'linear-gradient(180deg, #0d1829 0%, #0f1f36 100%)' : '#f9fafb' }}
+    >
+      <div
+        className="max-w-md w-full mx-4 rounded-2xl p-8 text-center"
+        style={{
+          background: isDark ? 'rgba(255,255,255,0.04)' : '#ffffff',
+          border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+        }}
+      >
+        <div className="text-4xl mb-4">🚧</div>
+        <h2
+          className="text-xl font-bold mb-2"
+          style={{ color: isDark ? '#ffffff' : '#111827' }}
+        >
+          Account Not Registered
+        </h2>
+        <p className="text-sm mb-4" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : '#6b7280' }}>
+          Your account{email ? ` (${email})` : ''} is not registered as a team member yet.
+          Please contact your admin to be added.
+        </p>
+        <button
+          onClick={handleSignOut}
+          className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
+          style={{ background: 'linear-gradient(135deg, #1282a2, #22b8d4)' }}
+        >
+          Sign Out
+        </button>
+      </div>
+    </div>
+  );
+}
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/sign-in');
-    }
-  }, [user, loading, router]);
+function DashboardShell({
+  children,
+  showLoading,
+  handleLoadingComplete,
+  theme,
+  pageBg,
+}: {
+  children: React.ReactNode;
+  showLoading: boolean;
+  handleLoadingComplete: () => void;
+  theme: Theme;
+  pageBg: string;
+}) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
+  const [pageLoading, setPageLoading] = useState(false);
+  const prevPathnameRef = useRef(pathname);
+  const { member, isLoading: memberLoading } = useMemberProfile();
+  const { user } = useUser();
 
-  // Page transition skeleton
   useEffect(() => {
     if (pathname !== prevPathnameRef.current) {
       prevPathnameRef.current = pathname;
@@ -63,37 +89,28 @@ export default function DashboardLayout({
     }
   }, [pathname]);
 
-  if (!loading && !user) return null;
-
-  // Show loading screen: first visit animation OR auth still loading
-  const showLoading = !animationDone || loading;
-  // Only render app shell once user is authenticated (prevents 401 from hooks)
-  const canRenderApp = !!user;
+  const notRegistered = !memberLoading && !showLoading && member === null;
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <App>
-        <AxiosErrorInterceptor />
-        {showLoading && (
-          <LoadingScreen onComplete={handleLoadingComplete} theme={theme} />
-        )}
-        {canRenderApp && (
-          <div
-            className="min-h-screen overflow-hidden transition-colors duration-300"
-            style={{
-              background: pageBg,
-              visibility: showLoading ? 'hidden' : 'visible',
-              position: showLoading ? 'fixed' : undefined,
-              inset: showLoading ? 0 : undefined,
-            }}
-          >
-            <Sidebar
-              isOpen={sidebarOpen}
-              onClose={() => setSidebarOpen(false)}
-            />
+    <>
+      {showLoading && (
+        <LoadingScreen onComplete={handleLoadingComplete} theme={theme} />
+      )}
+      <div
+        className="min-h-screen overflow-hidden transition-colors duration-300"
+        style={{
+          background: pageBg,
+          visibility: showLoading ? 'hidden' : 'visible',
+          position: showLoading ? 'fixed' : undefined,
+          inset: showLoading ? 0 : undefined,
+        }}
+      >
+        {notRegistered ? (
+          <NotRegisteredScreen email={user?.email ?? null} />
+        ) : (
+          <>
+            <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
             <Topbar onMenuClick={() => setSidebarOpen(true)} />
-
-            {/* Main content area - offset for floating sidebar + topbar */}
             <div
               className="absolute top-0 bottom-0 overflow-y-auto"
               style={{
@@ -105,13 +122,59 @@ export default function DashboardLayout({
                 paddingBottom: 14,
               }}
             >
-              {pageLoading ? (
-                <PageSkeleton theme={theme} />
-              ) : (
-                children
-              )}
+              {pageLoading ? <PageSkeleton theme={theme} /> : children}
             </div>
-          </div>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { user, loading } = useUser();
+  const router = useRouter();
+  const [queryClient] = useState(() => new QueryClient());
+  const { pageBg, theme } = useThemeColors();
+
+  const [animFinished, setAnimFinished] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return sessionStorage.getItem('tere_loaded_v2') === '1';
+  });
+
+  const handleLoadingComplete = () => {
+    setAnimFinished(true);
+    sessionStorage.setItem('tere_loaded_v2', '1');
+  };
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/sign-in');
+    }
+  }, [user, loading, router]);
+
+  if (!loading && !user) return null;
+
+  const showLoading = !animFinished || loading;
+  const canRenderApp = !!user;
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <App>
+        <AxiosErrorInterceptor />
+        {canRenderApp && (
+          <DashboardShell
+            showLoading={showLoading}
+            handleLoadingComplete={handleLoadingComplete}
+            theme={theme}
+            pageBg={pageBg}
+          >
+            {children}
+          </DashboardShell>
         )}
       </App>
     </QueryClientProvider>

@@ -126,14 +126,6 @@ export default function McpConnectionPage() {
         ),
     },
     {
-      title: 'Created By',
-      dataIndex: 'createdBy',
-      key: 'createdBy',
-      render: (email: string) => (
-        <span style={{ fontSize: 13, color: subCol }}>{email}</span>
-      ),
-    },
-    {
       title: 'Created',
       dataIndex: 'createdAt',
       key: 'createdAt',
