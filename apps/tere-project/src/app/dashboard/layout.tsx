@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App } from 'antd';
 import AxiosErrorInterceptor from '@src/components/AxiosErrorInterceptor';
 import { useThemeColors } from '@src/hooks/useTheme';
+import type { Theme } from '@src/hooks/useTheme';
 import { useMemberProfile } from '@src/features/dashboard/hooks/useMemberProfile';
 import { logout } from '@src/lib/auth';
 
@@ -69,7 +70,7 @@ function DashboardShell({
   children: React.ReactNode;
   showLoading: boolean;
   handleLoadingComplete: () => void;
-  theme: string;
+  theme: Theme;
   pageBg: string;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -140,22 +141,15 @@ export default function DashboardLayout({
   const [queryClient] = useState(() => new QueryClient());
   const { pageBg, theme } = useThemeColors();
 
-  const [animationDone, setAnimationDone] = useState(() => {
+  const [animFinished, setAnimFinished] = useState(() => {
     if (typeof window === 'undefined') return false;
     return sessionStorage.getItem('tere_loaded_v2') === '1';
   });
-  const [animFinished, setAnimFinished] = useState(animationDone);
 
   const handleLoadingComplete = () => {
     setAnimFinished(true);
     sessionStorage.setItem('tere_loaded_v2', '1');
   };
-
-  useEffect(() => {
-    if (animFinished && !loading && user) {
-      setAnimationDone(true);
-    }
-  }, [animFinished, loading, user]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -165,7 +159,7 @@ export default function DashboardLayout({
 
   if (!loading && !user) return null;
 
-  const showLoading = !animationDone || loading;
+  const showLoading = !animFinished || loading;
   const canRenderApp = !!user;
 
   return (
