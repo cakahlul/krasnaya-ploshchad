@@ -1,14 +1,8 @@
-import { withAuthOrApiKey, type CallerIdentity } from '@server/auth/with-auth-or-api-key';
+import { withAuthOrApiKey } from '@server/auth/with-auth-or-api-key';
 import { generateOpenSprintReport } from '@server/modules/reports/reports.service';
-import type { GetReportResponseDto } from '@shared/types/report.types';
+import { filterReportForMember } from '@server/modules/reports/report-filter';
 
 export const dynamic = 'force-dynamic';
-
-function filterReportForMember(report: GetReportResponseDto, caller: CallerIdentity): GetReportResponseDto {
-  if (caller.isLead || !caller.fullName) return report;
-  const myIssues = report.issues.filter(i => i.member === caller.fullName);
-  return { ...report, issues: myIssues };
-}
 
 export const GET = withAuthOrApiKey(async (req, { caller }) => {
   const { searchParams } = new URL(req.url);
