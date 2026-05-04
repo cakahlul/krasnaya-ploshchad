@@ -15,9 +15,8 @@ import { useMemberProfile } from '@src/features/dashboard/hooks/useMemberProfile
 import { logout } from '@src/lib/auth';
 
 function NotRegisteredScreen({ email }: { email: string | null }) {
-  const { theme } = useThemeColors();
+  const { isDark } = useThemeColors();
   const router = useRouter();
-  const isDark = theme === 'dark';
 
   const handleSignOut = async () => {
     await logout();
