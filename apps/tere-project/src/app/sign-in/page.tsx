@@ -5,6 +5,7 @@ import { login, signInWithGoogle } from '@src/lib/auth';
 import { getAuth } from 'firebase/auth';
 import useUser from '@src/hooks/useUser';
 import { useRouter } from 'next/navigation';
+import LegalModal, { type LegalModalType } from '@src/components/LegalModal';
 
 async function createSessionCookie() {
   const auth = getAuth();
@@ -75,6 +76,7 @@ export default function SignIn() {
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [legalModal, setLegalModal] = useState<LegalModalType | null>(null);
   const { loginPageMessage } = useUser();
   const router = useRouter();
 
@@ -409,9 +411,21 @@ export default function SignIn() {
 
               {/* Footer */}
               <div className="mt-8 flex items-center justify-center gap-4 text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
-                <a href="#" className="transition-colors hover:text-white/50">Terms</a>
+                <button
+                  type="button"
+                  onClick={() => setLegalModal('terms')}
+                  className="transition-colors hover:text-white/50"
+                >
+                  Terms
+                </button>
                 <span>|</span>
-                <a href="#" className="transition-colors hover:text-white/50">Privacy</a>
+                <button
+                  type="button"
+                  onClick={() => setLegalModal('privacy')}
+                  className="transition-colors hover:text-white/50"
+                >
+                  Privacy
+                </button>
               </div>
             </div>
 
@@ -425,6 +439,11 @@ export default function SignIn() {
           </div>
         </div>
       </div>
+
+      {/* Legal modals */}
+      {legalModal && (
+        <LegalModal type={legalModal} onClose={() => setLegalModal(null)} />
+      )}
     </div>
   );
 }
