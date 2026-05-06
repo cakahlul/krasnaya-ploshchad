@@ -12,6 +12,12 @@ export interface WorkItem {
   weightPointsTechDebt: number;
   targetWeightPoints: number;
   issueKeys: string[];
+  /**
+   * Unique epic/parent keys associated with this member's issues.
+   * Used for client-side epic filtering without additional network requests.
+   * Populated by the server and included in every report response.
+   */
+  epicKeys?: string[];
   workingDays?: number;
   wpToHours?: number;
   spProduct?: number;

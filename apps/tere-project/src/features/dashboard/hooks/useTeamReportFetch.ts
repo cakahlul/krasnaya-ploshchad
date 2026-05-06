@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { jiraRepository } from '@src/features/dashboard/repositories/jiraRepository';
 
 export function useTeamReportFetch() {
-  const { sprint, project, startDate, endDate, epicId } = useTeamReportFilterStore(
+  const { sprint, project, startDate, endDate } = useTeamReportFilterStore(
     state => state.selectedFilter,
   );
   const selectedTeams = useTeamReportFilterStore(state => state.selectedTeams);
@@ -15,14 +15,15 @@ export function useTeamReportFetch() {
   const hasValidFilter = hasSprintFilter || hasDateRangeFilter;
 
   return useQuery({
-    // Include both sprint and date range in queryKey for proper cache management
-    queryKey: ['teamReport', sprint, startDate, endDate, project, epicId, selectedTeams.sort().join(',')],
+    // epicId intentionally excluded from queryKey — epic filtering is now client-side via useMemo.
+    // Changing the epic selection does NOT trigger a new network request.
+    queryKey: ['teamReport', sprint, startDate, endDate, project, selectedTeams.sort().join(',')],
     queryFn: () => jiraRepository.fetchTeamReport(
-      sprint, 
-      project, 
-      startDate, 
+      sprint,
+      project,
+      startDate,
       endDate,
-      epicId ? (Array.isArray(epicId) ? epicId.join(',') : epicId) : undefined
+      // No epicId passed — server returns full unfiltered dataset; client filters via useTeamReportTransform
     ),
     enabled: hasValidFilter && !!project && selectedTeams.length > 0,
   });
