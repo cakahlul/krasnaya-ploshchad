@@ -108,6 +108,12 @@ export interface JiraIssueReportResponseDto {
   weightPointsTechDebt: number;
   targetWeightPoints: number;
   issueKeys: string[];
+  /**
+   * Unique epic/parent keys associated with this member's issues.
+   * Populated during report generation for client-side epic filtering.
+   * Value 'null' (string) indicates issues with no parent epic.
+   */
+  epicKeys?: string[];
   workingDays?: number;
   wpToHours?: number;
   spProduct?: number;

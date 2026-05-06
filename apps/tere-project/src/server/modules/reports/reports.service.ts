@@ -200,6 +200,7 @@ function processRawData(
       weightPointsTechDebt: 0,
       targetWeightPoints: (dailyTargetWPByLevel[m.level] ?? 8) * 10,
       issueKeys: [],
+      epicKeys: [],
       spMeeting: 0,
     };
   }
@@ -250,6 +251,14 @@ function processRawData(
       const report = reports.get(reportKey);
       if (!report) return;
       report.issueKeys.push(issue.key);
+
+      // Track epic keys for client-side filtering; 'null' (string) means no parent epic
+      const epicKey = issue.fields.parent?.key ?? 'null';
+      if (!report.epicKeys) report.epicKeys = [];
+      if (!report.epicKeys.includes(epicKey)) {
+        report.epicKeys.push(epicKey);
+      }
+
       const isDone = issue.fields.resolution?.name === 'Done';
       if (!isShowPlannedWP || isDone) {
         // Extract meeting SP from ALL-Meeting appendix options before adding WP

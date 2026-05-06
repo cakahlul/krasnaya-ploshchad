@@ -138,7 +138,16 @@ export default function DashboardLayout({
 }) {
   const { user, loading } = useUser();
   const router = useRouter();
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        // Keep data fresh for 5 minutes before background refetch
+        staleTime: 5 * 60 * 1000,
+        // Garbage collect unused query data after 10 minutes
+        gcTime: 10 * 60 * 1000,
+      },
+    },
+  }));
   const { pageBg, theme } = useThemeColors();
 
   const [animFinished, setAnimFinished] = useState(() => {

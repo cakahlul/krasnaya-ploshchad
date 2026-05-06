@@ -42,13 +42,15 @@ export function EpicSelect({ isStoryGrouping = false }: { isStoryGrouping?: bool
   const setEpicFilter = useTeamReportFilterStore(state => state.setEpicFilter);
   const label = isStoryGrouping ? 'Story' : 'Epic';
 
-  // Fetch epics or stories based on board grouping type
+  // Fetch epics or stories based on board grouping type.
+  // staleTime: 5 min — epic list rarely changes mid-session, safe to cache aggressively.
   const { data: epics, isLoading } = useQuery({
     queryKey: [isStoryGrouping ? 'stories' : 'epics', sprint, startDate, endDate, project],
     queryFn: () => isStoryGrouping
       ? jiraRepository.fetchStories(sprint, project, startDate, endDate)
       : jiraRepository.fetchEpics(sprint, project, startDate, endDate),
     enabled: !!project && (!!sprint || (!!startDate && !!endDate)),
+    staleTime: 5 * 60 * 1000,
   });
 
   const handleChange = (value: string) => {
@@ -146,8 +148,9 @@ export function EpicSelect({ isStoryGrouping = false }: { isStoryGrouping?: bool
                 onClick={() => handleChange(option.value)}
                 title={option.title || option.label}
                 className={`
-                  flex-shrink-0 px-4 py-2 rounded-xl text-xs font-medium transition-all duration-300
+                  flex-shrink-0 px-4 py-2 rounded-xl text-xs font-medium transition-all duration-200 ease-out
                   border select-none whitespace-nowrap flex items-center gap-2
+                  active:scale-95
                   ${isActive
                     ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200 transform scale-105'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50'
