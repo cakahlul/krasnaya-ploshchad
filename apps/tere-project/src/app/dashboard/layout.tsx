@@ -63,12 +63,14 @@ function NotRegisteredScreen({ email }: { email: string | null }) {
 function DashboardShell({
   children,
   showLoading,
+  isDataReady,
   handleLoadingComplete,
   theme,
   pageBg,
 }: {
   children: React.ReactNode;
   showLoading: boolean;
+  isDataReady: boolean;
   handleLoadingComplete: () => void;
   theme: Theme;
   pageBg: string;
@@ -94,7 +96,7 @@ function DashboardShell({
   return (
     <>
       {showLoading && (
-        <LoadingScreen onComplete={handleLoadingComplete} theme={theme} />
+        <LoadingScreen onComplete={handleLoadingComplete} isDataReady={isDataReady} theme={theme} />
       )}
       <div
         className="min-h-screen overflow-hidden transition-colors duration-300"
@@ -178,6 +180,7 @@ export default function DashboardLayout({
         {canRenderApp && (
           <DashboardShell
             showLoading={showLoading}
+            isDataReady={!loading}
             handleLoadingComplete={handleLoadingComplete}
             theme={theme}
             pageBg={pageBg}

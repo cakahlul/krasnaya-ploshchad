@@ -49,6 +49,14 @@ interface JiraIssue {
     customfield_10020?: Array<{ name?: string }>;
     customfield_11312?: { self: string; value: string; id: string };
     customfield_11543?: number | { self: string; value: string; id: string } | Array<{ self: string; value: string; id: string }>;
+    parent?: {
+      key: string;
+      fields: {
+        summary: string;
+        status?: { name: string };
+        issuetype?: { name: string; iconUrl?: string };
+      };
+    };
   };
 }
 
@@ -104,6 +112,7 @@ export class SearchRepository {
             'summary', 'description', 'status', 'resolution', 'assignee', 'reporter',
             'priority', 'issuetype', 'project', 'labels', 'created', 'updated',
             'customfield_10005', 'customfield_10020', 'customfield_11312', 'customfield_11543',
+            'parent',
           ].join(','),
         },
         timeout: TIMEOUT,
@@ -218,6 +227,11 @@ export class SearchRepository {
       appendixV3,
       totalWeightPoints,
       webUrl: `${process.env.JIRA_URL ?? ''}/browse/${issue.key}`,
+      parentKey: issue.fields.parent?.key,
+      parentSummary: issue.fields.parent?.fields.summary,
+      parentStatus: issue.fields.parent?.fields.status?.name,
+      parentIssueType: issue.fields.parent?.fields.issuetype?.name,
+      parentIssueTypeIcon: issue.fields.parent?.fields.issuetype?.iconUrl,
     };
   }
 

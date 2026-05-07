@@ -3,7 +3,12 @@
 import LoadingScreen from './LoadingScreen';
 import { useTheme } from '@src/hooks/useTheme';
 
-export default function LoadingBar() {
+interface LoadingBarProps {
+  isDataReady?: boolean;
+  onComplete?: () => void;
+}
+
+export default function LoadingBar({ isDataReady = false, onComplete = () => {} }: LoadingBarProps) {
   const { theme } = useTheme();
-  return <LoadingScreen onComplete={() => {}} theme={theme} />;
+  return <LoadingScreen onComplete={onComplete} isDataReady={isDataReady} theme={theme} />;
 }
