@@ -2,6 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { apiGet } from '../lib/api-client.js';
 import { resolveSprintIds, isSprintId } from '../lib/sprint-resolver.js';
+import type { EpicDto } from '../types/report.types.js';
 
 export function registerGetEpics(server: McpServer) {
   server.tool(
@@ -19,7 +20,7 @@ export function registerGetEpics(server: McpServer) {
         sprintId = await resolveSprintIds(sprint);
       }
 
-      const result = await apiGet('/api/report/epics', {
+      const result = await apiGet<EpicDto[]>('/api/report/epics', {
         project,
         sprint: sprintId,
         startDate,

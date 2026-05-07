@@ -2,6 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { apiGet } from '../lib/api-client.js';
 import { resolveSprintIds, isSprintId } from '../lib/sprint-resolver.js';
+import type { GetReportResponseDto } from '../types/report.types.js';
 
 export function registerGetSprintReport(server: McpServer) {
   server.tool(
@@ -20,7 +21,7 @@ export function registerGetSprintReport(server: McpServer) {
         sprintId = await resolveSprintIds(sprint);
       }
 
-      const result = await apiGet('/api/report', {
+      const result = await apiGet<GetReportResponseDto>('/api/report', {
         project,
         sprint: sprintId,
         startDate,

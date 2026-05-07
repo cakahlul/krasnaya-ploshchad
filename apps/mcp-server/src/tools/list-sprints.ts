@@ -1,13 +1,14 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { apiGet } from '../lib/api-client.js';
+import type { SprintDto } from '../types/report.types.js';
 
 interface Board {
   boardId: number;
   shortName: string;
 }
 
-interface Sprint {
+interface RawSprint {
   id: number;
   name: string;
   state: string;
@@ -27,18 +28,24 @@ export function registerListSprints(server: McpServer) {
     async ({ project, state }) => {
       const boards = await apiGet<Board[]>('/api/boards', {});
       let filteredBoards = boards;
+
       if (project) {
         const projectLower = project.toLowerCase();
         filteredBoards = boards.filter(b => b.shortName.toLowerCase() === projectLower);
         if (filteredBoards.length === 0) {
           return {
-            content: [{ type: 'text' as const, text: `No board found for project "${project}". Available projects: ${boards.map(b => b.shortName).join(', ')}` }],
+            content: [
+              {
+                type: 'text' as const,
+                text: `No board found for project "${project}". Available projects: ${boards.map(b => b.shortName).join(', ')}`,
+              },
+            ],
           };
         }
       }
 
       const boardIds = filteredBoards.map(b => b.boardId).filter(Boolean);
-      const sprints = await apiGet<Sprint[]>('/api/project/sprint/batch', {
+      const sprints = await apiGet<RawSprint[]>('/api/project/sprint/batch', {
         boardIds: boardIds.join(','),
       });
 
@@ -47,19 +54,20 @@ export function registerListSprints(server: McpServer) {
         result = sprints.filter(s => s.state === state);
       }
 
-      // Sort: active first, then by startDate descending
+      // Sort: active first, then by startDate descending (newest first)
       result.sort((a, b) => {
         if (a.state === 'active' && b.state !== 'active') return -1;
         if (b.state === 'active' && a.state !== 'active') return 1;
         return (b.startDate || '').localeCompare(a.startDate || '');
       });
 
-      const formatted = result.map(s => ({
+      const formatted: SprintDto[] = result.map(s => ({
         id: s.id,
         name: s.name,
         state: s.state,
-        startDate: s.startDate?.split('T')[0],
-        endDate: s.endDate?.split('T')[0],
+        startDate: s.startDate?.split('T')[0] ?? '',
+        endDate: s.endDate?.split('T')[0] ?? '',
+        boardId: s.boardId,
       }));
 
       return {
