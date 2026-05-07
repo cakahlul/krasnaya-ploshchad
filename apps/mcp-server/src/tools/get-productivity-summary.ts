@@ -1,6 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { apiGet } from '../lib/api-client.js';
+import type { ProductivitySummaryResponseDto } from '../types/report.types.js';
 
 export function registerGetProductivitySummary(server: McpServer) {
   server.tool(
@@ -12,7 +13,7 @@ export function registerGetProductivitySummary(server: McpServer) {
       teams: z.string().optional().describe('Filter by team names, comma-separated (e.g., "TeamA,TeamB").'),
     },
     async ({ month, year, teams }) => {
-      const result = await apiGet('/api/report/productivity-summary', {
+      const result = await apiGet<ProductivitySummaryResponseDto>('/api/report/productivity-summary', {
         month: String(month),
         year: String(year),
         teams,

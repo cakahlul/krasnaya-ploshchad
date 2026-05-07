@@ -1,6 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { apiGet } from '../lib/api-client.js';
+import type { GetReportResponseDto } from '../types/report.types.js';
 
 export function registerGetOpenSprintReport(server: McpServer) {
   server.tool(
@@ -10,7 +11,7 @@ export function registerGetOpenSprintReport(server: McpServer) {
       project: z.string().describe('Jira project key (e.g., "PROJ").'),
     },
     async ({ project }) => {
-      const result = await apiGet('/api/report/all', { project });
+      const result = await apiGet<GetReportResponseDto>('/api/report/all', { project });
 
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
