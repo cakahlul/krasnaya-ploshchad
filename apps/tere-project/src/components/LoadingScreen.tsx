@@ -538,10 +538,11 @@ const KEYFRAMES_CSS = `
 
 interface LoadingScreenProps {
   onComplete: () => void;
+  isDataReady?: boolean;
   theme?: string;
 }
 
-export default function LoadingScreen({ onComplete, theme = 'void' }: LoadingScreenProps) {
+export default function LoadingScreen({ onComplete, isDataReady = false, theme = 'void' }: LoadingScreenProps) {
   const colors = useMemo(() => getThemeColors(theme), [theme]);
   const [scene] = useState<SceneVariant>(() => SCENES[Math.floor(Math.random() * SCENES.length)]);
 
@@ -551,15 +552,28 @@ export default function LoadingScreen({ onComplete, theme = 'void' }: LoadingScr
   const [fadeOut, setFadeOut] = useState(false);
   const [opacity, setOpacity] = useState(1);
 
-  // Progress bar advancement
+  // Progress bar advancement — slows down asymptotically when waiting for data
   useEffect(() => {
-    if (progress >= 100) return;
+    if (isDataReady) {
+      // Data ready: rush to 100%
+      if (progress < 100) {
+        const timeout = setTimeout(() => setProgress(100), 150);
+        return () => clearTimeout(timeout);
+      }
+      return;
+    }
+    // Data not ready: keep moving but slow down as we approach 98%
+    if (progress >= 98) return;
+    const remaining = 98 - progress;
+    const increment = Math.max(0.3, remaining * 0.08 + Math.random() * 1.5);
+    const delay = progress < 70
+      ? 200 + Math.random() * 300
+      : 400 + Math.random() * 600;
     const timeout = setTimeout(() => {
-      const increment = Math.random() * 8 + 2;
-      setProgress((prev) => Math.min(prev + increment, 100));
-    }, 200 + Math.random() * 300);
+      setProgress((prev) => Math.min(prev + increment, 98));
+    }, delay);
     return () => clearTimeout(timeout);
-  }, [progress]);
+  }, [progress, isDataReady]);
 
   // Cycling tips
   useEffect(() => {
@@ -573,7 +587,7 @@ export default function LoadingScreen({ onComplete, theme = 'void' }: LoadingScr
     return () => clearInterval(interval);
   }, []);
 
-  // Fade-out and onComplete
+  // Fade-out and onComplete — only when progress hits 100 (which requires data to be ready)
   useEffect(() => {
     if (progress < 100 || fadeOut) return;
     const waitTimer = setTimeout(() => {
@@ -583,7 +597,7 @@ export default function LoadingScreen({ onComplete, theme = 'void' }: LoadingScr
         onComplete();
       }, 600);
       return () => clearTimeout(completeTimer);
-    }, 500);
+    }, 300);
     return () => clearTimeout(waitTimer);
   }, [progress, fadeOut, onComplete]);
 

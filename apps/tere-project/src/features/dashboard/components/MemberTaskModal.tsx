@@ -212,6 +212,32 @@ function TicketItem({ ticket, index }: { ticket: TicketDetail; index: number }) 
             )}
           </div>
 
+          {/* Parent task */}
+          {ticket.parentKey && (
+            <div
+              className="flex items-center gap-2 mb-4 p-2.5 rounded-xl transition-all duration-200 hover:shadow-sm"
+              style={{ background: cardBg, border: `1px solid ${cardBrd}` }}
+            >
+              {ticket.parentIssueTypeIcon && (
+                <img src={ticket.parentIssueTypeIcon} alt={ticket.parentIssueType} className="w-4 h-4 flex-shrink-0" />
+              )}
+              <span
+                className="text-xs font-bold flex-shrink-0 px-1.5 py-0.5 rounded"
+                style={{ color: accent, background: accent + '15' }}
+              >
+                {ticket.parentKey}
+              </span>
+              <span className="text-xs flex-1 line-clamp-1" style={{ color: rowCol }}>
+                {ticket.parentSummary}
+              </span>
+              {ticket.parentStatus && (
+                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded flex-shrink-0 ${getStatusBadgeColor(ticket.parentStatus)}`}>
+                  {ticket.parentStatus}
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Meta grid */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div

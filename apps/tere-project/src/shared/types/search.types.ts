@@ -47,6 +47,11 @@ export interface TicketDetailDto {
   appendixV3?: number | string | string[];
   totalWeightPoints?: number;
   webUrl?: string;
+  parentKey?: string;
+  parentSummary?: string;
+  parentStatus?: string;
+  parentIssueType?: string;
+  parentIssueTypeIcon?: string;
 }
 
 export interface SearchQueryDto {

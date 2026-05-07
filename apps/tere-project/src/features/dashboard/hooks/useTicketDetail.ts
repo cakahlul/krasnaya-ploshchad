@@ -29,6 +29,11 @@ export interface TicketDetail {
   appendixV3?: number | string | string[]; // Weight Complexity
   totalWeightPoints?: number; // Calculated total weight points
   webUrl?: string;
+  parentKey?: string;
+  parentSummary?: string;
+  parentStatus?: string;
+  parentIssueType?: string;
+  parentIssueTypeIcon?: string;
 }
 
 async function fetchTicketDetail(key: string): Promise<TicketDetail> {
