@@ -6,6 +6,8 @@ type FilterState = {
   selectedFilter: DashboardFilter;
   selectedTeams: number[];
   selectedSprints: string[];
+  /** Committed member filter — format: "memberName::teamShortName" */
+  selectedMemberKeys: string[];
   setSelectedFilter: (filter: DashboardFilter) => void;
   setTeams: (teams: number[]) => void;
   setSprints: (sprints: string[], project?: string) => void;
@@ -13,21 +15,24 @@ type FilterState = {
   setDateRangeFilter: (startDate: string, endDate: string, project: string) => void;
   clearFilter: () => void;
   setEpicFilter: (epicId: string) => void;
+  setSelectedMembers: (keys: string[]) => void;
+  clearSelectedMembers: () => void;
 };
 
 export const useTeamReportFilterStore = create<FilterState>((set, get) => ({
   selectedFilter: { sprint: '', project: '' },
   selectedTeams: [],
   selectedSprints: [],
+  selectedMemberKeys: [],
   
   setSelectedFilter: (filter: DashboardFilter) =>
     set({ selectedFilter: filter }),
   
   setTeams: (teams: number[]) => {
-    set({ selectedTeams: teams });
+    set({ selectedTeams: teams, selectedMemberKeys: [] });
     // Clear sprints and filter when teams change
     if (teams.length === 0) {
-      set({ 
+      set({
         selectedSprints: [],
         selectedFilter: { sprint: '', project: '' },
       });
@@ -35,7 +40,7 @@ export const useTeamReportFilterStore = create<FilterState>((set, get) => ({
   },
 
   setSprints: (sprints: string[], project?: string) => {
-    set({ selectedSprints: sprints });
+    set({ selectedSprints: sprints, selectedMemberKeys: [] });
     // Update the filter with first sprint if available (or all as comma-separated)
     if (sprints.length > 0) {
       set(state => ({
@@ -106,12 +111,18 @@ export const useTeamReportFilterStore = create<FilterState>((set, get) => ({
         epicId: undefined,
       },
       selectedSprints: [],
+      selectedMemberKeys: [],
     }),
-  
+
   clearFilter: () =>
     set({
       selectedFilter: { sprint: '', project: '' },
       selectedTeams: [],
       selectedSprints: [],
+      selectedMemberKeys: [],
     }),
+
+  setSelectedMembers: (keys: string[]) => set({ selectedMemberKeys: keys }),
+
+  clearSelectedMembers: () => set({ selectedMemberKeys: [] }),
 }));

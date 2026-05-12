@@ -4,11 +4,12 @@ import { Popover, Table, TableColumnsType } from 'antd';
 import { useTeamReportTransform } from '../hooks/useTeamReportTransform';
 import TeamPerformance from './teamPerformance';
 import MemberTaskModal from './MemberTaskModal';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTeamReportFilterStore } from '../store/teamReportFilterStore';
 import { useBoards } from '../hooks/useBoards';
 import { useWpWeightConfig } from '../hooks/useWpWeightConfig';
 import { useTargetWpConfig } from '../hooks/useTargetWpConfig';
+import { useMemberProfile } from '../hooks/useMemberProfile';
 import { Info } from 'lucide-react';
 import { useThemeColors } from '@src/hooks/useTheme';
 
@@ -180,8 +181,57 @@ export default function TeamTable() {
   const [selectedMember, setSelectedMember] = useState<WorkItem | null>(null);
   const selectedTeams = useTeamReportFilterStore(state => state.selectedTeams);
   const { startDate: filterStartDate } = useTeamReportFilterStore(state => state.selectedFilter);
+  const selectedMemberKeys = useTeamReportFilterStore(state => state.selectedMemberKeys);
+  const setSelectedMembers = useTeamReportFilterStore(state => state.setSelectedMembers);
+  const clearSelectedMembers = useTeamReportFilterStore(state => state.clearSelectedMembers);
   const { boards } = useBoards();
+  const { member: currentUser } = useMemberProfile();
+  const isLead = currentUser?.isLead ?? false;
   const { accent, cardBg, cardBrd, titleCol, subCol } = useThemeColors();
+
+  const [isCountSpecificMode, setIsCountSpecificMode] = useState(false);
+  const [pendingMemberKeys, setPendingMemberKeys] = useState<string[]>([]);
+
+  const isFiltered = selectedMemberKeys.length > 0;
+
+  // Reset local state when filter criteria changes externally (sprint/board change clears store)
+  const prevSelectedMemberKeysLen = useRef(selectedMemberKeys.length);
+  useEffect(() => {
+    const wasFiltered = prevSelectedMemberKeysLen.current > 0;
+    const isNowEmpty = selectedMemberKeys.length === 0;
+    if (wasFiltered && isNowEmpty) {
+      setPendingMemberKeys([]);
+      setIsCountSpecificMode(false);
+    }
+    prevSelectedMemberKeysLen.current = selectedMemberKeys.length;
+  }, [selectedMemberKeys]);
+
+  const handleToggleCountSpecific = () => {
+    if (isCountSpecificMode) {
+      clearSelectedMembers();
+      setPendingMemberKeys([]);
+      setIsCountSpecificMode(false);
+    } else {
+      setIsCountSpecificMode(true);
+      setPendingMemberKeys([...selectedMemberKeys]);
+    }
+  };
+
+  const handleCheckboxToggle = (key: string) => {
+    setPendingMemberKeys(prev =>
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key],
+    );
+  };
+
+  const handleCalculate = () => {
+    setSelectedMembers(pendingMemberKeys);
+  };
+
+  const handleReset = () => {
+    clearSelectedMembers();
+    setPendingMemberKeys([]);
+    setIsCountSpecificMode(false);
+  };
 
   const referenceDate = data?.sprintStartDate ?? filterStartDate;
 
@@ -196,23 +246,36 @@ export default function TeamTable() {
       dataIndex: 'member',
       key: 'member',
       fixed: 'left',
-      width: 200,
-      render: (text: string, record: WorkItem) => (
-        <button
-          style={{
-            color: accent,
-            fontWeight: 500,
-            background: 'transparent',
-            border: 'none',
-            padding: 0,
-            textAlign: 'left',
-            cursor: 'pointer',
-          }}
-          onClick={() => setSelectedMember(record)}
-        >
-          {text}
-        </button>
-      ),
+      width: isCountSpecificMode ? 230 : 200,
+      render: (text: string, record: WorkItem) => {
+        const memberKey = `${record.member}::${record.team}`;
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {isCountSpecificMode && isLead && (
+              <input
+                type="checkbox"
+                checked={pendingMemberKeys.includes(memberKey)}
+                onChange={() => handleCheckboxToggle(memberKey)}
+                style={{ cursor: 'pointer', flexShrink: 0, width: 14, height: 14 }}
+              />
+            )}
+            <button
+              style={{
+                color: accent,
+                fontWeight: 500,
+                background: 'transparent',
+                border: 'none',
+                padding: 0,
+                textAlign: 'left',
+                cursor: 'pointer',
+              }}
+              onClick={() => setSelectedMember(record)}
+            >
+              {text}
+            </button>
+          </div>
+        );
+      },
     },
     {
       title: <ColumnHeader columnKey="spProduct" referenceDate={referenceDate} />,
@@ -322,6 +385,111 @@ export default function TeamTable() {
   return (
     <div className="relative flex-1">
       {!!data && <TeamPerformance />}
+
+      {/* Lead-only: specific member filter toolbar */}
+      {!!data && isLead && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            marginBottom: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          {/* Toggle */}
+          <button
+            onClick={handleToggleCountSpecific}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '6px 14px',
+              borderRadius: 8,
+              border: `1px solid ${isCountSpecificMode ? accent : cardBrd}`,
+              background: isCountSpecificMode ? accent : cardBg,
+              color: isCountSpecificMode ? '#fff' : subCol,
+              fontSize: 12,
+              fontWeight: 600,
+              fontFamily: sans,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            <span
+              style={{
+                width: 28,
+                height: 16,
+                borderRadius: 99,
+                background: isCountSpecificMode ? 'rgba(255,255,255,0.4)' : '#d1d5db',
+                position: 'relative',
+                flexShrink: 0,
+                transition: 'background 0.2s',
+              }}
+            >
+              <span
+                style={{
+                  position: 'absolute',
+                  top: 2,
+                  left: isCountSpecificMode ? 14 : 2,
+                  width: 12,
+                  height: 12,
+                  borderRadius: '50%',
+                  background: '#fff',
+                  transition: 'left 0.2s',
+                }}
+              />
+            </span>
+            Count Specific Team Member
+          </button>
+
+          {/* Calculate button — shown when in mode and at least 1 member checked */}
+          {isCountSpecificMode && pendingMemberKeys.length > 0 && (
+            <button
+              onClick={handleCalculate}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 8,
+                border: 'none',
+                background: accent,
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: sans,
+                cursor: 'pointer',
+                transition: 'opacity 0.2s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+            >
+              Calculate Specific Member ({pendingMemberKeys.length})
+            </button>
+          )}
+
+          {/* Reset button — shown when a filter is committed */}
+          {isFiltered && (
+            <button
+              onClick={handleReset}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 8,
+                border: `1px solid ${cardBrd}`,
+                background: cardBg,
+                color: subCol,
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: sans,
+                cursor: 'pointer',
+                transition: 'opacity 0.2s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '0.7')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+            >
+              Reset Filter
+            </button>
+          )}
+        </div>
+      )}
 
       {isMultiTeam ? (
         groupedItems.map(({ boardId, label, shortName, items }) => (
