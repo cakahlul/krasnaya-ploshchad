@@ -1,216 +1,232 @@
 # Project Structure - Krasnaya Ploshchad
 
-## Monorepo Organization
-
+## Monorepo Layout
 ```
 krasnaya-ploshchad/
 ├── apps/
-│   ├── aioc-service/     # Backend NestJS service
-│   └── tere-project/     # Frontend Next.js application
-├── packages/             # Shared packages (currently empty)
-├── .claude/              # Claude Code configuration
-└── turbo.json           # Turborepo configuration
+│   ├── tere-project/    # Next.js 16 full-stack web app
+│   └── mcp-server/      # MCP server (published as @esjn/mcp-tere-report)
+├── .claude/             # Claude Code config, steering, specs, bugs
+├── package.json         # npm workspaces root
+├── package-lock.json
+└── README.md
 ```
 
-## Backend Structure (AIoC Service)
+> No `packages/`, no `turbo.json`, no `aioc-service/`. Do NOT recreate them.
 
-### Directory Layout
+## Tere Project (`apps/tere-project/`)
+
+### Top-level
 ```
-apps/aioc-service/src/
-├── app.controller.ts     # Main application controller
-├── app.module.ts         # Root application module
-├── app.service.ts        # Main application service
-├── auth/                 # Authentication modules
-├── common/               # Shared utilities and helpers
-├── config/               # Configuration modules
-├── firebase/             # Firebase Admin SDK configuration
-├── modules/              # Feature-specific modules
-│   └── talent-leave/     # Example: Talent leave management
-│       ├── talent-leave.controller.ts
-│       ├── talent-leave.service.ts
-│       ├── talent-leave.module.ts
-│       ├── interfaces/   # DTOs and entities
-│       │   ├── talent-leave.dto.ts
-│       │   └── talent-leave.entity.ts
-│       └── repositories/ # Data access layer
-│           └── talent-leave.repository.ts
-└── shared/               # Shared constants and interfaces
-    ├── constants/
-    └── interfaces/
+apps/tere-project/
+├── src/
+├── public/
+├── next.config.ts
+├── tailwind.config.ts
+├── postcss.config.mjs
+├── eslint.config.mjs
+├── tsconfig.json
+├── components.json    # shadcn-style config
+├── package.json
+└── README.md
 ```
 
-### NestJS Conventions
-- **Modules**: Each feature should have its own module
-- **Controllers**: Handle HTTP requests and responses
-- **Services**: Business logic and data processing
-- **Repositories**: Data access layer for Firestore operations
-- **DTOs**: Data Transfer Objects for validation (in interfaces/)
-- **Entities**: Internal data structures (in interfaces/)
-- **Guards**: Authentication and authorization
-- **Interceptors**: Cross-cutting concerns
-- **Testing**: `.spec.ts` files alongside source files
-
-### Module Structure Pattern
-For each feature module, follow this pattern:
+### `src/` layout
 ```
-src/modules/[feature-name]/
-├── [feature-name].controller.ts    # HTTP endpoints
-├── [feature-name].service.ts       # Business logic
-├── [feature-name].module.ts        # Module definition
-├── interfaces/                     # Data models
-│   ├── [feature-name].dto.ts      # Request/response DTOs
-│   └── [feature-name].entity.ts   # Internal entities
-└── repositories/                   # Data access
-    └── [feature-name].repository.ts
-```
-
-### New Feature Organization
-- Follow NestJS best practices
-- Create dedicated modules for major features under `src/modules/`
-- Use Controller → Service → Repository pattern
-- Separate DTOs (external) and Entities (internal) in interfaces/
-- Use dependency injection patterns
-- Maintain separation of concerns
-
-## Frontend Structure (Tere Project)
-
-### Directory Layout
-```
-apps/tere-project/src/
-├── app/                  # Next.js App Router pages
-├── components/           # Reusable UI components
-├── features/             # Feature-specific components
-├── hooks/                # Custom React hooks
-├── lib/                  # Utility functions and configurations
-└── store/                # Zustand state management
+src/
+├── app/                # Next.js App Router (pages + API routes)
+│   ├── api/            # Backend HTTP endpoints (route handlers)
+│   ├── dashboard/
+│   ├── sign-in/
+│   ├── sign-up/
+│   ├── user/
+│   ├── layout.tsx
+│   ├── page.tsx
+│   ├── icon.tsx
+│   ├── globals.css
+│   └── bug-monitoring.css
+├── components/         # SHARED cross-feature UI components
+├── features/           # Feature modules (UI side)
+├── hooks/              # SHARED React hooks
+├── lib/                # SHARED client/server utilities
+├── server/             # ALL backend logic (called by app/api routes)
+├── shared/             # Cross-cutting constants / types / utils
+├── store/              # Zustand stores (shared)
+├── types/              # Global TS types
+└── middleware.ts       # Next.js edge middleware
 ```
 
-### Next.js Conventions
-- **App Router**: Use Next.js 13+ app directory structure
-- **Components**: Organized by feature and reusability
-- **Server Components**: Default to server components when possible
-- **Client Components**: Use "use client" directive when needed
-- **API Routes**: Place in `app/api/` directory
-
-### Component Organization
-- **Shared Components**: Place in `src/components/`
-- **Feature Components**: Place in `src/features/[feature-name]/`
-- **Page Components**: Place in `src/app/` following route structure
-- **Custom Hooks**: Place in `src/hooks/`
-
-### State Management
-- **Zustand**: For client-side state
-- **TanStack React Query**: For server state and caching
-- **Store Structure**: Organized by feature in `src/store/`
-
-## Coding Conventions
-
-### General Standards
-- **Language**: TypeScript throughout the entire codebase
-- **Linting**: ESLint with Prettier formatting (automated)
-- **File Naming**: kebab-case for files and directories
-- **Component Naming**: PascalCase for React components
-- **Variable Naming**: camelCase for variables and functions
-
-### Import Organization
-- **External libraries** first
-- **Internal modules** second
-- **Relative imports** last
-- Use absolute imports when possible
-
-### Environment Configuration
-- **Development**: `.env.local` for local overrides
-- **Production**: Environment variables through deployment platform
-- **Security**: Never commit sensitive credentials
-
-## Testing Strategy
-
-### Testing Requirements
-- **Unit Tests**: Jest for both frontend and backend
-- **Coverage**: Aim for comprehensive test coverage
-- **Integration Tests**: Test API endpoints and component interactions
-- **E2E Tests**: Available in backend (`test:e2e`)
-
-### Test Organization
-- **Backend**: Tests alongside source files (`.spec.ts`)
-- **Frontend**: Tests alongside components and features
-- **Mocking**: Mock external services (Jira API, Firebase)
-- **Test Data**: Use realistic but anonymized data
-
-## Development Workflow
-
-### Branch Strategy
-- **Development**: Main development branch
-- **Feature Branches**: For new features and bug fixes
-- **Pull Requests**: Required for code review
-
-### Build Process
-- **Turborepo**: Orchestrates builds across all packages
-- **Parallel Execution**: Tasks run in parallel when possible
-- **Caching**: Build artifacts cached for performance
-- **Type Checking**: Required before builds
-
-### Docker Development
-- **Local Development**: Docker Compose for full stack
-- **Service Isolation**: Each service can be developed independently
-- **Environment Parity**: Development matches production environment
-
-## New Feature Guidelines
-
-### Backend Features (AIoC)
-1. Create feature module under `src/modules/[feature-name]/`
-2. Follow the module structure pattern:
-   - Create controller file for HTTP endpoints
-   - Create service file for business logic
-   - Create repository file for data access (if using Firestore)
-   - Create interfaces/ directory for DTOs and entities
-   - Create module file to wire everything together
-3. Add proper DTOs for request/response validation
-4. Create entities for internal data structures
-5. Include unit tests (`.spec.ts`) alongside each file
-6. Update module imports in `app.module.ts`
-
-**Example: Talent Leave Module**
+### `src/app/api/` — API route handlers
+One subdirectory per resource; each contains `route.ts` (and nested dynamic segments). Existing resources:
 ```
-src/modules/talent-leave/
-├── talent-leave.controller.ts       # Routes: GET, POST, PUT, DELETE
-├── talent-leave.service.ts          # Business logic
-├── talent-leave.module.ts           # Module definition
-├── interfaces/
-│   ├── talent-leave.dto.ts         # CreateDto, UpdateDto, ResponseDto
-│   └── talent-leave.entity.ts      # TalentLeaveEntity
-└── repositories/
-    └── talent-leave.repository.ts   # Firestore operations
+api/
+├── api-keys/
+├── auth/
+├── boards/
+├── bug-monitoring/
+├── dashboard/
+├── holidays/
+├── members/
+├── project/
+├── report/
+├── search/
+├── talent-leave/
+├── target-wp-config/
+├── user-access/
+└── wp-weight-config/
+```
+**Pattern**: route handlers are thin — they wrap a `src/server/modules/<name>/<name>.service.ts` call with the appropriate auth HOF from `src/server/auth/`.
+
+### `src/server/` — backend layer
+```
+server/
+├── auth/               # HOFs that wrap route handlers
+│   ├── with-auth.ts
+│   ├── with-api-key.ts
+│   ├── with-auth-or-api-key.ts
+│   └── with-role.ts
+├── cache/              # In-process cache
+├── lib/                # Server-only helpers (Firestore admin, Jira client, etc.)
+├── modules/            # Per-feature backend logic
+│   ├── api-keys/
+│   ├── boards/
+│   ├── bug-monitoring/
+│   ├── dashboard/
+│   ├── holidays/
+│   ├── members/
+│   ├── reports/
+│   ├── search/
+│   ├── sprint/
+│   ├── talent-leave/   # includes repository, services, clients/, utils/
+│   ├── target-wp-config/
+│   ├── user-access/
+│   └── wp-weight-config/
+└── rate-limit/
 ```
 
-### Frontend Features (Tere)
-1. Create feature directory in `src/features/[feature-name]/`
-2. Follow existing component patterns
-3. Organize by feature:
-   - `components/` for feature-specific components
-   - `hooks/` for custom React hooks (if needed)
-   - `store/` for Zustand state (if needed)
-   - `types/` for TypeScript interfaces
-4. Use TypeScript for all components
-5. Integrate with TanStack React Query for API calls
-6. Add to appropriate route in `src/app/`
-7. Use Ant Design components for consistency
+**Module conventions** (varies; not enforced uniformly):
+- `<feature>.service.ts` — business logic (always present)
+- `<feature>.repository.ts` — Firestore data access (when persistence involved)
+- `clients/` — external API clients (Jira, Google, etc.)
+- `utils/` — feature-specific helpers
+- No controllers — Next.js route handlers play that role.
 
-**Example: Talent Leave Feature (planned)**
+### `src/features/` — frontend feature modules
 ```
-src/features/talent-leave/
-├── components/
-│   ├── LeaveCalendar.tsx
-│   ├── LeaveModal.tsx
-│   └── LeaveFilters.tsx
-├── hooks/
-│   └── useTalentLeave.ts
-└── types/
-    └── talent-leave.types.ts
+features/
+├── api-keys/
+├── bug-monitoring/
+├── dashboard/
+├── holiday-management/
+├── talent-leave/       # has components/, hooks/, repositories/, store/, types/, utils/, plus *.test.tsx and *.md docs
+└── team-members/
 ```
+**Subfolders inside a feature** (use what is needed; not all features need all):
+- `components/` — feature-specific UI
+- `hooks/` — feature-specific hooks
+- `store/` — feature-local Zustand slice
+- `types/` — feature TS types
+- `utils/` — feature helpers
+- `repositories/` — client-side data fetching wrappers around React Query
+- `*.test.tsx` — colocated tests
+- `*.md` — feature docs (e.g. `ACCESSIBILITY.md`, `INTEGRATION_CHECKLIST.md`, `TESTING_GUIDE.md` in `talent-leave/`)
 
-### Shared Code
-- Place shared utilities in appropriate service's `common/` or `lib/` directory
-- Team constants in `shared/constants/team-member.const.ts`
-- Consider creating shared package in `packages/` for cross-service code
-- Maintain clear boundaries between services
+### `src/components/` — SHARED components
+Cross-feature, app-wide UI (sidebar, topbar, loading screens, theme toggle, auth UI, error interceptors). Feature-specific components live under `src/features/<name>/components/`.
+
+### `src/lib/` — SHARED utilities
+- `auth.ts` — auth helpers
+- `axiosClient.ts` — configured axios instance
+- `firebase.ts` — Firebase client SDK init
+- `firebaseAdmin.ts` — Firebase Admin SDK init (server-only)
+- `user-access.client.ts` — RBAC client helpers
+- `utils.ts` — general helpers (cn, etc.)
+
+### `src/shared/`
+- `constants/`, `types/`, `utils/` — cross-cutting items used by both `features/` and `server/`.
+
+### `src/hooks/`, `src/store/`, `src/types/`
+- `hooks/`: `useTheme.tsx`, `useUser.ts`, `useUserAccess.ts`
+- `store/`: `userStore.ts` (Zustand)
+- `types/`: `user-access.types.ts`
+
+## MCP Server (`apps/mcp-server/`)
+```
+apps/mcp-server/
+├── src/
+│   ├── index.ts           # MCP server entrypoint
+│   ├── tools/             # One file per tool
+│   │   ├── get-epics.ts
+│   │   ├── get-open-sprint-report.ts
+│   │   ├── get-productivity-summary.ts
+│   │   ├── get-sprint-report.ts
+│   │   └── list-sprints.ts
+│   ├── lib/
+│   │   ├── api-client.ts      # calls Tere API
+│   │   ├── config.ts
+│   │   └── sprint-resolver.ts
+│   └── types/
+├── dist/                  # tsc output (gitignored, shipped to npm)
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+- ESM module.
+- Tools register with the MCP SDK in `index.ts`.
+- Auth to Tere uses an API key.
+
+## Conventions
+
+### Naming
+- React components: `PascalCase.tsx`
+- Hooks: `useFoo.ts` / `useFoo.tsx`
+- Services / repositories / utilities: `kebab-case.ts` (e.g. `talent-leave.service.ts`, `with-auth.ts`)
+- Feature directories: `kebab-case`
+- Tests: `<name>.test.tsx` colocated with source
+
+### Imports
+- External libs first, internal modules next, relative imports last.
+- Use TS path aliases when configured (see `tsconfig.json`).
+
+### Adding a new feature
+1. **Backend**: create `src/server/modules/<feature>/` with `<feature>.service.ts` (and `<feature>.repository.ts` if it persists data).
+2. **API**: create `src/app/api/<feature>/route.ts` that wraps the service with `with-auth`, `with-api-key`, or `with-auth-or-api-key` + optional `with-role`.
+3. **Frontend**: create `src/features/<feature>/` with the subfolders you need (`components/`, `hooks/`, `store/`, `types/`, `utils/`, `repositories/`).
+4. **Page**: add a route under `src/app/<feature>/page.tsx` if it has its own page.
+5. **Shared types/constants**: put cross-cutting items in `src/shared/`.
+
+### Adding a new MCP tool
+1. Create `apps/mcp-server/src/tools/<tool-name>.ts` using zod for input schema.
+2. Register it in `src/index.ts`.
+3. If it needs a new Tere endpoint, add `src/lib/api-client.ts` method and ensure the Tere API route exists with `with-api-key`.
+4. `npm run mcp:build` then publish via `npm run mcp:release[:minor|:major]`.
+
+### Where things go (quick lookup)
+| Need | Location |
+|---|---|
+| New page | `src/app/<route>/page.tsx` |
+| New API endpoint | `src/app/api/<resource>/route.ts` |
+| Backend service | `src/server/modules/<feature>/<feature>.service.ts` |
+| Firestore data access | `src/server/modules/<feature>/<feature>.repository.ts` |
+| External API client | `src/server/modules/<feature>/clients/` or `src/server/lib/` |
+| Auth wrapper | `src/server/auth/` |
+| Shared UI component | `src/components/` |
+| Feature UI component | `src/features/<feature>/components/` |
+| Shared hook | `src/hooks/` |
+| Feature hook | `src/features/<feature>/hooks/` |
+| Zustand store (global) | `src/store/` |
+| Zustand store (feature) | `src/features/<feature>/store/` |
+| Firebase client init | `src/lib/firebase.ts` |
+| Firebase admin init | `src/lib/firebaseAdmin.ts` |
+| Cross-cutting types | `src/shared/types/` or `src/types/` |
+| Cross-cutting constants | `src/shared/constants/` |
+| MCP tool | `apps/mcp-server/src/tools/` |
+
+## Testing
+- Jest-style `*.test.tsx` files exist colocated with code (e.g. `components/sidebar.test.tsx`, `features/talent-leave/*.test.tsx`).
+- No root-level `test` script wired yet — confirm with the user before adding test infrastructure.
+
+## Env & Secrets
+- `apps/tere-project/.env` (from `.env.example`) — Firebase, Jira, Google config.
+- Never commit `.env*` files (except `.env.example`).
+- MCP server reads Tere API base URL + API key from its own env.
