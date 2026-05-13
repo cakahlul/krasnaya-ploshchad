@@ -261,6 +261,17 @@ const FUN_QUOTES = [
   '"No meetings before noon. Ever."',
 ];
 
+const SOVIET_QUOTES = [
+  '"Workers of the sprint, unite and ship."',
+  '"Every bug resolved is labor for the collective."',
+  '"Discipline in Jira, victory in delivery."',
+  '"Fuel the collective. Then deploy."',
+  '"Velocity is planned production."',
+  '"Today\'s blocker is tomorrow\'s organized work."',
+  '"Merge conflicts are resolved by comradeship."',
+  '"Meetings serve the plan, not the clock."',
+];
+
 /* ------------------------------------------------------------------ */
 /*  Sidebar Component                                                  */
 /* ------------------------------------------------------------------ */
@@ -275,7 +286,7 @@ export default function Sidebar({
   const isDesktop = useMediaQuery({ minWidth: 1024 });
   const pathname = usePathname();
   const router = useRouter();
-  const { isDark, accent, accentL } = useThemeColors();
+  const { isDark, isCrimson, accent, accentL } = useThemeColors();
 
   // Subscribe reactively to dashboard data filtered by user's managed teams
   const { member, teams: memberTeams } = useMemberProfile();
@@ -291,9 +302,10 @@ export default function Sidebar({
     managedBoardIds.length > 0 ? managedBoardIds : undefined,
   );
 
-  const [quote] = useState(
-    () => FUN_QUOTES[Math.floor(Math.random() * FUN_QUOTES.length)],
-  );
+  const [quote] = useState(() => {
+    const pool = isCrimson ? SOVIET_QUOTES : FUN_QUOTES;
+    return pool[Math.floor(Math.random() * pool.length)];
+  });
 
   const effectiveRole = member
     ? member.isLead
@@ -314,14 +326,16 @@ export default function Sidebar({
   );
 
   /* ---- derived colours ---- */
-  const sidebarBg = isDark
-    ? 'linear-gradient(180deg, #0d1829 0%, #0f1f36 100%)'
-    : '#ffffff';
+  const sidebarBg = isCrimson
+    ? 'linear-gradient(180deg, #1a0202 0%, #2a0404 60%, #1a0202 100%)'
+    : isDark
+      ? 'linear-gradient(180deg, #0d1829 0%, #0f1f36 100%)'
+      : '#ffffff';
   const navTextColor = isDark ? 'rgba(255,255,255,0.7)' : '#4b5563';
-  const navTextActive = isDark ? '#ffffff' : '#011d4d';
-  const hoverBg = isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6';
+  const navTextActive = isDark ? (isCrimson ? '#fff6e6' : '#ffffff') : '#011d4d';
+  const hoverBg = isDark ? (isCrimson ? 'rgba(194,21,24,0.18)' : 'rgba(255,255,255,0.06)') : '#f3f4f6';
   const activeBg = isDark ? `${accent}22` : `${accent}12`;
-  const quoteColor = isDark ? 'rgba(255,255,255,0.3)' : '#9ca3af';
+  const quoteColor = isDark ? (isCrimson ? 'rgba(255,215,0,0.5)' : 'rgba(255,255,255,0.3)') : '#9ca3af';
 
   /* ---- Header chip: Lead = Team Health, Member = personal progress ---- */
   const allChipMembers = dashTeams.flatMap(t => t.memberSummaries ?? []);
@@ -366,7 +380,7 @@ export default function Sidebar({
             <div
               className="text-[17px] font-bold leading-none"
               style={{
-                color: parseFloat(chipAvgProd) >= 100 ? '#34d399' : '#fbbf24',
+                color: parseFloat(chipAvgProd) >= 100 ? (isCrimson ? '#FFD700' : '#34d399') : (isCrimson ? '#FF6B3A' : '#fbbf24'),
               }}
             >
               {chipAvgProd}%
@@ -434,7 +448,9 @@ export default function Sidebar({
       <div
         className="px-3 pt-4 pb-3 rounded-t-[20px]"
         style={{
-          background: `linear-gradient(160deg, #0b1a2e 0%, #0f2b3d 50%, ${accent}30 100%)`,
+          background: isCrimson
+            ? `linear-gradient(160deg, #2a0404 0%, #1a0202 50%, rgba(194,21,24,0.45) 100%)`
+            : `linear-gradient(160deg, #0b1a2e 0%, #0f2b3d 50%, ${accent}30 100%)`,
         }}
       >
         <div className="flex items-center gap-3 px-1">
@@ -468,8 +484,13 @@ export default function Sidebar({
             </svg>
           </div>
           <div>
-            <div className="text-white font-bold text-lg leading-tight">
+            <div className="text-white font-bold text-lg leading-tight flex items-center gap-1">
               TERE
+              {isCrimson && (
+                <svg width="14" height="14" viewBox="0 0 24 24" className="inline-block ml-0.5">
+                  <path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.8 22 12 18.77 5.2 22 7 14.14 2 9.27l7.1-1.01L12 2z" fill="#FFD700" stroke="#C21518" strokeWidth="0.5"/>
+                </svg>
+              )}
             </div>
             <div className="text-[11px] text-white/50 leading-tight">
               v2.0 &middot;{' '}

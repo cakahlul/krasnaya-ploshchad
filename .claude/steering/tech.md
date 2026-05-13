@@ -1,88 +1,95 @@
 # Technology Stack - Krasnaya Ploshchad
 
 ## Architecture Overview
-Monorepo architecture using Turborepo with two main services:
-- **Backend**: AIoC Service (All In One Core)
-- **Frontend**: Tere Project (Team Reporting)
+Monorepo using **npm workspaces** (no Turborepo). Two workspaces under `apps/*`:
+- **`apps/tere-project`** — Full-stack Next.js 16 app (frontend + API routes; backend logic lives in `src/server/`).
+- **`apps/mcp-server`** — Standalone TypeScript MCP server, published to npm as `@esjn/mcp-tere-report`.
 
-## Core Technologies
+There is **no separate backend service**. All server-side logic for Tere runs inside the Next.js app.
 
-### Monorepo Management
-- **Turborepo**: Build orchestration and task management
-- **npm Workspaces**: Package management
-- **Node.js**: Runtime environment (>=18)
+## Root Tooling
+- **Node.js**: `>=18`
+- **Package manager**: `npm@10.9.2`
+- **TypeScript**: `5.8.2` (root devDep)
+- **Prettier**: `^3.5.3` (root devDep)
+- **Workspaces**: `apps/*`
 
-### Backend Stack (AIoC Service)
-- **Framework**: NestJS with TypeScript
-- **Runtime**: Node.js
-- **Database**: Firebase Firestore (NoSQL document database)
-- **Testing**: Jest with full coverage support
-- **API Architecture**: RESTful services
-- **Configuration**: Environment-based with @nestjs/config
-- **Data Models**: TypeScript interfaces for DTOs, Entities, and Repositories
+### Root scripts
+- `npm run dev` → tere-project dev
+- `npm run build` → tere-project build
+- `npm run lint` → tere-project lint
+- `npm run format` → prettier on `**/*.{ts,tsx,md}`
+- `npm run mcp:build` / `mcp:start` / `mcp:release[:minor|:major]` → mcp-server
 
-### Frontend Stack (Tere Project)
-- **Framework**: Next.js 15 (App Router)
-- **Runtime**: React 19
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **UI Components**: Ant Design (@ant-design/icons)
-- **State Management**: 
-  - **Client State**: Zustand
-  - **Server State**: TanStack React Query
-- **Charts**: Recharts for data visualization
+## Tere Project Stack (`apps/tere-project`, v2.0.0)
 
-### External Integrations
-- **Firebase**: Data storage and authentication (both client and admin SDKs)
-  - **Firestore**: NoSQL document database for talent leave records and team roster
-  - **Firebase Authentication**: User authentication and authorization
-  - **Firebase Admin SDK**: Backend server-side operations
-- **Jira API**: Primary data source for issue tracking and metrics collection
+### Framework / Runtime
+- **Next.js**: `16.0.8` (App Router)
+- **React**: `19.2.1` / **React DOM**: `19.2.1`
+- **TypeScript**: `^5`
+- **ESLint**: `^9` with `eslint-config-next`
 
-### Development Tools
-- **Linting**: ESLint with Prettier formatting
-- **Type Checking**: TypeScript strict mode
-- **Testing**: Jest for unit testing
-- **Package Manager**: npm 10.9.2
-- **Build Tools**: Turbo for orchestration
+### UI / Styling
+- **Tailwind CSS**: `^3.4.1` (+ `tw-animate-css`, `tailwind-merge`, `class-variance-authority`, `clsx`)
+- **Ant Design**: `antd ^5.24.9`, `@ant-design/icons ^5.6.1`
+- **Lucide React**: `^0.508.0`
+- **Framer Motion**: `^12.23.24`
+- **Recharts**: `^2.15.3` (+ `@types/recharts`)
+- **TanStack Table**: `^8.21.3`
+- **React Responsive**: `^10.0.1`
+- **PostCSS** + **Autoprefixer**
 
-### Deployment & Infrastructure
-- **Containerization**: Docker with multi-stage builds
-- **Orchestration**: Docker Compose for local development
-- **Environment**: Environment variable based configuration
+### State / Data
+- **Zustand**: `^5.0.3` (client state)
+- **TanStack React Query**: `^5.74.8` (server state)
+- **Axios**: `^1.9.0`
 
-## Security Considerations
-- **Data Privacy**: Jira data must not be publicly exposed
-- **Credential Management**: Jira API credentials must be securely stored and not published
-- **Environment Variables**: Sensitive configuration through .env files (not committed)
+### Backend Integrations (server-side)
+- **Firebase**: `^11.6.1` (client SDK) — Firestore + Auth
+- **Firebase Admin**: `^13.7.0` (server SDK)
+- **Google APIs**: `googleapis ^166.0.0`
+- **Jira**: REST API (no SDK dependency; calls via axios in `src/server/`)
 
-## Performance Requirements
-- No specific performance constraints identified
-- Standard web application responsiveness expected
+### Auth
+- Firebase Authentication (Google sign-in)
+- Session enforcement via `middleware.ts` and `src/server/auth/` HOFs:
+  - `with-auth.ts` — session-required wrapper
+  - `with-api-key.ts` — API-key wrapper
+  - `with-auth-or-api-key.ts` — either accepted
+  - `with-role.ts` — role-gating
+
+## MCP Server Stack (`apps/mcp-server`, v1.3.0)
+- **Package name**: `@esjn/mcp-tere-report` (public on npm)
+- **Module type**: ESM (`"type": "module"`)
+- **Build**: `tsc` → `dist/`
+- **SDK**: `@modelcontextprotocol/sdk ^1.29.0`
+- **Validation**: `zod ^3.25.0`
+- **Node**: `>=18`
+- **Bin**: `mcp-tere-report` → `dist/index.js`
+
+## Data Stores
+- **Firestore collections** (accessed from `src/server/`):
+  - `talent-leave` — leave records (id, name, team, dateFrom, dateTo, status, role, createdAt, updatedAt)
+  - `talent` — team roster (name, team, role)
+  - Plus collections for api-keys, user-access, holidays, configs, bug monitoring data, etc.
+- **Cache**: in-process cache layer in `src/server/cache/`
+- **Rate limiting**: `src/server/rate-limit/`
+
+## Security
+- Jira credentials and Firebase service-account keys live in env vars; never commit `.env`.
+- API-key auth supported for programmatic access (used by MCP server).
+- RBAC enforced via `with-role` HOF.
+- Sensitive Jira data must not be exposed publicly.
 
 ## Development Workflow
-- **Build**: `npm run build` (Turborepo orchestrated)
-- **Development**: `npm run dev` (Hot reload enabled)
-- **Linting**: `npm run lint` (ESLint + Prettier)
-- **Type Checking**: `npm run check-types`
-- **Testing**: Jest-based testing strategy
+- `npm run dev` for hot reload (tere-project).
+- Type-check via `tsc --noEmit` (no dedicated script at root; Next.js does it during build).
+- Lint: `npm run lint`.
+- Format: `npm run format` (prettier).
+- Tests: Jest-style `.test.tsx` files exist for some features (e.g. `sidebar.test.tsx`, `talent-leave/accessibility.test.tsx`, `talent-leave/integration.test.tsx`), but no test runner script is wired at the root — verify before assuming a `test` script exists.
 
-## Technical Decisions
-- **Monorepo**: Chosen for shared configuration and coordinated releases
-- **NestJS**: Selected for enterprise-grade Node.js backend architecture with modular design
-- **Next.js**: Chosen for modern React development with excellent performance
-- **Firebase Firestore**: Selected for managed NoSQL database with real-time capabilities
-  - Flexible schema for evolving data models (talent leave, team roster)
-  - Built-in authentication integration
-  - Scalable cloud infrastructure
-- **TypeScript**: Enforced across all services for type safety and better developer experience
-
-## Data Architecture
-
-### Firestore Collections
-- **talent-leave**: Stores leave records
-  - Fields: id, name, team, dateFrom, dateTo, status, role, createdAt, updatedAt
-  - Indexed by: dateFrom, dateTo, status, team
-- **talent**: Stores team member roster
-  - Fields: name, team (string or array), role
-  - Used for team dropdown and roster management
+## Notable Removed Tech (do NOT reintroduce without intent)
+- Turborepo — not used.
+- NestJS — backend was removed; do not add NestJS patterns.
+- `packages/` directory — does not exist.
+- Docker / Docker Compose — not currently in repo.

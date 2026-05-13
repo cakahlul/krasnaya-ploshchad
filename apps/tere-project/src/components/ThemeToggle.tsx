@@ -6,7 +6,7 @@ import type { Theme } from '@src/hooks/useTheme';
 const THEME_SWATCHES: { val: Theme; color: string; label: string }[] = [
   { val: 'light', color: '#1282a2', label: 'Atlas' },
   { val: 'void', color: '#22b8d4', label: 'Void' },
-  { val: 'crimson', color: '#e53935', label: 'Krasnaya' },
+  { val: 'crimson', color: '#C21518', label: 'Krasnaya' },
 ];
 
 export function ThemeToggle() {

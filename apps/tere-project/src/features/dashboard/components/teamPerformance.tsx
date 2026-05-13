@@ -272,28 +272,28 @@ function EnhancedGradientCard({
 
 /* ── Gradient Palette ────────────────────────────────────────────────────── */
 
-const GRADIENTS = {
-  // Row 1 — Key Metrics
-  totalSP: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-  targetSP: 'linear-gradient(135deg, #0ea5e9, #2563eb)',
-  avgProductivity: 'linear-gradient(135deg, #8b5cf6, #d946ef)',
-  avgWpHour: 'linear-gradient(135deg, #d946ef, #f43f5e)',
-  // Row 2 — Composition
-  product: 'linear-gradient(135deg, #10b981, #14b8a6)',
-  techDebt: 'linear-gradient(135deg, #f59e0b, #ea580c)',
-  totalWP: 'linear-gradient(135deg, #06b6d4, #0284c7)',
-  // Row 3 — Capacity
-  selectedDays: 'linear-gradient(135deg, #64748b, #475569)',
-  totalDays: 'linear-gradient(135deg, #6b7280, #4b5563)',
-  totalLeave: 'linear-gradient(135deg, #3b82f6, #6366f1)',
-  totalSick: 'linear-gradient(135deg, #f43f5e, #e11d48)',
-} as const;
+function buildGradients(T: ReturnType<typeof import('@src/hooks/useTheme').useThemeColors>) {
+  return {
+    totalSP: `linear-gradient(135deg, ${T.statusPurple}, ${T.accent})`,
+    targetSP: `linear-gradient(135deg, ${T.statusInfo}, ${T.accent})`,
+    avgProductivity: `linear-gradient(135deg, ${T.statusPurple}, ${T.statusOrange})`,
+    avgWpHour: `linear-gradient(135deg, ${T.statusOrange}, ${T.statusDanger})`,
+    product: `linear-gradient(135deg, ${T.statusSuccess}, ${T.accent})`,
+    techDebt: `linear-gradient(135deg, ${T.statusWarning}, ${T.statusOrange})`,
+    totalWP: `linear-gradient(135deg, ${T.accent}, ${T.accentL})`,
+    selectedDays: 'linear-gradient(135deg, #64748b, #475569)',
+    totalDays: 'linear-gradient(135deg, #6b7280, #4b5563)',
+    totalLeave: `linear-gradient(135deg, ${T.statusInfo}, ${T.statusPurple})`,
+    totalSick: `linear-gradient(135deg, ${T.statusDanger}, ${T.statusOrange})`,
+  };
+}
 
 /* ── Main Component ──────────────────────────────────────────────────────── */
 
 export default function TeamPerformance() {
   const { data } = useTeamReportTransform();
-  const { titleCol } = useThemeColors();
+  const { titleCol, ...T } = useThemeColors();
+  const GRADIENTS = buildGradients(T as any);
   const dateSubtitle = formatDateRange(data?.sprintStartDate, data?.sprintEndDate);
 
   const wpTotal = (data?.totalWeightPointsProduct ?? 0) + (data?.totalWeightPointsTechDebt ?? 0);

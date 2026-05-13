@@ -102,9 +102,9 @@ export default function ProductivitySummary() {
         const teamIdx = uniqueTeams.indexOf(team) % 4;
         const teamColors = [
           { bg: `${T.accent}15`, color: T.accent, border: `${T.accent}30` },
-          { bg: '#7c3aed15', color: '#7c3aed', border: '#7c3aed30' },
-          { bg: '#05966915', color: '#059669', border: '#05966930' },
-          { bg: '#d9770615', color: '#d97706', border: '#d9770630' },
+          { bg: `${T.statusPurple}15`, color: T.statusPurple, border: `${T.statusPurple}30` },
+          { bg: `${T.statusSuccess}15`, color: T.statusSuccess, border: `${T.statusSuccess}30` },
+          { bg: `${T.statusOrange}15`, color: T.statusOrange, border: `${T.statusOrange}30` },
         ];
         const tc = teamColors[teamIdx];
         return (
@@ -168,7 +168,7 @@ export default function ProductivitySummary() {
       align: 'center' as const,
       render: (val: string) => {
         const num = parseFloat(val);
-        const color = num >= 100 ? '#10b981' : '#ef4444';
+        const color = num >= 100 ? T.statusSuccess : T.statusDanger;
         return <span style={{ fontWeight: 700, color, fontFamily: mono, fontSize: 13 }}>{val}</span>;
       },
       sorter: (a: any, b: any) => parseFloat(a.productivityRate) - parseFloat(b.productivityRate),
@@ -231,7 +231,7 @@ export default function ProductivitySummary() {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
               <span style={{
                 fontSize: 13, fontWeight: 700, fontFamily: mono,
-                color: isAboveTarget ? '#10b981' : '#ef4444',
+                color: isAboveTarget ? T.statusSuccess : T.statusDanger,
                 display: 'flex', alignItems: 'center', gap: 4,
               }}>
                 {val.toFixed(2)}
@@ -262,8 +262,8 @@ export default function ProductivitySummary() {
   // Color map for KPI card tinting
   const colorMap = {
     default: { bg: T.cardBg, val: T.titleCol, border: T.cardBrd },
-    success: { bg: T.isDark ? '#0a2a1e' : '#f0fdf7', val: '#10b981', border: T.isDark ? '#10b98130' : '#d1fae5' },
-    danger: { bg: T.isDark ? '#2a0f10' : '#fff5f5', val: '#ef4444', border: T.isDark ? '#ef444430' : '#fecaca' },
+    success: { bg: T.statusSuccessBg, val: T.statusSuccess, border: T.statusSuccessBrd },
+    danger: { bg: T.statusDangerBg, val: T.statusDanger, border: T.statusDangerBrd },
   };
 
   // KPI cards configuration
@@ -416,7 +416,7 @@ export default function ProductivitySummary() {
               </div>
               <div style={{
                 fontSize: 36, fontWeight: 700, fontFamily: mono, letterSpacing: -1, lineHeight: 1,
-                color: isPositiveDiff ? '#10b981' : '#ef4444',
+                color: isPositiveDiff ? T.statusSuccess : T.statusDanger,
               }}>
                 {data.summary.productivityProduced.toFixed(3)}
               </div>

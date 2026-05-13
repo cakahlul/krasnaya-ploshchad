@@ -456,13 +456,13 @@ export default function MemberTaskModal({ open, onClose, member }: MemberTaskMod
             <div className="flex gap-3 flex-wrap">
               <span
                 className="transition-transform duration-200 hover:scale-105"
-                style={{ background: '#10b98118', color: '#10b981', ...BADGE_BASE }}
+                style={{ background: accent + '18', color: accent, ...BADGE_BASE }}
               >
                 WP Product: {member?.weightPointsProduct ?? 0}
               </span>
               <span
                 className="transition-transform duration-200 hover:scale-105"
-                style={{ background: '#f59e0b18', color: '#f59e0b', ...BADGE_BASE }}
+                style={{ background: accent + '18', color: accent, ...BADGE_BASE }}
               >
                 WP Tech Debt: {member?.weightPointsTechDebt ?? 0}
               </span>
@@ -474,7 +474,7 @@ export default function MemberTaskModal({ open, onClose, member }: MemberTaskMod
               </span>
               <span
                 className="transition-transform duration-200 hover:scale-105"
-                style={{ background: '#3b82f618', color: '#3b82f6', ...BADGE_BASE }}
+                style={{ background: accent + '18', color: accent, ...BADGE_BASE }}
               >
                 Productivity Rate: {member?.productivityRate}
               </span>

@@ -26,7 +26,7 @@ export default function Icon() {
             left: 6,
             width: 20,
             height: 4,
-            background: '#e53935',
+            background: '#C21518',
             borderRadius: 1.5,
           }}
         />
@@ -38,7 +38,7 @@ export default function Icon() {
             left: 14,
             width: 4,
             height: 16,
-            background: '#ff6659',
+            background: '#FF6B3A',
             borderRadius: 1.5,
           }}
         />

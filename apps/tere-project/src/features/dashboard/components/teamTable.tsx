@@ -187,7 +187,7 @@ export default function TeamTable() {
   const { boards } = useBoards();
   const { member: currentUser } = useMemberProfile();
   const isLead = currentUser?.isLead ?? false;
-  const { accent, cardBg, cardBrd, titleCol, subCol } = useThemeColors();
+  const { accent, cardBg, cardBrd, titleCol, subCol, statusDanger } = useThemeColors();
 
   const [isCountSpecificMode, setIsCountSpecificMode] = useState(false);
   const [pendingMemberKeys, setPendingMemberKeys] = useState<string[]>([]);
@@ -581,7 +581,7 @@ export default function TeamTable() {
           <p
             style={{
               fontSize: 11,
-              color: '#ef4444',
+              color: statusDanger,
               fontFamily: sans,
               padding: '10px 16px',
               borderTop: '1px solid ' + cardBrd,
