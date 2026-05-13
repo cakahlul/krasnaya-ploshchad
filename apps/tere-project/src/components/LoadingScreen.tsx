@@ -29,6 +29,24 @@ const FUN_TIPS = [
   "Pro tip: The best code review is one where nobody finds anything.",
 ];
 
+const SOVIET_TIPS = [
+  "Collective reporting builds collective strength.",
+  "Standup is short. Execution is decisive.",
+  "A task is complete only when the team can verify it.",
+  "Bugs delayed are bugs multiplied. Resolve early.",
+  "Tech debt is a shared responsibility of the collective.",
+  "Mobilizing data for the next production push...",
+  "Productivity beyond target serves the whole team.",
+  "Plan the sprint. Then execute with discipline.",
+  "Coffee supports morale; process supports delivery.",
+  "Velocity improves when teams synchronize effort.",
+  "Small refactors strengthen the production line.",
+  "Every sprint needs realistic planning and clear ownership.",
+  "Unreported bugs are hidden risks to the collective.",
+  "When unclear, align quickly and proceed together.",
+  "Strong code review protects the whole organization.",
+];
+
 type SceneVariant = 'desk' | 'standup' | 'launch';
 
 const SCENES: SceneVariant[] = ['desk', 'standup', 'launch'];
@@ -47,13 +65,13 @@ function getThemeColors(theme: string): ThemeColors {
   switch (theme) {
     case 'crimson':
       return {
-        accent: '#e53935',
-        accentGlow: 'rgba(229,57,53,0.25)',
-        bg1: '#0d0d0d',
-        bg2: '#1a0a0a',
-        textPrimary: '#ffffff',
-        textSecondary: 'rgba(255,255,255,0.55)',
-        gridColor: 'rgba(229,57,53,0.06)',
+        accent: '#C21518',
+        accentGlow: 'rgba(194,21,24,0.28)',
+        bg1: '#190405',
+        bg2: '#2a0404',
+        textPrimary: '#fff6e6',
+        textSecondary: 'rgba(255,215,0,0.85)',
+        gridColor: 'rgba(255,215,0,0.06)',
       };
     case 'light':
       return {
@@ -542,7 +560,85 @@ interface LoadingScreenProps {
   theme?: string;
 }
 
+function SovietLoadingScreen({ onComplete, isDataReady = false }: { onComplete: () => void; isDataReady?: boolean }) {
+  const [progress, setProgress] = useState(0);
+  const [fadeOut, setFadeOut] = useState(false);
+  const [opacity, setOpacity] = useState(1);
+
+  useEffect(() => {
+    if (isDataReady) {
+      if (progress < 100) {
+        const timeout = setTimeout(() => setProgress(100), 140);
+        return () => clearTimeout(timeout);
+      }
+      return;
+    }
+    if (progress >= 98) return;
+    const remaining = 98 - progress;
+    const increment = Math.max(0.4, remaining * 0.09 + Math.random() * 1.2);
+    const delay = progress < 72 ? 180 + Math.random() * 260 : 360 + Math.random() * 520;
+    const timeout = setTimeout(() => {
+      setProgress((prev) => Math.min(prev + increment, 98));
+    }, delay);
+    return () => clearTimeout(timeout);
+  }, [progress, isDataReady]);
+
+  useEffect(() => {
+    if (progress < 100 || fadeOut) return;
+    const waitTimer = setTimeout(() => {
+      setFadeOut(true);
+      setOpacity(0);
+      const completeTimer = setTimeout(() => onComplete(), 600);
+      return () => clearTimeout(completeTimer);
+    }, 260);
+    return () => clearTimeout(waitTimer);
+  }, [progress, fadeOut, onComplete]);
+
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: KEYFRAMES_CSS }} />
+      <div
+        style={{
+          position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+          background: 'radial-gradient(circle at 30% 20%, rgba(255,107,58,0.22), transparent 40%), repeating-conic-gradient(from -10deg at 50% -15%, rgba(194,21,24,0.20) 0deg 7deg, transparent 7deg 14deg), linear-gradient(135deg, #1a0202 0%, #2a0404 100%)',
+          opacity, transition: fadeOut ? 'opacity 600ms ease-out' : 'none', fontFamily: 'system-ui, -apple-system, sans-serif',
+        }}
+      >
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,215,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(194,21,24,0.11) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, padding: '0 24px', maxWidth: 620, width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ width: 24, height: 24, display: 'inline-block', background: '#FFD700', clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)', filter: 'drop-shadow(0 0 6px rgba(255,215,0,0.65))' }} />
+            <span style={{ fontSize: 44, fontWeight: 900, letterSpacing: 2, color: '#fff6e6', textTransform: 'uppercase' }}>TERE</span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: '#FFD700', background: 'rgba(194,21,24,0.5)', border: '1px solid rgba(255,215,0,0.5)', borderRadius: 6, padding: '2px 8px', marginTop: 8 }}>2.0</span>
+          </div>
+
+          <div style={{ fontSize: 11, letterSpacing: 2.2, fontWeight: 700, color: '#FFD700', textTransform: 'uppercase' }}>Workers of data, unite</div>
+
+          <div style={{ width: '100%', maxWidth: 420, border: '1px solid rgba(255,215,0,0.35)', background: 'linear-gradient(180deg, #2B1810, #1f100a)', borderRadius: 10, padding: 14 }}>
+            <div style={{ fontSize: 12, color: 'rgba(255,240,200,0.9)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Five-Year Sprint Plan</div>
+            <div style={{ width: '100%', height: 8, background: 'rgba(0,0,0,0.35)', borderRadius: 6, overflow: 'hidden', border: '1px solid rgba(194,21,24,0.45)' }}>
+              <div style={{ height: '100%', width: `${Math.min(progress, 100)}%`, background: 'linear-gradient(90deg, #C21518, #FFD700)', transition: 'width 300ms ease-out' }} />
+            </div>
+            <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,215,0,0.88)', fontVariantNumeric: 'tabular-nums' }}>
+              <span>Mobilizing reports...</span>
+              <span>{Math.round(Math.min(progress, 100))}%</span>
+            </div>
+          </div>
+
+          <p style={{ margin: 0, color: 'rgba(255,215,0,0.82)', fontSize: 12, letterSpacing: 0.4 }}>Discipline. Reporting. Collective velocity.</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function LoadingScreen({ onComplete, isDataReady = false, theme = 'void' }: LoadingScreenProps) {
+  if (theme === 'crimson') {
+    return <SovietLoadingScreen onComplete={onComplete} isDataReady={isDataReady} />;
+  }
+
   const colors = useMemo(() => getThemeColors(theme), [theme]);
   const [scene] = useState<SceneVariant>(() => SCENES[Math.floor(Math.random() * SCENES.length)]);
 
@@ -771,7 +867,7 @@ export default function LoadingScreen({ onComplete, isDataReady = false, theme =
               marginTop: 4,
             }}
           >
-            Your team. Your data. Your vibe.
+Your team. Your data. Your vibe.
           </p>
         </div>
       </div>

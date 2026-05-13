@@ -20,11 +20,37 @@ const GlobalSearch = dynamic(
 const mono = "var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace";
 const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
 
+// Socialist vibe overrides for crimson theme
+const SOVIET_VIBES: Record<string, string> = {
+  'Crushing it!': 'Exceeding the plan!',
+  'Keep pushing': 'Maintain discipline',
+  'all boards combined': 'all boards in production',
+  'Keep going!': 'Maintain discipline',
+  'Above target!': 'Exceeding the plan!',
+  'story points': 'planned output',
+  'meet target': 'meet the plan',
+};
+
+function vibeForTheme(vibe: string, isCrimson: boolean): string {
+  return isCrimson ? (SOVIET_VIBES[vibe] || vibe) : vibe;
+}
+
 export default function Dashboard() {
-  const [message, setMessage] = useState(
-    "Ready to rock this day? Let's code and conquer",
-  );
   const T = useThemeColors();
+  const [message, setMessage] = useState(
+    T.isCrimson
+      ? 'Comrades, align with the plan and advance delivery.'
+      : "Ready to rock this day? Let's code and conquer",
+  );
+
+  // Sync greeting when theme changes
+  useEffect(() => {
+    setMessage(
+      T.isCrimson
+        ? 'Comrades, align with the plan and advance delivery.'
+        : "Ready to rock this day? Let's code and conquer",
+    );
+  }, [T.isCrimson]);
 
   const { member, teams: memberTeams, isLoading: profileLoading } = useMemberProfile();
   const { boards, isLoading: boardsLoading } = useBoards();
@@ -76,6 +102,7 @@ function GradCard({ label, value, emoji, vibe, gradient, shadow }: {
   label: string; value: string | number; emoji: string; vibe: string;
   gradient: string; shadow: string;
 }) {
+  const T = useThemeColors();
   const [hov, setHov] = useState(false);
   return (
     <div
@@ -98,7 +125,7 @@ function GradCard({ label, value, emoji, vibe, gradient, shadow }: {
         <div style={{ fontSize: 20, marginBottom: 6 }}>{emoji}</div>
         <div style={{ fontSize: 30, fontWeight: 800, color: '#fff', fontFamily: mono, lineHeight: 1, letterSpacing: -1, marginBottom: 3 }}>{value}</div>
         <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.6)', fontFamily: sans, fontWeight: 500, marginBottom: 2 }}>{label}</div>
-        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.92)', fontFamily: sans, fontWeight: 700 }}>{vibe}</div>
+        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.92)', fontFamily: sans, fontWeight: 700 }}>{vibeForTheme(vibe, T.isCrimson)}</div>
       </div>
     </div>
   );
@@ -365,7 +392,7 @@ function LeadDashboard({ teams, bugBoards, members, boardShortNameMap, summaryLo
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: T.titleCol, fontFamily: sans }}>Active Bug Snapshot</span>
-                <span style={{ fontSize: 9.5, fontWeight: 700, color: '#ef4444', background: '#ef444418', border: '1px solid #ef444435', borderRadius: 5, padding: '1px 6px', fontFamily: sans }}>Production Bug</span>
+                <span style={{ fontSize: 9.5, fontWeight: 700, color: T.statusDanger, background: T.statusDangerBg, border: `1px solid ${T.statusDangerBrd}`, borderRadius: 5, padding: '1px 6px', fontFamily: sans }}>Production Bug</span>
               </div>
               <div style={{ fontSize: 11, color: T.subCol, fontFamily: sans, marginTop: 1 }}>{bugBoards.length} board{bugBoards.length !== 1 ? 's' : ''} monitored</div>
             </div>
@@ -543,8 +570,8 @@ function DashboardBugRow({ boardId, title, shortName }: { boardId: number; title
       }}>{shortName}</span>
       <span style={{ fontSize: 12.5, color: T.rowCol, fontFamily: sans, fontWeight: 500, flex: 1 }}>{title}</span>
       <div style={{ display: 'flex', gap: 12, fontSize: 11, fontFamily: mono }}>
-        <span style={{ color: '#ef4444', fontWeight: 600 }}>{bugs.criticalCount} critical</span>
-        <span style={{ color: '#f59e0b', fontWeight: 600 }}>{bugs.highCount} high</span>
+        <span style={{ color: T.statusDanger, fontWeight: 600 }}>{bugs.criticalCount} critical</span>
+        <span style={{ color: T.statusWarning, fontWeight: 600 }}>{bugs.highCount} high</span>
         <span style={{ color: T.subCol }}>{bugs.totalBugs} total</span>
       </div>
     </div>

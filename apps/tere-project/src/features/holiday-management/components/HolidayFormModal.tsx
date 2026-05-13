@@ -18,7 +18,7 @@ export default function HolidayFormModal({ isOpen, onClose, selectedRange, exist
   const [form] = Form.useForm();
   const { mutateAsync: createHoliday, isPending: isCreating } = useCreateHoliday();
   const { mutateAsync: deleteHoliday, isPending: isDeleting } = useDeleteHoliday();
-  const { isDark, accent, cardBg, cardBrd, titleCol, subCol, rowCol, headBg } = useThemeColors();
+  const { isDark, accent, cardBg, cardBrd, titleCol, subCol, rowCol, headBg, statusDanger, statusDangerBg, statusDangerBrd } = useThemeColors();
 
   const handleDelete = async (id: string) => {
     try {
@@ -114,11 +114,11 @@ export default function HolidayFormModal({ isOpen, onClose, selectedRange, exist
           background: isDark ? '#2a0f10' : '#fff5f5',
           borderRadius: 10,
           padding: 14,
-          border: '1px solid ' + (isDark ? '#ef444420' : '#fecaca'),
+          border: '1px solid ' + statusDangerBrd,
           margin: '16px 24px',
         }}>
           <div style={{
-            color: '#ef4444',
+            color: statusDanger,
             fontSize: 10,
             fontWeight: 700,
             textTransform: 'uppercase',
@@ -152,8 +152,8 @@ export default function HolidayFormModal({ isOpen, onClose, selectedRange, exist
                   okButtonProps={{ danger: true, loading: isDeleting }}
                 >
                   <button style={{
-                    background: isDark ? '#2a0f10' : '#fff5f5',
-                    color: '#ef4444',
+                    background: statusDangerBg,
+                    color: statusDanger,
                     border: 'none',
                     borderRadius: 6,
                     padding: '4px 10px',

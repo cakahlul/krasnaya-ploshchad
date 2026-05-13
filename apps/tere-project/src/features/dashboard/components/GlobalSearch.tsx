@@ -15,7 +15,10 @@ export default function GlobalSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  const { isDark, accent, accentL, cardBg, cardBrd, titleCol, subCol, rowCol, headBg } = useThemeColors();
+  const { isDark, accent, accentL, cardBg, cardBrd, titleCol, subCol, rowCol, headBg,
+    statusSuccess, statusSuccessBg, statusSuccessBrd,
+    statusDanger, statusDangerBg, statusDangerBrd,
+    statusWarning, statusWarningBg, statusWarningBrd } = useThemeColors();
 
   const {
     query,
@@ -91,9 +94,9 @@ export default function GlobalSearch() {
     const statusLower = status.toLowerCase();
     if (statusLower.includes('done') || statusLower.includes('closed')) {
       return {
-        background: isDark ? '#0a2a1e' : '#f0fdf7',
-        color: '#10b981',
-        border: '1px solid #10b98130',
+        background: statusSuccessBg,
+        color: statusSuccess,
+        border: `1px solid ${statusSuccessBrd}`,
         fontSize: 12,
         fontWeight: 500,
         padding: '2px 8px',
@@ -113,9 +116,9 @@ export default function GlobalSearch() {
     }
     if (statusLower.includes('blocked')) {
       return {
-        background: isDark ? '#2a0f10' : '#fff5f5',
-        color: '#ef4444',
-        border: '1px solid #ef444430',
+        background: statusDangerBg,
+        color: statusDanger,
+        border: `1px solid ${statusDangerBrd}`,
         fontSize: 12,
         fontWeight: 500,
         padding: '2px 8px',
@@ -137,9 +140,9 @@ export default function GlobalSearch() {
     const resLower = resolution.toLowerCase();
     if (resLower.includes('done') || resLower.includes('fixed') || resLower.includes('resolved')) {
       return {
-        background: isDark ? '#0a2a1e' : '#f0fdf7',
-        color: '#10b981',
-        border: '1px solid #10b98130',
+        background: statusSuccessBg,
+        color: statusSuccess,
+        border: `1px solid ${statusSuccessBrd}`,
         fontSize: 12,
         fontWeight: 500,
         padding: '2px 8px',
@@ -148,9 +151,9 @@ export default function GlobalSearch() {
     }
     if (resLower.includes('in progress') || resLower.includes('review')) {
       return {
-        background: isDark ? '#0f2030' : '#fff8f0',
-        color: isDark ? '#f59e0b' : '#d97706',
-        border: `1px solid ${isDark ? '#f59e0b30' : '#d9770630'}`,
+        background: statusWarningBg,
+        color: statusWarning,
+        border: `1px solid ${statusWarningBrd}`,
         fontSize: 12,
         fontWeight: 500,
         padding: '2px 8px',
@@ -189,13 +192,13 @@ export default function GlobalSearch() {
   const getPriorityStyle = (priority: string): React.CSSProperties => {
     const priorityLower = priority.toLowerCase();
     if (priorityLower.includes('highest') || priorityLower.includes('critical')) {
-      return { color: '#ef4444' };
+      return { color: statusDanger };
     }
     if (priorityLower.includes('high')) {
-      return { color: '#f97316' };
+      return { color: statusWarning };
     }
     if (priorityLower.includes('medium')) {
-      return { color: '#f59e0b' };
+      return { color: statusWarning };
     }
     return { color: subCol };
   };

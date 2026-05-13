@@ -8,22 +8,28 @@ import { Spin } from 'antd';
 const mono = "var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace";
 const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
 
-function getSeverityStyle(priority: string, isDark: boolean, accent: string) {
+type StatusPal = {
+  statusDanger: string; statusDangerBg: string; statusDangerBrd: string;
+  statusWarning: string; statusWarningBg: string; statusWarningBrd: string;
+  statusSuccess: string; statusSuccessBg: string; statusSuccessBrd: string;
+};
+
+function getSeverityStyle(priority: string, isDark: boolean, accent: string, pal: StatusPal) {
   const p = priority.toLowerCase();
   if (p.includes('highest') || p.includes('critical'))
-    return { bg: isDark ? '#3a0f0f' : '#fff1f1', col: '#ef4444', brd: '#ef444430', label: 'Critical' };
+    return { bg: pal.statusDangerBg, col: pal.statusDanger, brd: pal.statusDangerBrd, label: 'Critical' };
   if (p.includes('high'))
-    return { bg: isDark ? '#2e1f08' : '#fff8ed', col: '#f59e0b', brd: '#f59e0b30', label: 'High' };
+    return { bg: pal.statusWarningBg, col: pal.statusWarning, brd: pal.statusWarningBrd, label: 'High' };
   if (p.includes('medium'))
     return { bg: isDark ? '#0f2030' : '#f0f7ff', col: accent, brd: accent + '30', label: 'Medium' };
-  return { bg: isDark ? '#0d1f14' : '#f0fdf7', col: '#10b981', brd: '#10b98130', label: 'Low' };
+  return { bg: pal.statusSuccessBg, col: pal.statusSuccess, brd: pal.statusSuccessBrd, label: 'Low' };
 }
 
-function getStatusDot(status: string, subCol: string) {
+function getStatusDot(status: string, subCol: string, pal: StatusPal) {
   const s = status.toLowerCase();
-  if (s.includes('to do') || s.includes('open') || s.includes('detected')) return '#ef4444';
-  if (s.includes('progress') || s.includes('review')) return '#f59e0b';
-  if (s.includes('done') || s.includes('fixed') || s.includes('resolved') || s.includes('test')) return '#10b981';
+  if (s.includes('to do') || s.includes('open') || s.includes('detected')) return pal.statusDanger;
+  if (s.includes('progress') || s.includes('review')) return pal.statusWarning;
+  if (s.includes('done') || s.includes('fixed') || s.includes('resolved') || s.includes('test')) return pal.statusSuccess;
   return subCol;
 }
 
@@ -33,7 +39,11 @@ interface BugListViewProps {
 
 export default function BugListView({ boardId }: BugListViewProps) {
   const { data, isLoading, error } = useBugMonitoring(boardId);
-  const { isDark, accent, cardBg, cardBrd, titleCol, subCol, rowCol } = useThemeColors();
+  const { isDark, accent, cardBg, cardBrd, titleCol, subCol, rowCol,
+    statusDanger, statusDangerBg, statusDangerBrd,
+    statusWarning, statusWarningBg, statusWarningBrd,
+    statusSuccess, statusSuccessBg, statusSuccessBrd } = useThemeColors();
+  const pal = { statusDanger, statusDangerBg, statusDangerBrd, statusWarning, statusWarningBg, statusWarningBrd, statusSuccess, statusSuccessBg, statusSuccessBrd };
   const [filter, setFilter] = useState('All');
 
   const allBugs = data?.allBugs ?? [];
@@ -81,7 +91,7 @@ export default function BugListView({ boardId }: BugListViewProps) {
 
   if (error) {
     return (
-      <div style={{ background: cardBg, borderRadius: 14, border: '1px solid #ef444430', padding: '24px', color: '#ef4444', fontFamily: sans, fontSize: 13 }}>
+      <div style={{ background: cardBg, borderRadius: 14, border: '1px solid ' + statusDangerBrd, padding: '24px', color: statusDanger, fontFamily: sans, fontSize: 13 }}>
         Failed to load bug data. Please try again.
       </div>
     );
@@ -101,9 +111,9 @@ export default function BugListView({ boardId }: BugListViewProps) {
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(kpis.length, 6)}, 1fr)`, gap: 10, marginBottom: 14 }}>
         {kpis.map((k, i) => (
-          <div key={i} style={{ background: cardBg, borderRadius: 12, padding: 14, border: '1px solid ' + (k.red ? '#ef444430' : cardBrd) }}>
+          <div key={i} style={{ background: cardBg, borderRadius: 12, padding: 14, border: '1px solid ' + (k.red ? statusDangerBrd : cardBrd) }}>
             <div style={{ fontSize: 9.5, color: subCol, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', fontFamily: sans, marginBottom: 6 }}>{k.label}</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: k.red ? '#ef4444' : titleCol, fontFamily: mono, letterSpacing: -0.5 }}>{k.value}</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: k.red ? statusDanger : titleCol, fontFamily: mono, letterSpacing: -0.5 }}>{k.value}</div>
           </div>
         ))}
       </div>
@@ -130,8 +140,8 @@ export default function BugListView({ boardId }: BugListViewProps) {
       {/* Bug Rows */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {filtered.map((bug) => {
-          const sev = getSeverityStyle(bug.priority, isDark, accent);
-          const dotColor = getStatusDot(bug.status, subCol);
+          const sev = getSeverityStyle(bug.priority, isDark, accent, pal);
+          const dotColor = getStatusDot(bug.status, subCol, pal);
           return (
             <div key={bug.key} style={{
               background: cardBg, borderRadius: 12, padding: '14px 16px',

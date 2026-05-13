@@ -22,10 +22,10 @@ interface FlattenedLeave {
   dayCount: number;
 }
 
-function getStatusStyle(status: string, isDark: boolean) {
-  if (status === 'Confirmed') return { color: '#10b981', bg: isDark ? '#0a2a1e' : '#f0fdf7', brd: '#10b98130' };
-  if (status === 'Draft') return { color: '#f59e0b', bg: isDark ? '#2e1f08' : '#fff8ed', brd: '#f59e0b30' };
-  if (status === 'Sick') return { color: '#8b5cf6', bg: isDark ? '#1a0f2e' : '#f5f3ff', brd: '#8b5cf630' };
+function getStatusStyle(status: string, isDark: boolean, pal: { statusSuccess: string; statusSuccessBg: string; statusSuccessBrd: string; statusWarning: string; statusWarningBg: string; statusWarningBrd: string; statusPurple: string; statusPurpleBg: string; statusPurpleBrd: string }) {
+  if (status === 'Confirmed') return { color: pal.statusSuccess, bg: pal.statusSuccessBg, brd: pal.statusSuccessBrd };
+  if (status === 'Draft') return { color: pal.statusWarning, bg: pal.statusWarningBg, brd: pal.statusWarningBrd };
+  if (status === 'Sick') return { color: pal.statusPurple, bg: pal.statusPurpleBg, brd: pal.statusPurpleBrd };
   return { color: '#9ca3af', bg: isDark ? 'rgba(255,255,255,0.06)' : '#f5f6fb', brd: isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb' };
 }
 
@@ -41,7 +41,10 @@ function formatShortDate(dateStr: string): string {
 }
 
 export function LeaveListView() {
-  const { isDark, accent, cardBg, cardBrd, titleCol, subCol, rowCol } = useThemeColors();
+  const { isDark, accent, cardBg, cardBrd, titleCol, subCol, rowCol,
+    statusSuccess, statusSuccessBg, statusSuccessBrd,
+    statusWarning, statusWarningBg, statusWarningBrd,
+    statusPurple, statusPurpleBg, statusPurpleBrd } = useThemeColors();
   const { dateRangeStart, dateRangeEnd } = useTalentLeaveStore();
   const { data: leaveRecords, isLoading } = useTalentLeave();
 
@@ -105,9 +108,9 @@ export function LeaveListView() {
   const kpis = [
     { label: 'Total Requests', value: totalRequests },
     { label: 'Total Days', value: totalDays },
-    { label: 'Confirmed', value: confirmed, col: '#10b981' },
-    { label: 'Draft', value: draft, col: '#f59e0b' },
-    { label: 'Sick', value: sick, col: '#8b5cf6' },
+    { label: 'Confirmed', value: confirmed, col: statusSuccess },
+    { label: 'Draft', value: draft, col: statusWarning },
+    { label: 'Sick', value: sick, col: statusPurple },
   ];
 
   if (isLoading) {
@@ -144,7 +147,7 @@ export function LeaveListView() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {flatLeaves.map((leave, i) => {
-            const ss = getStatusStyle(leave.status, isDark);
+            const ss = getStatusStyle(leave.status, isDark, { statusSuccess, statusSuccessBg, statusSuccessBrd, statusWarning, statusWarningBg, statusWarningBrd, statusPurple, statusPurpleBg, statusPurpleBrd });
             const typeInfo = getTypeLabel(leave.status);
             return (
               <div

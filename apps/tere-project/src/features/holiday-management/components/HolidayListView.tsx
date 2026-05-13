@@ -21,7 +21,7 @@ interface HolidayRowProps {
 }
 
 function HolidayRow({ holiday, isPast, onEdit, onDelete, isDeleting }: HolidayRowProps) {
-  const { isDark, accent, cardBrd, titleCol, subCol, rowCol } = useThemeColors();
+  const { isDark, accent, cardBrd, titleCol, subCol, rowCol, statusDanger } = useThemeColors();
   const date = new Date(holiday.holiday_date);
 
   return (
@@ -162,7 +162,7 @@ function HolidayRow({ holiday, isPast, onEdit, onDelete, isDeleting }: HolidayRo
               background: 'transparent', border: 'none', cursor: 'pointer',
               color: subCol, padding: 4, borderRadius: 6, transition: 'color 0.15s',
             }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+              onMouseEnter={e => (e.currentTarget.style.color = statusDanger)}
               onMouseLeave={e => (e.currentTarget.style.color = subCol)}
             >
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

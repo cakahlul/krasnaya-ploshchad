@@ -28,7 +28,7 @@ const PAGE_TITLES: Record<string, string> = {
 const THEME_SWATCHES: { key: Theme; color: string }[] = [
   { key: 'light', color: '#1282a2' },
   { key: 'void', color: '#22b8d4' },
-  { key: 'crimson', color: '#e53935' },
+  { key: 'crimson', color: '#C21518' },
 ];
 
 function formatDate(): string {
@@ -61,7 +61,7 @@ function BellIcon({ stroke }: { stroke: string }) {
 export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const { getDisplayName, setLoginPageMessage, getUserPhoto } = useUser();
   const { theme, setTheme } = useTheme();
-  const { isDark, accent, accentL, titleCol, subCol } = useThemeColors();
+  const { isDark, isCrimson, accent, accentL, titleCol, subCol } = useThemeColors();
   const isFetching = useIsFetching();
   const pathname = usePathname();
 
@@ -121,9 +121,12 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
     },
   ];
 
+  const firstName = member?.name || getDisplayName()?.split(' ')[0] || 'User';
   const displayGreeting = isFetching > 0
-    ? `Loading...`
-    : `Hey, ${member?.name || getDisplayName()?.split(' ')[0] || 'User'}!`;
+    ? 'Loading...'
+    : isCrimson
+      ? `Comrade ${firstName}!`
+      : `Hey, ${firstName}!`;
 
   const userInitial = (member?.name || getDisplayName() || 'U').charAt(0).toUpperCase();
   const photoUrl = getUserPhoto();
@@ -160,6 +163,13 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
             {displayGreeting}
           </span>
           <span className="animate-topbar-wave text-base leading-none">👋</span>
+          {theme === 'crimson' && (
+            <span style={{ marginLeft: 6, display: 'inline-flex', verticalAlign: 'middle' }} title="Socialist star" aria-hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.8 22 12 18.77 5.2 22 7 14.14 2 9.27l7.1-1.01L12 2z" fill="#FFD700" stroke="#C21518" strokeWidth="0.5"/>
+              </svg>
+            </span>
+          )}
           <span
             className="text-[13px] font-medium whitespace-nowrap hidden sm:inline"
             style={{ color: subCol }}

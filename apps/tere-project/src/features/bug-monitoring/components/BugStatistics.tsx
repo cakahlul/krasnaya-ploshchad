@@ -5,18 +5,19 @@ import { Progress } from 'antd';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { motion } from 'framer-motion';
 import { BugOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { useThemeColors } from '@src/hooks/useTheme';
 
 interface BugStatisticsProps {
   statistics: BugStatistics;
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  // Active statuses
+  // Active statuses — map to theme tokens dynamically where possible
   'To Do': '#6B7280',         // Gray
-  'In Progress': '#F97316',   // Orange
-  'Ready to Test': '#3B82F6', // Blue
-  'Detected': '#EF4444',      // Red
-  'In Review': '#8B5CF6',     // Purple
+  'In Progress': '#F97316',   // Orange (fallback)
+  'Ready to Test': '#3B82F6', // Blue (fallback)
+  'Detected': '#EF4444',      // Red (fallback)
+  'In Review': '#8B5CF6',     // Purple (fallback)
 
   // Other common statuses
   'Testing': '#A855F7',       // Light Purple
@@ -27,11 +28,36 @@ const STATUS_COLORS: Record<string, string> = {
   'Reopened': '#DC2626',      // Dark Red
 };
 
+// When rendering, components should prefer using useThemeColors() tokens so crimson theme can override these.
+
+export function resolvedStatusColorMapping(T: any) {
+  return {
+    'To Do': T.statusInfo || '#6B7280',
+    'In Progress': T.statusOrange || '#F97316',
+    'Ready to Test': T.statusInfo || '#3B82F6',
+    'Detected': T.statusDanger || '#EF4444',
+    'In Review': T.statusPurple || '#8B5CF6',
+    'Testing': T.statusPurple || '#A855F7',
+    'Done': T.statusSuccess || '#10B981',
+    'Closed': T.statusSuccess || '#059669',
+    'Resolved': T.statusSuccess || '#10B981',
+    'Open': T.statusWarning || '#EAB308',
+    'Reopened': T.statusDanger || '#DC2626',
+  };
+}
+
 const PRIORITY_COLORS = ['#EF4444', '#F97316', '#FBBF24', '#3B82F6', '#10B981', '#6B7280'];
 
+function resolvedPriorityColors(T: any) {
+  return [T.statusDanger, T.statusOrange, T.statusWarning, T.statusInfo, T.statusSuccess, '#6B7280'];
+}
+
 export default function BugStatisticsView({ statistics }: BugStatisticsProps) {
+  const T = useThemeColors();
+  const statusColors = resolvedStatusColorMapping(T);
+  const priorityColors = resolvedPriorityColors(T);
   const statusData = Object.entries(statistics.countByStatus).map(([status, count]) => {
-    const color = STATUS_COLORS[status] || '#6366F1'; // Indigo as default
+    const color = statusColors[status as keyof typeof statusColors] || T.statusInfo || '#6366F1';
     
     // Debug: log if status is not in mapping
     if (!STATUS_COLORS[status]) {
@@ -48,7 +74,7 @@ export default function BugStatisticsView({ statistics }: BugStatisticsProps) {
   const priorityData = statistics.priorityDistribution.map((item, index) => ({
     priority: item.priority,
     count: item.count,
-    fill: PRIORITY_COLORS[index % PRIORITY_COLORS.length],
+    fill: priorityColors[index % priorityColors.length],
   }));
 
   const containerVariants = {

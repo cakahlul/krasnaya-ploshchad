@@ -6,6 +6,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { motion } from 'framer-motion';
 import type { Bug } from '../types/bug-monitoring.types';
 import dayjs, { Dayjs } from 'dayjs';
+import { useThemeColors } from '@src/hooks/useTheme';
 
 const { RangePicker } = DatePicker;
 
@@ -17,6 +18,7 @@ interface BugTrendChartProps {
 type TimeRange = 'week' | 'month' | 'year' | 'custom';
 
 export default function BugTrendChart({ bugs, showActiveOnly }: BugTrendChartProps) {
+  const T = useThemeColors();
   const [timeRange, setTimeRange] = useState<TimeRange>('month');
   const [customDateRange, setCustomDateRange] = useState<[Dayjs, Dayjs] | null>(null);
 
@@ -183,14 +185,14 @@ export default function BugTrendChart({ bugs, showActiveOnly }: BugTrendChartPro
         {/* Chart Content Body */}
         <div className="p-6">
           <div className="flex gap-8 mb-6">
-              <div className="bg-red-50 px-4 py-3 rounded-xl border border-red-100">
-                  <p className="text-sm font-semibold tracking-wide text-red-600/80 mb-1 uppercase">Current Active</p>
-                  <p className="text-3xl font-extrabold text-red-600 drop-shadow-sm">{currentActive}</p>
+              <div style={{ background: T.statusDangerBg, padding: '12px 16px', borderRadius: 12, border: `1px solid ${T.statusDangerBrd}` }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: T.statusDanger, marginBottom: 4 }}>Current Active</p>
+                  <p style={{ fontSize: 28, fontWeight: 800, color: T.statusDanger, margin: 0 }}>{currentActive}</p>
               </div>
               {!showActiveOnly && (
-              <div className="bg-emerald-50 px-4 py-3 rounded-xl border border-emerald-100">
-                  <p className="text-sm font-semibold tracking-wide text-emerald-600/80 mb-1 uppercase">Total Closed</p>
-                  <p className="text-3xl font-extrabold text-emerald-600 drop-shadow-sm">{currentClosed}</p>
+              <div style={{ background: T.statusSuccessBg, padding: '12px 16px', borderRadius: 12, border: `1px solid ${T.statusSuccessBrd}` }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: T.statusSuccess, marginBottom: 4 }}>Total Closed</p>
+                  <p style={{ fontSize: 28, fontWeight: 800, color: T.statusSuccess, margin: 0 }}>{currentClosed}</p>
               </div>
               )}
           </div>
@@ -200,12 +202,12 @@ export default function BugTrendChart({ bugs, showActiveOnly }: BugTrendChartPro
                   <AreaChart data={trendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                       <defs>
                           <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+                              <stop offset="5%" stopColor={T.chartLineB} stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor={T.chartLineB} stopOpacity={0}/>
                           </linearGradient>
                           <linearGradient id="colorClosed" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                              <stop offset="5%" stopColor={T.chartLineA} stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor={T.chartLineA} stopOpacity={0}/>
                           </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
@@ -229,26 +231,26 @@ export default function BugTrendChart({ bugs, showActiveOnly }: BugTrendChartPro
                       <Legend 
                         wrapperStyle={{ paddingTop: '10px' }}
                       />
-                      <Area 
-                          type="monotone" 
-                          dataKey="active" 
+                      <Area
+                          type="monotone"
+                          dataKey="active"
                           name="Active Bugs"
-                          stroke="#EF4444" 
-                          fillOpacity={1} 
-                          fill="url(#colorActive)" 
+                          stroke={T.chartLineB}
+                          fillOpacity={1}
+                          fill="url(#colorActive)"
                           strokeWidth={3}
-                          activeDot={{ r: 6, strokeWidth: 0, fill: '#EF4444' }}
+                          activeDot={{ r: 6, strokeWidth: 0, fill: T.chartLineB }}
                       />
                       {!showActiveOnly && (
-                      <Area 
-                          type="monotone" 
-                          dataKey="closed" 
+                      <Area
+                          type="monotone"
+                          dataKey="closed"
                           name="Closed Bugs"
-                          stroke="#10B981" 
-                          fillOpacity={1} 
-                          fill="url(#colorClosed)" 
+                          stroke={T.chartLineA}
+                          fillOpacity={1}
+                          fill="url(#colorClosed)"
                           strokeWidth={3}
-                          activeDot={{ r: 6, strokeWidth: 0, fill: '#10B981' }}
+                          activeDot={{ r: 6, strokeWidth: 0, fill: T.chartLineA }}
                       />
                       )}
                   </AreaChart>

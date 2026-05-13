@@ -40,8 +40,8 @@ const config: Config = {
         'tere-navy': '#011d4d',
         'tere-void-bg': '#080f1e',
         'tere-void-card': '#101e32',
-        'tere-crimson': '#e53935',
-        'tere-crimson-light': '#ff6659',
+        'tere-crimson': '#C21518',
+        'tere-crimson-light': '#FF6B3A',
       },
       animation: {
         'bounce-up-down': 'bounce-up-down 0.4s ease-in-out',

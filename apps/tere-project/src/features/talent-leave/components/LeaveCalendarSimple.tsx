@@ -32,6 +32,7 @@ export function LeaveCalendarSimple() {
   const {
     isDark, accent, accentL,
     cardBg, cardBrd, titleCol, subCol, rowCol, headBg,
+    statusDanger, statusDangerBg,
   } = useThemeColors();
 
   useEffect(() => {
@@ -221,7 +222,7 @@ export function LeaveCalendarSimple() {
               {/* Date columns */}
               {dateColumnsWithHolidays.map(cell => {
                 const dateBg = cell.isNationalHoliday
-                  ? (isDark ? '#2a0f10' : '#fff5f5')
+                  ? statusDangerBg
                   : cell.isWeekend
                     ? (isDark ? 'rgba(255,255,255,0.03)' : '#fafbfd')
                     : headBg;
@@ -236,7 +237,7 @@ export function LeaveCalendarSimple() {
                         fontSize: 16,
                         fontWeight: 700,
                         fontFamily: mono,
-                        color: cell.isNationalHoliday ? '#ef4444' : titleCol,
+                        color: cell.isNationalHoliday ? statusDanger : titleCol,
                       }}
                     >
                       {day}
@@ -255,7 +256,7 @@ export function LeaveCalendarSimple() {
                     {cell.isHoliday && (
                       <div
                         className="mt-1 truncate"
-                        style={{ fontSize: 9, fontWeight: 600, color: '#ef4444' }}
+                        style={{ fontSize: 9, fontWeight: 600, color: statusDanger }}
                       >
                         {cell.holidayName}
                       </div>
