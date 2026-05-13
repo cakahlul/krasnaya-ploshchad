@@ -38,6 +38,7 @@ There is **no separate backend service**. All server-side logic for Tere runs in
 - **TanStack Table**: `^8.21.3`
 - **React Responsive**: `^10.0.1`
 - **PostCSS** + **Autoprefixer**
+- **Vercel Analytics**: `@vercel/analytics` — mounted via `<Analytics />` in `src/app/layout.tsx`
 
 ### State / Data
 - **Zustand**: `^5.0.3` (client state)
