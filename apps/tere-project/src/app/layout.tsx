@@ -3,6 +3,7 @@ import './globals.css';
 import { Space_Grotesk, IBM_Plex_Mono } from 'next/font/google';
 import { ThemeProvider } from '@src/hooks/useTheme';
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const spaceGrotesk = Space_Grotesk({
   variable: '--font-space-grotesk',
@@ -35,6 +36,7 @@ export default function RootLayout({
         <ThemeProvider>
           {children}
           <Analytics />
+          <SpeedInsights />
         </ThemeProvider>
       </body>
     </html>
