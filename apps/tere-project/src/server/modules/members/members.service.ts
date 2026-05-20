@@ -23,6 +23,7 @@ class MembersService {
     this.invalidateCache();
     const now = new Date();
     const entity: MemberEntity = {
+      jiraId: dto.jiraId ?? null,
       name: dto.name,
       fullName: dto.fullName,
       email: dto.email,
@@ -36,31 +37,12 @@ class MembersService {
     return this.entityToDto(created);
   }
 
-  async createWithId(
-    id: string,
-    dto: CreateMemberRequest,
-  ): Promise<MemberResponse> {
-    const now = new Date();
-    const entity: MemberEntity = {
-      name: dto.name,
-      fullName: dto.fullName,
-      email: dto.email,
-      level: dto.level,
-      teams: dto.teams,
-      isLead: dto.isLead ?? false,
-      createdAt: now,
-      updatedAt: now,
-    };
-    const created = await this.repository.createWithId(id, entity);
-    return this.entityToDto(created);
-  }
-
   async findAll(): Promise<MemberResponse[]> {
     const cached = this.cache.get<MemberResponse[]>(CACHE_KEY);
     if (cached) return cached;
 
     const entities = await this.repository.findAll();
-    const result = entities.map(e => this.entityToDto(e));
+    const result = entities.map((e) => this.entityToDto(e));
     this.cache.set(CACHE_KEY, result);
     return result;
   }
@@ -71,16 +53,22 @@ class MembersService {
     return this.entityToDto(entity);
   }
 
+  async findByJiraId(jiraId: string): Promise<MemberResponse | null> {
+    const entity = await this.repository.findByJiraId(jiraId);
+    if (!entity) return null;
+    return this.entityToDto(entity);
+  }
+
   async update(id: string, dto: UpdateMemberRequest): Promise<MemberResponse> {
     this.invalidateCache();
     const updateData: Partial<MemberEntity> = { updatedAt: new Date() };
+    if (dto.jiraId !== undefined) updateData.jiraId = dto.jiraId;
     if (dto.name !== undefined) updateData.name = dto.name;
     if (dto.fullName !== undefined) updateData.fullName = dto.fullName;
     if (dto.email !== undefined) updateData.email = dto.email;
     if (dto.level !== undefined) updateData.level = dto.level;
     if (dto.isLead !== undefined) updateData.isLead = dto.isLead;
     if (dto.teams !== undefined) updateData.teams = dto.teams;
-    if (dto.isLead !== undefined) updateData.isLead = dto.isLead;
     const updated = await this.repository.update(id, updateData);
     if (!updated) throw new Error(`Member with ID '${id}' not found`);
     return this.entityToDto(updated);
@@ -93,25 +81,28 @@ class MembersService {
     await this.repository.delete(id);
   }
 
-  /** Returns members in TalentResponse shape for backwards-compatibility with talent-leave dropdown. */
   async findByEmail(email: string): Promise<MemberResponse | null> {
     const entity = await this.repository.findByEmail(email);
     if (!entity) return null;
     return this.entityToDto(entity);
   }
 
+  /** Returns members as TalentResponse — `id` is the Jira accountId, used as the natural key for talent-leave. */
   async findAllAsTalents(): Promise<TalentResponse[]> {
     const members = await this.repository.findAll();
-    return members.map(m => ({
-      id: m.id!,
-      name: m.name,
-      team: m.teams.join(', '),
-    }));
+    return members
+      .filter((m) => !!m.jiraId)
+      .map((m) => ({
+        id: m.jiraId!,
+        name: m.name,
+        team: m.teams.join(', '),
+      }));
   }
 
   private entityToDto(entity: MemberEntity): MemberResponse {
     return {
       id: entity.id!,
+      jiraId: entity.jiraId ?? null,
       name: entity.name,
       fullName: entity.fullName,
       email: entity.email,

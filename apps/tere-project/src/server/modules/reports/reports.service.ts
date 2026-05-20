@@ -94,14 +94,14 @@ async function fetchLeaveData(
   members: MemberResponse[],
 ): Promise<Map<string, LeaveDateRange[]>> {
   try {
-    const memberIds = new Set(members.map(m => m.id));
+    const memberJiraIds = new Set(members.map((m) => m.jiraId).filter((v): v is string => !!v));
     const leaveRecords = await talentLeaveService.findAll({
       startDate,
       endDate,
     });
     const leaveMap = new Map<string, LeaveDateRange[]>();
     for (const r of leaveRecords) {
-      if (memberIds.has(r.memberId)) leaveMap.set(r.memberId, r.leaveDate);
+      if (memberJiraIds.has(r.memberId)) leaveMap.set(r.memberId, r.leaveDate);
     }
     return leaveMap;
   } catch {
@@ -178,12 +178,16 @@ function processRawData(
 ): JiraIssueReportResponseDto[] {
   const isMultiProject = projectList && projectList.length > 1;
 
-  // accountId (Jira) === memberId (Firestore doc ID)
+  // accountId (Jira) === members.jiraId
   const accountIdMap = new Map<string, string>(
-    members.map(m => [m.id.toLowerCase(), m.fullName]),
+    members
+      .filter((m): m is typeof m & { jiraId: string } => !!m.jiraId)
+      .map((m) => [m.jiraId.toLowerCase(), m.fullName]),
   );
   const nameToId = new Map<string, string>(
-    members.map(m => [m.fullName, m.id]),
+    members
+      .filter((m): m is typeof m & { jiraId: string } => !!m.jiraId)
+      .map((m) => [m.fullName, m.jiraId]),
   );
 
   function makeReportEntry(m: MemberResponse, team: string): JiraIssueReportResponseDto {
@@ -499,15 +503,19 @@ async function buildPlannedWPMap(
   >[1],
 ): Promise<Map<string, number>> {
   const accountIdToName = new Map<string, string>(
-    members.map(m => [m.id.toLowerCase(), m.fullName]),
+    members
+      .filter((m): m is typeof m & { jiraId: string } => !!m.jiraId)
+      .map((m) => [m.jiraId.toLowerCase(), m.fullName]),
   );
   const plannedWPMap = new Map<string, number>();
 
   for (const plannedWPProject of plannedWPProjects) {
-    const projectMembers = members.filter(m =>
-      m.teams.some(t => t.toLowerCase() === plannedWPProject.toLowerCase()),
+    const projectMembers = members.filter(
+      (m) =>
+        !!m.jiraId &&
+        m.teams.some((t) => t.toLowerCase() === plannedWPProject.toLowerCase()),
     );
-    const assignees = projectMembers.map(m => m.id);
+    const assignees = projectMembers.map((m) => m.jiraId!).filter(Boolean);
     try {
       const plannedData = await repo.fetchPlannedWPData(
         plannedWPProject,
@@ -557,7 +565,7 @@ export async function generateReport(
   const members = filterMembersByProject(allMembers, project).filter(
     m => !m.isLead,
   );
-  const assignees = members.map(m => m.id);
+  const assignees = members.map(m => m.jiraId!).filter(Boolean);
   const isSubtaskType = await boardsService.hasSubtaskType(project);
   const allBoards = await boardsService.findAll();
   const projectList = project
@@ -668,7 +676,7 @@ export async function generateReportByDateRange(
   const members = filterMembersByProject(allMembers, project).filter(
     m => !m.isLead,
   );
-  const assignees = members.map(m => m.id);
+  const assignees = members.map(m => m.jiraId!).filter(Boolean);
   const isSubtaskType = await boardsService.hasSubtaskType(project);
   let rawData = await repo.fetchRawDataByDateRange(
     project,
@@ -723,7 +731,9 @@ export async function getEpics(
   endDate?: string,
 ): Promise<EpicDto[]> {
   const allMembers = await membersService.findAll();
-  const assignees = filterMembersByProject(allMembers, project).map(m => m.id);
+  const assignees = filterMembersByProject(allMembers, project)
+    .map(m => m.jiraId!)
+    .filter(Boolean);
   const isSubtaskType = await boardsService.hasSubtaskType(project);
   let rawData: Awaited<ReturnType<typeof repo.fetchRawData>>;
   try {
@@ -779,7 +789,7 @@ export async function generateOpenSprintReport(
     m =>
       m.teams.some(t => t.toLowerCase() === project.toLowerCase()) && !m.isLead,
   );
-  const assignees = members.map(m => m.id);
+  const assignees = members.map(m => m.jiraId!).filter(Boolean);
   const isSubtaskType = await boardsService.hasSubtaskType(project);
   const rawData = await repo.fetchOpenSprintData(
     project,

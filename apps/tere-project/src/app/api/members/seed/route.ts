@@ -6,22 +6,22 @@ export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/members/seed
- * One-time migration: writes all hardcoded teamMembers into the Firestore `members` collection.
- * Uses the existing legacy ID as the Firestore document ID so existing talent-leave records
- * can be linked by memberId after migration.
+ * One-time seed: writes hardcoded teamMembers, storing the legacy ID as `jiraId`
+ * so talent-leave records keyed by Jira accountId continue to resolve.
  */
 export const POST = withAuth(async () => {
   const results = await Promise.allSettled(
     teamMembers.map((member) =>
-      membersService.createWithId(member.id, {
+      membersService.create({
+        jiraId: member.id,
         name: member.name,
         fullName: member.fullName,
         email: member.email,
         level: member.level,
         isLead: false,
         teams: member.team,
-      })
-    )
+      }),
+    ),
   );
 
   const succeeded = results.filter((r) => r.status === 'fulfilled').length;
@@ -31,8 +31,12 @@ export const POST = withAuth(async () => {
     .map(({ result, member }) => ({
       id: member.id,
       name: member.name,
-      reason: (result as PromiseRejectedResult).reason?.message ?? 'Unknown error',
+      reason:
+        (result as PromiseRejectedResult).reason?.message ?? 'Unknown error',
     }));
 
-  return Response.json({ succeeded, failed }, { status: failed.length > 0 ? 207 : 200 });
+  return Response.json(
+    { succeeded, failed },
+    { status: failed.length > 0 ? 207 : 200 },
+  );
 });

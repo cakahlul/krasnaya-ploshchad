@@ -1,18 +1,15 @@
-import { firestore } from '@server/lib/firebase-admin';
+import { db } from '@server/lib/db';
+import { userAccess } from '@server/db/schema';
+import { eq } from 'drizzle-orm';
 
 class UserAccessService {
   async getUserRole(email: string): Promise<'Lead' | 'Member'> {
     try {
-      const snapshot = await firestore
-        .collection('user-access')
-        .where('email', '==', email)
-        .limit(1)
-        .get();
-
-      if (snapshot.empty) return 'Member';
-
-      const role = snapshot.docs[0].data().role as 'Lead' | 'Member';
-      return role ?? 'Member';
+      const [row] = await db
+        .select({ role: userAccess.role })
+        .from(userAccess)
+        .where(eq(userAccess.email, email));
+      return row?.role ?? 'Member';
     } catch {
       return 'Member';
     }

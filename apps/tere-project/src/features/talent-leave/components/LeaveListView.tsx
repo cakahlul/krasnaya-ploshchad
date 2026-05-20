@@ -3,10 +3,14 @@
 import { useMemo } from 'react';
 import { useTalentLeave } from '../hooks/useTalentLeave';
 import { useHolidays } from '../hooks/useHolidays';
+import { useLeaveDelete } from '../hooks/useLeaveDelete';
+import { useLeaveUpdate } from '../hooks/useLeaveUpdate';
+import { useMemberProfile } from '@src/features/dashboard/hooks/useMemberProfile';
 import { useTalentLeaveStore } from '../store/talentLeaveStore';
 import { useThemeColors } from '@src/hooks/useTheme';
 import { calculateDayCount } from '../utils/dateUtils';
-import { Spin } from 'antd';
+import { Spin, Popconfirm, Button } from 'antd';
+import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { TalentLeaveResponse, LeaveDateRange } from '../types/talent-leave.types';
 
 const mono = "var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace";
@@ -45,8 +49,12 @@ export function LeaveListView() {
     statusSuccess, statusSuccessBg, statusSuccessBrd,
     statusWarning, statusWarningBg, statusWarningBrd,
     statusPurple, statusPurpleBg, statusPurpleBrd } = useThemeColors();
-  const { dateRangeStart, dateRangeEnd } = useTalentLeaveStore();
+  const { dateRangeStart, dateRangeEnd, openEditModal } = useTalentLeaveStore();
   const { data: leaveRecords, isLoading } = useTalentLeave();
+  const { member } = useMemberProfile();
+  const canEdit = !!member;
+  const deleteMutation = useLeaveDelete();
+  const updateMutation = useLeaveUpdate();
 
   const startDate = useMemo(() => {
     const y = dateRangeStart.getFullYear();
@@ -112,6 +120,24 @@ export function LeaveListView() {
     { label: 'Draft', value: draft, col: statusWarning },
     { label: 'Sick', value: sick, col: statusPurple },
   ];
+
+  const handleDelete = async (leave: FlattenedLeave) => {
+    const record = leaveRecords?.find((r) => r.id === leave.recordId);
+    if (!record) return;
+    const remaining = record.leaveDate.filter((r) => {
+      const rFrom = r.dateFrom.split('T')[0];
+      const rTo = r.dateTo.split('T')[0];
+      return !(rFrom === leave.dateFrom && rTo === leave.dateTo && r.status === leave.status);
+    });
+    if (remaining.length === 0) {
+      await deleteMutation.mutateAsync(record.id);
+    } else {
+      await updateMutation.mutateAsync({
+        id: record.id,
+        data: { name: record.name, team: record.team, leaveDate: remaining },
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -222,6 +248,36 @@ export function LeaveListView() {
                     {leave.status}
                   </span>
                 </div>
+
+                {/* Actions */}
+                {canEdit && (
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<EditOutlined />}
+                      aria-label={`Edit leave for ${leave.memberName}`}
+                      onClick={() => openEditModal(leave.recordId)}
+                      style={{ color: accent }}
+                    />
+                    <Popconfirm
+                      title="Delete this leave?"
+                      description={`Remove ${formatShortDate(leave.dateFrom)} → ${formatShortDate(leave.dateTo)} for ${leave.memberName}?`}
+                      okText="Delete"
+                      okButtonProps={{ danger: true, loading: deleteMutation.isPending || updateMutation.isPending }}
+                      cancelText="Cancel"
+                      onConfirm={() => handleDelete(leave)}
+                    >
+                      <Button
+                        type="text"
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        aria-label={`Delete leave for ${leave.memberName}`}
+                      />
+                    </Popconfirm>
+                  </div>
+                )}
               </div>
             );
           })}

@@ -6,7 +6,9 @@ class TalentLeaveService {
   constructor(private readonly repository: TalentLeaveRepository) {}
 
   async create(dto: CreateLeaveRequest): Promise<TalentLeaveResponse> {
-    const member = await membersService.findOne(dto.memberId);
+    // dto.memberId is the Jira accountId (natural key shared with talent_leave.memberId)
+    const member = await membersService.findByJiraId(dto.memberId);
+    if (!member) throw new Error(`Member with Jira ID '${dto.memberId}' not found`);
     const existing = await this.repository.findByMemberId(dto.memberId);
     if (existing) {
       if (dto.leaveDate && dto.leaveDate.length > 0) {
@@ -20,7 +22,7 @@ class TalentLeaveService {
     }
     const now = new Date();
     const entity: TalentLeaveEntity = {
-      memberId: member.id,
+      memberId: dto.memberId,
       name: member.name,
       team: member.teams.join(', '),
       leaveDate: dto.leaveDate ? dto.leaveDate.map((leave) => ({ dateFrom: new Date(leave.dateFrom), dateTo: new Date(leave.dateTo), status: leave.status || 'Draft' })) : [],

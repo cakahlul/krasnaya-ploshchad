@@ -157,9 +157,9 @@ See [Dashboard / Reports](#dashboard--reports) — Reports lives in the dashboar
 ### Shared types
 - `apps/tere-project/src/shared/types/talent-leave.types.ts`
 
-### Firestore
-- Collection: `talent-leave` (id, name, team, dateFrom, dateTo, status, role, createdAt, updatedAt)
-- Collection: `talent` (used for talent dropdown)
+### Data store
+- Table: `talent_leave` (Postgres, Drizzle) — see `src/server/db/schema.ts`. `memberId` is the natural key (1:1 with member). `leaveDate` is `jsonb` array of `{dateFrom, dateTo, status}`.
+- Talent dropdown sources from `members` table (no separate `talent` table).
 
 ---
 
@@ -387,10 +387,18 @@ Two parallel modules: **Target WP** and **WP Weight**.
 ### Server libs (`apps/tere-project/src/server/lib/`)
 | File | Purpose |
 |---|---|
-| `firebase-admin.ts` | Firebase Admin SDK init |
+| `firebase-admin.ts` | Firebase Admin SDK init (Auth only — Firestore removed) |
+| `db.ts` | Drizzle/Postgres client (Supabase) — singleton |
 | `jira.client.ts` | Jira REST client |
 | `google-oauth.client.ts` | Google OAuth (for Sheets export) |
 | `cache.ts` | Cache wrapper |
+
+### Database
+- Schema: `apps/tere-project/src/server/db/schema.ts`
+- Migrations: `apps/tere-project/drizzle/`
+- Config: `apps/tere-project/drizzle.config.ts`
+- Generate: `cd apps/tere-project && npx drizzle-kit generate`
+- Apply: `cd apps/tere-project && npx drizzle-kit migrate`
 
 ### Server infrastructure
 - `apps/tere-project/src/server/cache/server-cache.ts`

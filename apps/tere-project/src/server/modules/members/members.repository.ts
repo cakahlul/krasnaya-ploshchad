@@ -1,84 +1,83 @@
-import { firestore } from '@server/lib/firebase-admin';
+import { db } from '@server/lib/db';
+import { members } from '@server/db/schema';
+import { eq } from 'drizzle-orm';
 import type { MemberEntity } from '@shared/types/member.types';
 import { Level } from '@shared/types/common.types';
 
-const COLLECTION = 'members';
+type Row = typeof members.$inferSelect;
 
-function toDate(field: any): Date {
-  if (field === undefined || field === null) throw new Error('Missing required date field');
-  if (typeof field.toDate === 'function') return field.toDate();
-  if (field._seconds !== undefined) return new Date(field._seconds * 1000);
-  if (typeof field === 'object' && field.seconds !== undefined) return new Date(field.seconds * 1000);
-  const date = new Date(field);
-  if (isNaN(date.getTime())) throw new Error(`Invalid date format: ${JSON.stringify(field)}`);
-  return date;
+function rowToEntity(row: Row): MemberEntity {
+  return {
+    id: row.id,
+    jiraId: row.jiraId,
+    name: row.name,
+    fullName: row.fullName,
+    email: row.email,
+    level: row.level as Level,
+    isLead: row.isLead,
+    teams: row.teams ?? [],
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
 }
 
-function mapDocToEntity(id: string, data: FirebaseFirestore.DocumentData): MemberEntity {
+function entityToInsert(data: Omit<MemberEntity, 'id'>) {
   return {
-    id,
+    jiraId: data.jiraId ?? null,
     name: data.name,
     fullName: data.fullName,
     email: data.email,
-    level: data.level as Level,
+    level: data.level,
     isLead: data.isLead ?? false,
     teams: data.teams ?? [],
-    createdAt: toDate(data.createdAt),
-    updatedAt: toDate(data.updatedAt),
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
   };
 }
 
 export class MembersRepository {
   async create(data: MemberEntity): Promise<MemberEntity> {
-    const docRef = await firestore.collection(COLLECTION).add(data);
-    const doc = await docRef.get();
-    const docData = doc.data();
-    if (!docData) throw new Error('Failed to retrieve created member document');
-    return mapDocToEntity(doc.id, docData);
-  }
-
-  async createWithId(id: string, data: MemberEntity): Promise<MemberEntity> {
-    const docRef = firestore.collection(COLLECTION).doc(id);
-    await docRef.set(data);
-    const doc = await docRef.get();
-    const docData = doc.data();
-    if (!docData) throw new Error('Failed to retrieve created member document');
-    return mapDocToEntity(doc.id, docData);
+    const [row] = await db.insert(members).values(entityToInsert(data)).returning();
+    return rowToEntity(row);
   }
 
   async findAll(): Promise<MemberEntity[]> {
-    const snapshot = await firestore.collection(COLLECTION).orderBy('name').get();
-    return snapshot.docs.map((doc) => mapDocToEntity(doc.id, doc.data()));
+    const rows = await db.select().from(members).orderBy(members.name);
+    return rows.map(rowToEntity);
   }
 
   async findById(id: string): Promise<MemberEntity | null> {
-    const doc = await firestore.collection(COLLECTION).doc(id).get();
-    if (!doc.exists) return null;
-    const data = doc.data();
-    if (!data) return null;
-    return mapDocToEntity(doc.id, data);
+    const [row] = await db.select().from(members).where(eq(members.id, id));
+    return row ? rowToEntity(row) : null;
+  }
+
+  async findByJiraId(jiraId: string): Promise<MemberEntity | null> {
+    const [row] = await db.select().from(members).where(eq(members.jiraId, jiraId));
+    return row ? rowToEntity(row) : null;
   }
 
   async findByEmail(email: string): Promise<MemberEntity | null> {
-    const snapshot = await firestore.collection(COLLECTION).where('email', '==', email).limit(1).get();
-    if (snapshot.empty) return null;
-    const doc = snapshot.docs[0];
-    return mapDocToEntity(doc.id, doc.data());
+    const [row] = await db.select().from(members).where(eq(members.email, email));
+    return row ? rowToEntity(row) : null;
   }
 
   async update(id: string, data: Partial<MemberEntity>): Promise<MemberEntity | null> {
-    const docRef = firestore.collection(COLLECTION).doc(id);
-    const doc = await docRef.get();
-    if (!doc.exists) return null;
-    await docRef.update(data as any);
-    const updatedDoc = await docRef.get();
-    const updatedData = updatedDoc.data();
-    if (!updatedData) return null;
-    return mapDocToEntity(updatedDoc.id, updatedData);
+    const patch: Partial<typeof members.$inferInsert> = {};
+    if (data.jiraId !== undefined) patch.jiraId = data.jiraId;
+    if (data.name !== undefined) patch.name = data.name;
+    if (data.fullName !== undefined) patch.fullName = data.fullName;
+    if (data.email !== undefined) patch.email = data.email;
+    if (data.level !== undefined) patch.level = data.level;
+    if (data.isLead !== undefined) patch.isLead = data.isLead;
+    if (data.teams !== undefined) patch.teams = data.teams;
+    patch.updatedAt = data.updatedAt ?? new Date();
+
+    const [row] = await db.update(members).set(patch).where(eq(members.id, id)).returning();
+    return row ? rowToEntity(row) : null;
   }
 
   async delete(id: string): Promise<void> {
-    await firestore.collection(COLLECTION).doc(id).delete();
+    await db.delete(members).where(eq(members.id, id));
   }
 }
 

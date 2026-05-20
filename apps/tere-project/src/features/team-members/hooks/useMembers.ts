@@ -29,7 +29,7 @@ export function useCreateMember() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: CreateMemberRequest & { id?: string }) => {
+    mutationFn: async (payload: CreateMemberRequest) => {
       const response = await axiosClient.post('/members', payload);
       return response.data as MemberResponse;
     },
