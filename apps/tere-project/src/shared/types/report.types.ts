@@ -93,6 +93,22 @@ export interface EpicDto {
   status?: string;
 }
 
+export interface EpicBreakdownDto {
+  productivityRate: string;
+  wpProductivity: string;
+  devDefect: number;
+  devDefectRate: string;
+  totalWeightPoints: number;
+  weightPointsProduct: number;
+  weightPointsTechDebt: number;
+  issueKeys: string[];
+  wpToHours?: number;
+  spProduct?: number;
+  spTechDebt?: number;
+  spMeeting?: number;
+  spTotal?: number;
+}
+
 export interface JiraIssueReportResponseDto {
   member: string;
   team: string;
@@ -114,6 +130,7 @@ export interface JiraIssueReportResponseDto {
    * Value 'null' (string) indicates issues with no parent epic.
    */
   epicKeys?: string[];
+  epicBreakdown?: Record<string, EpicBreakdownDto>;
   workingDays?: number;
   wpToHours?: number;
   spProduct?: number;

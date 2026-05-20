@@ -205,6 +205,7 @@ function processRawData(
       targetWeightPoints: (dailyTargetWPByLevel[m.level] ?? 8) * 10,
       issueKeys: [],
       epicKeys: [],
+      epicBreakdown: {},
       spMeeting: 0,
     };
   }
@@ -262,24 +263,41 @@ function processRawData(
       if (!report.epicKeys.includes(epicKey)) {
         report.epicKeys.push(epicKey);
       }
+      if (!report.epicBreakdown) report.epicBreakdown = {};
+      report.epicBreakdown[epicKey] ??= {
+        productivityRate: '',
+        wpProductivity: '',
+        devDefect: 0,
+        devDefectRate: '',
+        totalWeightPoints: 0,
+        weightPointsProduct: 0,
+        weightPointsTechDebt: 0,
+        issueKeys: [],
+        spMeeting: 0,
+      };
+      const epicReport = report.epicBreakdown[epicKey];
+      epicReport.issueKeys.push(issue.key);
 
       const isDone = issue.fields.resolution?.name === 'Done';
       if (!isShowPlannedWP || isDone) {
-        // Extract meeting SP from ALL-Meeting appendix options before adding WP
         const meetingSP = extractMeetingSPFromIssue(issue);
         if (meetingSP > 0) {
-          // Meeting tickets: accumulate direct SP, do not add to WP
           report.spMeeting = (report.spMeeting ?? 0) + meetingSP;
+          epicReport.spMeeting = (epicReport.spMeeting ?? 0) + meetingSP;
         } else {
-          // Regular tickets: accumulate weight points as usual
           report[weightPoints] += complexityWeight;
+          epicReport[weightPoints] += complexityWeight;
+          epicReport.totalWeightPoints += complexityWeight;
           const cData = complexityMap.get(reportKey);
           if (cData) {
             cData.totalComplexity += complexityWeight;
             cData.count++;
           }
         }
-        if (issue.fields.issuetype?.name === 'Bug') report.devDefect++;
+        if (issue.fields.issuetype?.name === 'Bug') {
+          report.devDefect++;
+          epicReport.devDefect++;
+        }
       }
     } catch (error) {
       console.error('Error processing issue:', error);
@@ -358,6 +376,39 @@ function processRawData(
           ? `${((report.spTotal / totalAvailableHours) * 100).toFixed(2)}%`
           : '0.00%';
     }
+
+    Object.values(report.epicBreakdown ?? {}).forEach(epicReport => {
+      const epicTargetWP = report.targetWeightPoints;
+      epicReport.wpProductivity =
+        epicTargetWP > 0
+          ? `${((epicReport.totalWeightPoints / epicTargetWP) * 100).toFixed(2)}%`
+          : '0.00%';
+      epicReport.devDefectRate = calculateDefectRate(epicReport.devDefect);
+      epicReport.wpToHours = epicReport.totalWeightPoints / targetSP;
+      epicReport.spProduct = epicReport.weightPointsProduct * spBase;
+      epicReport.spTechDebt = epicReport.weightPointsTechDebt * spBase;
+      epicReport.spTotal =
+        epicReport.spProduct + epicReport.spTechDebt + (epicReport.spMeeting ?? 0);
+      epicReport.productivityRate =
+        totalAvailableHours > 0
+          ? `${((epicReport.spTotal / totalAvailableHours) * 100).toFixed(2)}%`
+          : '0.00%';
+      if (epicReport.totalWeightPoints === 0) {
+        epicReport.weightPointsProduct = 0;
+        epicReport.weightPointsTechDebt = 0;
+        epicReport.devDefect = 0;
+        epicReport.devDefectRate = '0%';
+        epicReport.wpProductivity = '0%';
+        epicReport.wpToHours = 0;
+        epicReport.spProduct = 0;
+        epicReport.spTechDebt = 0;
+        epicReport.spTotal = epicReport.spMeeting ?? 0;
+        epicReport.productivityRate =
+          totalAvailableHours > 0
+            ? `${((epicReport.spTotal / totalAvailableHours) * 100).toFixed(2)}%`
+            : '0.00%';
+      }
+    });
   });
 
   return Array.from(reports.values()).filter(r => r.issueKeys.length > 0);

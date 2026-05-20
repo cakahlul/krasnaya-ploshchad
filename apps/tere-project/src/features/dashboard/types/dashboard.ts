@@ -1,3 +1,19 @@
+export interface EpicBreakdown {
+  productivityRate: string;
+  wpProductivity: string;
+  devDefect: number;
+  devDefectRate: string;
+  totalWeightPoints: number;
+  weightPointsProduct: number;
+  weightPointsTechDebt: number;
+  issueKeys: string[];
+  wpToHours?: number;
+  spProduct?: number;
+  spTechDebt?: number;
+  spMeeting?: number;
+  spTotal?: number;
+}
+
 export interface WorkItem {
   member: string;
   team: string;
@@ -18,6 +34,7 @@ export interface WorkItem {
    * Populated by the server and included in every report response.
    */
   epicKeys?: string[];
+  epicBreakdown?: Record<string, EpicBreakdown>;
   workingDays?: number;
   wpToHours?: number;
   spProduct?: number;

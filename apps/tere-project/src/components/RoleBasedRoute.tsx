@@ -10,12 +10,14 @@ interface RoleBasedRouteProps {
   children: React.ReactNode;
   allowedRoles: ('Lead' | 'Member')[];
   redirectTo?: string;
+  fallback?: React.ReactNode;
 }
 
 export default function RoleBasedRoute({
   children,
   allowedRoles,
   redirectTo = '/dashboard/reports',
+  fallback,
 }: RoleBasedRouteProps) {
   const { member, isLoading } = useMemberProfile();
   const router = useRouter();
@@ -30,7 +32,7 @@ export default function RoleBasedRoute({
   }, [role, isLoading, allowedRoles, redirectTo, router]);
 
   if (isLoading) {
-    return <LoadingScreen onComplete={() => {}} theme={theme} />;
+    return fallback !== undefined ? <>{fallback}</> : <LoadingScreen onComplete={() => {}} theme={theme} />;
   }
 
   if (!role || !allowedRoles.includes(role)) {

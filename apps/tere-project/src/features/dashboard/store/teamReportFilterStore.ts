@@ -15,6 +15,7 @@ type FilterState = {
   setDateRangeFilter: (startDate: string, endDate: string, project: string) => void;
   clearFilter: () => void;
   setEpicFilter: (epicId: string) => void;
+  setEpicFilters: (epicIds?: string[]) => void;
   setSelectedMembers: (keys: string[]) => void;
   clearSelectedMembers: () => void;
 };
@@ -84,6 +85,15 @@ export const useTeamReportFilterStore = create<FilterState>((set, get) => ({
 
     set(state => ({
       selectedFilter: { ...state.selectedFilter, epicId: newEpics.length > 0 ? newEpics : undefined },
+    }));
+  },
+
+  setEpicFilters: (epicIds?: string[]) => {
+    set(state => ({
+      selectedFilter: {
+        ...state.selectedFilter,
+        epicId: epicIds && epicIds.length > 0 ? [...epicIds] : undefined,
+      },
     }));
   },
 

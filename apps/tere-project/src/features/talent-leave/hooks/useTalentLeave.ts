@@ -37,5 +37,7 @@ export function useTalentLeave() {
     queryKey: ['talentLeave', selectedMonthStart],
     queryFn: () => talentLeaveRepository.fetchLeaveRecords(startDate, endDate),
     enabled: !!selectedMonthStart,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 }

@@ -42,35 +42,41 @@ export default function TalentLeavePage() {
     return undefined;
   }, [modalState.mode, modalState.leaveId, leaveRecords]);
 
-  return (
-    <RoleBasedRoute allowedRoles={['Lead', 'Member']}>
-      <div className="relative p-6 overflow-x-hidden tere-input tere-modal tere-table">
-        {isLoading && <LoadingBar />}
+  const bodySkeleton = (
+    <div style={{ padding: '24px 0', opacity: 0.6 }}>
+      <div style={{ height: 14, width: 180, background: iconBg, borderRadius: 6, marginBottom: 12 }} />
+      <div style={{ height: 320, width: '100%', background: iconBg, borderRadius: 12 }} />
+    </div>
+  );
 
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: titleCol, margin: 0, fontFamily: sans, letterSpacing: -0.3 }}>
-              Talent Leave
-            </h2>
-            <p style={{ color: subCol, margin: '4px 0 0', fontSize: 12.5, fontFamily: sans }}>
-              Leave records and calendar overview
-            </p>
-            <div className="flex items-center gap-3 mt-3">
-              <span style={{ color: subCol, fontSize: 12.5, fontFamily: sans }}>Showing data from</span>
-              <DateRangePicker />
-            </div>
-            <p style={{
-              color: isDark ? '#f87171' : '#dc2626',
-              margin: '8px 0 0',
-              fontSize: 12,
-              fontStyle: 'italic',
-              fontFamily: sans,
-              opacity: isDark ? 0.85 : 1,
-            }}>
-              *Penghitungan jumlah berdasarkan total hari cuti yang diambil pada
-              rentang tanggal yang ditampilkan tanpa menghitung hari libur.
-            </p>
+  return (
+    <div className="relative p-6 overflow-x-hidden tere-input tere-modal tere-table">
+      {isLoading && <LoadingBar />}
+
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: titleCol, margin: 0, fontFamily: sans, letterSpacing: -0.3 }}>
+            Talent Leave
+          </h2>
+          <p style={{ color: subCol, margin: '4px 0 0', fontSize: 12.5, fontFamily: sans }}>
+            Leave records and calendar overview
+          </p>
+          <div className="flex items-center gap-3 mt-3">
+            <span style={{ color: subCol, fontSize: 12.5, fontFamily: sans }}>Showing data from</span>
+            <DateRangePicker />
           </div>
+          <p style={{
+            color: isDark ? '#f87171' : '#dc2626',
+            margin: '8px 0 0',
+            fontSize: 12,
+            fontStyle: 'italic',
+            fontFamily: sans,
+            opacity: isDark ? 0.85 : 1,
+          }}>
+            *Penghitungan jumlah berdasarkan total hari cuti yang diambil pada
+            rentang tanggal yang ditampilkan tanpa menghitung hari libur.
+          </p>
+        </div>
           <div className="flex gap-3 items-center">
             {/* View Toggle */}
             <div style={{
@@ -163,6 +169,7 @@ export default function TalentLeavePage() {
           </div>
         </div>
 
+      <RoleBasedRoute allowedRoles={['Lead', 'Member']} fallback={bodySkeleton}>
         {viewMode === 'list' ? <LeaveListView /> : <LeaveCalendarSimple />}
 
         <ExportToast
@@ -185,7 +192,7 @@ export default function TalentLeavePage() {
           }
           isAdmin={canEdit}
         />
-      </div>
-    </RoleBasedRoute>
+      </RoleBasedRoute>
+    </div>
   );
 }
