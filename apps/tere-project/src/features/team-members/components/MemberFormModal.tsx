@@ -66,17 +66,16 @@ export default function MemberFormModal({
     teams: string[];
   }) => {
     try {
-      const { jiraId, ...rest } = values;
       const payload = {
-        ...rest,
-        isLead: rest.isLead ?? false,
+        ...values,
+        isLead: values.isLead ?? false,
       };
 
       if (isEditMode) {
         await updateMember({ id: member.id, ...payload });
         message.success('Member updated successfully');
       } else {
-        await createMember({ ...(jiraId ? { id: jiraId } : {}), ...payload });
+        await createMember(payload);
         message.success('Member created successfully');
       }
 

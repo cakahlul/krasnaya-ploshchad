@@ -1,5 +1,7 @@
 import { withAuth } from '@server/auth/with-auth';
-import { firestore } from '@server/lib/firebase-admin';
+import { db } from '@server/lib/db';
+import { boards } from '@server/db/schema';
+import { sql } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,14 +11,19 @@ const INITIAL_BOARDS = [
 ];
 
 export const POST = withAuth(async () => {
-  const batch = firestore.batch();
+  await db
+    .insert(boards)
+    .values(INITIAL_BOARDS)
+    .onConflictDoUpdate({
+      target: boards.boardId,
+      set: {
+        name: sql`excluded.name`,
+        shortName: sql`excluded.short_name`,
+      },
+    });
 
-  for (const board of INITIAL_BOARDS) {
-    const ref = firestore.collection('boards').doc(String(board.boardId));
-    batch.set(ref, board, { merge: true });
-  }
-
-  await batch.commit();
-
-  return Response.json({ message: `Seeded ${INITIAL_BOARDS.length} boards`, boards: INITIAL_BOARDS }, { status: 201 });
+  return Response.json(
+    { message: `Seeded ${INITIAL_BOARDS.length} boards`, boards: INITIAL_BOARDS },
+    { status: 201 },
+  );
 });

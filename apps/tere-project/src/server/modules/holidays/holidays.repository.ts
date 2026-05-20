@@ -1,4 +1,6 @@
-import { firestore } from '@server/lib/firebase-admin';
+import { db } from '@server/lib/db';
+import { holidays } from '@server/db/schema';
+import { and, eq, gte, lte } from 'drizzle-orm';
 
 export interface Holiday {
   id?: string;
@@ -7,27 +9,25 @@ export interface Holiday {
   is_national_holiday: boolean;
 }
 
-const COLLECTION = 'holiday';
+type Row = typeof holidays.$inferSelect;
 
-function docToHoliday(doc: FirebaseFirestore.QueryDocumentSnapshot): Holiday {
-  const data = doc.data();
+function rowToHoliday(row: Row): Holiday {
   return {
-    id: doc.id,
-    holiday_date: data.date as string,
-    holiday_name: data.name as string,
-    is_national_holiday: data.is_national_holiday !== false,
+    id: row.id,
+    holiday_date: row.date,
+    holiday_name: row.name,
+    is_national_holiday: row.isNationalHoliday,
   };
 }
 
 export class HolidaysRepository {
   async fetchHolidaysByYear(year: number): Promise<Holiday[]> {
     try {
-      const snapshot = await firestore
-        .collection(COLLECTION)
-        .where('date', '>=', `${year}-01-01`)
-        .where('date', '<=', `${year}-12-31`)
-        .get();
-      return snapshot.docs.map(docToHoliday);
+      const rows = await db
+        .select()
+        .from(holidays)
+        .where(and(gte(holidays.date, `${year}-01-01`), lte(holidays.date, `${year}-12-31`)));
+      return rows.map(rowToHoliday);
     } catch {
       return [];
     }
@@ -38,12 +38,11 @@ export class HolidaysRepository {
     const minYear = Math.min(...years);
     const maxYear = Math.max(...years);
     try {
-      const snapshot = await firestore
-        .collection(COLLECTION)
-        .where('date', '>=', `${minYear}-01-01`)
-        .where('date', '<=', `${maxYear}-12-31`)
-        .get();
-      return snapshot.docs.map(docToHoliday).filter((h) => {
+      const rows = await db
+        .select()
+        .from(holidays)
+        .where(and(gte(holidays.date, `${minYear}-01-01`), lte(holidays.date, `${maxYear}-12-31`)));
+      return rows.map(rowToHoliday).filter((h) => {
         const y = parseInt(h.holiday_date.substring(0, 4), 10);
         return years.includes(y);
       });
@@ -53,15 +52,14 @@ export class HolidaysRepository {
   }
 
   async createHoliday(date: string, name: string): Promise<Holiday> {
-    const ref = await firestore.collection(COLLECTION).add({
-      date,
-      name,
-      is_national_holiday: true,
-    });
-    return { id: ref.id, holiday_date: date, holiday_name: name, is_national_holiday: true };
+    const [row] = await db
+      .insert(holidays)
+      .values({ date, name, isNationalHoliday: true })
+      .returning();
+    return rowToHoliday(row);
   }
 
   async deleteHoliday(id: string): Promise<void> {
-    await firestore.collection(COLLECTION).doc(id).delete();
+    await db.delete(holidays).where(eq(holidays.id, id));
   }
 }

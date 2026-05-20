@@ -40,7 +40,7 @@ export async function getDashboardSummary(): Promise<DashboardSummaryResponseDto
           const teamMembers = allMembers.filter(
             m => m.teams.some(t => t.toLowerCase() === board.shortName.toLowerCase()) && !m.isLead,
           );
-          const assignees = teamMembers.map(m => m.id);
+          const assignees = teamMembers.map(m => m.jiraId!).filter(Boolean);
           const isSubtaskType = await boardsService.hasSubtaskType(board.shortName);
           const rawIssues = await repo.fetchPlannedWPData(board.shortName, assignees, String(sprintId), isSubtaskType);
           const uniqueParents = new Set(

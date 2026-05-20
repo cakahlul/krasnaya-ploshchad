@@ -1,5 +1,6 @@
-import { firestore } from '@server/lib/firebase-admin';
-import { Timestamp } from 'firebase-admin/firestore';
+import { db } from '@server/lib/db';
+import { targetWpConfig } from '@server/db/schema';
+import { desc, eq } from 'drizzle-orm';
 
 export type TargetWpRates = Record<string, number>;
 
@@ -9,8 +10,6 @@ export interface TargetWpConfig {
   rates: TargetWpRates;
 }
 
-const COLLECTION = 'target_wp_config';
-
 const DEFAULT_RATES: TargetWpRates = {
   junior: 4.5,
   medior: 6,
@@ -18,36 +17,24 @@ const DEFAULT_RATES: TargetWpRates = {
   'individual contributor': 8,
 };
 
-function toDateString(value: unknown): string {
-  if (value && typeof value === 'object' && 'toDate' in value && typeof (value as { toDate: unknown }).toDate === 'function') {
-    const date = (value as FirebaseFirestore.Timestamp).toDate();
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  }
-  return value as string;
-}
+type Row = typeof targetWpConfig.$inferSelect;
 
-function parseToTimestamp(dateStr: string): Timestamp {
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return Timestamp.fromDate(new Date(year, month - 1, day));
-}
-
-function docToConfig(doc: FirebaseFirestore.QueryDocumentSnapshot): TargetWpConfig {
-  const data = doc.data();
+function rowToConfig(row: Row): TargetWpConfig {
   return {
-    id: doc.id,
-    effective_date: toDateString(data.effective_date),
-    rates: data.rates as TargetWpRates,
+    id: row.id,
+    effective_date: row.effectiveDate,
+    rates: row.rates as TargetWpRates,
   };
 }
 
 export class TargetWpConfigRepository {
   async fetchAll(): Promise<TargetWpConfig[]> {
     try {
-      const snapshot = await firestore
-        .collection(COLLECTION)
-        .orderBy('effective_date', 'desc')
-        .get();
-      return snapshot.docs.map(docToConfig);
+      const rows = await db
+        .select()
+        .from(targetWpConfig)
+        .orderBy(desc(targetWpConfig.effectiveDate));
+      return rows.map(rowToConfig);
     } catch {
       return [];
     }
@@ -57,7 +44,7 @@ export class TargetWpConfigRepository {
     try {
       const all = await this.fetchAll();
       const match = all
-        .filter(c => c.effective_date <= sprintStartDate)
+        .filter((c) => c.effective_date <= sprintStartDate)
         .sort((a, b) => b.effective_date.localeCompare(a.effective_date))[0];
       return match?.rates ?? DEFAULT_RATES;
     } catch {
@@ -66,12 +53,14 @@ export class TargetWpConfigRepository {
   }
 
   async create(effective_date: string, rates: TargetWpRates): Promise<TargetWpConfig> {
-    const timestamp = parseToTimestamp(effective_date);
-    const ref = await firestore.collection(COLLECTION).add({ effective_date: timestamp, rates });
-    return { id: ref.id, effective_date, rates };
+    const [row] = await db
+      .insert(targetWpConfig)
+      .values({ effectiveDate: effective_date, rates })
+      .returning();
+    return rowToConfig(row);
   }
 
   async delete(id: string): Promise<void> {
-    await firestore.collection(COLLECTION).doc(id).delete();
+    await db.delete(targetWpConfig).where(eq(targetWpConfig.id, id));
   }
 }

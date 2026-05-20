@@ -19,7 +19,8 @@ async function resolveCaller(email: string): Promise<CallerIdentity> {
   return {
     email,
     isLead: member?.isLead ?? false,
-    memberId: member?.id,
+    // memberId here is the Jira accountId — natural key shared with talent_leave.memberId
+    memberId: member?.jiraId ?? undefined,
     fullName: member?.fullName,
   };
 }

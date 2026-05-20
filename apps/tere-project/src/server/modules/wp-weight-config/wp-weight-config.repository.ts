@@ -1,4 +1,6 @@
-import { firestore } from '@server/lib/firebase-admin';
+import { db } from '@server/lib/db';
+import { wpWeightConfig } from '@server/db/schema';
+import { desc, eq } from 'drizzle-orm';
 import type { AppendixWeightPoint } from '@shared/utils/appendix-level';
 
 export type WpWeights = Record<AppendixWeightPoint, number>;
@@ -9,40 +11,31 @@ export interface WpWeightConfig {
   weights: WpWeights;
 }
 
-const COLLECTION = 'wp_weight_config';
-
 const DEFAULT_WEIGHTS: WpWeights = {
   'Very Low': 1,
-  'Low': 2,
-  'Medium': 4,
-  'High': 8,
+  Low: 2,
+  Medium: 4,
+  High: 8,
 };
 
-function toDateString(value: unknown): string {
-  if (value && typeof value === 'object' && 'toDate' in value && typeof (value as { toDate: unknown }).toDate === 'function') {
-    const date = (value as FirebaseFirestore.Timestamp).toDate();
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  }
-  return value as string;
-}
+type Row = typeof wpWeightConfig.$inferSelect;
 
-function docToConfig(doc: FirebaseFirestore.QueryDocumentSnapshot): WpWeightConfig {
-  const data = doc.data();
+function rowToConfig(row: Row): WpWeightConfig {
   return {
-    id: doc.id,
-    effective_date: toDateString(data.effective_date),
-    weights: data.weights as WpWeights,
+    id: row.id,
+    effective_date: row.effectiveDate,
+    weights: row.weights as WpWeights,
   };
 }
 
 export class WpWeightConfigRepository {
   async fetchAll(): Promise<WpWeightConfig[]> {
     try {
-      const snapshot = await firestore
-        .collection(COLLECTION)
-        .orderBy('effective_date', 'desc')
-        .get();
-      return snapshot.docs.map(docToConfig);
+      const rows = await db
+        .select()
+        .from(wpWeightConfig)
+        .orderBy(desc(wpWeightConfig.effectiveDate));
+      return rows.map(rowToConfig);
     } catch {
       return [];
     }
@@ -52,7 +45,7 @@ export class WpWeightConfigRepository {
     try {
       const all = await this.fetchAll();
       const match = all
-        .filter(c => c.effective_date <= sprintStartDate)
+        .filter((c) => c.effective_date <= sprintStartDate)
         .sort((a, b) => b.effective_date.localeCompare(a.effective_date))[0];
       return match?.weights ?? DEFAULT_WEIGHTS;
     } catch {
@@ -61,11 +54,14 @@ export class WpWeightConfigRepository {
   }
 
   async create(effective_date: string, weights: WpWeights): Promise<WpWeightConfig> {
-    const ref = await firestore.collection(COLLECTION).add({ effective_date, weights });
-    return { id: ref.id, effective_date, weights };
+    const [row] = await db
+      .insert(wpWeightConfig)
+      .values({ effectiveDate: effective_date, weights })
+      .returning();
+    return rowToConfig(row);
   }
 
   async delete(id: string): Promise<void> {
-    await firestore.collection(COLLECTION).doc(id).delete();
+    await db.delete(wpWeightConfig).where(eq(wpWeightConfig.id, id));
   }
 }

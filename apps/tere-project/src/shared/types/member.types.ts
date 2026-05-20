@@ -2,6 +2,7 @@ import { Level } from './common.types';
 
 export interface MemberEntity {
   id?: string;
+  jiraId?: string | null;
   name: string;
   fullName: string;
   email: string;
@@ -14,6 +15,7 @@ export interface MemberEntity {
 
 export interface MemberResponse {
   id: string;
+  jiraId: string | null;
   name: string;
   fullName: string;
   email: string;
@@ -25,6 +27,7 @@ export interface MemberResponse {
 }
 
 export interface CreateMemberRequest {
+  jiraId?: string;
   name: string;
   fullName: string;
   email: string;
@@ -34,6 +37,7 @@ export interface CreateMemberRequest {
 }
 
 export interface UpdateMemberRequest {
+  jiraId?: string;
   name?: string;
   fullName?: string;
   email?: string;

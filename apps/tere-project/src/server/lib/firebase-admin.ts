@@ -1,10 +1,8 @@
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
-import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
 // Global singleton survives Next.js hot reloads in dev
 declare global {
-  // eslint-disable-next-line no-var
   var __firebaseAdminApp: App | undefined;
 }
 
@@ -34,7 +32,6 @@ const app = initAdmin();
 
 export const firebaseAdmin = app;
 export const auth: Auth = getAuth(app);
-export const firestore: Firestore = getFirestore(app);
 
 // Re-export session cookie helpers used by existing auth routes
 export { auth as adminAuth };
