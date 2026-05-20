@@ -67,6 +67,10 @@
 ### Notes
 - **Feature flag** `isShowPlannedWP` — Team Reporting only (NOT dashboard, NOT productivity summary).
 - Reports fetch from Jira via `src/server/lib/jira.client.ts`.
+- Epic/Story filter (`components/epicSelect.tsx`) uses **staged multi-select** (local draft) and commits only on **Apply**.
+- Do **not** refetch `/api/report` per epic: `useTeamReportFetch.ts` excludes epic IDs from the query key/API call.
+- Do **not** row-filter member aggregates for epic filtering: `reports.service.ts` populates per-member `epicBreakdown`, and `useTeamReportTransform.ts` rebuilds member rows from selected epic buckets before recalculating every displayed summary metric.
+- Bulk commit API: `store/teamReportFilterStore.ts → setEpicFilters(epicIds?: string[])`. Per-click toggle `setEpicFilter` retained for legacy callers.
 
 ---
 
