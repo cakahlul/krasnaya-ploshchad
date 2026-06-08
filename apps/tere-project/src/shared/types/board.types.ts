@@ -8,6 +8,7 @@ export interface BoardEntity {
   isBugMonitoring?: boolean;
   bugIssueType?: string;
   isStoryGrouping?: boolean;
+  kanbanCycleStartDate?: string | null;
 }
 
 export interface BoardResponse {
@@ -21,4 +22,5 @@ export interface BoardResponse {
   isBugMonitoring?: boolean;
   bugIssueType?: string;
   isStoryGrouping?: boolean;
+  kanbanCycleStartDate?: string | null;
 }

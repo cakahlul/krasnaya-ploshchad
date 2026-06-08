@@ -1,0 +1,1 @@
+ALTER TABLE "boards" ADD COLUMN "kanban_cycle_start_date" date;

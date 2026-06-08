@@ -26,7 +26,13 @@ type CalendarCell = {
   holidayName?: string;
 };
 
-export function LeaveCalendarSimple() {
+interface LeaveCalendarSimpleProps {
+  canEditOwn?: boolean;
+  canManageAll?: boolean;
+  currentMemberId?: string;
+}
+
+export function LeaveCalendarSimple({ canEditOwn = false, canManageAll = false, currentMemberId = '' }: LeaveCalendarSimpleProps) {
   const { dateRangeStart, dateRangeEnd, openEditModal } = useTalentLeaveStore();
   const [isMounted, setIsMounted] = useState(false);
   const {
@@ -121,9 +127,8 @@ export function LeaveCalendarSimple() {
     if (cell.isNationalHoliday) return isDark ? '#2a0f10' : '#fee2e2';
     if (cell.isWeekend) return isDark ? 'rgba(255,255,255,0.03)' : '#f1f5f9';
     if (isLeaveDate) {
-      if (leaveStatus === 'Draft') return isDark ? '#2e1f08' : '#fef3c7';
       if (leaveStatus === 'Sick') return isDark ? '#1a0f2e' : '#ede9fe';
-      return isDark ? '#0a2a1e' : '#d1fae5'; // Confirmed
+      return isDark ? '#0a2a1e' : '#d1fae5';
     }
     return cardBg;
   };
@@ -376,7 +381,7 @@ export function LeaveCalendarSimple() {
                         >
                           {member.name}
                         </span>
-                        {hasFutureLeaveDates(member) && (
+                        {(canManageAll || (canEditOwn && member.memberId === currentMemberId)) && hasFutureLeaveDates(member) && (
                           <button
                             onClick={() => openEditModal(member.id)}
                             className="p-1 rounded transition-all duration-150 flex-shrink-0"
@@ -424,7 +429,6 @@ export function LeaveCalendarSimple() {
                         : undefined;
                       const cellBg = getCellBg(cell, isLeaveDate, leaveStatus);
                       const showCheckmark = isLeaveDate && !cell.isWeekend && !cell.isNationalHoliday;
-                      const isDraft = leaveStatus === 'Draft';
                       const isSick = leaveStatus === 'Sick';
 
                       return (
@@ -437,7 +441,7 @@ export function LeaveCalendarSimple() {
                             {showCheckmark && (
                               <CheckCircleFilled
                                 className={`text-lg drop-shadow-md ${
-                                  isDraft ? 'text-amber-600' : isSick ? 'text-purple-600' : 'text-emerald-600'
+                                  isSick ? 'text-purple-600' : 'text-emerald-600'
                                 }`}
                               />
                             )}
@@ -445,7 +449,7 @@ export function LeaveCalendarSimple() {
                           {isLeaveDate && (
                             <div
                               className={`absolute left-0 top-0 bottom-0 w-1 ${
-                                isDraft ? 'bg-amber-500' : isSick ? 'bg-purple-600' : 'bg-emerald-600'
+                                isSick ? 'bg-purple-600' : 'bg-emerald-600'
                               }`}
                             ></div>
                           )}

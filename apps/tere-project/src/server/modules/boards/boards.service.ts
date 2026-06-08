@@ -25,6 +25,7 @@ class BoardsService {
       isBugMonitoring: e.isBugMonitoring,
       bugIssueType: e.bugIssueType,
       isStoryGrouping: e.isStoryGrouping,
+      kanbanCycleStartDate: e.kanbanCycleStartDate,
     }));
     this.cache.set(CACHE_KEY, result);
     return result;

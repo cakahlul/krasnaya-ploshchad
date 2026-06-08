@@ -15,8 +15,13 @@ export const GET = withAuth(async (req) => {
   return Response.json(records);
 });
 
-export const POST = withAuth(async (req) => {
+export const POST = withAuth(async (req, { user }) => {
   const body = await req.json();
-  const record = await talentLeaveService.create(body);
-  return Response.json(record, { status: 201 });
+  try {
+    const record = await talentLeaveService.create(body, user.email);
+    return Response.json(record, { status: 201 });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Forbidden') return Response.json({ message: 'Forbidden' }, { status: 403 });
+    return Response.json({ message: 'Not found' }, { status: 404 });
+  }
 });

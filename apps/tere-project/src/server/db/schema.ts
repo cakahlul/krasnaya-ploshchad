@@ -38,7 +38,7 @@ export const talentLeave = pgTable('talent_leave', {
       Array<{
         dateFrom: string;
         dateTo: string;
-        status: 'Draft' | 'Confirmed' | 'Sick';
+        status: 'Leave' | 'Sick';
       }>
     >()
     .notNull()
@@ -71,6 +71,7 @@ export const boards = pgTable('boards', {
   isBugMonitoring: boolean('is_bug_monitoring').notNull().default(false),
   bugIssueType: text('bug_issue_type'),
   isStoryGrouping: boolean('is_story_grouping').notNull().default(false),
+  kanbanCycleStartDate: date('kanban_cycle_start_date'),
 });
 
 // api keys

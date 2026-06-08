@@ -2,7 +2,7 @@
 export interface LeaveDateRange {
   dateFrom: string; // ISO 8601
   dateTo: string; // ISO 8601
-  status: 'Draft' | 'Confirmed' | 'Sick'; // Status per leave range
+  status: 'Leave' | 'Sick'; // Status per leave range
 }
 
 // Response from GET /talent-leave
@@ -61,12 +61,13 @@ export interface TeamGroup {
 
 export interface LeaveRowData {
   id: string;
+  memberId: string;
   name: string;
   team: string;
   leaveCount: number; // Total days across all ranges
   dateRanges: Array<{ dateFrom: string; dateTo: string; status: string; display: string }>; // Multiple date ranges with status
   leaveDates: string[]; // Array of YYYY-MM-DD (flattened from all ranges)
-  leaveDatesWithStatus: Record<string, 'Draft' | 'Confirmed' | 'Sick'>; // Map date to status
+  leaveDatesWithStatus: Record<string, 'Leave' | 'Sick'>; // Map date to status
   dateRange: string; // Formatted date range display (comma-separated if multiple)
   status: string; // Status display (unique statuses if multiple)
 }

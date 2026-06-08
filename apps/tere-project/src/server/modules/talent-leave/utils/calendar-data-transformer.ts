@@ -12,12 +12,13 @@ export interface SprintInfo {
 
 export interface TeamMemberRow {
   id: string;
+  memberId: string;
   name: string;
   team: string;
   leaveCount: number;
   dateRange: string;
   leaveDates: string[];
-  leaveDatesWithStatus: Record<string, 'Draft' | 'Confirmed' | 'Sick'>;
+  leaveDatesWithStatus: Record<string, 'Leave' | 'Sick'>;
 }
 
 export interface TeamGroupData {
@@ -98,15 +99,15 @@ function transformToRowData(leave: TalentLeaveResponse, holidayDates: string[] |
   const leaveDates: string[] = [];
   leave.leaveDate.forEach((range) => { leaveDates.push(...generateLeaveDatesArray(range.dateFrom, range.dateTo)); });
 
-  const leaveDatesWithStatus: Record<string, 'Draft' | 'Confirmed' | 'Sick'> = {};
+  const leaveDatesWithStatus: Record<string, 'Leave' | 'Sick'> = {};
   leave.leaveDate.forEach((range) => {
     const dates = generateLeaveDatesArray(range.dateFrom, range.dateTo);
-    dates.forEach((date) => { leaveDatesWithStatus[date] = range.status as 'Draft' | 'Confirmed' | 'Sick'; });
+    dates.forEach((date) => { leaveDatesWithStatus[date] = range.status; });
   });
 
   const dateRange = leave.leaveDate.map((range) => formatDateRange(range.dateFrom, range.dateTo)).join(', ');
 
-  return { id: leave.id, name: leave.name, team: leave.team, leaveCount, dateRange, leaveDates, leaveDatesWithStatus };
+  return { id: leave.id, memberId: leave.memberId, name: leave.name, team: leave.team, leaveCount, dateRange, leaveDates, leaveDatesWithStatus };
 }
 
 function generateLeaveDatesArray(dateFrom: string, dateTo: string): string[] {

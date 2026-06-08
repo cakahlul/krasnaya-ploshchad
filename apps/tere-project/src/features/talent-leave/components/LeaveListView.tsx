@@ -18,25 +18,24 @@ const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
 
 interface FlattenedLeave {
   recordId: string;
+  memberId: string;
   memberName: string;
   team: string;
   dateFrom: string;
   dateTo: string;
-  status: 'Draft' | 'Confirmed' | 'Sick';
+  status: 'Leave' | 'Sick';
   dayCount: number;
 }
 
 function getStatusStyle(status: string, isDark: boolean, pal: { statusSuccess: string; statusSuccessBg: string; statusSuccessBrd: string; statusWarning: string; statusWarningBg: string; statusWarningBrd: string; statusPurple: string; statusPurpleBg: string; statusPurpleBrd: string }) {
-  if (status === 'Confirmed') return { color: pal.statusSuccess, bg: pal.statusSuccessBg, brd: pal.statusSuccessBrd };
-  if (status === 'Draft') return { color: pal.statusWarning, bg: pal.statusWarningBg, brd: pal.statusWarningBrd };
   if (status === 'Sick') return { color: pal.statusPurple, bg: pal.statusPurpleBg, brd: pal.statusPurpleBrd };
+  if (status === 'Leave') return { color: pal.statusSuccess, bg: pal.statusSuccessBg, brd: pal.statusSuccessBrd };
   return { color: '#9ca3af', bg: isDark ? 'rgba(255,255,255,0.06)' : '#f5f6fb', brd: isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb' };
 }
 
 function getTypeLabel(status: string): { icon: string; label: string } {
   if (status === 'Sick') return { icon: '🩺', label: 'Sick Leave' };
-  if (status === 'Draft') return { icon: '📝', label: 'Draft Leave' };
-  return { icon: '✈', label: 'Confirmed Leave' };
+  return { icon: '✈', label: 'Leave' };
 }
 
 function formatShortDate(dateStr: string): string {
@@ -44,7 +43,11 @@ function formatShortDate(dateStr: string): string {
   return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-export function LeaveListView() {
+interface LeaveListViewProps {
+  currentMemberId?: string;
+}
+
+export function LeaveListView({ currentMemberId: currentMemberIdProp }: LeaveListViewProps) {
   const { isDark, accent, cardBg, cardBrd, titleCol, subCol, rowCol,
     statusSuccess, statusSuccessBg, statusSuccessBrd,
     statusWarning, statusWarningBg, statusWarningBrd,
@@ -52,7 +55,7 @@ export function LeaveListView() {
   const { dateRangeStart, dateRangeEnd, openEditModal } = useTalentLeaveStore();
   const { data: leaveRecords, isLoading } = useTalentLeave();
   const { member } = useMemberProfile();
-  const canEdit = !!member;
+  const currentMemberId = currentMemberIdProp || member?.jiraId || '';
   const deleteMutation = useLeaveDelete();
   const updateMutation = useLeaveUpdate();
 
@@ -92,6 +95,7 @@ export function LeaveListView() {
 
         result.push({
           recordId: record.id,
+          memberId: record.memberId,
           memberName: record.name,
           team: record.team,
           dateFrom: range.dateFrom.split('T')[0],
@@ -109,15 +113,13 @@ export function LeaveListView() {
   // KPI calculations
   const totalRequests = flatLeaves.length;
   const totalDays = flatLeaves.reduce((s, l) => s + l.dayCount, 0);
-  const confirmed = flatLeaves.filter(l => l.status === 'Confirmed').length;
-  const draft = flatLeaves.filter(l => l.status === 'Draft').length;
+  const leave = flatLeaves.filter(l => l.status === 'Leave').length;
   const sick = flatLeaves.filter(l => l.status === 'Sick').length;
 
   const kpis = [
     { label: 'Total Requests', value: totalRequests },
     { label: 'Total Days', value: totalDays },
-    { label: 'Confirmed', value: confirmed, col: statusSuccess },
-    { label: 'Draft', value: draft, col: statusWarning },
+    { label: 'Leave', value: leave, col: statusSuccess },
     { label: 'Sick', value: sick, col: statusPurple },
   ];
 
@@ -175,6 +177,7 @@ export function LeaveListView() {
           {flatLeaves.map((leave, i) => {
             const ss = getStatusStyle(leave.status, isDark, { statusSuccess, statusSuccessBg, statusSuccessBrd, statusWarning, statusWarningBg, statusWarningBrd, statusPurple, statusPurpleBg, statusPurpleBrd });
             const typeInfo = getTypeLabel(leave.status);
+            const canEdit = !!member && (member.isLead || leave.memberId === currentMemberId);
             return (
               <div
                 key={`${leave.recordId}-${leave.dateFrom}-${i}`}

@@ -10,9 +10,10 @@ import { useThemeColors } from '@src/hooks/useTheme';
 interface ExportButtonProps {
   onSuccess?: (spreadsheetUrl: string) => void;
   onError?: () => void;
+  canExport?: boolean;
 }
 
-export function ExportButton({ onSuccess, onError }: ExportButtonProps) {
+export function ExportButton({ onSuccess, onError, canExport = false }: ExportButtonProps) {
   const { dateRangeStart, dateRangeEnd } = useTalentLeaveStore();
   const { startExportFlow, isExporting } = useExportTalentLeave();
   const [isHovered, setIsHovered] = useState(false);
@@ -117,7 +118,7 @@ export function ExportButton({ onSuccess, onError }: ExportButtonProps) {
           )
         }
         onClick={handleExport}
-        disabled={isExporting}
+        disabled={isExporting || !canExport}
         className="relative overflow-hidden"
         style={{
           background: showSuccess
@@ -136,9 +137,11 @@ export function ExportButton({ onSuccess, onError }: ExportButtonProps) {
         >
           {isExporting
             ? 'Exporting...'
-            : showSuccess
-              ? 'Success!'
-              : 'Export to Google Spreadsheet'}
+            : !canExport
+              ? 'Lead only'
+              : showSuccess
+                ? 'Success!'
+                : 'Export to Google Spreadsheet'}
         </motion.span>
 
         {/* Shimmer effect */}
