@@ -1,15 +1,23 @@
 import { serverCache } from '@server/cache/server-cache';
-import { generateOpenSprintReport, getSprintWorkItemStats } from '@server/modules/reports/reports.service';
+import { generateOpenSprintReport, generateReportByDateRange, getSprintWorkItemStats } from '@server/modules/reports/reports.service';
 import { boardsService } from '@server/modules/boards/boards.service';
 import { membersService } from '@server/modules/members/members.service';
 import * as repo from '@server/modules/reports/reports.repository';
+import { getKanbanDateRange } from '@shared/utils/kanban-cycle.util';
 import type { DashboardSummaryResponseDto } from '@shared/types/dashboard.types';
 
 const CACHE_KEY = 'dashboard_summary';
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
-export async function getDashboardSummary(): Promise<DashboardSummaryResponseDto> {
-  const cached = serverCache.get<DashboardSummaryResponseDto>(CACHE_KEY);
+export async function getDashboardSummary(
+  requestedStartDate?: string,
+  requestedEndDate?: string,
+): Promise<DashboardSummaryResponseDto> {
+  const defaultRange = getKanbanDateRange();
+  const startDate = requestedStartDate ?? defaultRange.startDate;
+  const endDate = requestedEndDate ?? defaultRange.endDate;
+  const cacheKey = `${CACHE_KEY}_${startDate}_${endDate}`;
+  const cached = serverCache.get<DashboardSummaryResponseDto>(cacheKey);
   if (cached) return cached;
 
   const allBoards = await boardsService.findAll();
@@ -17,6 +25,44 @@ export async function getDashboardSummary(): Promise<DashboardSummaryResponseDto
 
   const teams = await Promise.all(
     boards.map(async (board) => {
+      if (board.isKanban) {
+        const boardRange = requestedStartDate && requestedEndDate
+          ? { startDate, endDate }
+          : getKanbanDateRange(undefined, board.kanbanCycleStartDate ?? undefined);
+        const report = await generateReportByDateRange(boardRange.startDate, boardRange.endDate, board.shortName).catch(() => null);
+        const issues = report?.issues ?? [];
+        const uniqueParents = new Set(
+          issues.flatMap(issue => issue.epicKeys?.filter(key => key !== 'null') ?? []),
+        );
+
+        return {
+          teamName: board.name,
+          boardId: board.boardId,
+          sprintName: 'Kanban Cycle',
+          sprintState: null,
+          sprintStartDate: boardRange.startDate,
+          sprintEndDate: boardRange.endDate,
+          averageProductivity: report?.averageProductivity || null,
+          averageWpPerHour: report?.averageWpPerHour || null,
+          teamMembers: issues.length,
+          memberSummaries: issues.map(issue => ({
+            name: issue.member,
+            wpProductivity: issue.wpProductivity,
+            totalWeightPoints: issue.totalWeightPoints,
+            targetWeightPoints: issue.targetWeightPoints,
+            spTotal: issue.spTotal ?? 0,
+          })),
+          totalEpics: uniqueParents.size,
+          isStoryGrouping: board.isStoryGrouping ?? false,
+          productPercentage: report?.productPercentage || null,
+          techDebtPercentage: report?.techDebtPercentage || null,
+          totalWorkingDays: report?.totalWorkingDays || null,
+          totalWorkItems: issues.reduce((sum, issue) => sum + issue.issueKeys.length, 0),
+          closedWorkItems: issues.reduce((sum, issue) => sum + issue.issueKeys.length, 0),
+          averageHoursOpen: null,
+        };
+      }
+
       const [report, workItems] = await Promise.all([
         generateOpenSprintReport(board.shortName).catch(() => null),
         getSprintWorkItemStats(board.shortName).catch(() => ({ totalWorkItems: 0, closedWorkItems: 0, averageHoursOpen: null })),
@@ -31,7 +77,6 @@ export async function getDashboardSummary(): Promise<DashboardSummaryResponseDto
         spTotal: issue.spTotal ?? 0,
       }));
 
-      // Count unique epics/stories from ALL sprint issues (not just resolved)
       let epicCount = 0;
       const sprintId = report?.sprintId;
       if (sprintId) {
@@ -78,6 +123,6 @@ export async function getDashboardSummary(): Promise<DashboardSummaryResponseDto
     generatedAt: new Date().toISOString(),
   };
 
-  serverCache.set(CACHE_KEY, response, CACHE_TTL_MS);
+  serverCache.set(cacheKey, response, CACHE_TTL_MS);
   return response;
 }

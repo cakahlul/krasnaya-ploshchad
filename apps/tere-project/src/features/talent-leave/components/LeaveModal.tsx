@@ -1,7 +1,7 @@
 'use client';
 import { Modal, Form, Select, DatePicker, Button, Input, App, Space, Card } from 'antd';
 import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import { useTalentLeaveStore } from '../store/talentLeaveStore';
 import { useTalentList } from '../hooks/useTalentList';
@@ -17,11 +17,15 @@ interface LeaveModalProps {
     name: string;
     team: string;
     leaveDate: LeaveDateRange[];
+    memberId?: string;
   };
-  isAdmin?: boolean;
+  canDelete?: boolean;
+  canEdit?: boolean;
+  currentMemberId?: string;
+  canManageAll?: boolean;
 }
 
-export function LeaveModal({ leaveRecord, isAdmin = false }: LeaveModalProps) {
+export function LeaveModal({ leaveRecord, canDelete = false, canEdit = false, currentMemberId = '', canManageAll = false }: LeaveModalProps) {
   const [form] = Form.useForm();
   const [selectedTalentId, setSelectedTalentId] = useState<string>('');
   const { modal } = App.useApp();
@@ -34,6 +38,11 @@ export function LeaveModal({ leaveRecord, isAdmin = false }: LeaveModalProps) {
   const deleteMutation = useLeaveDelete();
 
   const isEditMode = modalState.mode === 'edit';
+  const isReadOnly = isEditMode && !canEdit;
+  const filteredTalentList = useMemo(
+    () => canManageAll ? talentList : talentList?.filter((t) => t.id === currentMemberId),
+    [canManageAll, currentMemberId, talentList],
+  );
 
   // Populate form when editing
   useEffect(() => {
@@ -65,12 +74,15 @@ export function LeaveModal({ leaveRecord, isAdmin = false }: LeaveModalProps) {
       }
     } else {
       form.resetFields();
+      const ownTalent = filteredTalentList?.[0];
       form.setFieldsValue({
-        leaveDates: [{}], // Start with one empty leave date
+        name: ownTalent?.name,
+        team: ownTalent?.team,
+        leaveDates: [{}],
       });
-      setSelectedTalentId('');
+      setSelectedTalentId(ownTalent?.id ?? '');
     }
-  }, [isEditMode, leaveRecord, form, talentList]);
+  }, [isEditMode, leaveRecord, form, talentList, filteredTalentList]);
 
   const handleNameChange = (talentId: string) => {
     setSelectedTalentId(talentId);
@@ -159,12 +171,12 @@ export function LeaveModal({ leaveRecord, isAdmin = false }: LeaveModalProps) {
 
   return (
     <Modal
-      title={isEditMode ? 'Edit Leave Record' : 'Add Leave Record'}
+      title={isEditMode ? (isReadOnly ? 'View Leave Record' : 'Edit Leave Record') : 'Add Leave Record'}
       open={modalState.open}
       onCancel={handleCancel}
       width={700}
       footer={[
-        ...(isEditMode && isAdmin
+        ...(isEditMode && canDelete
           ? [
               <Button
                 key="delete"
@@ -183,14 +195,14 @@ export function LeaveModal({ leaveRecord, isAdmin = false }: LeaveModalProps) {
         <Button
           key="submit"
           type="primary"
-          onClick={handleSubmit}
+          onClick={isReadOnly ? handleCancel : handleSubmit}
           loading={createMutation.isPending || updateMutation.isPending}
         >
-          {isEditMode ? 'Update' : 'Create'}
+          {isEditMode ? (isReadOnly ? 'Close' : 'Update') : 'Create'}
         </Button>,
       ]}
     >
-      <Form form={form} layout="vertical">
+      <Form form={form} layout="vertical" disabled={isReadOnly}>
         <Form.Item
           label="Name"
           name="name"
@@ -203,7 +215,8 @@ export function LeaveModal({ leaveRecord, isAdmin = false }: LeaveModalProps) {
             loading={isTalentListLoading}
             onChange={handleNameChange}
             value={selectedTalentId}
-            options={talentList?.map((talent) => ({
+            disabled={!canManageAll && !isEditMode}
+            options={filteredTalentList?.map((talent) => ({
               value: talent.id,
               label: talent.name,
             }))}
@@ -227,7 +240,7 @@ export function LeaveModal({ leaveRecord, isAdmin = false }: LeaveModalProps) {
                     title={`Leave Date ${name + 1}`}
                     extra={
                       // In edit mode, always show delete. In create mode, only show if > 1
-                      (isEditMode || fields.length > 1) && (
+                      !isReadOnly && (isEditMode || fields.length > 1) && (
                         <MinusCircleOutlined
                           onClick={() => remove(name)}
                           style={{ color: 'red', cursor: 'pointer' }}
@@ -322,10 +335,10 @@ export function LeaveModal({ leaveRecord, isAdmin = false }: LeaveModalProps) {
                         ]}
                       >
                         <Select
+              disabled={isReadOnly}
                           placeholder="Select status"
                           options={[
-                            { value: 'Draft', label: 'Draft' },
-                            { value: 'Confirmed', label: 'Confirmed' },
+                            { value: 'Leave', label: 'Leave' },
                             { value: 'Sick', label: 'Sick' },
                           ]}
                         />

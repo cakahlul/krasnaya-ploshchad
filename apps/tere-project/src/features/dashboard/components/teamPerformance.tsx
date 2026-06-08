@@ -398,7 +398,7 @@ export default function TeamPerformance() {
         <GradientCard
           label="Total Leave"
           value={data?.totalLeave}
-          tooltip="Sum of confirmed leave days (status: Confirmed) across all members within the sprint period. Only counts weekdays that are not national holidays."
+          tooltip="Sum of leave days (status: Leave) across all members within the sprint period. Only counts weekdays that are not national holidays."
           gradient={GRADIENTS.totalLeave}
         />
         <GradientCard

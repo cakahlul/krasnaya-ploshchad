@@ -5,6 +5,9 @@ import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDashboardSummary, useDashboardBugSummary, TeamSummary } from '@src/features/dashboard/hooks/useDashboardSummary';
+import { DateRangeSelect } from '@src/features/dashboard/components/DateRangeSelect';
+import { getKanbanDateRange } from '@shared/utils/kanban-cycle.util';
+import dayjs from 'dayjs';
 import { useMemberProfile } from '@src/features/dashboard/hooks/useMemberProfile';
 import { useBoards } from '@src/features/dashboard/hooks/useBoards';
 import { useMembers } from '@src/features/dashboard/hooks/useMembers';
@@ -55,6 +58,8 @@ export default function Dashboard() {
   const { member, teams: memberTeams, isLoading: profileLoading } = useMemberProfile();
   const { boards, isLoading: boardsLoading } = useBoards();
   const { members } = useMembers();
+  const [{ startDate, endDate }, setKanbanRange] = useState(() => getKanbanDateRange());
+  const [isManualKanbanRange, setIsManualKanbanRange] = useState(false);
 
   const isLead = member?.isLead ?? false;
 
@@ -64,8 +69,12 @@ export default function Dashboard() {
 
   const { teams, isLoading: summaryLoading } = useDashboardSummary(
     memberBoardIds,
+    isManualKanbanRange ? startDate : undefined,
+    isManualKanbanRange ? endDate : undefined,
   );
   const bugBoards = boards.filter(b => b.isBugMonitoring);
+  const kanbanBoards = boards.filter(b => b.isKanban && !b.isBugMonitoring);
+  const hasKanbanBoards = kanbanBoards.length > 0;
 
   const isBootstrapping = profileLoading || boardsLoading;
 
@@ -74,6 +83,15 @@ export default function Dashboard() {
       setMessage(getValue(remoteConfig, 'welcome_message').asString());
     });
   }, []);
+
+  useEffect(() => {
+    if (isManualKanbanRange || !hasKanbanBoards) return;
+    const kanbanBoard = boards.find(b => b.isKanban && b.kanbanCycleStartDate);
+    if (kanbanBoard?.kanbanCycleStartDate) {
+      const derived = getKanbanDateRange(dayjs(), kanbanBoard.kanbanCycleStartDate);
+      setKanbanRange(derived);
+    }
+  }, [boards, hasKanbanBoards, isManualKanbanRange]);
 
   if (isBootstrapping) {
     return (
@@ -90,11 +108,25 @@ export default function Dashboard() {
   }
 
   // Build boardId → shortName lookup for member matching
-  const boardShortNameMap = new Map(boards.map(b => [b.boardId, b.shortName]));
+  const boardShortNameMap = new Map<number, string>(boards.map((b) => [b.boardId, b.shortName]));
+  const boardKanbanMap = new Map<number, boolean>(boards.map((b) => [b.boardId, Boolean(b.isKanban)]));
+
+  const handleKanbanRangeChange = (dates: [dayjs.Dayjs | null, dayjs.Dayjs | null] | null) => {
+    if (!dates?.[0] || !dates[1]) {
+      setKanbanRange(getKanbanDateRange());
+      setIsManualKanbanRange(false);
+      return;
+    }
+    setKanbanRange({
+      startDate: dates[0].format('YYYY-MM-DD'),
+      endDate: dates[1].format('YYYY-MM-DD'),
+    });
+    setIsManualKanbanRange(true);
+  };
 
   return isLead
-    ? <LeadDashboard teams={teams} bugBoards={bugBoards} members={members} boardShortNameMap={boardShortNameMap} summaryLoading={summaryLoading} message={message} />
-    : <MemberDashboard teams={teams} memberName={member?.fullName ?? null} summaryLoading={summaryLoading} message={message} />;
+    ? <LeadDashboard teams={teams} bugBoards={bugBoards} members={members} boardShortNameMap={boardShortNameMap} boardKanbanMap={boardKanbanMap} summaryLoading={summaryLoading} message={message} startDate={startDate} endDate={endDate} onKanbanRangeChange={handleKanbanRangeChange} />
+    : <MemberDashboard teams={teams} memberName={member?.fullName ?? null} boardKanbanMap={boardKanbanMap} summaryLoading={summaryLoading} message={message} startDate={startDate} endDate={endDate} onKanbanRangeChange={handleKanbanRangeChange} />;
 }
 
 /* ── Gradient KPI Card ── */
@@ -251,13 +283,17 @@ function SprintCardStack({ sprints }: { sprints: SprintInfo[] }) {
 }
 
 /* ── LEAD DASHBOARD ── */
-function LeadDashboard({ teams, bugBoards, members, boardShortNameMap, summaryLoading, message }: {
+function LeadDashboard({ teams, bugBoards, members, boardShortNameMap, boardKanbanMap, summaryLoading, message, startDate, endDate, onKanbanRangeChange }: {
   teams: (TeamSummary & { isLoading: boolean; error: Error | null })[];
   bugBoards: { boardId: number; name: string; shortName: string }[];
   members: MemberResponse[];
   boardShortNameMap: Map<number, string>;
+  boardKanbanMap: Map<number, boolean>;
   summaryLoading: boolean;
   message: string;
+  startDate: string;
+  endDate: string;
+  onKanbanRangeChange: (dates: [dayjs.Dayjs | null, dayjs.Dayjs | null] | null) => void;
 }) {
   const T = useThemeColors();
 
@@ -299,7 +335,7 @@ function LeadDashboard({ teams, bugBoards, members, boardShortNameMap, summaryLo
         <h1 style={{ fontSize: 22, fontWeight: 800, color: T.titleCol, margin: 0, fontFamily: sans, letterSpacing: -0.5 }}>
           Team at a Glance
         </h1>
-        <div style={{ marginTop: 6 }}>
+        <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <SprintCardStack sprints={sprintInfos} />
         </div>
       </div>
@@ -379,6 +415,10 @@ function LeadDashboard({ teams, bugBoards, members, boardShortNameMap, summaryLo
                 team={team}
                 members={boardMembers}
                 bc={bc}
+                isKanban={boardKanbanMap.get(team.boardId) ?? false}
+                startDate={startDate}
+                endDate={endDate}
+                onKanbanRangeChange={onKanbanRangeChange}
               />
             );
           })}
@@ -409,10 +449,14 @@ function LeadDashboard({ teams, bugBoards, members, boardShortNameMap, summaryLo
 }
 
 /* ── Board Summary Card with Member Listing ── */
-function BoardSummaryCard({ team, members: boardMembers, bc }: {
+function BoardSummaryCard({ team, members: boardMembers, bc, isKanban, startDate, endDate, onKanbanRangeChange }: {
   team: TeamSummary & { isLoading: boolean; error: Error | null };
   members: MemberResponse[];
   bc: { gradient: string; shadow: string; color: string };
+  isKanban: boolean;
+  startDate: string;
+  endDate: string;
+  onKanbanRangeChange: (dates: [dayjs.Dayjs | null, dayjs.Dayjs | null] | null) => void;
 }) {
   const T = useThemeColors();
 
@@ -423,6 +467,11 @@ function BoardSummaryCard({ team, members: boardMembers, bc }: {
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: sans, whiteSpace: 'nowrap' }}>{team.teamName}</div>
           <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.65)', fontFamily: mono, marginTop: 2, whiteSpace: 'nowrap' }}>
+            {isKanban
+              ? `${team.sprintStartDate ?? startDate} → ${team.sprintEndDate ?? endDate}`
+              : team.sprintName || 'No active sprint'}
+          </div>
+          <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.65)', fontFamily: mono, marginTop: 2, whiteSpace: 'nowrap' }}>
             {team.teamMembers} members
           </div>
         </div>
@@ -431,6 +480,17 @@ function BoardSummaryCard({ team, members: boardMembers, bc }: {
           <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', fontFamily: sans }}>avg productivity</div>
         </div>
       </div>
+
+      {isKanban && (
+        <div style={{ padding: '12px 16px 0' }}>
+          <DateRangeSelect
+            startDate={startDate}
+            endDate={endDate}
+            onChange={onKanbanRangeChange}
+            isActive
+          />
+        </div>
+      )}
 
       {/* Members list with productivity */}
       <div style={{ padding: '10px 0', flex: 1 }}>
@@ -579,11 +639,15 @@ function DashboardBugRow({ boardId, title, shortName }: { boardId: number; title
 }
 
 /* ── MEMBER DASHBOARD — personal progress per board ── */
-function MemberDashboard({ teams, memberName, summaryLoading, message }: {
+function MemberDashboard({ teams, memberName, boardKanbanMap, summaryLoading, message, startDate, endDate, onKanbanRangeChange }: {
   teams: (TeamSummary & { isLoading: boolean; error: Error | null })[];
   memberName: string | null;
+  boardKanbanMap: Map<number, boolean>;
   summaryLoading: boolean;
   message: string;
+  startDate: string;
+  endDate: string;
+  onKanbanRangeChange: (dates: [dayjs.Dayjs | null, dayjs.Dayjs | null] | null) => void;
 }) {
   const T = useThemeColors();
 
@@ -626,7 +690,7 @@ function MemberDashboard({ teams, memberName, summaryLoading, message }: {
         <h1 style={{ fontSize: 22, fontWeight: 800, color: T.titleCol, margin: 0, fontFamily: sans, letterSpacing: -0.5 }}>
           My Sprint Dashboard
         </h1>
-        <div style={{ marginTop: 6 }}>
+        <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <SprintCardStack sprints={sprintInfos} />
         </div>
       </div>
@@ -698,19 +762,35 @@ function MemberDashboard({ teams, memberName, summaryLoading, message }: {
           {myBoards.map(({ team, me, bc }, bi) => {
             const myProd = me ? parseFloat(me.wpProductivity) : 0;
             const isAbove = myProd >= 100;
+            const isKanban = boardKanbanMap.get(team.boardId) ?? false;
             return (
               <div key={team.boardId} style={{ background: T.cardBg, borderRadius: 16, border: `1px solid ${T.cardBrd}`, overflow: 'hidden' }}>
                 {/* Board header — shows MY productivity, not team average */}
                 <div style={{ background: bc.gradient, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: sans }}>{team.teamName}</div>
-                    <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.65)', fontFamily: mono, marginTop: 2 }}>{team.sprintName || 'No active sprint'}</div>
+                    <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.65)', fontFamily: mono, marginTop: 2 }}>
+                      {boardKanbanMap.get(team.boardId)
+                        ? `${team.sprintStartDate ?? startDate} → ${team.sprintEndDate ?? endDate}`
+                        : team.sprintName || 'No active sprint'}
+                    </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', fontFamily: mono, lineHeight: 1 }}>{me ? me.wpProductivity : '-'}</div>
                     <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', fontFamily: sans }}>my productivity</div>
                   </div>
                 </div>
+
+                {isKanban && (
+                  <div style={{ padding: '12px 16px 0' }}>
+                    <DateRangeSelect
+                      startDate={startDate}
+                      endDate={endDate}
+                      onChange={onKanbanRangeChange}
+                      isActive
+                    />
+                  </div>
+                )}
 
                 {me ? (
                   <div className="grid grid-cols-2 gap-3 p-4">

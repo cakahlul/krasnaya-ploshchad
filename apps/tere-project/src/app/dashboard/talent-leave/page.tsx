@@ -33,7 +33,11 @@ export default function TalentLeavePage() {
     type: 'success',
   });
 
-  const canEdit = !!member;
+  const canCreate = !!member;
+  const canDelete = !!member && member.isLead;
+  const canEditOwn = !!member;
+  const canManageAll = !!member && member.isLead;
+  const currentMemberId = member?.jiraId ?? '';
 
   const leaveRecord = useMemo(() => {
     if (modalState.mode === 'edit' && modalState.leaveId && leaveRecords) {
@@ -140,7 +144,7 @@ export default function TalentLeavePage() {
               </button>
             </div>
 
-            <ExportButton
+            <ExportButton canExport={!!member && member.isLead}
               onSuccess={(url) => {
                 setToast({ show: true, type: 'success', spreadsheetUrl: url });
                 setTimeout(() => setToast({ show: false, type: 'success' }), 8000);
@@ -150,7 +154,7 @@ export default function TalentLeavePage() {
                 setTimeout(() => setToast({ show: false, type: 'error' }), 8000);
               }}
             />
-            {canEdit && (
+            {canCreate && (
               <Button
                 type="primary"
                 onClick={openCreateModal}
@@ -170,7 +174,7 @@ export default function TalentLeavePage() {
         </div>
 
       <RoleBasedRoute allowedRoles={['Lead', 'Member']} fallback={bodySkeleton}>
-        {viewMode === 'list' ? <LeaveListView /> : <LeaveCalendarSimple />}
+        {viewMode === 'list' ? <LeaveListView currentMemberId={currentMemberId} /> : <LeaveCalendarSimple canEditOwn={canEditOwn} canManageAll={canManageAll} currentMemberId={currentMemberId} />}
 
         <ExportToast
           show={toast.show}
@@ -187,10 +191,14 @@ export default function TalentLeavePage() {
                   name: leaveRecord.name,
                   team: leaveRecord.team,
                   leaveDate: leaveRecord.leaveDate,
+                  memberId: leaveRecord.memberId,
                 }
               : undefined
           }
-          isAdmin={canEdit}
+          canDelete={canDelete}
+          canEdit={!leaveRecord || canManageAll || leaveRecord.memberId === currentMemberId}
+          currentMemberId={currentMemberId}
+          canManageAll={canManageAll}
         />
       </RoleBasedRoute>
     </div>

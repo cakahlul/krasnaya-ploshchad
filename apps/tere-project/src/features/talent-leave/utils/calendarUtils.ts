@@ -113,11 +113,10 @@ export function transformToRowData(
   );
 
   // Create a map of date to status
-  const leaveDatesWithStatus: Record<string, 'Draft' | 'Confirmed' | 'Sick'> = {};
-  leave.leaveDate.forEach((range) => {
+  const leaveDatesWithStatus: Record<string, 'Leave' | 'Sick'> = {};  leave.leaveDate.forEach((range) => {
     const dates = generateLeaveDatesArray(range.dateFrom, range.dateTo);
     dates.forEach((date) => {
-      leaveDatesWithStatus[date] = range.status;
+      leaveDatesWithStatus[date] = range.status === 'Sick' ? 'Sick' : 'Leave';
     });
   });
 
@@ -131,6 +130,7 @@ export function transformToRowData(
 
   return {
     id: leave.id,
+    memberId: leave.memberId,
     name: leave.name,
     team: leave.team,
     leaveCount,
@@ -180,7 +180,6 @@ function generateLeaveDatesArray(dateFrom: string, dateTo: string): string[] {
  * @param isHoliday - Whether the date is a public holiday
  * @param isNationalHoliday - Whether it's a national (vs regional) holiday
  * @param isLeaveDate - Whether the date is a leave date
- * @param leaveStatus - Status of the leave ('Draft' or 'Confirmed'), if applicable
  * @returns Tailwind CSS background color class
  */
 export function getCellColorClass(
@@ -188,7 +187,7 @@ export function getCellColorClass(
   isHoliday: boolean,
   isNationalHoliday: boolean,
   isLeaveDate: boolean,
-  leaveStatus?: 'Draft' | 'Confirmed' | 'Sick'
+  leaveStatus?: 'Leave' | 'Sick'
 ): string {
   // Priority: national holiday > weekend > leave (by status)
   // Only national holidays affect cell color, not regional holidays
@@ -202,13 +201,10 @@ export function getCellColorClass(
 
   // Only show leave color if not weekend or national holiday
   if (isLeaveDate) {
-    if (leaveStatus === 'Draft') {
-      return 'bg-gradient-to-br from-amber-100 to-yellow-200'; // Modern gradient for draft
-    }
     if (leaveStatus === 'Sick') {
-      return 'bg-gradient-to-br from-purple-100 to-violet-200'; // Modern gradient for sick leave
+      return 'bg-gradient-to-br from-purple-100 to-violet-200';
     }
-    return 'bg-gradient-to-br from-emerald-100 to-green-200'; // Modern gradient for confirmed
+    return 'bg-gradient-to-br from-emerald-100 to-green-200';
   }
 
   // Default background (non-national holidays use default color)

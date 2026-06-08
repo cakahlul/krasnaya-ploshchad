@@ -424,6 +424,7 @@ Two parallel modules: **Target WP** and **WP Weight**.
 ### Shared utils
 - `apps/tere-project/src/shared/utils/working-days.util.ts`
 - `apps/tere-project/src/shared/utils/appendix-level.ts`
+- `apps/tere-project/src/shared/utils/kanban-cycle.util.ts`
 
 ### App-wide UI components (`apps/tere-project/src/components/`)
 `sidebar.tsx`, `topbar.tsx`, `LoadingScreen.tsx`, `PageSkeleton.tsx`, `loadingBar.tsx`, `loadingBounce.tsx`, `ThemeToggle.tsx`, `AxiosErrorInterceptor.tsx`, `LegalModal.tsx`, `RoleBasedRoute.tsx`, `buttonLoginGoogle.tsx`, `maintenancePage.tsx`

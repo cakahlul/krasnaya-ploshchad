@@ -47,9 +47,15 @@ export interface DashboardSummaryResponse {
   generatedAt: string;
 }
 
-async function fetchDashboardSummary(): Promise<DashboardSummaryResponse> {
-  const response = await axiosClient.get('/dashboard/summary');
+async function fetchDashboardSummary(startDate?: string, endDate?: string): Promise<DashboardSummaryResponse> {
+  const response = await axiosClient.get('/dashboard/summary', {
+    params: { startDate, endDate },
+  });
   return response.data;
+}
+
+function getDashboardQueryKey(startDate?: string, endDate?: string, boardIds?: number[]) {
+  return ['dashboard-summary', startDate ?? '', endDate ?? '', (boardIds ?? []).join(',')];
 }
 
 async function fetchDashboardBugSummary(boardId: number = 177): Promise<BugSummary> {
@@ -59,10 +65,10 @@ async function fetchDashboardBugSummary(boardId: number = 177): Promise<BugSumma
   return response.data;
 }
 
-export function useDashboardSummary(filterBoardIds?: number[]) {
+export function useDashboardSummary(filterBoardIds?: number[], startDate?: string, endDate?: string) {
   const query = useQuery({
-    queryKey: ['dashboard-summary'],
-    queryFn: fetchDashboardSummary,
+    queryKey: getDashboardQueryKey(startDate, endDate, filterBoardIds),
+    queryFn: () => fetchDashboardSummary(startDate, endDate),
     staleTime: 5 * 60 * 1000,
     refetchInterval: 5 * 60 * 1000,
   });

@@ -113,7 +113,7 @@ function countLeaveDaysByStatus(
   startDate: Date,
   endDate: Date,
   leaveDates: LeaveDateRange[],
-  status: 'Confirmed' | 'Sick',
+  status: 'Leave' | 'Sick',
   nationalHolidays: string[] = [],
 ): number {
   const filtered = leaveDates.filter(l => l.status === status);
@@ -320,7 +320,7 @@ function processRawData(
         start,
         end,
         memberLeaveDates,
-        'Confirmed',
+        'Leave',
         nationalHolidays,
       );
       report.sickDays = countLeaveDaysByStatus(

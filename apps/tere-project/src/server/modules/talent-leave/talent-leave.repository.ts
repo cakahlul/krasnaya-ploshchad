@@ -7,7 +7,7 @@ export interface TalentLeaveEntity {
   memberId: string;
   name: string;
   team: string;
-  leaveDate: Array<{ dateFrom: Date; dateTo: Date; status: 'Draft' | 'Confirmed' | 'Sick' }>;
+  leaveDate: Array<{ dateFrom: Date; dateTo: Date; status: 'Leave' | 'Sick' }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -20,7 +20,7 @@ export interface LeaveFilterDto {
 }
 
 type Row = typeof talentLeave.$inferSelect;
-type StoredLeave = { dateFrom: string; dateTo: string; status: 'Draft' | 'Confirmed' | 'Sick' };
+type StoredLeave = { dateFrom: string; dateTo: string; status: 'Leave' | 'Sick' };
 
 function leaveArrayToStored(arr: TalentLeaveEntity['leaveDate']): StoredLeave[] {
   return arr.map((l) => ({

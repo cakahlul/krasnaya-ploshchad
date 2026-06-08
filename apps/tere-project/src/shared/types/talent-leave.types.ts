@@ -3,7 +3,7 @@
 export interface LeaveDateRange {
   dateFrom: string;
   dateTo: string;
-  status: 'Draft' | 'Confirmed' | 'Sick';
+  status: 'Leave' | 'Sick';
 }
 
 export interface TalentLeaveResponse {
@@ -59,12 +59,13 @@ export interface TeamGroup {
 
 export interface LeaveRowData {
   id: string;
+  memberId: string;
   name: string;
   team: string;
   leaveCount: number;
   dateRanges: Array<{ dateFrom: string; dateTo: string; status: string; display: string }>;
   leaveDates: string[];
-  leaveDatesWithStatus: Record<string, 'Draft' | 'Confirmed' | 'Sick'>;
+  leaveDatesWithStatus: Record<string, 'Leave' | 'Sick'>;
   dateRange: string;
   status: string;
 }

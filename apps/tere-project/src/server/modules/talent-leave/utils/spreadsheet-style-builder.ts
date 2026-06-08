@@ -6,8 +6,8 @@ export const COLORS = {
   slateBg: '#F1F5F9', whiteBg: '#FFFFFF',
   teamBg: '#DBEAFE', teamText: '#312E81',
   sprintBg: '#8B5CF6', sprintText: '#FFFFFF',
-  confirmedBg: '#A7F3D0', confirmedBorder: '#059669', confirmedCheck: '#059669',
-  draftBg: '#FEF3C7', draftBorder: '#D97706', draftCheck: '#D97706',
+  leaveBg: '#A7F3D0', leaveBorder: '#059669', leaveCheck: '#059669',
+  sickBg: '#EDE9FE', sickBorder: '#7C3AED', sickCheck: '#7C3AED',
   nameText: '#312E81', countGreen: '#52C41A', countGray: '#D9D9D9', grayText: '#4B5563',
 };
 
@@ -63,13 +63,13 @@ export function buildMemberCellFormat(columnType: string, value?: any): any {
   }
 }
 
-export function buildLeaveDateCellFormat(cell: CalendarCell, isLeaveDate: boolean, status?: 'Draft' | 'Confirmed'): any {
+export function buildLeaveDateCellFormat(cell: CalendarCell, isLeaveDate: boolean, status?: 'Leave' | 'Sick'): any {
   if (cell.isNationalHoliday) return { backgroundColor: hexToRgb(COLORS.redBg), textFormat: { foregroundColor: hexToRgb(COLORS.redText), fontSize: 10 }, horizontalAlignment: 'CENTER', verticalAlignment: 'MIDDLE' };
   if (cell.isWeekend) return { backgroundColor: hexToRgb(COLORS.slateBg), textFormat: { foregroundColor: hexToRgb(COLORS.grayText), fontSize: 10 }, horizontalAlignment: 'CENTER', verticalAlignment: 'MIDDLE' };
   if (isLeaveDate) {
-    const bgColor = status === 'Draft' ? COLORS.draftBg : COLORS.confirmedBg;
-    const borderColor = status === 'Draft' ? COLORS.draftBorder : COLORS.confirmedBorder;
-    const checkColor = status === 'Draft' ? COLORS.draftCheck : COLORS.confirmedCheck;
+    const bgColor = status === 'Sick' ? COLORS.sickBg : COLORS.leaveBg;
+    const borderColor = status === 'Sick' ? COLORS.sickBorder : COLORS.leaveBorder;
+    const checkColor = status === 'Sick' ? COLORS.sickCheck : COLORS.leaveCheck;
     return { backgroundColor: hexToRgb(bgColor), textFormat: { foregroundColor: hexToRgb(checkColor), fontSize: 10, bold: true }, horizontalAlignment: 'CENTER', verticalAlignment: 'MIDDLE', borders: { left: { style: 'SOLID', width: 3, color: hexToRgb(borderColor) } } };
   }
   return { backgroundColor: hexToRgb(COLORS.whiteBg), textFormat: { foregroundColor: hexToRgb(COLORS.grayText), fontSize: 10 }, horizontalAlignment: 'CENTER', verticalAlignment: 'MIDDLE' };

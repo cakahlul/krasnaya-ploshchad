@@ -12,7 +12,7 @@ export function isOnLeave(date: Date, leaveDates: LeaveDateRange[]): boolean {
   checkDate.setHours(0, 0, 0, 0);
 
   return leaveDates.some((leave) => {
-    if (leave.status !== 'Confirmed' && leave.status !== 'Sick') return false;
+    if (leave.status !== 'Leave' && leave.status !== 'Sick') return false;
     return checkDate >= parseLocalDate(leave.dateFrom) && checkDate <= parseLocalDate(leave.dateTo);
   });
 }

@@ -242,7 +242,7 @@ export function LeaveCalendar() {
           if (row.original.type === 'team') return null;
           const member = row.original.data as TeamMember;
           const statusColor =
-            member.status === 'Confirmed' ? '#faad14' : '#d9d9d9';
+            member.status === 'Leave' ? '#52c41a' : '#d9d9d9';
           return (
             <div className="text-center">
               <span
@@ -331,7 +331,7 @@ export function LeaveCalendar() {
             cell.isHoliday,
             cell.isNationalHoliday,
             isLeaveDate,
-            leaveStatus as 'Draft' | 'Confirmed' | 'Sick' | undefined,
+            leaveStatus as 'Leave' | 'Sick' | undefined,
           );
           const showCheckmark =
             isLeaveDate && !cell.isWeekend && !cell.isNationalHoliday;
