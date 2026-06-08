@@ -6,6 +6,8 @@ import { registerGetSprintReport } from './tools/get-sprint-report.js';
 import { registerGetOpenSprintReport } from './tools/get-open-sprint-report.js';
 import { registerGetEpics } from './tools/get-epics.js';
 import { registerGetProductivitySummary } from './tools/get-productivity-summary.js';
+import { registerGetTalentDateLeave } from './tools/get-talent-date-leave.js';
+import { registerGetTalentLeave } from './tools/get-talent-leave.js';
 import { registerListSprints } from './tools/list-sprints.js';
 
 const server = new McpServer({
@@ -17,6 +19,8 @@ registerGetSprintReport(server);
 registerGetOpenSprintReport(server);
 registerGetEpics(server);
 registerGetProductivitySummary(server);
+registerGetTalentDateLeave(server);
+registerGetTalentLeave(server);
 registerListSprints(server);
 
 const transport = new StdioServerTransport();

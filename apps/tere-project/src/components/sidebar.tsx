@@ -493,7 +493,7 @@ export default function Sidebar({
               )}
             </div>
             <div className="text-[11px] text-white/50 leading-tight">
-              v2.0 &middot;{' '}
+              v2.5 &middot;{' '}
               {member?.isLead
                 ? 'Lead'
                 : member?.level

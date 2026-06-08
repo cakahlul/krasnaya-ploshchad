@@ -33,6 +33,8 @@ Team managers need consolidated insights from Jira workflow data and effective t
 - `get-sprint-report` — sprint report by ID
 - `get-open-sprint-report` — current open sprint
 - `get-productivity-summary` — aggregated productivity metrics
+- `get-talent-leave` — talent leave records by natural-language date window
+- `get-talent-date-leave` — flattened leave dates by natural-language date window
 - `get-epics` — list epics
 - Auth via API key against Tere API endpoints.
 

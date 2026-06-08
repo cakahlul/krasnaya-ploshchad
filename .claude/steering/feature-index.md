@@ -365,11 +365,14 @@ Two parallel modules: **Target WP** and **WP Weight**.
 - `apps/mcp-server/src/tools/get-sprint-report.ts`
 - `apps/mcp-server/src/tools/get-open-sprint-report.ts`
 - `apps/mcp-server/src/tools/get-productivity-summary.ts`
+- `apps/mcp-server/src/tools/get-talent-leave.ts`
+- `apps/mcp-server/src/tools/get-talent-date-leave.ts`
 - `apps/mcp-server/src/tools/get-epics.ts`
 
 ### Shared
 - `apps/mcp-server/src/lib/api-client.ts` — calls Tere API (uses API key)
 - `apps/mcp-server/src/lib/config.ts`
+- `apps/mcp-server/src/lib/date-range-resolver.ts`
 - `apps/mcp-server/src/lib/sprint-resolver.ts`
 - `apps/mcp-server/src/types/report.types.ts`
 
