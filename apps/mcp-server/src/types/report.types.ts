@@ -148,3 +148,21 @@ export interface ProductivitySummaryResponseDto {
   /** Sorted alphabetically by name */
   details: ProductivitySummaryMemberDto[];
 }
+
+// ── Talent Leave ───────────────────────────────────────────────────────────────
+
+export interface LeaveDateRangeDto {
+  dateFrom: string;
+  dateTo: string;
+  status: 'Leave' | 'Sick';
+}
+
+export interface TalentLeaveResponseDto {
+  id: string;
+  memberId: string;
+  name: string;
+  team: string;
+  leaveDate: LeaveDateRangeDto[];
+  createdAt: string;
+  updatedAt: string;
+}

@@ -1,9 +1,10 @@
 import { withAuth } from '@server/auth/with-auth';
+import { withAuthOrApiKey } from '@server/auth/with-auth-or-api-key';
 import { talentLeaveService } from '@server/modules/talent-leave/talent-leave.service';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withAuth(async (req) => {
+export const GET = withAuthOrApiKey(async (req, { caller }) => {
   const { searchParams } = new URL(req.url);
   const filters = {
     startDate: searchParams.get('startDate') ?? undefined,
@@ -12,7 +13,10 @@ export const GET = withAuth(async (req) => {
     team: searchParams.get('team') ?? undefined,
   };
   const records = await talentLeaveService.findAll(filters);
-  return Response.json(records);
+  const visibleRecords = caller?.isLead
+    ? records
+    : records.filter(record => record.memberId === caller?.memberId);
+  return Response.json(visibleRecords);
 });
 
 export const POST = withAuth(async (req, { user }) => {

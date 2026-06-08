@@ -565,6 +565,9 @@ export default function McpConnectionPage() {
               '"What\'s the current open sprint status for project PROJ?"',
               '"Get the productivity summary for March 2025"',
               '"List the epics for project PROJ this sprint"',
+              '"Get talent leave for today"',
+              '"Show talent who are on leave next week"',
+              '"Get talent leave dates for last week"',
             ].map((prompt, i) => (
               <div
                 key={i}
@@ -633,6 +636,14 @@ export default function McpConnectionPage() {
               {
                 name: 'get-productivity-summary',
                 desc: 'Monthly productivity metrics',
+              },
+              {
+                name: 'get-talent-leave',
+                desc: 'Leave list by natural-language date',
+              },
+              {
+                name: 'get-talent-date-leave',
+                desc: 'Leave dates flattened by person',
               },
             ].map(tool => (
               <div
