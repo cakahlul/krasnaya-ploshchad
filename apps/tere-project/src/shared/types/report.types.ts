@@ -144,6 +144,37 @@ export interface JiraIssueReportResponseDto {
   epic?: EpicDto | null;
 }
 
+export interface SprintTrendTeamMetricsDto {
+  team: string;
+  velocity: number;
+  targetWP: number;
+  wpAttainment: number;
+  totalSP: number;
+  targetSP: number;
+  spVelocity: number;
+  activeMembers: number;
+}
+
+export interface SprintTrendPointDto {
+  sprintId: string;
+  sprintStartDate?: string;
+  sprintEndDate?: string;
+  teams: SprintTrendTeamMetricsDto[];
+}
+
+export interface SprintSlowdownAlertDto {
+  team: string;
+  consecutiveDeclines: number;
+  declinePercent: number;
+  latestVelocity: number;
+  baselineVelocity: number;
+}
+
+export interface SprintTrendResponseDto {
+  points: SprintTrendPointDto[];
+  slowdownAlerts: SprintSlowdownAlertDto[];
+}
+
 export interface GetReportResponseDto {
   issues: JiraIssueReportResponseDto[];
   totalWeightPointsProduct: number;

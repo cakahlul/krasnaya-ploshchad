@@ -1,11 +1,24 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
+import dynamic from 'next/dynamic';
+import {
+  motion,
+  useMotionTemplate,
+  useMotionValue,
+  useSpring,
+  useTransform,
+} from 'framer-motion';
 import { login, signInWithGoogle } from '@src/lib/auth';
 import { getAuth } from 'firebase/auth';
 import useUser from '@src/hooks/useUser';
 import { useRouter } from 'next/navigation';
 import LegalModal, { type LegalModalType } from '@src/components/LegalModal';
+
+const Stat3DScene = dynamic(() => import('./Stat3DScene'), {
+  ssr: false,
+  loading: () => null,
+});
 
 async function createSessionCookie() {
   const auth = getAuth();
@@ -20,52 +33,11 @@ async function createSessionCookie() {
   });
 }
 
-const FEATURES = [
-  {
-    label: 'Sprint WP tracking across all boards',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <rect x="1" y="10" width="4" height="9" rx="1" fill="#22b8d4" />
-        <rect x="7" y="6" width="4" height="13" rx="1" fill="#22b8d4" opacity="0.7" />
-        <rect x="13" y="2" width="4" height="17" rx="1" fill="#22b8d4" opacity="0.5" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Real-time productivity analytics',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <circle cx="10" cy="12" r="7" stroke="#22b8d4" strokeWidth="2" fill="none" />
-        <path d="M10 12 L10 6" stroke="#22b8d4" strokeWidth="2" strokeLinecap="round" />
-        <path d="M10 12 L14 9" stroke="#22b8d4" strokeWidth="1.5" strokeLinecap="round" />
-        <rect x="4" y="0" width="12" height="2" rx="1" fill="#22b8d4" opacity="0.4" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Bug monitoring & team health',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <ellipse cx="10" cy="12" rx="5" ry="6" stroke="#22b8d4" strokeWidth="1.5" fill="none" />
-        <path d="M5 12H1M15 12H19" stroke="#22b8d4" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M6 7L3 4M14 7L17 4" stroke="#22b8d4" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M6 17L3 19M14 17L17 19" stroke="#22b8d4" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M7 9H13M7 12H13M7 15H13" stroke="#22b8d4" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Leave & holiday management',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <rect x="2" y="4" width="16" height="14" rx="2" stroke="#22b8d4" strokeWidth="1.5" fill="none" />
-        <path d="M2 8H18" stroke="#22b8d4" strokeWidth="1.5" />
-        <path d="M6 2V5M14 2V5" stroke="#22b8d4" strokeWidth="1.5" strokeLinecap="round" />
-        <rect x="5" y="11" width="3" height="2" rx="0.5" fill="#22b8d4" opacity="0.6" />
-        <rect x="10" y="11" width="3" height="2" rx="0.5" fill="#22b8d4" opacity="0.4" />
-      </svg>
-    ),
-  },
+const FEATURE_CHIPS = [
+  { label: 'Sprint WP tracking', icon: '📊' },
+  { label: 'Productivity analytics', icon: '⚡' },
+  { label: 'Bug monitoring', icon: '🐛' },
+  { label: 'Leave & holidays', icon: '🗓️' },
 ];
 
 export default function SignIn() {
@@ -79,6 +51,33 @@ export default function SignIn() {
   const [legalModal, setLegalModal] = useState<LegalModalType | null>(null);
   const { loginPageMessage } = useUser();
   const router = useRouter();
+
+  // 3D card tilt — tracks cursor over card and tilts in 3D based on offset
+  // from center. Activated after the intro animation completes so initial
+  // load isn't fighting motion values.
+  const [cardInteractive, setCardInteractive] = useState(false);
+  const cardMouseX = useMotionValue(0);
+  const cardMouseY = useMotionValue(0);
+  const cardSpringX = useSpring(cardMouseX, { stiffness: 160, damping: 18 });
+  const cardSpringY = useSpring(cardMouseY, { stiffness: 160, damping: 18 });
+  const cardRotateY = useTransform(cardSpringX, [-200, 200], [-9, 9]);
+  const cardRotateX = useTransform(cardSpringY, [-200, 200], [7, -7]);
+  // Cursor-following highlight position (% within the card)
+  const glareX = useTransform(cardMouseX, [-220, 220], ['10%', '90%']);
+  const glareY = useTransform(cardMouseY, [-280, 280], ['10%', '90%']);
+  const glareBackground = useMotionTemplate`radial-gradient(circle at ${glareX} ${glareY}, rgba(127,216,238,0.13) 0%, rgba(167,139,250,0.06) 30%, transparent 55%)`;
+
+  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardInteractive) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    cardMouseX.set(e.clientX - rect.left - rect.width / 2);
+    cardMouseY.set(e.clientY - rect.top - rect.height / 2);
+  };
+
+  const handleCardMouseLeave = () => {
+    cardMouseX.set(0);
+    cardMouseY.set(0);
+  };
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -137,12 +136,19 @@ export default function SignIn() {
         }}
       />
 
+      {/* Full-page 3D layer — sits behind content. pointer-events:none on the wrapper
+          so DOM stays clickable; R3F uses document.body as event source so bars
+          still raycast hover/click correctly when cursor is over them. */}
+      <div className="pointer-events-none fixed inset-0 z-[5] hidden lg:block">
+        <Stat3DScene />
+      </div>
+
       {/* Two-column layout */}
       <div className="relative z-10 flex min-h-screen flex-col lg:flex-row">
-        {/* Left panel - Branding */}
-        <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-16 xl:px-24">
-          {/* Logo */}
-          <div className="mb-10 flex items-center gap-3">
+        {/* Left panel — text content overlays the full-page 3D layer behind it */}
+        <div className="relative hidden lg:flex lg:w-1/2 flex-col px-12 xl:px-16 py-10">
+          {/* Logo - top */}
+          <div className="flex items-center gap-3">
             <div
               className="flex h-9 w-9 items-center justify-center rounded-lg"
               style={{ background: 'linear-gradient(135deg, #1282a2, #22b8d4)' }}
@@ -153,56 +159,131 @@ export default function SignIn() {
                 <rect x="12" y="1" width="3.5" height="16" rx="1" fill="white" opacity="0.7" />
               </svg>
             </div>
-            <div>
+            <div className="flex items-baseline gap-2">
               <span className="text-lg font-bold tracking-wide text-white">TERE</span>
-              <span className="ml-2 text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                Team Reporting Engine v2.0
+              <span className="text-[10px] uppercase tracking-[0.18em]" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                Team Reporting Engine
               </span>
             </div>
           </div>
 
-          {/* Headline */}
-          <h1 className="mb-6 text-4xl font-bold leading-tight text-white xl:text-5xl">
-            Your team&apos;s data, finally{' '}
-            <span style={{ color: '#22b8d4' }}>fun to look at.</span>
-          </h1>
+          {/* Info block — vertically centered. 3D bars rise from below the page,
+              tops can poke up through this text region for a "free floating" feel. */}
+          <div className="my-auto flex flex-col gap-5">
+            <div
+              className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1"
+              style={{
+                background: 'rgba(34,184,212,0.08)',
+                border: '1px solid rgba(34,184,212,0.18)',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              <span
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ background: '#22b8d4', boxShadow: '0 0 8px #22b8d4' }}
+              />
+              <span className="text-[11px] font-medium uppercase tracking-[0.16em]" style={{ color: '#7fd8ee' }}>
+                v2.0 · Now Live
+              </span>
+            </div>
 
-          {/* Description */}
-          <p className="mb-10 max-w-lg text-base leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }}>
-            TERE consolidates sprint tracking, productivity analytics, bug monitoring, and leave
-            management into one unified dashboard your team will actually enjoy using.
-          </p>
+            <h1
+              className="text-4xl font-bold leading-tight text-white xl:text-5xl"
+              style={{ textShadow: '0 2px 14px rgba(0,0,0,0.5)' }}
+            >
+              Your team&apos;s data,{' '}
+              <span
+                style={{
+                  background: 'linear-gradient(135deg, #a78bfa, #7fd8ee, #fbb6ce)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                finally fun to look at.
+              </span>
+            </h1>
 
-          {/* Feature list */}
-          <div className="space-y-5">
-            {FEATURES.map((f) => (
-              <div key={f.label} className="flex items-center gap-4">
+            <p
+              className="max-w-md text-sm leading-relaxed"
+              style={{
+                color: 'rgba(255,255,255,0.75)',
+                textShadow: '0 1px 8px rgba(0,0,0,0.45)',
+              }}
+            >
+              Sprint tracking, productivity, bug monitoring & leave — one dashboard your team will actually
+              enjoy opening.
+            </p>
+
+            <div className="flex flex-wrap gap-2">
+              {FEATURE_CHIPS.map((f) => (
                 <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                  style={{ background: 'rgba(34,184,212,0.08)', border: '1px solid rgba(34,184,212,0.15)' }}
+                  key={f.label}
+                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-colors duration-200 hover:bg-white/10"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'rgba(255,255,255,0.75)',
+                    backdropFilter: 'blur(8px)',
+                  }}
                 >
-                  {f.icon}
+                  <span className="text-sm leading-none">{f.icon}</span>
+                  <span>{f.label}</span>
                 </div>
-                <span className="text-sm text-white/80">{f.label}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Right panel - Sign-in card */}
-        <div className="flex w-full items-center justify-center px-6 py-12 lg:w-1/2 lg:px-16">
+        <div
+          className="flex w-full items-center justify-center px-6 py-12 lg:w-1/2 lg:px-16"
+          style={{ perspective: '1400px' }}
+        >
           <div className="w-full max-w-md">
-            {/* Glassmorphic card */}
-            <div
-              className="rounded-[24px] p-8 sm:p-10"
+            {/* Glassmorphic card — subtle 3D intro (small Y-tilt + scale-in)
+                synced with bars loading, then becomes interactively tiltable
+                with cursor position (3D parallax tilt). Cursor also drives a
+                soft highlight that follows over the card surface. */}
+            <motion.div
+              initial={{ rotateY: -22, rotateX: 6, scale: 0.94, opacity: 0 }}
+              animate={{ rotateY: 0, rotateX: 0, scale: 1, opacity: 1 }}
+              transition={{
+                duration: 1.4,
+                ease: [0.16, 1, 0.3, 1],
+                delay: 0.3,
+              }}
+              onAnimationComplete={() => setCardInteractive(true)}
+              onMouseMove={handleCardMouseMove}
+              onMouseLeave={handleCardMouseLeave}
+              className="relative overflow-hidden rounded-[24px] p-8 sm:p-10"
               style={{
                 background: 'rgba(255,255,255,0.04)',
                 backdropFilter: 'blur(24px)',
                 WebkitBackdropFilter: 'blur(24px)',
                 border: '1px solid rgba(255,255,255,0.08)',
                 boxShadow: '0 8px 48px rgba(0,0,0,0.4)',
+                transformStyle: 'preserve-3d',
+                willChange: 'transform',
+                ...(cardInteractive
+                  ? { rotateY: cardRotateY, rotateX: cardRotateX }
+                  : {}),
               }}
             >
+              {/* Cursor-following highlight overlay — adds the "glass card has
+                  depth" feel when interacting */}
+              {cardInteractive && (
+                <motion.div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: glareBackground,
+                    borderRadius: 'inherit',
+                    pointerEvents: 'none',
+                    mixBlendMode: 'plus-lighter',
+                  }}
+                />
+              )}
               {/* Mobile logo */}
               <div className="mb-6 flex items-center gap-2 lg:hidden">
                 <div
@@ -427,7 +508,7 @@ export default function SignIn() {
                   Privacy
                 </button>
               </div>
-            </div>
+            </motion.div>
 
             {/* Below card note */}
             <p
