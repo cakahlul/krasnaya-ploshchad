@@ -4,22 +4,25 @@ import LoadingBar from '@src/components/loadingBar';
 import { FilterReport } from '@src/features/dashboard/components/filterReport';
 import TeamTable from '@src/features/dashboard/components/teamTable';
 import { useTeamReportTransform } from '@src/features/dashboard/hooks/useTeamReportTransform';
+import { useTeamReportAutoDefaults } from '@src/features/dashboard/hooks/useTeamReportAutoDefaults';
 import RoleBasedRoute from '@src/components/RoleBasedRoute';
 import { useThemeColors } from '@src/hooks/useTheme';
 
 export default function Dashboard() {
   const { isLoading } = useTeamReportTransform();
+  const { isInitializing } = useTeamReportAutoDefaults();
   const { titleCol, subCol } = useThemeColors();
+  const effectiveLoading = isLoading || isInitializing;
   const [showLoading, setShowLoading] = useState(true);
-  const prevIsLoading = useRef(isLoading);
+  const prevLoading = useRef(effectiveLoading);
 
   // Re-show loading screen when a new fetch starts (e.g., filter change)
   useEffect(() => {
-    if (isLoading && !prevIsLoading.current) {
+    if (effectiveLoading && !prevLoading.current) {
       setShowLoading(true);
     }
-    prevIsLoading.current = isLoading;
-  }, [isLoading]);
+    prevLoading.current = effectiveLoading;
+  }, [effectiveLoading]);
 
   const handleLoadingComplete = useCallback(() => {
     setShowLoading(false);
@@ -30,7 +33,7 @@ export default function Dashboard() {
       <div className="relative p-6 tere-table tere-input">
         {showLoading && (
           <LoadingBar
-            isDataReady={!isLoading}
+            isDataReady={!effectiveLoading}
             onComplete={handleLoadingComplete}
           />
         )}

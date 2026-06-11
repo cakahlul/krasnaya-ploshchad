@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { EpicSelect } from './epicSelect';
 import { MultiSelectTeam } from './MultiSelectTeam';
 import { MultiSelectSprint } from './MultiSelectSprint';
@@ -5,11 +6,15 @@ import { DateRangeSelect } from './DateRangeSelect';
 import { useMultiSprintDataTransform } from '../hooks/useMultiSprintDataTransform';
 import { useTeamReportFilterStore } from '../store/teamReportFilterStore';
 import { useBoards } from '../hooks/useBoards';
+import { useMemberProfile } from '../hooks/useMemberProfile';
 import dayjs from 'dayjs';
 import './FilterReport.css';
 
 export function FilterReport() {
   const { boards, isLoading: boardsLoading } = useBoards();
+  const { member, teams: memberTeamShortNames } = useMemberProfile();
+  const isLead = member?.isLead === true;
+  const isNonLead = !!member && !isLead;
   const selectedTeams = useTeamReportFilterStore(state => state.selectedTeams);
 
   const nonKanbanTeamIds = boardsLoading ? [] : selectedTeams.filter(id =>
@@ -31,7 +36,22 @@ export function FilterReport() {
     boards.map(b => [b.boardId, b.shortName])
   );
 
-  const teamOptions = boards.filter(b => !b.isBugMonitoring).map(b => ({ value: b.boardId, label: b.name }));
+  const memberTeamSet = useMemo(
+    () => new Set(memberTeamShortNames),
+    [memberTeamShortNames],
+  );
+
+  const visibleBoards = useMemo(
+    () =>
+      boards.filter(b => {
+        if (b.isBugMonitoring) return false;
+        if (isNonLead) return memberTeamSet.has(b.shortName);
+        return true;
+      }),
+    [boards, isNonLead, memberTeamSet],
+  );
+
+  const teamOptions = visibleBoards.map(b => ({ value: b.boardId, label: b.name }));
 
   const handleTeamChange = (values: number[]) => {
     setTeams(values);

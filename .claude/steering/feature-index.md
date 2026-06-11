@@ -39,7 +39,7 @@
 ### Feature module (frontend)
 - `apps/tere-project/src/features/dashboard/`
   - `components/` — `ProductivitySummary.tsx`, `GlobalSearch.tsx`, `ProductivitySummaryExportButton.tsx`, `filterReport.tsx`, `epicSelect.tsx`, `DateRangeSelect.tsx`, `SprintSelect.tsx`, `TeamSelect.tsx`, `MultiSelectSprint.tsx`, `MultiSelectTeam.tsx`
-  - `hooks/` — 16 hooks including `useSprintFetch.ts`, `useMultiTeamSprintFetch.ts`, `useSprintDataTransform.ts`, `useMultiSprintDataTransform.ts`, `useBoards.ts`, `useGlobalSearch.ts`, `useMemberIssues.ts`, `useMemberProfile.ts`, `useTargetWpConfig.ts`, `useWpWeightConfig.ts`
+  - `hooks/` — 17 hooks including `useSprintFetch.ts`, `useMultiTeamSprintFetch.ts`, `useSprintDataTransform.ts`, `useMultiSprintDataTransform.ts`, `useBoards.ts`, `useGlobalSearch.ts`, `useMemberIssues.ts`, `useMemberProfile.ts`, `useTargetWpConfig.ts`, `useWpWeightConfig.ts`, `useTeamReportAutoDefaults.ts`
   - `repositories/jiraRepository.ts` — client-side Jira data fetcher
   - `store/sprintFilterStore.ts`, `store/teamReportFilterStore.ts` — Zustand
   - `types/dashboard.ts`
@@ -66,6 +66,7 @@
 
 ### Notes
 - **Feature flag** `isShowPlannedWP` — Team Reporting only (NOT dashboard, NOT productivity summary).
+- **Team Reporting auto-defaults**: on first mount, `useTeamReportAutoDefaults` (called from `app/dashboard/reports/page.tsx`) auto-selects (a) the user's teams (from `member.teams` via `useMemberProfile`; non-Leads also have non-member teams hidden in `filterReport.tsx`), then (b) the active sprint(s) for non-kanban teams OR the 2-week kanban cycle range for kanban-only teams. The hook returns `isInitializing` which the page ORs with `useTeamReportTransform().isLoading` to keep `LoadingBar` visible across the auto-init handoff (prevents the brief empty-state glitch).
 - Reports fetch from Jira via `src/server/lib/jira.client.ts`.
 - Epic/Story filter (`components/epicSelect.tsx`) uses **staged multi-select** (local draft) and commits only on **Apply**.
 - Do **not** refetch `/api/report` per epic: `useTeamReportFetch.ts` excludes epic IDs from the query key/API call.
@@ -239,6 +240,9 @@ No dashboard page — used by other features via HOFs/hooks.
 
 ### Auth HOFs
 - `apps/tere-project/src/server/auth/with-role.ts`
+
+### Notes
+- **Lead vs non-Lead gating**: when a feature needs to behave differently for Leads, gate on `member.isLead` (from the `members` table, exposed via `useMemberProfile()` / `members.me` API), **NOT** on `UserAccess.role`. `isLead` is the canonical source of truth for this distinction in product features; `UserAccess.role` is a separate concept and must not be overloaded for it.
 
 ---
 
