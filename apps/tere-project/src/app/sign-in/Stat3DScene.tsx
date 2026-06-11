@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useRef, useState } from 'react';
-import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber';
+import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import {
   Environment,
   Float,
@@ -209,11 +209,14 @@ function Bar({ config: cfg, index }: { config: BarConfig; index: number }) {
 
 function BarsGroup() {
   const groupRef = useRef<THREE.Group>(null);
+  const { size } = useThree();
+  const isMobile = size.width < 768;
 
   useFrame((state) => {
     if (!groupRef.current) return;
     const { x, y } = state.pointer;
-    groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, x * 0.25, 0.05);
+    const factor = isMobile ? 0.18 : 0.25;
+    groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, x * factor, 0.05);
     groupRef.current.rotation.x = THREE.MathUtils.lerp(
       groupRef.current.rotation.x,
       -y * 0.1 + 0.06,
@@ -221,8 +224,14 @@ function BarsGroup() {
     );
   });
 
+  // Mobile: scene centered+up so bars are visible above the card.
+  // Desktop: scene shifted left so bars sit under the left panel.
   return (
-    <group ref={groupRef} position={[-2.5, -1.6, 0]}>
+    <group
+      ref={groupRef}
+      position={isMobile ? [0, 0.2, 0] : [-2.5, -1.6, 0]}
+      scale={isMobile ? 0.55 : 1}
+    >
       <Float speed={0.9} rotationIntensity={0.04} floatIntensity={0.15}>
         {BARS.map((b, i) => (
           <Bar key={i} config={b} index={i} />
@@ -233,11 +242,17 @@ function BarsGroup() {
 }
 
 function SparkleField() {
+  const { size } = useThree();
+  const isMobile = size.width < 768;
+  const baseCount = isMobile ? 30 : 70;
+  const accentCount = isMobile ? 18 : 35;
+  const fieldScale: [number, number, number] = isMobile ? [10, 16, 6] : [18, 10, 6];
+  const accentScaleA: [number, number, number] = isMobile ? [12, 18, 6] : [20, 12, 6];
   return (
     <>
-      <Sparkles count={70} scale={[18, 10, 6]} position={[0, 1, -1]} size={2.2} speed={0.3} opacity={0.55} color={RIM} />
-      <Sparkles count={35} scale={[20, 12, 6]} position={[2, 0.5, -0.5]} size={2.4} speed={0.25} opacity={0.45} color="#c4b5fd" />
-      <Sparkles count={35} scale={[20, 12, 6]} position={[-2, -0.5, 0]} size={2.4} speed={0.28} opacity={0.45} color="#fbb6ce" />
+      <Sparkles count={baseCount} scale={fieldScale} position={[0, 1, -1]} size={2.2} speed={0.3} opacity={0.55} color={RIM} />
+      <Sparkles count={accentCount} scale={accentScaleA} position={[2, 0.5, -0.5]} size={2.4} speed={0.25} opacity={0.45} color="#c4b5fd" />
+      <Sparkles count={accentCount} scale={accentScaleA} position={[-2, -0.5, 0]} size={2.4} speed={0.28} opacity={0.45} color="#fbb6ce" />
     </>
   );
 }

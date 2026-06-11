@@ -79,6 +79,15 @@ export default function SignIn() {
     cardMouseY.set(0);
   };
 
+  const handleCardTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!cardInteractive) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    cardMouseX.set(touch.clientX - rect.left - rect.width / 2);
+    cardMouseY.set(touch.clientY - rect.top - rect.height / 2);
+  };
+
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -112,7 +121,7 @@ export default function SignIn() {
 
   return (
     <div
-      className="relative min-h-screen w-full overflow-hidden font-sans"
+      className="relative min-h-screen w-full overflow-x-hidden overflow-y-auto font-sans"
       style={{ background: 'linear-gradient(135deg, #060d1a, #011d4d, #034078)' }}
     >
       {/* Grid overlay */}
@@ -138,17 +147,19 @@ export default function SignIn() {
 
       {/* Full-page 3D layer — sits behind content. pointer-events:none on the wrapper
           so DOM stays clickable; R3F uses document.body as event source so bars
-          still raycast hover/click correctly when cursor is over them. */}
-      <div className="pointer-events-none fixed inset-0 z-[5] hidden lg:block">
+          still raycast hover/click correctly when cursor is over them. Visible on
+          all screen sizes — the scene auto-repositions for mobile vs desktop. */}
+      <div className="pointer-events-none fixed inset-0 z-[5]">
         <Stat3DScene />
       </div>
 
       {/* Two-column layout */}
       <div className="relative z-10 flex min-h-screen flex-col lg:flex-row">
-        {/* Left panel — text content overlays the full-page 3D layer behind it */}
-        <div className="relative hidden lg:flex lg:w-1/2 flex-col px-12 xl:px-16 py-10">
+        {/* Left panel — branding content. Visible on all screens; compact
+            stacked on mobile, full column on desktop. */}
+        <div className="relative flex w-full lg:w-1/2 flex-col px-6 pt-8 pb-2 lg:px-12 xl:px-16 lg:py-10">
           {/* Logo - top */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center lg:justify-start gap-3">
             <div
               className="flex h-9 w-9 items-center justify-center rounded-lg"
               style={{ background: 'linear-gradient(135deg, #1282a2, #22b8d4)' }}
@@ -161,15 +172,16 @@ export default function SignIn() {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-lg font-bold tracking-wide text-white">TERE</span>
-              <span className="text-[10px] uppercase tracking-[0.18em]" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              <span className="hidden sm:inline text-[10px] uppercase tracking-[0.18em]" style={{ color: 'rgba(255,255,255,0.4)' }}>
                 Team Reporting Engine
               </span>
             </div>
           </div>
 
-          {/* Info block — vertically centered. 3D bars rise from below the page,
-              tops can poke up through this text region for a "free floating" feel. */}
-          <div className="my-auto flex flex-col gap-5">
+          {/* Info block — centered on mobile (above card), vertically centered
+              on desktop. 3D bars rise from below the page, tops can poke up
+              through this text region for a "free floating" feel. */}
+          <div className="mt-6 lg:my-auto flex flex-col gap-3 lg:gap-5 items-center lg:items-start text-center lg:text-left">
             <div
               className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1"
               style={{
@@ -188,7 +200,7 @@ export default function SignIn() {
             </div>
 
             <h1
-              className="text-4xl font-bold leading-tight text-white xl:text-5xl"
+              className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold leading-tight text-white"
               style={{ textShadow: '0 2px 14px rgba(0,0,0,0.5)' }}
             >
               Your team&apos;s data,{' '}
@@ -205,7 +217,7 @@ export default function SignIn() {
             </h1>
 
             <p
-              className="max-w-md text-sm leading-relaxed"
+              className="hidden sm:block max-w-md text-xs sm:text-sm leading-relaxed"
               style={{
                 color: 'rgba(255,255,255,0.75)',
                 textShadow: '0 1px 8px rgba(0,0,0,0.45)',
@@ -215,7 +227,7 @@ export default function SignIn() {
               enjoy opening.
             </p>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="hidden sm:flex flex-wrap justify-center lg:justify-start gap-2">
               {FEATURE_CHIPS.map((f) => (
                 <div
                   key={f.label}
@@ -237,7 +249,7 @@ export default function SignIn() {
 
         {/* Right panel - Sign-in card */}
         <div
-          className="flex w-full items-center justify-center px-6 py-12 lg:w-1/2 lg:px-16"
+          className="flex w-full items-center justify-center overflow-x-hidden px-4 py-6 sm:px-6 sm:py-10 lg:w-1/2 lg:px-16 lg:py-12"
           style={{ perspective: '1400px' }}
         >
           <div className="w-full max-w-md">
@@ -246,7 +258,7 @@ export default function SignIn() {
                 with cursor position (3D parallax tilt). Cursor also drives a
                 soft highlight that follows over the card surface. */}
             <motion.div
-              initial={{ rotateY: -22, rotateX: 6, scale: 0.94, opacity: 0 }}
+              initial={{ rotateY: -14, rotateX: 4, scale: 0.94, opacity: 0 }}
               animate={{ rotateY: 0, rotateX: 0, scale: 1, opacity: 1 }}
               transition={{
                 duration: 1.4,
@@ -256,7 +268,10 @@ export default function SignIn() {
               onAnimationComplete={() => setCardInteractive(true)}
               onMouseMove={handleCardMouseMove}
               onMouseLeave={handleCardMouseLeave}
-              className="relative overflow-hidden rounded-[24px] p-8 sm:p-10"
+              onTouchMove={handleCardTouchMove}
+              onTouchEnd={handleCardMouseLeave}
+              onTouchCancel={handleCardMouseLeave}
+              className="relative overflow-hidden rounded-[20px] sm:rounded-[24px] p-6 sm:p-8 lg:p-10"
               style={{
                 background: 'rgba(255,255,255,0.04)',
                 backdropFilter: 'blur(24px)',
@@ -284,21 +299,6 @@ export default function SignIn() {
                   }}
                 />
               )}
-              {/* Mobile logo */}
-              <div className="mb-6 flex items-center gap-2 lg:hidden">
-                <div
-                  className="flex h-8 w-8 items-center justify-center rounded-lg"
-                  style={{ background: 'linear-gradient(135deg, #1282a2, #22b8d4)' }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-                    <rect x="1" y="9" width="3.5" height="8" rx="1" fill="white" />
-                    <rect x="6.5" y="5" width="3.5" height="12" rx="1" fill="white" opacity="0.85" />
-                    <rect x="12" y="1" width="3.5" height="16" rx="1" fill="white" opacity="0.7" />
-                  </svg>
-                </div>
-                <span className="text-base font-bold tracking-wide text-white">TERE</span>
-              </div>
-
               {loginPageMessage && (
                 <div
                   className="mb-6 rounded-lg border-l-4 p-4"
