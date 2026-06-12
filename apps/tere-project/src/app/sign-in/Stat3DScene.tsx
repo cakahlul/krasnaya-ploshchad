@@ -210,28 +210,44 @@ function Bar({ config: cfg, index }: { config: BarConfig; index: number }) {
 function BarsGroup() {
   const groupRef = useRef<THREE.Group>(null);
   const { size } = useThree();
-  const isMobile = size.width < 768;
+  const w = size.width;
+  const isMobile = w < 640;
+  const isTablet = w >= 640 && w < 1024;
+
+  // Per-breakpoint placement so bars sit gracefully in available space:
+  //   mobile  → top-center, small  (decorative peeking from top behind text)
+  //   tablet  → upper-left, medium
+  //   desktop → far-left, full size (hero element)
+  let position: [number, number, number] = [-2.5, -1.6, 0];
+  let scale = 1;
+  let parallaxFactor = 0.25;
+  if (isMobile) {
+    position = [0, 1.2, 0];
+    scale = 0.42;
+    parallaxFactor = 0.14;
+  } else if (isTablet) {
+    position = [-1.2, 0, 0];
+    scale = 0.7;
+    parallaxFactor = 0.2;
+  }
 
   useFrame((state) => {
     if (!groupRef.current) return;
     const { x, y } = state.pointer;
-    const factor = isMobile ? 0.18 : 0.25;
-    groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, x * factor, 0.05);
+    groupRef.current.rotation.y = THREE.MathUtils.lerp(
+      groupRef.current.rotation.y,
+      x * parallaxFactor,
+      0.05,
+    );
     groupRef.current.rotation.x = THREE.MathUtils.lerp(
       groupRef.current.rotation.x,
-      -y * 0.1 + 0.06,
+      -y * (isMobile ? 0.06 : 0.1) + 0.06,
       0.05,
     );
   });
 
-  // Mobile: scene centered+up so bars are visible above the card.
-  // Desktop: scene shifted left so bars sit under the left panel.
   return (
-    <group
-      ref={groupRef}
-      position={isMobile ? [0, 0.2, 0] : [-2.5, -1.6, 0]}
-      scale={isMobile ? 0.55 : 1}
-    >
+    <group ref={groupRef} position={position} scale={scale}>
       <Float speed={0.9} rotationIntensity={0.04} floatIntensity={0.15}>
         {BARS.map((b, i) => (
           <Bar key={i} config={b} index={i} />

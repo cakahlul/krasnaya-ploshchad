@@ -124,23 +124,19 @@ export default function SignIn() {
       className="relative min-h-screen w-full overflow-x-hidden overflow-y-auto font-sans"
       style={{ background: 'linear-gradient(135deg, #060d1a, #011d4d, #034078)' }}
     >
-      {/* Grid overlay */}
+      {/* Grid overlay — denser on mobile, looser on desktop */}
       <div
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 bg-[length:40px_40px] sm:bg-[length:60px_60px]"
         style={{
           backgroundImage:
             'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
-          backgroundSize: '60px 60px',
         }}
       />
 
-      {/* Accent glow orb */}
+      {/* Accent glow orb — scales with viewport */}
       <div
-        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[280px] w-[280px] sm:h-[420px] sm:w-[420px] lg:h-[600px] lg:w-[600px] rounded-full"
         style={{
-          width: 600,
-          height: 600,
-          borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(18,130,162,0.15) 0%, transparent 70%)',
         }}
       />
@@ -155,35 +151,37 @@ export default function SignIn() {
 
       {/* Two-column layout */}
       <div className="relative z-10 flex min-h-screen flex-col lg:flex-row">
-        {/* Left panel — branding content. Visible on all screens; compact
-            stacked on mobile, full column on desktop. */}
-        <div className="relative flex w-full lg:w-1/2 flex-col px-6 pt-8 pb-2 lg:px-12 xl:px-16 lg:py-10">
+        {/* Left panel — branding. Tight on mobile, comfortable on tablet,
+            full hero on desktop. */}
+        <div className="relative flex w-full lg:w-1/2 flex-col px-5 pt-6 pb-1 sm:px-8 sm:pt-8 md:px-10 lg:px-12 xl:px-16 lg:pt-10 lg:pb-2">
           {/* Logo - top */}
-          <div className="flex items-center justify-center lg:justify-start gap-3">
+          <div className="flex items-center justify-center lg:justify-start gap-2.5 sm:gap-3">
             <div
-              className="flex h-9 w-9 items-center justify-center rounded-lg"
+              className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg"
               style={{ background: 'linear-gradient(135deg, #1282a2, #22b8d4)' }}
             >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="h-4 w-4 sm:h-[18px] sm:w-[18px]">
                 <rect x="1" y="9" width="3.5" height="8" rx="1" fill="white" />
                 <rect x="6.5" y="5" width="3.5" height="12" rx="1" fill="white" opacity="0.85" />
                 <rect x="12" y="1" width="3.5" height="16" rx="1" fill="white" opacity="0.7" />
               </svg>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-lg font-bold tracking-wide text-white">TERE</span>
-              <span className="hidden sm:inline text-[10px] uppercase tracking-[0.18em]" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              <span className="text-base sm:text-lg font-bold tracking-wide text-white">TERE</span>
+              <span
+                className="hidden md:inline text-[10px] uppercase tracking-[0.18em]"
+                style={{ color: 'rgba(255,255,255,0.4)' }}
+              >
                 Team Reporting Engine
               </span>
             </div>
           </div>
 
-          {/* Info block — centered on mobile (above card), vertically centered
-              on desktop. 3D bars rise from below the page, tops can poke up
-              through this text region for a "free floating" feel. */}
-          <div className="mt-6 lg:my-auto flex flex-col gap-3 lg:gap-5 items-center lg:items-start text-center lg:text-left">
+          {/* Info block — centered on mobile/tablet, left-aligned vertically
+              centered on desktop. Bars peek behind this text region. */}
+          <div className="mt-4 sm:mt-5 lg:my-auto flex flex-col gap-2.5 sm:gap-3 lg:gap-5 items-center lg:items-start text-center lg:text-left">
             <div
-              className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1"
+              className="inline-flex w-fit items-center gap-2 rounded-full px-2.5 py-0.5 sm:px-3 sm:py-1"
               style={{
                 background: 'rgba(34,184,212,0.08)',
                 border: '1px solid rgba(34,184,212,0.18)',
@@ -194,13 +192,16 @@ export default function SignIn() {
                 className="h-1.5 w-1.5 rounded-full"
                 style={{ background: '#22b8d4', boxShadow: '0 0 8px #22b8d4' }}
               />
-              <span className="text-[11px] font-medium uppercase tracking-[0.16em]" style={{ color: '#7fd8ee' }}>
+              <span
+                className="text-[10px] sm:text-[11px] font-medium uppercase tracking-[0.16em]"
+                style={{ color: '#7fd8ee' }}
+              >
                 v2.0 · Now Live
               </span>
             </div>
 
             <h1
-              className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold leading-tight text-white"
+              className="max-w-xl text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold leading-tight text-white"
               style={{ textShadow: '0 2px 14px rgba(0,0,0,0.5)' }}
             >
               Your team&apos;s data,{' '}
@@ -217,7 +218,7 @@ export default function SignIn() {
             </h1>
 
             <p
-              className="hidden sm:block max-w-md text-xs sm:text-sm leading-relaxed"
+              className="hidden sm:block max-w-md text-xs md:text-sm leading-relaxed"
               style={{
                 color: 'rgba(255,255,255,0.75)',
                 textShadow: '0 1px 8px rgba(0,0,0,0.45)',
@@ -227,11 +228,11 @@ export default function SignIn() {
               enjoy opening.
             </p>
 
-            <div className="hidden sm:flex flex-wrap justify-center lg:justify-start gap-2">
+            <div className="hidden md:flex flex-wrap justify-center lg:justify-start gap-1.5 sm:gap-2">
               {FEATURE_CHIPS.map((f) => (
                 <div
                   key={f.label}
-                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition-colors duration-200 hover:bg-white/10"
+                  className="flex items-center gap-1.5 rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs transition-colors duration-200 hover:bg-white/10"
                   style={{
                     background: 'rgba(255,255,255,0.04)',
                     border: '1px solid rgba(255,255,255,0.08)',
@@ -249,21 +250,20 @@ export default function SignIn() {
 
         {/* Right panel - Sign-in card */}
         <div
-          className="flex w-full items-center justify-center overflow-x-hidden px-4 py-6 sm:px-6 sm:py-10 lg:w-1/2 lg:px-16 lg:py-12"
+          className="flex w-full items-center justify-center overflow-x-hidden px-4 py-4 sm:px-6 sm:py-8 md:px-10 lg:w-1/2 lg:px-16 lg:py-12"
           style={{ perspective: '1400px' }}
         >
-          <div className="w-full max-w-md">
-            {/* Glassmorphic card — subtle 3D intro (small Y-tilt + scale-in)
-                synced with bars loading, then becomes interactively tiltable
-                with cursor position (3D parallax tilt). Cursor also drives a
-                soft highlight that follows over the card surface. */}
+          <div className="w-full max-w-sm sm:max-w-md">
+            {/* Glassmorphic card — smooth blur-in fade. Card materializes from
+                blurred to sharp with subtle lift, then becomes interactively
+                tiltable on cursor + glare highlight follows the pointer. */}
             <motion.div
-              initial={{ rotateY: -14, rotateX: 4, scale: 0.94, opacity: 0 }}
-              animate={{ rotateY: 0, rotateX: 0, scale: 1, opacity: 1 }}
+              initial={{ opacity: 0, y: 12, scale: 0.98, filter: 'blur(12px)' }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
               transition={{
-                duration: 1.4,
-                ease: [0.16, 1, 0.3, 1],
-                delay: 0.3,
+                duration: 1.1,
+                ease: [0.22, 1, 0.36, 1],
+                delay: 0.45,
               }}
               onAnimationComplete={() => setCardInteractive(true)}
               onMouseMove={handleCardMouseMove}
@@ -271,7 +271,7 @@ export default function SignIn() {
               onTouchMove={handleCardTouchMove}
               onTouchEnd={handleCardMouseLeave}
               onTouchCancel={handleCardMouseLeave}
-              className="relative overflow-hidden rounded-[20px] sm:rounded-[24px] p-6 sm:p-8 lg:p-10"
+              className="relative overflow-hidden rounded-2xl sm:rounded-[24px] p-5 sm:p-7 lg:p-10"
               style={{
                 background: 'rgba(255,255,255,0.04)',
                 backdropFilter: 'blur(24px)',
@@ -301,22 +301,22 @@ export default function SignIn() {
               )}
               {loginPageMessage && (
                 <div
-                  className="mb-6 rounded-lg border-l-4 p-4"
+                  className="mb-4 sm:mb-6 rounded-lg border-l-4 p-3 sm:p-4"
                   style={{
                     borderColor: '#1282a2',
                     background: 'rgba(18,130,162,0.1)',
                   }}
                 >
-                  <p className="text-sm font-medium" style={{ color: '#22b8d4' }}>
+                  <p className="text-xs sm:text-sm font-medium" style={{ color: '#22b8d4' }}>
                     {loginPageMessage}
                   </p>
                 </div>
               )}
 
-              <h2 className="mb-2 text-2xl font-bold text-white">
+              <h2 className="mb-2 text-xl sm:text-2xl font-bold text-white">
                 Welcome back <span className="inline-block">&#x1F44B;</span>
               </h2>
-              <p className="mb-8 text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              <p className="mb-6 sm:mb-8 text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
                 Sign in to access your team dashboard
               </p>
 
@@ -325,7 +325,7 @@ export default function SignIn() {
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={loading || googleLoading || success}
-                className="group relative flex w-full items-center justify-center gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                className="group relative flex w-full items-center justify-center gap-2 sm:gap-3 rounded-xl px-3 py-3 sm:px-4 sm:py-3.5 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                 style={{
                   background: success
                     ? 'linear-gradient(135deg, #059669, #10b981)'
@@ -334,15 +334,15 @@ export default function SignIn() {
                 }}
               >
                 {googleLoading ? (
-                  <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <svg className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" viewBox="0 0 24 24" fill="none">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
                   </svg>
                 ) : success ? (
-                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <svg className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                     <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
@@ -352,14 +352,14 @@ export default function SignIn() {
                 {success ? 'Redirecting to dashboard...' : 'Continue with Google'}
               </button>
 
-              <p className="mt-3 text-center text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              <p className="mt-2 sm:mt-3 text-center text-[10px] sm:text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
                 Recommended &mdash; use your company Google account
               </p>
 
               {/* Divider */}
-              <div className="my-7 flex items-center gap-4">
+              <div className="my-5 sm:my-7 flex items-center gap-3 sm:gap-4">
                 <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.1)' }} />
-                <span className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>or</span>
+                <span className="text-[10px] sm:text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>or</span>
                 <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.1)' }} />
               </div>
 
@@ -367,7 +367,7 @@ export default function SignIn() {
                 <button
                   type="button"
                   onClick={() => setShowEmailForm(true)}
-                  className="w-full rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:border-white/20"
+                  className="w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-medium transition-all duration-200 hover:border-white/20"
                   style={{
                     color: 'rgba(255,255,255,0.6)',
                     border: '1px dashed rgba(255,255,255,0.15)',
@@ -377,10 +377,10 @@ export default function SignIn() {
                   Sign in with email instead
                 </button>
               ) : (
-                <form className="space-y-4" onSubmit={handleLogin}>
+                <form className="space-y-3 sm:space-y-4" onSubmit={handleLogin}>
                   {/* Email input */}
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-white/50" htmlFor="email">
+                    <label className="mb-1 sm:mb-1.5 block text-[10px] sm:text-xs font-medium text-white/50" htmlFor="email">
                       Email
                     </label>
                     <input
@@ -390,7 +390,7 @@ export default function SignIn() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition-all duration-200 focus:ring-2"
+                      className="w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm text-white placeholder-white/25 outline-none transition-all duration-200 focus:ring-2"
                       style={{
                         background: 'rgba(255,255,255,0.05)',
                         border: '1px solid rgba(255,255,255,0.1)',
@@ -409,13 +409,13 @@ export default function SignIn() {
 
                   {/* Password input */}
                   <div>
-                    <div className="mb-1.5 flex items-center justify-between">
-                      <label className="text-xs font-medium text-white/50" htmlFor="password">
+                    <div className="mb-1 sm:mb-1.5 flex items-center justify-between">
+                      <label className="text-[10px] sm:text-xs font-medium text-white/50" htmlFor="password">
                         Password
                       </label>
                       <a
                         href="#"
-                        className="text-xs font-medium transition-colors duration-200 hover:underline"
+                        className="text-[10px] sm:text-xs font-medium transition-colors duration-200 hover:underline"
                         style={{ color: '#22b8d4' }}
                       >
                         Forgot?
@@ -429,7 +429,7 @@ export default function SignIn() {
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full rounded-xl px-4 py-3 pr-10 text-sm text-white placeholder-white/25 outline-none transition-all duration-200"
+                        className="w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 pr-9 sm:pr-10 text-xs sm:text-sm text-white placeholder-white/25 outline-none transition-all duration-200"
                         style={{
                           background: 'rgba(255,255,255,0.05)',
                           border: '1px solid rgba(255,255,255,0.1)',
@@ -467,7 +467,7 @@ export default function SignIn() {
                   <button
                     type="submit"
                     disabled={loading || success}
-                    className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                     style={{
                       background: success
                         ? 'linear-gradient(135deg, #059669, #10b981)'
@@ -482,7 +482,7 @@ export default function SignIn() {
                   <button
                     type="button"
                     onClick={() => setShowEmailForm(false)}
-                    className="w-full text-center text-xs transition-colors duration-200 hover:underline"
+                    className="w-full text-center text-[10px] sm:text-xs transition-colors duration-200 hover:underline"
                     style={{ color: 'rgba(255,255,255,0.4)' }}
                   >
                     Back to Google sign in
@@ -491,7 +491,7 @@ export default function SignIn() {
               )}
 
               {/* Footer */}
-              <div className="mt-8 flex items-center justify-center gap-4 text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
+              <div className="mt-6 sm:mt-8 flex items-center justify-center gap-3 sm:gap-4 text-[10px] sm:text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
                 <button
                   type="button"
                   onClick={() => setLegalModal('terms')}
@@ -512,7 +512,7 @@ export default function SignIn() {
 
             {/* Below card note */}
             <p
-              className="mt-6 text-center text-xs italic"
+              className="mt-4 sm:mt-6 text-center text-[10px] sm:text-xs italic px-2"
               style={{ color: 'rgba(255,255,255,0.2)' }}
             >
               Your data is safe. Unlike your WP score on a bad sprint.
