@@ -1,4 +1,5 @@
 import { DashboardDto, SprintDto } from '../types/dashboard';
+import type { SprintTrendResponseDto } from '@shared/types/report.types';
 import axiosClient from '@src/lib/axiosClient';
 
 export const jiraRepository = {
@@ -51,6 +52,17 @@ export const jiraRepository = {
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
     const response = await axiosClient.get(`/report/stories?${params.toString()}`);
+    return response.data;
+  },
+
+  fetchSprintTrend: async (
+    sprintIds: string[],
+    project: string,
+  ): Promise<SprintTrendResponseDto> => {
+    const params = new URLSearchParams();
+    params.append('project', project);
+    params.append('sprints', sprintIds.join(','));
+    const response = await axiosClient.get(`/report/sprint-trend?${params.toString()}`);
     return response.data;
   },
 

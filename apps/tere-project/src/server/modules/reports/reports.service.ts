@@ -3,6 +3,10 @@ import type {
   JiraIssueReportResponseDto,
   GetReportResponseDto,
   EpicDto,
+  SprintTrendResponseDto,
+  SprintTrendPointDto,
+  SprintTrendTeamMetricsDto,
+  SprintSlowdownAlertDto,
 } from '@shared/types/report.types';
 import type { MemberResponse } from '@shared/types/member.types';
 import type { LeaveDateRange } from '@shared/types/talent-leave.types';
@@ -773,6 +777,133 @@ export async function generateReportByDateRange(
     { startDate, endDate },
     nationalHolidays,
   );
+}
+
+function aggregateReportByTeam(
+  report: GetReportResponseDto,
+): SprintTrendTeamMetricsDto[] {
+  const buckets = new Map<
+    string,
+    {
+      velocity: number;
+      targetWP: number;
+      totalSP: number;
+      targetSP: number;
+      activeMembers: number;
+    }
+  >();
+
+  for (const issue of report.issues) {
+    const isActive = (issue.spTotal ?? 0) > 0 || issue.totalWeightPoints > 0;
+    const team = issue.team || 'UNKNOWN';
+    const entry = buckets.get(team) ?? {
+      velocity: 0,
+      targetWP: 0,
+      totalSP: 0,
+      targetSP: 0,
+      activeMembers: 0,
+    };
+    if (isActive) {
+      entry.velocity += issue.totalWeightPoints || 0;
+      entry.targetWP += issue.targetWeightPoints || 0;
+      entry.totalSP += issue.spTotal ?? 0;
+      entry.targetSP += (issue.workingDays ?? 10) * 8;
+      entry.activeMembers += 1;
+    }
+    buckets.set(team, entry);
+  }
+
+  return Array.from(buckets.entries()).map(([team, v]) => ({
+    team,
+    velocity: parseFloat(v.velocity.toFixed(2)),
+    targetWP: parseFloat(v.targetWP.toFixed(2)),
+    wpAttainment:
+      v.targetWP > 0 ? parseFloat(((v.velocity / v.targetWP) * 100).toFixed(2)) : 0,
+    totalSP: parseFloat(v.totalSP.toFixed(2)),
+    targetSP: parseFloat(v.targetSP.toFixed(2)),
+    spVelocity: parseFloat(v.totalSP.toFixed(2)),
+    activeMembers: v.activeMembers,
+  }));
+}
+
+function detectSlowdowns(
+  points: SprintTrendPointDto[],
+): SprintSlowdownAlertDto[] {
+  if (points.length < 2) return [];
+  const sorted = [...points].sort((a, b) => {
+    const aDate = a.sprintStartDate ?? '';
+    const bDate = b.sprintStartDate ?? '';
+    return aDate.localeCompare(bDate);
+  });
+
+  const teamSeries = new Map<string, number[]>();
+  for (const point of sorted) {
+    for (const t of point.teams) {
+      const arr = teamSeries.get(t.team) ?? [];
+      arr.push(t.velocity);
+      teamSeries.set(t.team, arr);
+    }
+  }
+
+  const alerts: SprintSlowdownAlertDto[] = [];
+  for (const [team, series] of teamSeries.entries()) {
+    if (series.length < 3) continue;
+    let consecutive = 0;
+    for (let i = series.length - 1; i > 0; i--) {
+      if (series[i] < series[i - 1]) consecutive++;
+      else break;
+    }
+    if (consecutive < 2) continue;
+    const latest = series[series.length - 1];
+    const baseline = series[series.length - 1 - consecutive];
+    if (baseline <= 0) continue;
+    const declinePercent = ((baseline - latest) / baseline) * 100;
+    if (declinePercent < 20) continue;
+    alerts.push({
+      team,
+      consecutiveDeclines: consecutive,
+      declinePercent: parseFloat(declinePercent.toFixed(2)),
+      latestVelocity: parseFloat(latest.toFixed(2)),
+      baselineVelocity: parseFloat(baseline.toFixed(2)),
+    });
+  }
+  return alerts;
+}
+
+export async function generateSprintTrend(
+  sprintIds: string[],
+  project: string,
+): Promise<SprintTrendResponseDto> {
+  const cleanIds = sprintIds.map(s => s.trim()).filter(Boolean);
+  if (cleanIds.length === 0) {
+    return { points: [], slowdownAlerts: [] };
+  }
+
+  const reports = await Promise.all(
+    cleanIds.map(async sprintId => {
+      try {
+        const report = await generateReport(sprintId, project);
+        return { sprintId, report };
+      } catch (error) {
+        console.warn(
+          `[generateSprintTrend] failed for sprint=${sprintId}:`,
+          error,
+        );
+        return null;
+      }
+    }),
+  );
+
+  const points: SprintTrendPointDto[] = reports
+    .filter((r): r is NonNullable<typeof r> => !!r)
+    .map(({ sprintId, report }) => ({
+      sprintId,
+      sprintStartDate: report.sprintStartDate,
+      sprintEndDate: report.sprintEndDate,
+      teams: aggregateReportByTeam(report),
+    }));
+
+  return { points, slowdownAlerts: detectSlowdowns(points) };
 }
 
 export async function getEpics(

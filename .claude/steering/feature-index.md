@@ -11,6 +11,7 @@
 | Intent | Feature |
 |---|---|
 | Sprint reports / story-point dashboard | [Dashboard / Reports](#dashboard--reports) |
+| Sprint-over-sprint velocity trend | [Dashboard / Reports](#dashboard--reports) |
 | Productivity Summary export | [Reports](#reports) |
 | Bug tracking and charts | [Bug Monitoring](#bug-monitoring) |
 | Public-holiday CRUD | [Holiday Management](#holiday-management) |
@@ -38,8 +39,8 @@
 
 ### Feature module (frontend)
 - `apps/tere-project/src/features/dashboard/`
-  - `components/` — `ProductivitySummary.tsx`, `GlobalSearch.tsx`, `ProductivitySummaryExportButton.tsx`, `filterReport.tsx`, `epicSelect.tsx`, `DateRangeSelect.tsx`, `SprintSelect.tsx`, `TeamSelect.tsx`, `MultiSelectSprint.tsx`, `MultiSelectTeam.tsx`
-  - `hooks/` — 17 hooks including `useSprintFetch.ts`, `useMultiTeamSprintFetch.ts`, `useSprintDataTransform.ts`, `useMultiSprintDataTransform.ts`, `useBoards.ts`, `useGlobalSearch.ts`, `useMemberIssues.ts`, `useMemberProfile.ts`, `useTargetWpConfig.ts`, `useWpWeightConfig.ts`, `useTeamReportAutoDefaults.ts`
+  - `components/` — `ProductivitySummary.tsx`, `GlobalSearch.tsx`, `ProductivitySummaryExportButton.tsx`, `filterReport.tsx`, `epicSelect.tsx`, `DateRangeSelect.tsx`, `SprintSelect.tsx`, `TeamSelect.tsx`, `MultiSelectSprint.tsx`, `MultiSelectTeam.tsx`, `SprintTrendChart.tsx`
+  - `hooks/` — 18 hooks including `useSprintFetch.ts`, `useMultiTeamSprintFetch.ts`, `useSprintDataTransform.ts`, `useMultiSprintDataTransform.ts`, `useBoards.ts`, `useGlobalSearch.ts`, `useMemberIssues.ts`, `useMemberProfile.ts`, `useTargetWpConfig.ts`, `useWpWeightConfig.ts`, `useTeamReportAutoDefaults.ts`, `useSprintTrend.ts`
   - `repositories/jiraRepository.ts` — client-side Jira data fetcher
   - `store/sprintFilterStore.ts`, `store/teamReportFilterStore.ts` — Zustand
   - `types/dashboard.ts`
@@ -52,6 +53,7 @@
 - `GET /api/report/stories` → `apps/tere-project/src/app/api/report/stories/route.ts`
 - `GET /api/report/productivity-summary` → `apps/tere-project/src/app/api/report/productivity-summary/route.ts`
 - `POST /api/report/productivity-summary/export` → `apps/tere-project/src/app/api/report/productivity-summary/export/route.ts`
+- `GET /api/report/sprint-trend` → `apps/tere-project/src/app/api/report/sprint-trend/route.ts`
 - `GET /api/report/productivity-summary/auth/google` → OAuth callback for export to Google Sheets
 
 ### Server modules
@@ -66,6 +68,7 @@
 
 ### Notes
 - **Feature flag** `isShowPlannedWP` — Team Reporting only (NOT dashboard, NOT productivity summary).
+- **Sprint Trend** (`SprintTrendChart`): rendered below `TeamTable` on reports page. Activates when 2+ sprints selected. Calls `/api/report/sprint-trend` which loops `generateReport` per sprint and aggregates per-team via `aggregateReportByTeam`. Metrics: velocity (WP), wpAttainment (%), spVelocity (raw SP). Slowdown alerts flag teams with 2+ consecutive declines totaling ≥ 20%.
 - **Team Reporting auto-defaults**: on first mount, `useTeamReportAutoDefaults` (called from `app/dashboard/reports/page.tsx`) auto-selects (a) the user's teams (from `member.teams` via `useMemberProfile`; non-Leads also have non-member teams hidden in `filterReport.tsx`), then (b) the active sprint(s) for non-kanban teams OR the 2-week kanban cycle range for kanban-only teams. The hook returns `isInitializing` which the page ORs with `useTeamReportTransform().isLoading` to keep `LoadingBar` visible across the auto-init handoff (prevents the brief empty-state glitch).
 - Reports fetch from Jira via `src/server/lib/jira.client.ts`.
 - Epic/Story filter (`components/epicSelect.tsx`) uses **staged multi-select** (local draft) and commits only on **Apply**.
@@ -333,6 +336,7 @@ Two parallel modules: **Target WP** and **WP Weight**.
 
 ### Pages
 - `apps/tere-project/src/app/sign-in/page.tsx`
+- `apps/tere-project/src/app/sign-in/Stat3DScene.tsx` — interactive R3F scene on sign-in left panel (hover bars/sphere, parallax on mouse)
 - `apps/tere-project/src/app/sign-up/page.tsx`
 
 ### Middleware (session enforcement)

@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import LoadingBar from '@src/components/loadingBar';
 import { FilterReport } from '@src/features/dashboard/components/filterReport';
 import TeamTable from '@src/features/dashboard/components/teamTable';
+import { SprintTrendChart } from '@src/features/dashboard/components/SprintTrendChart';
 import { useTeamReportTransform } from '@src/features/dashboard/hooks/useTeamReportTransform';
 import { useTeamReportAutoDefaults } from '@src/features/dashboard/hooks/useTeamReportAutoDefaults';
 import RoleBasedRoute from '@src/components/RoleBasedRoute';
@@ -47,6 +48,7 @@ export default function Dashboard() {
         </div>
         <FilterReport />
         <TeamTable />
+        <SprintTrendChart />
       </div>
     </RoleBasedRoute>
   );
