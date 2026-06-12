@@ -55,44 +55,89 @@ export function useTeamReportAutoDefaults() {
 
   const didInitTeamsRef = useRef(false);
   const didInitFilterRef = useRef(false);
+  const lastAutoSetKeyRef = useRef<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Step 1: auto-select user's teams (Lead + non-Lead) on first load.
+  const memberBoardIdsKey = useMemo(
+    () => [...memberBoardIds].sort((a, b) => a - b).join(','),
+    [memberBoardIds],
+  );
+  const selectedTeamsKey = useMemo(
+    () => [...selectedTeams].sort((a, b) => a - b).join(','),
+    [selectedTeams],
+  );
+
+  // Step 1: auto-select user's teams (Lead + non-Lead).
+  // Re-syncs while the user hasn't touched the team filter, so that if
+  // `memberBoardIds` resolves incrementally (e.g. boards query finishes after
+  // member query), all matching boards end up selected — not just the first batch.
   useEffect(() => {
     if (didInitTeamsRef.current) return;
     if (boardsLoading || memberLoading) return;
     if (!member) return;
-    if (selectedTeams.length > 0) {
+
+    // Wait for boards to actually arrive — an empty array may just be the
+    // first render before the query resolves.
+    if (boards.length === 0) return;
+
+    const lastAutoKey = lastAutoSetKeyRef.current;
+    const userInteracted =
+      lastAutoKey !== null && selectedTeamsKey !== lastAutoKey;
+
+    if (userInteracted) {
       didInitTeamsRef.current = true;
       return;
     }
+
+    // Pre-existing selection from another page/session — respect it.
+    if (lastAutoKey === null && selectedTeams.length > 0) {
+      didInitTeamsRef.current = true;
+      return;
+    }
+
     if (memberBoardIds.length === 0) {
-      // Nothing to default to — end initialization early.
       didInitTeamsRef.current = true;
       didInitFilterRef.current = true;
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsInitializing(false);
       return;
     }
-    setTeams(memberBoardIds);
-    didInitTeamsRef.current = true;
+
+    // Only push to the store when the desired set actually differs — prevents
+    // an infinite loop, but still re-syncs if memberBoardIds grew.
+    if (selectedTeamsKey !== memberBoardIdsKey) {
+      setTeams(memberBoardIds);
+    }
+    lastAutoSetKeyRef.current = memberBoardIdsKey;
   }, [
     boardsLoading,
     memberLoading,
     member,
+    boards.length,
     memberBoardIds,
+    memberBoardIdsKey,
     selectedTeams.length,
+    selectedTeamsKey,
     setTeams,
   ]);
 
   // Step 2: auto-select active sprints OR kanban date range once teams are set.
   useEffect(() => {
     if (didInitFilterRef.current) return;
-    if (!didInitTeamsRef.current) return;
     if (selectedTeams.length === 0) return;
 
     const hasCommittedFilter = !!sprint || (!!startDate && !!endDate) || selectedSprints.length > 0;
     if (hasCommittedFilter) {
+      didInitFilterRef.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsInitializing(false);
+      return;
+    }
+
+    // Perf guard: skip sprint/date-range auto-fill when the user has 3+ teams.
+    // The Jira fetch is expensive; let them pick a sprint manually until that
+    // pipeline is faster. Team filter itself stays populated via step 1.
+    if (selectedTeams.length > 2) {
       didInitFilterRef.current = true;
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsInitializing(false);
