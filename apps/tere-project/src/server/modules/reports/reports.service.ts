@@ -283,7 +283,8 @@ function processRawData(
       epicReport.issueKeys.push(issue.key);
 
       const isDone = issue.fields.resolution?.name === 'Done';
-      if (!isShowPlannedWP || isDone) {
+      const isDefect = issue.fields.issuetype?.name === 'Defect';
+      if (!isDefect && (!isShowPlannedWP || isDone)) {
         const meetingSP = extractMeetingSPFromIssue(issue);
         if (meetingSP > 0) {
           report.spMeeting = (report.spMeeting ?? 0) + meetingSP;
