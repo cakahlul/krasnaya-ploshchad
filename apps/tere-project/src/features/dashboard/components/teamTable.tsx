@@ -10,8 +10,69 @@ import { useBoards } from '../hooks/useBoards';
 import { useWpWeightConfig } from '../hooks/useWpWeightConfig';
 import { useTargetWpConfig } from '../hooks/useTargetWpConfig';
 import { useMemberProfile } from '../hooks/useMemberProfile';
-import { Info } from 'lucide-react';
+import { Info, Copy, Check } from 'lucide-react';
 import { useThemeColors } from '@src/hooks/useTheme';
+
+/**
+ * Spreadsheet column order (for director report), tab-separated so it pastes
+ * across columns in one row:
+ * SP Product | SP Tech Debt (+SP Meeting) | SP Total | SP Target (days×8) |
+ * WP Product | WP Tech | WP Total | WP Target | Day of Work
+ */
+const round2 = (v: number) => Math.round(v * 100) / 100;
+
+function buildClipboardRow(item: WorkItem): string {
+  const days = item.workingDays ?? 0;
+  const cells = [
+    item.spProduct ?? 0,
+    (item.spTechDebt ?? 0) + (item.spMeeting ?? 0),
+    item.spTotal ?? 0,
+    days * 8,
+    item.weightPointsProduct ?? 0,
+    item.weightPointsTechDebt ?? 0,
+    item.totalWeightPoints ?? 0,
+    item.targetWeightPoints ?? 0,
+    days,
+  ];
+  return cells.map(round2).join('\t');
+}
+
+function CopyMemberButton({ item, color, accent }: { item: WorkItem; color: string; accent: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(buildClipboardRow(item));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard unavailable (insecure context) — silently ignore
+    }
+  };
+
+  return (
+    <Popover content={copied ? 'Copied!' : 'Copy row for spreadsheet'} trigger="hover" placement="top">
+      <button
+        onClick={handleCopy}
+        aria-label="Copy member row for spreadsheet"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'transparent',
+          border: 'none',
+          padding: 2,
+          cursor: 'pointer',
+          flexShrink: 0,
+          lineHeight: 0,
+        }}
+      >
+        {copied ? <Check size={13} style={{ color: accent }} /> : <Copy size={13} style={{ color }} />}
+      </button>
+    </Popover>
+  );
+}
 
 interface ColumnInfo {
   label: string;
@@ -273,6 +334,7 @@ export default function TeamTable() {
             >
               {text}
             </button>
+            <CopyMemberButton item={record} color={subCol} accent={accent} />
           </div>
         );
       },
