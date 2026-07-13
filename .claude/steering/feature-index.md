@@ -20,6 +20,7 @@
 | API key issuance / management | [API Keys](#api-keys) |
 | RBAC checks, role gating | [User Access (RBAC)](#user-access-rbac) |
 | WP weights and targets config | [WP Configs](#wp-configs) |
+| Configuration tabs (Holiday/WP Weight/Target WP/Audit Log shell) | [Configuration](#configuration) |
 | Jira board listing | [Boards](#boards) |
 | Sprint listing / sprint data | [Sprint](#sprint) |
 | Global search (tickets) | [Search](#search) |
@@ -270,6 +271,26 @@ Two parallel modules: **Target WP** and **WP Weight**.
 ### Frontend hooks
 - `apps/tere-project/src/features/dashboard/hooks/useTargetWpConfig.ts`
 - `apps/tere-project/src/features/dashboard/hooks/useWpWeightConfig.ts`
+
+---
+
+## Configuration
+
+Tab-switcher shell around `/dashboard/configuration?tab={id}`. Holiday tab reuses Holiday Management components (no logic change); WP Weight/Target WP/Audit Log tabs are stubs (Phase 2/3).
+
+### Page
+- `apps/tere-project/src/app/dashboard/configuration/page.tsx` — `RoleBasedRoute allowedRoles={['Lead']}` + `Suspense` wrapping `ConfigurationTabs` (required since it reads `useSearchParams`)
+
+### Feature module
+- `apps/tere-project/src/features/configuration/`
+  - `components/ConfigurationTabs.tsx` — reads `?tab=` via `useSearchParams`, falls back to `DEFAULT_CONFIG_TAB` on unknown/empty, switches via `router.replace` (shallow). Renders `HolidayListView`/`HolidayCalendar`/`BulkInsert` from `features/holiday-management/components/*` for the `holiday` tab (imported only, zero logic change); `ComingSoon` stub for `wp-weight`/`target-wp`/`audit-log`.
+  - `components/ComingSoon.tsx` — generic "coming soon" stub, no API call.
+
+### Shared constants
+- `apps/tere-project/src/shared/constants/configuration-tabs.ts` — `CONFIG_TABS`, `ConfigTabId`, `DEFAULT_CONFIG_TAB` ('holiday'). Contract shared with the `/dashboard/holiday-management` → `/dashboard/configuration?tab=holiday` redirect.
+
+### Notes
+- `/dashboard/holiday-management` is now a server-side redirect to `/dashboard/configuration?tab=holiday` (done in SLS-16500).
 
 ---
 
