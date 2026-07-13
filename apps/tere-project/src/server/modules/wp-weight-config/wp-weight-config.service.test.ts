@@ -50,33 +50,40 @@ const repo = {
   deleteFuture: async () => false,
 };
 const service = new WpWeightConfigService(repo, () => '2026-07-13');
-const duplicate = await service.create('2026-07-14', { ...weights });
-assert.equal(duplicate.created, false);
-assert.equal(duplicate.config, existing);
+async function main() {
+  const duplicate = await service.create('2026-07-14', { ...weights });
+  assert.equal(duplicate.created, false);
+  assert.equal(duplicate.config, existing);
 
-await assert.rejects(
-  service.delete(existing.id),
-  (error: unknown) =>
-    error instanceof WpWeightConfigError && error.code === 'IMMUTABLE_CONFIG',
-);
+  await assert.rejects(
+    service.delete(existing.id),
+    (error: unknown) =>
+      error instanceof WpWeightConfigError && error.code === 'IMMUTABLE_CONFIG',
+  );
 
-let lookedUpAfterDelete = false;
-const atomicDeleteService = new WpWeightConfigService({
-  ...repo,
-  deleteFuture: async () => true,
-  findById: async () => {
-    lookedUpAfterDelete = true;
-    return null;
-  },
-});
-await atomicDeleteService.delete(existing.id);
-assert.equal(lookedUpAfterDelete, false);
-
-await assert.rejects(
-  new WpWeightConfigService({
+  let lookedUpAfterDelete = false;
+  const atomicDeleteService = new WpWeightConfigService({
     ...repo,
-    findById: async () => null,
-  }).delete(existing.id),
-  (error: unknown) =>
-    error instanceof WpWeightConfigError && error.code === 'CONFIG_NOT_FOUND',
-);
+    deleteFuture: async () => true,
+    findById: async () => {
+      lookedUpAfterDelete = true;
+      return null;
+    },
+  });
+  await atomicDeleteService.delete(existing.id);
+  assert.equal(lookedUpAfterDelete, false);
+
+  await assert.rejects(
+    new WpWeightConfigService({
+      ...repo,
+      findById: async () => null,
+    }).delete(existing.id),
+    (error: unknown) =>
+      error instanceof WpWeightConfigError && error.code === 'CONFIG_NOT_FOUND',
+  );
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
