@@ -3,18 +3,23 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { useThemeColors } from '@src/hooks/useTheme';
-import { CONFIG_TABS, DEFAULT_CONFIG_TAB, type ConfigTabId } from '@src/shared/constants/configuration-tabs';
+import {
+  CONFIG_TABS,
+  DEFAULT_CONFIG_TAB,
+  type ConfigTabId,
+} from '@src/shared/constants/configuration-tabs';
 import HolidayCalendar from '@src/features/holiday-management/components/HolidayCalendar';
 import BulkInsert from '@src/features/holiday-management/components/BulkInsert';
 import HolidayListView from '@src/features/holiday-management/components/HolidayListView';
 import ComingSoon from './ComingSoon';
+import WpWeightConfigPanel from './WpWeightConfigPanel';
 
 const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
 
 type HolidayViewMode = 'list' | 'calendar';
 
 function resolveTab(raw: string | null): ConfigTabId {
-  return (CONFIG_TABS.find((tab) => tab.id === raw)?.id ?? DEFAULT_CONFIG_TAB);
+  return CONFIG_TABS.find(tab => tab.id === raw)?.id ?? DEFAULT_CONFIG_TAB;
 }
 
 export default function ConfigurationTabs() {
@@ -30,8 +35,8 @@ export default function ConfigurationTabs() {
 
   return (
     <div>
-      <div
-        role="tablist"
+      <nav
+        aria-label="Configuration sections"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -41,13 +46,14 @@ export default function ConfigurationTabs() {
           gap: 2,
           marginBottom: 18,
           width: 'fit-content',
+          maxWidth: '100%',
+          overflowX: 'auto',
         }}
       >
-        {CONFIG_TABS.map((tab) => (
+        {CONFIG_TABS.map(tab => (
           <button
             key={tab.id}
-            role="tab"
-            aria-selected={activeTab === tab.id}
+            aria-current={activeTab === tab.id ? 'page' : undefined}
             onClick={() => handleTabClick(tab.id)}
             style={{
               padding: '6px 14px',
@@ -66,7 +72,7 @@ export default function ConfigurationTabs() {
             {tab.label}
           </button>
         ))}
-      </div>
+      </nav>
 
       {activeTab === 'holiday' && (
         <div>
@@ -105,7 +111,15 @@ export default function ConfigurationTabs() {
                   gap: 6,
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                >
                   <line x1="2" y1="4" x2="14" y2="4" />
                   <line x1="2" y1="8" x2="14" y2="8" />
                   <line x1="2" y1="12" x2="14" y2="12" />
@@ -122,7 +136,8 @@ export default function ConfigurationTabs() {
                   fontSize: 12,
                   fontWeight: 600,
                   fontFamily: sans,
-                  background: holidayView === 'calendar' ? accent : 'transparent',
+                  background:
+                    holidayView === 'calendar' ? accent : 'transparent',
                   color: holidayView === 'calendar' ? '#fff' : subCol,
                   transition: 'all 0.15s',
                   display: 'flex',
@@ -130,7 +145,16 @@ export default function ConfigurationTabs() {
                   gap: 6,
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <rect x="1.5" y="3" width="13" height="11" rx="1.5" />
                   <line x1="1.5" y1="7" x2="14.5" y2="7" />
                   <line x1="5" y1="1.5" x2="5" y2="4.5" />
@@ -152,7 +176,7 @@ export default function ConfigurationTabs() {
         </div>
       )}
 
-      {activeTab === 'wp-weight' && <ComingSoon label="WP Weight Config" />}
+      {activeTab === 'wp-weight' && <WpWeightConfigPanel />}
       {activeTab === 'target-wp' && <ComingSoon label="Target WP Config" />}
       {activeTab === 'audit-log' && <ComingSoon label="Audit Log" />}
     </div>
