@@ -1,12 +1,12 @@
 import { db } from '@server/lib/db';
 import { wpWeightConfig } from '@server/db/schema';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq, lte, sql } from 'drizzle-orm';
 import type { AppendixWeightPoint } from '@shared/utils/appendix-level';
 
 export type WpWeights = Record<AppendixWeightPoint, number>;
 
 export interface WpWeightConfig {
-  id?: string;
+  id: string;
   effective_date: string;
   weights: WpWeights;
 }
@@ -30,27 +30,39 @@ function rowToConfig(row: Row): WpWeightConfig {
 
 export class WpWeightConfigRepository {
   async fetchAll(): Promise<WpWeightConfig[]> {
-    try {
-      const rows = await db
-        .select()
-        .from(wpWeightConfig)
-        .orderBy(desc(wpWeightConfig.effectiveDate));
-      return rows.map(rowToConfig);
-    } catch {
-      return [];
-    }
+    const rows = await db
+      .select()
+      .from(wpWeightConfig)
+      .orderBy(desc(wpWeightConfig.effectiveDate));
+    return rows.map(rowToConfig);
   }
 
   async getEffectiveWeights(sprintStartDate: string): Promise<WpWeights> {
-    try {
-      const all = await this.fetchAll();
-      const match = all
-        .filter((c) => c.effective_date <= sprintStartDate)
-        .sort((a, b) => b.effective_date.localeCompare(a.effective_date))[0];
-      return match?.weights ?? DEFAULT_WEIGHTS;
-    } catch {
-      return DEFAULT_WEIGHTS;
-    }
+    const [row] = await db
+      .select()
+      .from(wpWeightConfig)
+      .where(lte(wpWeightConfig.effectiveDate, sprintStartDate))
+      .orderBy(desc(wpWeightConfig.effectiveDate))
+      .limit(1);
+    return row ? rowToConfig(row).weights : DEFAULT_WEIGHTS;
+  }
+
+  async findByEffectiveDate(effectiveDate: string): Promise<WpWeightConfig | null> {
+    const [row] = await db
+      .select()
+      .from(wpWeightConfig)
+      .where(eq(wpWeightConfig.effectiveDate, effectiveDate))
+      .limit(1);
+    return row ? rowToConfig(row) : null;
+  }
+
+  async findById(id: string): Promise<WpWeightConfig | null> {
+    const [row] = await db
+      .select()
+      .from(wpWeightConfig)
+      .where(eq(wpWeightConfig.id, id))
+      .limit(1);
+    return row ? rowToConfig(row) : null;
   }
 
   async create(effective_date: string, weights: WpWeights): Promise<WpWeightConfig> {
@@ -61,7 +73,14 @@ export class WpWeightConfigRepository {
     return rowToConfig(row);
   }
 
-  async delete(id: string): Promise<void> {
-    await db.delete(wpWeightConfig).where(eq(wpWeightConfig.id, id));
+  async deleteFuture(id: string): Promise<boolean> {
+    const rows = await db
+      .delete(wpWeightConfig)
+      .where(and(
+        eq(wpWeightConfig.id, id),
+        sql`${wpWeightConfig.effectiveDate} > (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')::date`,
+      ))
+      .returning({ id: wpWeightConfig.id });
+    return rows.length > 0;
   }
 }

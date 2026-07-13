@@ -5,6 +5,7 @@ import { parseAppendixWeightPoints } from '@shared/utils/appendix-level';
 import { boardsService } from '@server/modules/boards/boards.service';
 import { wpWeightConfigService } from '@server/modules/wp-weight-config/wp-weight-config.service';
 import type { WpWeights } from '@server/modules/wp-weight-config/wp-weight-config.repository';
+import { todayInWib } from '@server/modules/wp-weight-config/wp-weight-config-date';
 
 const STATIC_ALLOWED_PROJECTS = ['ABB', 'BUZZ', 'REL', 'VUL', 'TAE', 'SRETASK'];
 
@@ -15,11 +16,6 @@ async function getAllowedProjects(): Promise<{ allowed: string[]; boardProjects:
     allowed: [...new Set([...STATIC_ALLOWED_PROJECTS, ...boardProjects])],
     boardProjects,
   };
-}
-
-function getTodayString(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 interface JiraSearchResponse {
@@ -117,7 +113,7 @@ export class SearchRepository {
         },
         timeout: TIMEOUT,
       });
-      const weights = await wpWeightConfigService.getEffectiveWeights(getTodayString());
+      const weights = await wpWeightConfigService.getEffectiveWeights(todayInWib());
       return this.mapToTicketDetail(response.data, boardProjects, weights);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) return null;

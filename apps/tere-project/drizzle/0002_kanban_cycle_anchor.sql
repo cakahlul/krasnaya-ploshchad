@@ -1,1 +1,1 @@
-ALTER TABLE "boards" ADD COLUMN "kanban_cycle_start_date" date;
+ALTER TABLE "boards" ADD COLUMN IF NOT EXISTS "kanban_cycle_start_date" date;

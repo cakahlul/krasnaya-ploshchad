@@ -106,6 +106,6 @@ export const targetWpConfig = pgTable('target_wp_config', {
 // wp weight config
 export const wpWeightConfig = pgTable('wp_weight_config', {
   id: uuid('id').primaryKey().defaultRandom(),
-  effectiveDate: date('effective_date').notNull(),
+  effectiveDate: date('effective_date').notNull().unique(),
   weights: jsonb('weights').$type<Record<string, number>>().notNull(),
 });
