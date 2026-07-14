@@ -1,5 +1,5 @@
 import { db } from '@server/lib/db';
-import { wpWeightConfig } from '@server/db/schema';
+import { configAuditLog, wpWeightConfig } from '@server/db/schema';
 import { and, desc, eq, lte, sql } from 'drizzle-orm';
 import type { AppendixWeightPoint } from '@shared/utils/appendix-level';
 
@@ -65,22 +65,53 @@ export class WpWeightConfigRepository {
     return row ? rowToConfig(row) : null;
   }
 
-  async create(effective_date: string, weights: WpWeights): Promise<WpWeightConfig> {
-    const [row] = await db
-      .insert(wpWeightConfig)
-      .values({ effectiveDate: effective_date, weights })
-      .returning();
-    return rowToConfig(row);
+  async createWithAudit(
+    effectiveDate: string,
+    weights: WpWeights,
+    changedBy: string,
+  ): Promise<WpWeightConfig> {
+    return db.transaction(async tx => {
+      const [row] = await tx
+        .insert(wpWeightConfig)
+        .values({ effectiveDate, weights })
+        .returning();
+      const config = rowToConfig(row);
+      await tx.insert(configAuditLog).values({
+        entityType: 'wp_weight_config',
+        entityId: config.id,
+        action: 'create',
+        changedBy,
+        oldValue: null,
+        newValue: config,
+      });
+      return config;
+    });
   }
 
-  async deleteFuture(id: string): Promise<boolean> {
-    const rows = await db
-      .delete(wpWeightConfig)
-      .where(and(
-        eq(wpWeightConfig.id, id),
-        sql`${wpWeightConfig.effectiveDate} > (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')::date`,
-      ))
-      .returning({ id: wpWeightConfig.id });
-    return rows.length > 0;
+  async deleteFutureWithAudit(
+    id: string,
+    changedBy: string,
+  ): Promise<WpWeightConfig | null> {
+    return db.transaction(async tx => {
+      const [row] = await tx
+        .delete(wpWeightConfig)
+        .where(and(
+          eq(wpWeightConfig.id, id),
+          sql`${wpWeightConfig.effectiveDate} > (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')::date`,
+        ))
+        .returning();
+      if (!row) return null;
+
+      const config = rowToConfig(row);
+      await tx.insert(configAuditLog).values({
+        entityType: 'wp_weight_config',
+        entityId: config.id,
+        action: 'delete',
+        changedBy,
+        oldValue: config,
+        newValue: null,
+      });
+      return config;
+    });
   }
 }

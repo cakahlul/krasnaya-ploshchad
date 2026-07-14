@@ -36,6 +36,13 @@
       "when": 1783936730510,
       "tag": "0004_wp_weight_config_effective_date_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1783936730511,
+      "tag": "0005_config_audit_log",
+      "breakpoints": true
     }
   ]
 }

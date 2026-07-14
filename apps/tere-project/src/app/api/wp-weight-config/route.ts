@@ -7,7 +7,7 @@ export const GET = withLead(async () =>
   Response.json(await wpWeightConfigService.fetchAll()),
 );
 
-export const POST = withLead(async (req) => {
+export const POST = withLead(async (req, { user }) => {
   let body: unknown;
   try {
     body = await req.json();
@@ -20,6 +20,7 @@ export const POST = withLead(async (req) => {
   const result = await wpWeightConfigService.create(
     input.effective_date,
     input.weights,
+    user.email!,
   );
   return Response.json(result.config, { status: result.created ? 201 : 200 });
 });

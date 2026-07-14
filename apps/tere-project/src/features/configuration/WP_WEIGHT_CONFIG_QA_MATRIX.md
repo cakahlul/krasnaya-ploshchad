@@ -8,6 +8,27 @@ BASE_URL=http://localhost:3000 LEAD_TOKEN='…' MEMBER_TOKEN='…' node scripts/
 
 The script never prints tokens, chooses an unoccupied future date, and deletes only the exact valid ID returned by its `201` response. If that response lacks an ID, it reports a possible orphan for manual cleanup rather than inferring a record from the list. Today/past deletion stays manual because the future-only create rule makes a disposable immutable fixture unsafe.
 
+Run the Phase 2 atomic audit contract only against an isolated test database:
+
+```sh
+ALLOW_DB_CONTRACT_TEST=1 DATABASE_URL='postgresql://…test…' \
+  npx tsx src/server/modules/wp-weight-config/wp-weight-config-audit.contract.test.ts
+```
+
+The check aborts before opening a database connection unless both variables are present, never prints credentials, allocates unused far-future dates, and cleans up only the exact config and audit IDs it observed.
+
+## Phase 2 atomic audit trail
+
+| ID | Scenario | Expected | Coverage |
+| --- | --- | --- | --- |
+| AUD-01 | Two concurrent identical creates for one unused future date | One config winner; one `create` event total with exact actor, entity, persisted `new_value`, null `old_value`, and DB timestamp | DB contract |
+| AUD-02 | Replay the identical create after success | Existing config with `created:false`; audit count remains one | DB contract |
+| AUD-03 | Two concurrent deletes of the created future config | One delete winner and one rejection; one `delete` event with exact persisted `old_value` and null `new_value` | DB contract |
+| AUD-04 | Blank trusted actor violates the audit constraint | Repository rejects; config and audit writes both roll back | DB contract |
+| AUD-05 | Invalid input, date conflict, immutable delete, unknown delete, or auth failure | No audit event; existing Phase 1 status and error shape remain unchanged | Existing live/service checks + manual immutable fixture |
+| AUD-06 | Audit insert/database failure reaches HTTP boundary | Mutation rolls back; generic `500 INTERNAL_SERVER_ERROR` without database details | Service/HTTP check + DB contract rollback proof |
+| AUD-07 | Phase 2 deployment starts with existing WP configs | No historical events synthesized; auditing begins only for new successful mutations | Migration inspection |
+
 ## API and authorization
 
 | ID | Scenario | Expected | Coverage |

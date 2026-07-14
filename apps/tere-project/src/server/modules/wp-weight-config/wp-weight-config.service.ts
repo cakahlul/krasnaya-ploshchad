@@ -73,7 +73,7 @@ function isUniqueViolation(error: unknown): boolean {
 
 type Repository = Pick<
   WpWeightConfigRepository,
-  'fetchAll' | 'getEffectiveWeights' | 'findByEffectiveDate' | 'findById' | 'create' | 'deleteFuture'
+  'fetchAll' | 'getEffectiveWeights' | 'findByEffectiveDate' | 'findById' | 'createWithAudit' | 'deleteFutureWithAudit'
 >;
 
 export class WpWeightConfigService {
@@ -101,6 +101,7 @@ export class WpWeightConfigService {
   async create(
     effectiveDate: unknown,
     inputWeights: unknown,
+    changedBy: string,
   ): Promise<{ config: WpWeightConfig; created: boolean }> {
     const { effective_date, weights } = validateConfigInput(
       effectiveDate,
@@ -111,7 +112,7 @@ export class WpWeightConfigService {
     if (existing) return this.resolveDuplicate(existing, weights);
 
     try {
-      return { config: await this.repo.create(effective_date, weights), created: true };
+      return { config: await this.repo.createWithAudit(effective_date, weights, changedBy), created: true };
     } catch (error) {
       if (!isUniqueViolation(error)) throw error;
       const raced = await this.repo.findByEffectiveDate(effective_date);
@@ -120,11 +121,11 @@ export class WpWeightConfigService {
     }
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: string, changedBy: string): Promise<void> {
     if (!UUID_PATTERN.test(id)) {
       throw new WpWeightConfigError('CONFIG_NOT_FOUND', 'WP weight config not found', 404);
     }
-    if (await this.repo.deleteFuture(id)) return;
+    if (await this.repo.deleteFutureWithAudit(id, changedBy)) return;
 
     if (await this.repo.findById(id)) {
       throw new WpWeightConfigError(
