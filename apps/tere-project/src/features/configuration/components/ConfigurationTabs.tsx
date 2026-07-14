@@ -13,6 +13,7 @@ import BulkInsert from '@src/features/holiday-management/components/BulkInsert';
 import HolidayListView from '@src/features/holiday-management/components/HolidayListView';
 import ComingSoon from './ComingSoon';
 import WpWeightConfigPanel from './WpWeightConfigPanel';
+import WpWeightAuditLogPanel from './WpWeightAuditLogPanel';
 
 const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
 
@@ -178,7 +179,7 @@ export default function ConfigurationTabs() {
 
       {activeTab === 'wp-weight' && <WpWeightConfigPanel />}
       {activeTab === 'target-wp' && <ComingSoon label="Target WP Config" />}
-      {activeTab === 'audit-log' && <ComingSoon label="Audit Log" />}
+      {activeTab === 'audit-log' && <WpWeightAuditLogPanel />}
     </div>
   );
 }
