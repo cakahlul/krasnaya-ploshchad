@@ -261,29 +261,43 @@ Two parallel modules: **Target WP** and **WP Weight**.
 
 ### API routes — WP Weight
 - `GET|POST /api/wp-weight-config` → `apps/tere-project/src/app/api/wp-weight-config/route.ts`
-- `GET|PUT|DELETE /api/wp-weight-config/[id]` → `[id]/route.ts`
-- `GET /api/wp-weight-config/effective`
+- `DELETE /api/wp-weight-config/[id]` → `apps/tere-project/src/app/api/wp-weight-config/[id]/route.ts`
+- `GET /api/wp-weight-config/effective` → `apps/tere-project/src/app/api/wp-weight-config/effective/route.ts`
+- `GET /api/wp-weight-config/audit-log` → `apps/tere-project/src/app/api/wp-weight-config/audit-log/route.ts` — Lead-only, 20-row keyset pagination
 
 ### Server modules
 - `apps/tere-project/src/server/modules/target-wp-config/`
-- `apps/tere-project/src/server/modules/wp-weight-config/`
+- `apps/tere-project/src/server/modules/wp-weight-config/` — management/effective/audit service, repository, HTTP normalization, and checks
+
+### WP Weight audit storage and index
+- `apps/tere-project/drizzle/0005_config_audit_log.sql` — Phase 2 atomic create/delete snapshots; no backfill
+- `apps/tere-project/drizzle/0006_wp_weight_audit_cursor_index.sql` — Phase 3 partial `(changed_at DESC, id DESC)` index for `wp_weight_config`
+- `apps/tere-project/src/server/db/schema.ts` — audit table and matching cursor index declaration
 
 ### Frontend hooks
 - `apps/tere-project/src/features/dashboard/hooks/useTargetWpConfig.ts`
 - `apps/tere-project/src/features/dashboard/hooks/useWpWeightConfig.ts`
 
+### WP Weight rollout QA
+- `apps/tere-project/scripts/wp-weight-config.contract.mjs` — safe live API/auth/shape checks, including Phase 3 audit log
+- `apps/tere-project/src/server/modules/wp-weight-config/wp-weight-config-audit.contract.test.ts` — gated isolated-DB atomicity and keyset pagination contract
+- `apps/tere-project/src/features/configuration/WP_WEIGHT_CONFIG_QA_MATRIX.md` — Phase 1–3 API/UI/manual accessibility matrix
+
 ---
 
 ## Configuration
 
-Tab-switcher shell around `/dashboard/configuration?tab={id}`. Holiday tab reuses Holiday Management components (no logic change); WP Weight/Target WP/Audit Log tabs are stubs (Phase 2/3).
+Tab-switcher around `/dashboard/configuration?tab={id}`. Holiday reuses Holiday Management, WP Weight management shipped in Phase 1, its atomic audit trail shipped in Phase 2, and the read-only Audit Log UI is the final Phase 3. Target WP remains a stub and is outside this rollout.
 
 ### Page
 - `apps/tere-project/src/app/dashboard/configuration/page.tsx` — `RoleBasedRoute allowedRoles={['Lead']}` + `Suspense` wrapping `ConfigurationTabs` (required since it reads `useSearchParams`)
 
 ### Feature module
 - `apps/tere-project/src/features/configuration/`
-  - `components/ConfigurationTabs.tsx` — reads `?tab=` via `useSearchParams`, falls back to `DEFAULT_CONFIG_TAB` on unknown/empty, switches via `router.replace` (shallow). Renders `HolidayListView`/`HolidayCalendar`/`BulkInsert` from `features/holiday-management/components/*` for the `holiday` tab (imported only, zero logic change); `ComingSoon` stub for `wp-weight`/`target-wp`/`audit-log`.
+  - `components/ConfigurationTabs.tsx` — resolves `?tab=`, renders Holiday, WP Weight management, or WP Weight Audit Log; Target WP alone remains `ComingSoon`.
+  - `components/WpWeightConfigPanel.tsx` + `WpWeightConfigPanel.api.ts` — Phase 1 Lead-only create/list/delete UI and query/mutation hooks.
+  - `components/WpWeightAuditLogPanel.tsx` — Phase 3 read-only table; server order, WIB `<time>`, loading/error/empty/load-more states.
+  - `components/WpWeightAuditLogPanel.api.ts` — infinite query using `['wp-weight-config','audit-log']` and opaque server cursor.
   - `components/ComingSoon.tsx` — generic "coming soon" stub, no API call.
 
 ### Shared constants

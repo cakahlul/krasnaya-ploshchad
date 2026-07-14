@@ -6,7 +6,9 @@ const baseUrl = required('BASE_URL').replace(/\/$/, '');
 const leadToken = required('LEAD_TOKEN');
 const memberToken = required('MEMBER_TOKEN');
 const configPath = '/api/wp-weight-config';
+const auditPath = `${configPath}/audit-log`;
 const weightKeys = ['High', 'Low', 'Medium', 'Very Low'];
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 let createdId;
 let createdDate;
 
@@ -95,6 +97,78 @@ function config(value, expectedDate, expectedWeights, label) {
   weights(value.weights, expectedWeights, `${label}.weights`);
 }
 
+function auditCursor(value, lastItem, label) {
+  assert.equal(typeof value, 'string', `${label}: expected string`);
+  assert(value.length <= 512, `${label}: expected at most 512 characters`);
+  assert.match(value, /^[A-Za-z0-9_-]+$/, `${label}: expected unpadded base64url`);
+  const decoded = JSON.parse(Buffer.from(value, 'base64url').toString('utf8'));
+  exactKeys(decoded, ['v', 'changed_at', 'id'], `${label} payload`);
+  assert.equal(decoded.v, 1, `${label}: unsupported version`);
+  assert.equal(decoded.changed_at, lastItem.changed_at, `${label}: changed_at differs from row 20`);
+  assert.equal(decoded.id, lastItem.id, `${label}: id differs from row 20`);
+  assert.equal(Buffer.from(JSON.stringify(decoded)).toString('base64url'), value, `${label}: non-canonical encoding`);
+}
+
+function auditEntry(value, label) {
+  exactKeys(
+    value,
+    ['id', 'entity_id', 'action', 'changed_by', 'old_value', 'new_value', 'changed_at'],
+    label,
+  );
+  assert.match(value.id, uuidPattern, `${label}.id: expected UUID`);
+  assert.match(value.entity_id, uuidPattern, `${label}.entity_id: expected UUID`);
+  assert(['create', 'delete'].includes(value.action), `${label}.action: expected create/delete`);
+  assert.equal(typeof value.changed_by, 'string', `${label}.changed_by: expected string`);
+  assert(value.changed_by.trim().length > 0, `${label}.changed_by: expected non-empty string`);
+  assert.match(
+    value.changed_at,
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/,
+    `${label}.changed_at: expected UTC timestamp with six fractional digits`,
+  );
+  if (value.action === 'create') {
+    assert.equal(value.old_value, null, `${label}.old_value: create must be null`);
+    config(value.new_value, null, null, `${label}.new_value`);
+  } else {
+    config(value.old_value, null, null, `${label}.old_value`);
+    assert.equal(value.new_value, null, `${label}.new_value: delete must be null`);
+  }
+}
+
+function auditPage(value, label) {
+  exactKeys(value, ['items', 'next_cursor'], label);
+  assert(Array.isArray(value.items), `${label}.items: expected array`);
+  assert(value.items.length <= 20, `${label}.items: expected at most 20 entries`);
+  value.items.forEach((entry, index) => auditEntry(entry, `${label}.items[${index}]`));
+  for (let index = 1; index < value.items.length; index += 1) {
+    const previous = value.items[index - 1];
+    const current = value.items[index];
+    assert(
+      previous.changed_at > current.changed_at
+        || (previous.changed_at === current.changed_at && previous.id > current.id),
+      `${label}.items: expected changed_at DESC, id DESC`,
+    );
+  }
+  if (value.next_cursor !== null) {
+    assert.equal(value.items.length, 20, `${label}: cursor requires 20 returned entries`);
+    auditCursor(value.next_cursor, value.items[19], `${label}.next_cursor`);
+  }
+}
+
+async function findAudit(entityId, action) {
+  let cursor = null;
+  for (let pageNumber = 1; pageNumber <= 100; pageNumber += 1) {
+    const suffix = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+    const result = await request(`${auditPath}${suffix}`, { token: leadToken });
+    status(result, 200, `Lead audit page ${pageNumber}`);
+    auditPage(result.body, `Lead audit page ${pageNumber}`);
+    const found = result.body.items.find(item => item.entity_id === entityId && item.action === action);
+    if (found) return found;
+    cursor = result.body.next_cursor;
+    if (!cursor) break;
+  }
+  assert.fail(`Audit ${action}: event for ${entityId} not found`);
+}
+
 function error(value, code, field, label) {
   assert(value && typeof value === 'object' && !Array.isArray(value), `${label}: expected error object`);
   exactKeys(value, 'fields' in value ? ['code', 'message', 'fields'] : ['code', 'message'], label);
@@ -117,6 +191,23 @@ async function expectError(path, options, expectedStatus, code, field, label) {
 }
 
 async function main() {
+  await expectError(auditPath, {}, 401, null, null, 'Unauthenticated audit list');
+  await expectError(auditPath, { token: memberToken }, 403, null, null, 'Member audit list');
+  const invalidCursor = await request(`${auditPath}?cursor=not-a-cursor`, { token: leadToken });
+  status(invalidCursor, 400, 'Malformed audit cursor');
+  assert.deepEqual(invalidCursor.body, {
+    code: 'VALIDATION_ERROR',
+    message: 'Invalid audit cursor',
+    fields: { cursor: 'Invalid cursor' },
+  });
+  const oversizedCursor = await request(`${auditPath}?cursor=${'a'.repeat(513)}`, { token: leadToken });
+  status(oversizedCursor, 400, 'Oversized audit cursor');
+  assert.deepEqual(oversizedCursor.body, invalidCursor.body);
+
+  const initialAudit = await request(auditPath, { token: leadToken });
+  status(initialAudit, 200, 'Lead audit list');
+  auditPage(initialAudit.body, 'Lead audit list');
+
   const initial = await request(configPath, { token: leadToken });
   status(initial, 200, 'Lead list');
   assert(Array.isArray(initial.body), 'Lead list: expected array');
@@ -189,6 +280,10 @@ async function main() {
   }
   createdId = created.body.id;
   config(created.body, createdDate, validWeights, 'Lead create');
+  const createAudit = await findAudit(createdId, 'create');
+  assert.deepEqual(createAudit.old_value, null, 'Create audit: expected null old snapshot');
+  config(createAudit.new_value, createdDate, validWeights, 'Create audit new snapshot');
+  assert.equal(createAudit.new_value.id, createdId, 'Create audit: config ID differs');
 
   const retry = await request(configPath, {
     method: 'POST',
@@ -240,6 +335,10 @@ async function main() {
   assert.equal(deleted.body, null, 'Lead future delete: expected empty body');
   const deletedId = createdId;
   createdId = undefined;
+  const deleteAudit = await findAudit(deletedId, 'delete');
+  config(deleteAudit.old_value, createdDate, validWeights, 'Delete audit old snapshot');
+  assert.equal(deleteAudit.old_value.id, deletedId, 'Delete audit: config ID differs');
+  assert.equal(deleteAudit.new_value, null, 'Delete audit: expected null new snapshot');
 
   await expectError(
     `${configPath}/${deletedId}`,
