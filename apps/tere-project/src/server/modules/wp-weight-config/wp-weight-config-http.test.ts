@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { errorResponse, normalizeWpResponse } from './wp-weight-config-http';
+import { WpWeightConfigError } from './wp-weight-config.service';
 
 async function main() {
   for (const [input, status, code, message] of [
@@ -17,6 +18,19 @@ async function main() {
   assert.deepEqual(await internal.json(), {
     code: 'INTERNAL_SERVER_ERROR',
     message: 'Internal Server Error',
+  });
+
+  const invalidCursor = errorResponse(new WpWeightConfigError(
+    'VALIDATION_ERROR',
+    'Invalid audit cursor',
+    400,
+    { cursor: 'Invalid cursor' },
+  ));
+  assert.equal(invalidCursor.status, 400);
+  assert.deepEqual(await invalidCursor.json(), {
+    code: 'VALIDATION_ERROR',
+    message: 'Invalid audit cursor',
+    fields: { cursor: 'Invalid cursor' },
   });
 }
 

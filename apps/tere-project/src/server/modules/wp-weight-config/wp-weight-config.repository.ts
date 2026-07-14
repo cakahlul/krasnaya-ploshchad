@@ -1,6 +1,6 @@
 import { db } from '@server/lib/db';
 import { configAuditLog, wpWeightConfig } from '@server/db/schema';
-import { and, desc, eq, lte, sql } from 'drizzle-orm';
+import { and, desc, eq, lt, lte, or, sql } from 'drizzle-orm';
 import type { AppendixWeightPoint } from '@shared/utils/appendix-level';
 
 export type WpWeights = Record<AppendixWeightPoint, number>;
@@ -9,6 +9,21 @@ export interface WpWeightConfig {
   id: string;
   effective_date: string;
   weights: WpWeights;
+}
+
+export interface WpWeightAuditCursor {
+  changed_at: string;
+  id: string;
+}
+
+export interface WpWeightAuditEntry {
+  id: string;
+  entity_id: string;
+  action: 'create' | 'delete';
+  changed_by: string;
+  old_value: WpWeightConfig | null;
+  new_value: WpWeightConfig | null;
+  changed_at: string;
 }
 
 const DEFAULT_WEIGHTS: WpWeights = {
@@ -29,6 +44,36 @@ function rowToConfig(row: Row): WpWeightConfig {
 }
 
 export class WpWeightConfigRepository {
+  async fetchAuditLog(cursor: WpWeightAuditCursor | null): Promise<WpWeightAuditEntry[]> {
+    const cursorTimestamp = cursor
+      ? sql`${cursor.changed_at}::timestamptz`
+      : undefined;
+    const rows = await db
+      .select({
+        id: configAuditLog.id,
+        entity_id: configAuditLog.entityId,
+        action: configAuditLog.action,
+        changed_by: configAuditLog.changedBy,
+        old_value: configAuditLog.oldValue,
+        new_value: configAuditLog.newValue,
+        changed_at: sql<string>`to_char(${configAuditLog.changedAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
+      })
+      .from(configAuditLog)
+      .where(and(
+        eq(configAuditLog.entityType, 'wp_weight_config'),
+        cursor ? or(
+          lt(configAuditLog.changedAt, cursorTimestamp!),
+          and(
+            eq(configAuditLog.changedAt, cursorTimestamp!),
+            lt(configAuditLog.id, cursor.id),
+          ),
+        ) : undefined,
+      ))
+      .orderBy(desc(configAuditLog.changedAt), desc(configAuditLog.id))
+      .limit(21);
+    return rows as WpWeightAuditEntry[];
+  }
+
   async fetchAll(): Promise<WpWeightConfig[]> {
     const rows = await db
       .select()
