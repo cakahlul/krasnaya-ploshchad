@@ -1,11 +1,15 @@
 import {
   WpWeightConfigRepository,
-  type WpWeightAuditCursor,
   type WpWeightAuditEntry,
   type WpWeightConfig,
   type WpWeights,
 } from './wp-weight-config.repository';
 import { isStrictDate, todayInWib } from './wp-weight-config-date';
+import {
+  decodeAuditCursor as decodeSharedAuditCursor,
+  paginate,
+  InvalidAuditCursorError,
+} from '@server/modules/config-audit-log';
 
 export type WpWeightConfigErrorCode =
   | 'VALIDATION_ERROR'
@@ -78,52 +82,23 @@ type Repository = Pick<
   'fetchAll' | 'fetchAuditLog' | 'getEffectiveWeights' | 'findByEffectiveDate' | 'findById' | 'createWithAudit' | 'deleteFutureWithAudit'
 >;
 
-const AUDIT_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
-
-function invalidAuditCursor(): never {
-  throw new WpWeightConfigError(
-    'VALIDATION_ERROR',
-    'Invalid audit cursor',
-    400,
-    { cursor: 'Invalid cursor' },
-  );
-}
-
-function decodeAuditCursor(cursor: string): WpWeightAuditCursor {
-  if (!cursor || cursor.length > 512 || !/^[A-Za-z0-9_-]+$/.test(cursor)) {
-    return invalidAuditCursor();
-  }
-
-  let value: unknown;
+function decodeAuditCursor(cursor: string): WpWeightAuditCursorValue {
   try {
-    const bytes = Buffer.from(cursor, 'base64url');
-    if (bytes.toString('base64url') !== cursor) return invalidAuditCursor();
-    value = JSON.parse(bytes.toString('utf8'));
-  } catch {
-    return invalidAuditCursor();
+    return decodeSharedAuditCursor(cursor);
+  } catch (error) {
+    if (error instanceof InvalidAuditCursorError) {
+      throw new WpWeightConfigError(
+        'VALIDATION_ERROR',
+        'Invalid audit cursor',
+        400,
+        { cursor: 'Invalid cursor' },
+      );
+    }
+    throw error;
   }
-
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return invalidAuditCursor();
-  }
-  const input = value as Record<string, unknown>;
-  if (
-    Object.keys(input).sort().join(',') !== 'changed_at,id,v'
-    || input.v !== 1
-    || typeof input.changed_at !== 'string'
-    || typeof input.id !== 'string'
-    || !AUDIT_TIMESTAMP_PATTERN.test(input.changed_at)
-    || input.changed_at.startsWith('0000-')
-    || !UUID_PATTERN.test(input.id)
-  ) {
-    return invalidAuditCursor();
-  }
-  const milliseconds = new Date(`${input.changed_at.slice(0, 23)}Z`);
-  if (Number.isNaN(milliseconds.getTime()) || milliseconds.toISOString() !== `${input.changed_at.slice(0, 23)}Z`) {
-    return invalidAuditCursor();
-  }
-  return { changed_at: input.changed_at, id: input.id };
 }
+
+type WpWeightAuditCursorValue = ReturnType<typeof decodeSharedAuditCursor>;
 
 export class WpWeightConfigService {
   constructor(
@@ -140,14 +115,7 @@ export class WpWeightConfigService {
     next_cursor: string | null;
   }> {
     const rows = await this.repo.fetchAuditLog(cursor === null ? null : decodeAuditCursor(cursor));
-    const items = rows.slice(0, 20);
-    const boundary = rows.length > 20 ? items[19] : undefined;
-    return {
-      items,
-      next_cursor: boundary
-        ? Buffer.from(JSON.stringify({ v: 1, changed_at: boundary.changed_at, id: boundary.id })).toString('base64url')
-        : null,
-    };
+    return paginate(rows);
   }
 
   getEffectiveWeights(date: string): Promise<WpWeights> {
