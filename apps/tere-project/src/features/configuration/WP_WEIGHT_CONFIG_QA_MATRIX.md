@@ -131,3 +131,43 @@ Use exact keys `Very Low`, `Low`, `Medium`, `High` for every row below.
 | UI-06 | Keyboard-only create, validation, cancel, delete confirmation | Logical focus order, visible focus, Escape/cancel works, focus returns to trigger | Manual |
 | UI-07 | Labels, errors, and status messages | Inputs have accessible names; errors associated to fields; async result announced | Manual |
 | UI-08 | Decimal/comma input on mobile and desktop | Appropriate decimal keyboard; zoom/reflow and tap targets remain usable | Manual |
+
+## Shared config-audit-log module refactor regression (SLS-16616 / SLS-16620)
+
+Context: `SLS-16620` extracted a generic keyset-paginated audit reader
+(`fetchConfigAuditLog`, `src/server/modules/config-audit-log/config-audit-log.repository.ts`)
+and cursor codec (`decodeAuditCursor`/`paginate`/`AUDIT_PAGE_SIZE`,
+`src/server/modules/config-audit-log/audit-cursor.ts`). Confirmed (be-reviewer
+CLEAN): `WpWeightConfigRepository.fetchAuditLog` now calls `fetchConfigAuditLog`
+directly, and `WpWeightConfigService.fetchAuditLog` delegates cursor decode/page
+slicing to the shared `decodeAuditCursor`/`paginate`. WP Weight is a thin
+wrapper — no local reimplementation left. So this matrix does not compare "local
+impl vs shared impl" (that would just call the same function twice). Instead it
+locks in the **external behavior contract** of the WP Weight audit-log endpoint
+as a baseline, so a future change to the shared module that regresses WP Weight
+gets caught even though WP Weight's own code no longer contains the logic. The
+existing `wp-weight-config-audit.contract.test.ts` and
+`scripts/wp-weight-config.contract.mjs` MUST keep passing **without modification**.
+
+| ID | Scenario | Expected | Coverage |
+| --- | --- | --- | --- |
+| REG-01 | Run `wp-weight-config-audit.contract.test.ts` unmodified against current `main` | Full pass: page-size-20 cutoff, 21-row split, `changed_at DESC, id DESC` tie-break, cursor round-trip, atomic rollback on audit failure, entity-scope decoy rejection | DB contract (gate for this ticket) |
+| REG-02 | Run `scripts/wp-weight-config.contract.mjs` unmodified against a running dev server | Full pass: 401/403/200 on audit list, exact item/page key shapes, `400` malformed/oversized cursor, create/delete snapshot shapes | Live (gate for this ticket) |
+| REG-03 | Seed 21 `wp_weight_config` audit rows (incl. two with a tied `changed_at`), call WP Weight audit-log GET with no cursor, then with the returned `next_cursor` | Page 1: exactly 20 items in `changed_at DESC, id DESC` order, tie broken by `id DESC`, non-null `next_cursor`; page 2: the 21st row, `next_cursor:null` — same observable contract as pre-refactor baseline, verified end-to-end through the shared module | New — DB contract, behavior baseline (post-refactor) |
+| REG-04 | Send a malformed cursor, an oversized (>512 char) cursor, and a well-formed-but-tampered cursor (valid base64url/shape but non-canonical padding, or `v` != 1) to WP Weight audit-log GET | Every case: exact `400 {code:'VALIDATION_ERROR',message:'Invalid audit cursor',fields:{cursor:'Invalid cursor'}}` — WP Weight's HTTP error shape must still hide the shared module's internal `InvalidAuditCursorError` and re-wrap it via `WpWeightConfigError` | New — DB contract / HTTP behavior baseline |
+| REG-05 | Fetch a full 21-row cursor traversal (page 1 + page 2) for WP Weight, then diff item order against a plain `SELECT ... WHERE entity_type='wp_weight_config' ORDER BY changed_at DESC, id DESC` run directly against the DB | Traversal order and item set match the direct SQL query exactly; no gaps, no duplicates, no reordering introduced by the shared module | New — DB contract, behavior baseline (post-refactor) |
+| REG-06 | Insert 20 exactly matching rows (not 21) and fetch WP Weight audit-log with no cursor | All 20 returned, `next_cursor:null` — the page-size-20 boundary (`AUDIT_PAGE_SIZE`) still holds for WP Weight through the shared module, not just for holidays | New — DB contract, behavior baseline (post-refactor) |
+| REG-07 | Insert WP Weight (`wp_weight_config`) and holiday (`holiday`) audit rows interleaved by `changed_at` in the shared `config_audit_log` table, then call WP Weight's audit-log GET | Only `entity_type = 'wp_weight_config'` rows returned; no holiday row leaks into WP Weight's `items`, `next_cursor`, or page count | New — DB contract (cross-entity isolation, only relevant now that holidays shares the table via the new module) |
+| REG-08 | Insert 21 `wp_weight_config` rows and, interleaved by `changed_at`, 21 `holiday` rows in the same window; fully traverse WP Weight's audit-log GET (page 1 + page 2 via `next_cursor`) | Every returned item across both pages has `entity_type='wp_weight_config'` only (verified via the underlying row before the API strips `entity_type`); no holiday row is skipped-into, duplicated-into, or shifts WP Weight's pagination boundary; WP Weight's own row count/order is identical to the no-holiday-rows case | New — DB contract, cross-entity isolation across a full pagination traversal |
+| REG-09 | Lead vs Member vs unauthenticated GET `/api/wp-weight-config/audit-log` after the shared-module extraction | Unchanged: `401` unauthenticated, `403` Member, `200` Lead — RBAC enforcement lives in `withLead`/`withWpAuth` (HTTP layer), untouched by the repository-level refactor | Live (regression of existing API-01/P3-API-01, not new behavior) |
+| REG-10 | `create` then `delete` a future WP Weight config, fetch audit log | `create` event: `old_value:null`, `new_value` = persisted `{id,effective_date,weights}`; `delete` event: reverse; both under `entity_type='wp_weight_config'`, unaffected by the shared module's generic `ConfigAuditEntry<T>` typing | Live + DB contract (regression of existing AUD-01/AUD-03/P3-API-04) |
+
+**Ambiguity to confirm with TRD/PRD owner**: TRD Phase 1 (Confluence pageId
+`4084957244`) was not reachable from this pass (no Confluence/JIRA MCP tool
+available to this subagent) — REG-01..REG-10 above are derived from the
+existing contract tests, this matrix's own Phase 2/3 rows, and direct code
+reading of `config-audit-log/` vs `wp-weight-config/`. Please confirm against
+the TRD whether holidays' audit-log already exposes (or will imminently expose)
+a paginated GET endpoint — REG-08 only needs an HTTP-level holiday-side check
+once that endpoint exists; until then, REG-08's holiday side is DB-fixture-only
+(rows inserted directly, no holiday API call).
