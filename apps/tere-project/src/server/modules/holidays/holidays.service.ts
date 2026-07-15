@@ -1,29 +1,99 @@
-import { HolidaysRepository, Holiday } from './holidays.repository';
+import {
+  HolidaysRepository,
+  type Holiday,
+  type HolidayAuditEntry,
+} from './holidays.repository';
 import { MemoryCache } from '@server/lib/cache';
+import { decodeAuditCursor, paginate, InvalidAuditCursorError } from '@server/modules/config-audit-log';
+
+export type HolidaysErrorCode = 'VALIDATION_ERROR' | 'IMMUTABLE_CONFIG' | 'HOLIDAY_NOT_FOUND';
+
+export class HolidaysError extends Error {
+  constructor(
+    readonly code: HolidaysErrorCode,
+    message: string,
+    readonly status: number,
+    readonly fields?: Record<string, string>,
+  ) {
+    super(message);
+  }
+}
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+type Repository = Pick<
+  HolidaysRepository,
+  | 'fetchHolidaysByYear'
+  | 'fetchHolidaysForYears'
+  | 'fetchAuditLog'
+  | 'findById'
+  | 'createWithAudit'
+  | 'createManyWithAudit'
+  | 'deleteFutureWithAudit'
+>;
 
 export class HolidaysService {
   private cache = new MemoryCache(60 * 60 * 1000); // 60 minutes
 
-  constructor(private readonly repo: HolidaysRepository) {}
+  constructor(private readonly repo: Repository) {}
 
   async getHolidaysByYear(year: number): Promise<Holiday[]> {
     return this.repo.fetchHolidaysByYear(year);
   }
 
-  async createHoliday(date: string, name: string): Promise<Holiday> {
+  async createHoliday(date: string, name: string, changedBy: string): Promise<Holiday> {
+    if (!date || !name) {
+      throw new HolidaysError('VALIDATION_ERROR', 'Invalid holiday input', 400, {
+        ...(date ? {} : { date: 'Required' }),
+        ...(name ? {} : { name: 'Required' }),
+      });
+    }
     this.cache.invalidate();
-    return this.repo.createHoliday(date, name);
+    return this.repo.createWithAudit(date, name, changedBy);
   }
 
-  async bulkCreateHolidays(holidays: { date: string; name: string }[]): Promise<{ count: number }> {
+  async bulkCreateHolidays(
+    items: { date: string; name: string }[],
+    changedBy: string,
+  ): Promise<{ count: number }> {
+    if (!Array.isArray(items) || items.length === 0 || items.some((item) => !item.date || !item.name)) {
+      throw new HolidaysError('VALIDATION_ERROR', 'Invalid bulk holiday input', 400);
+    }
     this.cache.invalidate();
-    await Promise.all(holidays.map((h) => this.repo.createHoliday(h.date, h.name)));
-    return { count: holidays.length };
+    const created = await this.repo.createManyWithAudit(items, changedBy);
+    return { count: created.length };
   }
 
-  async deleteHoliday(id: string): Promise<void> {
+  async deleteHoliday(id: string, changedBy: string): Promise<void> {
+    if (!UUID_PATTERN.test(id)) {
+      throw new HolidaysError('HOLIDAY_NOT_FOUND', 'Holiday not found', 404);
+    }
     this.cache.invalidate();
-    return this.repo.deleteHoliday(id);
+    if (await this.repo.deleteFutureWithAudit(id, changedBy)) return;
+
+    if (await this.repo.findById(id)) {
+      throw new HolidaysError('IMMUTABLE_CONFIG', 'Only future holidays can be deleted', 409);
+    }
+    throw new HolidaysError('HOLIDAY_NOT_FOUND', 'Holiday not found', 404);
+  }
+
+  async fetchAuditLog(cursor: string | null): Promise<{
+    items: HolidayAuditEntry[];
+    next_cursor: string | null;
+  }> {
+    let decoded = null;
+    if (cursor !== null) {
+      try {
+        decoded = decodeAuditCursor(cursor);
+      } catch (error) {
+        if (error instanceof InvalidAuditCursorError) {
+          throw new HolidaysError('VALIDATION_ERROR', 'Invalid audit cursor', 400, { cursor: 'Invalid cursor' });
+        }
+        throw error;
+      }
+    }
+    const rows = await this.repo.fetchAuditLog(decoded);
+    return paginate(rows);
   }
 
   async getNationalHolidays(startDate: Date, endDate: Date): Promise<string[]> {
