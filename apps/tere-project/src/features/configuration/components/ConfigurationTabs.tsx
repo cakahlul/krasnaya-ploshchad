@@ -14,6 +14,7 @@ import HolidayListView from '@src/features/holiday-management/components/Holiday
 import ComingSoon from './ComingSoon';
 import WpWeightConfigPanel from './WpWeightConfigPanel';
 import WpWeightAuditLogPanel from './WpWeightAuditLogPanel';
+import HolidayAuditLogPanel from './HolidayAuditLogPanel';
 
 const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
 
@@ -174,6 +175,10 @@ export default function ConfigurationTabs() {
               <BulkInsert />
             </div>
           )}
+
+          <div style={{ marginTop: 24 }}>
+            <HolidayAuditLogPanel />
+          </div>
         </div>
       )}
 
