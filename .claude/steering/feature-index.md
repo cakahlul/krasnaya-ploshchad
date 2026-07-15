@@ -124,13 +124,19 @@ See [Dashboard / Reports](#dashboard--reports) — Reports lives in the dashboar
   - `types/holiday-management.types.ts`
 
 ### API routes
-- `GET|POST /api/holidays` → `apps/tere-project/src/app/api/holidays/route.ts`
-- `GET|PUT|DELETE /api/holidays/[id]` → `apps/tere-project/src/app/api/holidays/[id]/route.ts`
-- `POST /api/holidays/bulk` → `apps/tere-project/src/app/api/holidays/bulk/route.ts`
+- `GET|POST /api/holidays` → `apps/tere-project/src/app/api/holidays/route.ts` (`withHolidayAuth`; POST plumbs `user.email` as `changedBy`)
+- `DELETE /api/holidays/[id]` → `apps/tere-project/src/app/api/holidays/[id]/route.ts` (no GET/PUT — config is create/delete only, no in-place update; `withHolidayAuth`, plumbs `changedBy`, can 409 IMMUTABLE_CONFIG / 404 HOLIDAY_NOT_FOUND)
+- `POST /api/holidays/bulk` → `apps/tere-project/src/app/api/holidays/bulk/route.ts` (`withHolidayAuth`, plumbs `changedBy`)
+- `GET /api/holidays/audit-log` → `apps/tere-project/src/app/api/holidays/audit-log/route.ts` — thin wrapper, `withLead` guard (SLS-16614)
 
 ### Server module
 - `apps/tere-project/src/server/modules/holidays/`
   - `holidays.service.ts`, `holidays.repository.ts`
+  - `holidays-http.ts` — `withHolidayAuth` (any signed-in user, wraps `withAuth`) and `withLead` (reuses `withRole('Lead', ...)`), mirrors `wp-weight-config-http.ts` pattern (SLS-16614)
+
+### Holiday audit QA
+- `apps/tere-project/scripts/holidays-audit.contract.mjs` — live API/auth contract: audit-log shape/pagination/RBAC, changed_by plumb on create/bulk/delete, 409 IMMUTABLE_CONFIG / 404 HOLIDAY_NOT_FOUND (SLS-16618), mirrors `wp-weight-config.contract.mjs`
+- `apps/tere-project/src/server/modules/holidays/holidays-audit.contract.test.ts` — isolated-DB contract (SLS-16617): `createWithAudit`/`createManyWithAudit`/`deleteFutureWithAudit` atomicity (rollback on `23514` audit-insert failure), exact snapshot shape `{id,holiday_date,holiday_name,is_national_holiday}`, no-dedup on `holidays.date` (no unique constraint, unlike `wp_weight_config.effective_date`), `config_audit_log` constraint checks (`entity_supported`/`action_supported`/`snapshot_shape`/`actor_nonblank`) for `entity_type='holiday'`. Run via `ALLOW_DB_CONTRACT_TEST=1 npx tsx src/server/modules/holidays/holidays-audit.contract.test.ts`; mirrors `wp-weight-config-audit.contract.test.ts`.
 
 ---
 
@@ -256,7 +262,7 @@ Two parallel modules: **Target WP** and **WP Weight**.
 
 ### API routes — Target WP
 - `GET|POST /api/target-wp-config` → `apps/tere-project/src/app/api/target-wp-config/route.ts`
-- `GET|PUT|DELETE /api/target-wp-config/[id]` → `[id]/route.ts`
+- `DELETE /api/target-wp-config/[id]` → `[id]/route.ts` (no GET/PUT — config is create/delete only, no in-place update)
 - `GET /api/target-wp-config/effective` → effective config for current board
 
 ### API routes — WP Weight
@@ -268,10 +274,15 @@ Two parallel modules: **Target WP** and **WP Weight**.
 ### Server modules
 - `apps/tere-project/src/server/modules/target-wp-config/`
 - `apps/tere-project/src/server/modules/wp-weight-config/` — management/effective/audit service, repository, HTTP normalization, and checks
+- `apps/tere-project/src/server/modules/config-audit-log/` — SLS-16620: entity-agnostic shared audit-log module (`fetchConfigAuditLog<T>(entityType, cursor)`, `decodeAuditCursor`, `InvalidAuditCursorError`, `paginate` — page size 20, `{v,changed_at,id}` base64url cursor). `wp-weight-config.repository.ts`/`.service.ts` delegate to it; future audit-log consumers (holiday/target-wp, PRD-04) should reuse this instead of re-implementing cursor/pagination logic.
+
+### RBAC note
+- Target WP and Holiday mutation routes use `withAuth` (any signed-in user) — NOT `withLead` like WP Weight's `POST /api/wp-weight-config`. Relevant if/when audit logging extends to these entities (PRD-04): `changed_by` on those entities can be any authenticated user, not Lead-only.
 
 ### WP Weight audit storage and index
 - `apps/tere-project/drizzle/0005_config_audit_log.sql` — Phase 2 atomic create/delete snapshots; no backfill
 - `apps/tere-project/drizzle/0006_wp_weight_audit_cursor_index.sql` — Phase 3 partial `(changed_at DESC, id DESC)` index for `wp_weight_config`
+- `apps/tere-project/drizzle/0007_config_audit_log_widen_entity_types.sql` — widens `config_audit_log_entity_supported` check to `wp_weight_config`/`holiday`/`target_wp_config`; replaces the partial cursor index with composite `config_audit_log_cursor_idx (entity_type, changed_at DESC, id DESC)` valid for all entity types. Still create/delete snapshot only — no update/diff semantics added.
 - `apps/tere-project/src/server/db/schema.ts` — audit table and matching cursor index declaration
 
 ### Frontend hooks
@@ -296,9 +307,14 @@ Tab-switcher around `/dashboard/configuration?tab={id}`. Holiday reuses Holiday 
 - `apps/tere-project/src/features/configuration/`
   - `components/ConfigurationTabs.tsx` — resolves `?tab=`, renders Holiday, WP Weight management, or WP Weight Audit Log; Target WP alone remains `ComingSoon`.
   - `components/WpWeightConfigPanel.tsx` + `WpWeightConfigPanel.api.ts` — Phase 1 Lead-only create/list/delete UI and query/mutation hooks.
-  - `components/WpWeightAuditLogPanel.tsx` — Phase 3 read-only table; server order, WIB `<time>`, loading/error/empty/load-more states.
-  - `components/WpWeightAuditLogPanel.api.ts` — infinite query using `['wp-weight-config','audit-log']` and opaque server cursor.
+  - `components/ConfigAuditLogPanel.tsx` — SLS-16621 generic `<T>` audit-log table (base columns: Changed at/Action/Changed by + caller-supplied `snapshotColumns`); server order, WIB `<time>`, loading/error/empty/load-more states. Props: `{ entityType: 'wp-weight-config'|'holiday', label, snapshotColumns }`.
+  - `components/ConfigAuditLogPanel.api.ts` — generic `useConfigAuditLog<T>(entityType)` infinite query, key `[entityType,'audit-log']`, API path `/${entityType}/audit-log`, opaque server cursor. Exports `ConfigAuditEntry<T>`, `snapshot()`, `configAuditErrorMessage()`.
+  - `components/WpWeightAuditLogPanel.tsx` — Phase 3 thin wrapper: calls `ConfigAuditLogPanel` with `entityType="wp-weight-config"`, `label="WP Weight"`, WP-weight `snapshotColumns` (Effective date + weight keys). No own API file anymore (folded into `ConfigAuditLogPanel.api.ts`).
+  - `components/HolidayAuditLogPanel.tsx` — SLS-16619/16621 thin wrapper: calls `ConfigAuditLogPanel` with `entityType="holiday"`, `label="Holiday"`, Holiday `snapshotColumns` (Date/Name/National holiday from `holiday_date`/`holiday_name`/`is_national_holiday`). Rendered inside `ConfigurationTabs.tsx` under the List/Calendar toggle for `activeTab === 'holiday'` (both modes). **Known defect**: `entityType="holiday"` (singular) drives the request URL `/${entityType}/audit-log` → `/api/holiday/audit-log`, but the real route folder is plural `/api/holidays/audit-log` — see `HOLIDAY_AUDIT_QA_MATRIX.md`.
   - `components/ComingSoon.tsx` — generic "coming soon" stub, no API call.
+
+### Holiday audit QA
+- `apps/tere-project/src/features/configuration/HOLIDAY_AUDIT_QA_MATRIX.md` — SLS-16619 Phase 1 UI/a11y matrix adapted from `WP_WEIGHT_CONFIG_QA_MATRIX.md`'s `P3-UI-01..08`/`P3-A11Y-01`; documents the `entityType` singular/plural route mismatch above and a WP Weight regression check.
 
 ### Shared constants
 - `apps/tere-project/src/shared/constants/configuration-tabs.ts` — `CONFIG_TABS`, `ConfigTabId`, `DEFAULT_CONFIG_TAB` ('holiday'). Contract shared with the `/dashboard/holiday-management` → `/dashboard/configuration?tab=holiday` redirect.
