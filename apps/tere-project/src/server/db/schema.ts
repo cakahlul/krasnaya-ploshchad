@@ -126,11 +126,13 @@ export const configAuditLog = pgTable('config_audit_log', {
     .notNull()
     .defaultNow(),
 }, table => [
-  index('config_audit_log_wp_weight_cursor_idx')
-    .on(table.changedAt.desc(), table.id.desc())
-    .where(sql`${table.entityType} = 'wp_weight_config'`),
+  index('config_audit_log_cursor_idx')
+    .on(table.entityType, table.changedAt.desc(), table.id.desc()),
   check('config_audit_log_actor_nonblank', sql`btrim(${table.changedBy}) <> ''`),
-  check('config_audit_log_entity_supported', sql`${table.entityType} = 'wp_weight_config'`),
+  check(
+    'config_audit_log_entity_supported',
+    sql`${table.entityType} in ('wp_weight_config', 'holiday', 'target_wp_config')`,
+  ),
   check('config_audit_log_action_supported', sql`${table.action} in ('create', 'delete')`),
   check(
     'config_audit_log_snapshot_shape',
