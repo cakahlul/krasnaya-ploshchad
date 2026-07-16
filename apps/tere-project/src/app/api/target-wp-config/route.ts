@@ -8,12 +8,12 @@ export const GET = withAuth(async () => {
   return Response.json(configs);
 });
 
-export const POST = withAuth(async (req) => {
+export const POST = withAuth(async (req, { user }) => {
   const body = await req.json();
   const { effective_date, rates } = body;
   if (!effective_date || !rates) {
     return Response.json({ error: 'effective_date and rates are required' }, { status: 400 });
   }
-  const config = await targetWpConfigService.create(effective_date, rates);
+  const config = await targetWpConfigService.create(effective_date, rates, user.email!);
   return Response.json(config, { status: 201 });
 });

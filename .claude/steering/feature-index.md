@@ -261,9 +261,10 @@ No dashboard page — used by other features via HOFs/hooks.
 Two parallel modules: **Target WP** and **WP Weight**.
 
 ### API routes — Target WP
-- `GET|POST /api/target-wp-config` → `apps/tere-project/src/app/api/target-wp-config/route.ts`
-- `DELETE /api/target-wp-config/[id]` → `[id]/route.ts` (no GET/PUT — config is create/delete only, no in-place update)
+- `GET|POST /api/target-wp-config` → `apps/tere-project/src/app/api/target-wp-config/route.ts` (`withAuth`; POST plumbs `user.email` as `changedBy`, SLS-16639)
+- `DELETE /api/target-wp-config/[id]` → `[id]/route.ts` (no GET/PUT — config is create/delete only, no in-place update; `withAuth`, plumbs `changedBy`, unconditional delete — no immutability guard)
 - `GET /api/target-wp-config/effective` → effective config for current board
+- `GET /api/target-wp-config/audit-log` → `apps/tere-project/src/app/api/target-wp-config/audit-log/route.ts` — thin wrapper, `withLead` guard (SLS-16639)
 
 ### API routes — WP Weight
 - `GET|POST /api/wp-weight-config` → `apps/tere-project/src/app/api/wp-weight-config/route.ts`
@@ -273,6 +274,8 @@ Two parallel modules: **Target WP** and **WP Weight**.
 
 ### Server modules
 - `apps/tere-project/src/server/modules/target-wp-config/`
+  - `target-wp-config.service.ts`, `target-wp-config.repository.ts`
+  - `target-wp-config-http.ts` — `withLead` (reuses `withRole('Lead', ...)`), mirrors `holidays-http.ts`/`wp-weight-config-http.ts` pattern; only `withLead` exported this phase (mutation routes stay on plain `withAuth`, no HTTP normalization change) (SLS-16639)
 - `apps/tere-project/src/server/modules/wp-weight-config/` — management/effective/audit service, repository, HTTP normalization, and checks
 - `apps/tere-project/src/server/modules/config-audit-log/` — SLS-16620: entity-agnostic shared audit-log module (`fetchConfigAuditLog<T>(entityType, cursor)`, `decodeAuditCursor`, `InvalidAuditCursorError`, `paginate` — page size 20, `{v,changed_at,id}` base64url cursor). `wp-weight-config.repository.ts`/`.service.ts` delegate to it; future audit-log consumers (holiday/target-wp, PRD-04) should reuse this instead of re-implementing cursor/pagination logic.
 
