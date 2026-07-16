@@ -1,5 +1,6 @@
 import { withAuth } from '@server/auth/with-auth';
 import { targetWpConfigService } from '@server/modules/target-wp-config/target-wp-config.service';
+import { withLead } from '@server/modules/target-wp-config/target-wp-config-http';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,7 +9,7 @@ export const GET = withAuth(async () => {
   return Response.json(configs);
 });
 
-export const POST = withAuth(async (req, { user }) => {
+export const POST = withLead(async (req, { user }) => {
   const body = await req.json();
   const { effective_date, rates } = body;
   if (!effective_date || !rates) {

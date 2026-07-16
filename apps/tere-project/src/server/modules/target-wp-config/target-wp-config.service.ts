@@ -67,6 +67,13 @@ export class TargetWpConfigService {
   }
 
   async create(effective_date: string, rates: TargetWpRates, changedBy: string): Promise<TargetWpConfig> {
+    for (const [level, rate] of Object.entries(rates)) {
+      if (!(rate > 0)) {
+        throw new TargetWpConfigError('VALIDATION_ERROR', 'rate harus > 0', 400, {
+          [level]: 'rate harus > 0',
+        });
+      }
+    }
     this.cache.invalidate();
     return this.repo.createWithAudit(effective_date, rates, changedBy);
   }

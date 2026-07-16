@@ -103,6 +103,27 @@ async function main() {
   assert.equal(created, existing);
   assert.equal(createdBy, 'lead@amarbank.co.id');
 
+  for (const badRates of [
+    { ...rates, junior: 0 },
+    { ...rates, senior: -1 },
+    { ...rates, medior: NaN },
+  ]) {
+    let calledCreate = false;
+    await assert.rejects(
+      new TargetWpConfigService({
+        ...repo,
+        createWithAudit: async () => {
+          calledCreate = true;
+          return existing;
+        },
+      }).create('2026-07-14', badRates, 'lead@amarbank.co.id'),
+      (error: unknown) => error instanceof TargetWpConfigError
+        && error.status === 400
+        && error.code === 'VALIDATION_ERROR',
+    );
+    assert.equal(calledCreate, false);
+  }
+
   let deletedBy = '';
   const deleteService = new TargetWpConfigService({
     ...repo,
