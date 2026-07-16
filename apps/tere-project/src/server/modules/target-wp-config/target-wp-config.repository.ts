@@ -1,6 +1,11 @@
 import { db } from '@server/lib/db';
-import { targetWpConfig } from '@server/db/schema';
+import { configAuditLog, targetWpConfig } from '@server/db/schema';
 import { desc, eq } from 'drizzle-orm';
+import {
+  fetchConfigAuditLog,
+  type AuditCursor,
+  type AuditLogEntry,
+} from '@server/modules/config-audit-log';
 
 export type TargetWpRates = Record<string, number>;
 
@@ -9,6 +14,9 @@ export interface TargetWpConfig {
   effective_date: string;
   rates: TargetWpRates;
 }
+
+export type TargetWpAuditCursor = AuditCursor;
+export type TargetWpAuditEntry = AuditLogEntry<TargetWpConfig>;
 
 const DEFAULT_RATES: TargetWpRates = {
   junior: 4.5,
@@ -28,6 +36,10 @@ function rowToConfig(row: Row): TargetWpConfig {
 }
 
 export class TargetWpConfigRepository {
+  fetchAuditLog(cursor: TargetWpAuditCursor | null): Promise<TargetWpAuditEntry[]> {
+    return fetchConfigAuditLog<TargetWpConfig>('target_wp_config', cursor);
+  }
+
   async fetchAll(): Promise<TargetWpConfig[]> {
     try {
       const rows = await db
@@ -52,15 +64,47 @@ export class TargetWpConfigRepository {
     }
   }
 
-  async create(effective_date: string, rates: TargetWpRates): Promise<TargetWpConfig> {
-    const [row] = await db
-      .insert(targetWpConfig)
-      .values({ effectiveDate: effective_date, rates })
-      .returning();
-    return rowToConfig(row);
+  async createWithAudit(
+    effective_date: string,
+    rates: TargetWpRates,
+    changedBy: string,
+  ): Promise<TargetWpConfig> {
+    return db.transaction(async tx => {
+      const [row] = await tx
+        .insert(targetWpConfig)
+        .values({ effectiveDate: effective_date, rates })
+        .returning();
+      const config = rowToConfig(row);
+      await tx.insert(configAuditLog).values({
+        entityType: 'target_wp_config',
+        entityId: config.id!,
+        action: 'create',
+        changedBy,
+        oldValue: null,
+        newValue: config,
+      });
+      return config;
+    });
   }
 
-  async delete(id: string): Promise<void> {
-    await db.delete(targetWpConfig).where(eq(targetWpConfig.id, id));
+  async deleteWithAudit(id: string, changedBy: string): Promise<TargetWpConfig | null> {
+    return db.transaction(async tx => {
+      const [row] = await tx
+        .delete(targetWpConfig)
+        .where(eq(targetWpConfig.id, id))
+        .returning();
+      if (!row) return null;
+
+      const config = rowToConfig(row);
+      await tx.insert(configAuditLog).values({
+        entityType: 'target_wp_config',
+        entityId: config.id!,
+        action: 'delete',
+        changedBy,
+        oldValue: config,
+        newValue: null,
+      });
+      return config;
+    });
   }
 }
