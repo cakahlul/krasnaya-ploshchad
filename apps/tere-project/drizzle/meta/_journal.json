@@ -15,6 +15,55 @@
       "when": 1779191261419,
       "tag": "0001_sudden_arachne",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780905105000,
+      "tag": "0002_kanban_cycle_anchor",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780905105001,
+      "tag": "0003_talent_leave_status_cleanup",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1783936730510,
+      "tag": "0004_wp_weight_config_effective_date_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1783936730511,
+      "tag": "0005_config_audit_log",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783936730512,
+      "tag": "0006_wp_weight_audit_cursor_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783936730513,
+      "tag": "0007_config_audit_log_widen_entity_types",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783936730514,
+      "tag": "0008_config_audit_log_allow_update",
+      "breakpoints": true
     }
   ]
 }

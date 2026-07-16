@@ -1,10 +1,66 @@
-import { TargetWpConfigRepository, type TargetWpConfig, type TargetWpRates } from './target-wp-config.repository';
+import {
+  TargetWpConfigRepository,
+  type TargetWpAuditEntry,
+  type TargetWpConfig,
+  type TargetWpRates,
+} from './target-wp-config.repository';
 import { MemoryCache } from '@server/lib/cache';
+import {
+  decodeAuditCursor as decodeSharedAuditCursor,
+  paginate,
+  InvalidAuditCursorError,
+} from '@server/modules/config-audit-log';
 
-class TargetWpConfigService {
+export type TargetWpConfigErrorCode = 'VALIDATION_ERROR' | 'NOT_FOUND';
+
+export class TargetWpConfigError extends Error {
+  constructor(
+    readonly code: TargetWpConfigErrorCode,
+    message: string,
+    readonly status: number,
+    readonly fields?: Record<string, string>,
+  ) {
+    super(message);
+  }
+}
+
+function decodeAuditCursor(cursor: string) {
+  try {
+    return decodeSharedAuditCursor(cursor);
+  } catch (error) {
+    if (error instanceof InvalidAuditCursorError) {
+      throw new TargetWpConfigError('VALIDATION_ERROR', 'Invalid audit cursor', 400, {
+        cursor: 'Invalid cursor',
+      });
+    }
+    throw error;
+  }
+}
+
+type Repository = Pick<
+  TargetWpConfigRepository,
+  | 'createWithAudit'
+  | 'updateWithAudit'
+  | 'deleteWithAudit'
+  | 'fetchAuditLog'
+  | 'fetchAll'
+  | 'getEffectiveRates'
+>;
+
+function assertPositiveRates(rates: TargetWpRates): void {
+  for (const [level, rate] of Object.entries(rates)) {
+    if (!(rate > 0)) {
+      throw new TargetWpConfigError('VALIDATION_ERROR', 'rate harus > 0', 400, {
+        [level]: 'rate harus > 0',
+      });
+    }
+  }
+}
+
+export class TargetWpConfigService {
   private cache = new MemoryCache(60 * 60 * 1000); // 60 minutes
 
-  constructor(private readonly repo: TargetWpConfigRepository) {}
+  constructor(private readonly repo: Repository) {}
 
   async fetchAll(): Promise<TargetWpConfig[]> {
     const cached = this.cache.get<TargetWpConfig[]>('all');
@@ -25,14 +81,38 @@ class TargetWpConfigService {
     return result;
   }
 
-  async create(effective_date: string, rates: TargetWpRates): Promise<TargetWpConfig> {
+  async create(effective_date: string, rates: TargetWpRates, changedBy: string): Promise<TargetWpConfig> {
+    assertPositiveRates(rates);
     this.cache.invalidate();
-    return this.repo.create(effective_date, rates);
+    return this.repo.createWithAudit(effective_date, rates, changedBy);
   }
 
-  async delete(id: string): Promise<void> {
+  async update(
+    id: string,
+    effective_date: string,
+    rates: TargetWpRates,
+    changedBy: string,
+  ): Promise<TargetWpConfig> {
+    assertPositiveRates(rates);
     this.cache.invalidate();
-    return this.repo.delete(id);
+    const updated = await this.repo.updateWithAudit(id, effective_date, rates, changedBy);
+    if (!updated) {
+      throw new TargetWpConfigError('NOT_FOUND', 'target wp config not found', 404);
+    }
+    return updated;
+  }
+
+  async delete(id: string, changedBy: string): Promise<void> {
+    this.cache.invalidate();
+    await this.repo.deleteWithAudit(id, changedBy);
+  }
+
+  async fetchAuditLog(cursor: string | null): Promise<{
+    items: TargetWpAuditEntry[];
+    next_cursor: string | null;
+  }> {
+    const rows = await this.repo.fetchAuditLog(cursor === null ? null : decodeAuditCursor(cursor));
+    return paginate(rows);
   }
 }
 

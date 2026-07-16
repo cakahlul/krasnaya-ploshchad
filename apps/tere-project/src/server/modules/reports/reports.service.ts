@@ -21,6 +21,7 @@ import { sprintService } from '@server/modules/sprint/sprint.service';
 import { boardsService } from '@server/modules/boards/boards.service';
 import { holidaysService } from '@server/modules/holidays/holidays.service';
 import { wpWeightConfigService } from '@server/modules/wp-weight-config/wp-weight-config.service';
+import { todayInWib } from '@server/modules/wp-weight-config/wp-weight-config-date';
 import { targetWpConfigService } from '@server/modules/target-wp-config/target-wp-config.service';
 import { calculateWorkingDays } from '@shared/utils/working-days.util';
 import * as repo from './reports.repository';
@@ -676,7 +677,7 @@ export async function generateReport(
       parseLocalDate(sprintDetails.endDate),
     );
   }
-  const effectiveDateStr = sprintStartDateStr ?? formatToYYYYMMDD(new Date());
+  const effectiveDateStr = sprintStartDateStr ?? todayInWib();
   const wpWeights =
     await wpWeightConfigService.getEffectiveWeights(effectiveDateStr);
   const dailyTargetWPByLevel =

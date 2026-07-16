@@ -12,4 +12,9 @@ SET leave_date = COALESCE(
   ),
   '[]'::jsonb
 ),
-updated_at = NOW();
+updated_at = NOW()
+WHERE EXISTS (
+  SELECT 1
+  FROM jsonb_array_elements(leave_date) AS item
+  WHERE item ->> 'status' IN ('Confirmed', 'Draft')
+);

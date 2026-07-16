@@ -1,6 +1,11 @@
 import { db } from '@server/lib/db';
-import { holidays } from '@server/db/schema';
-import { and, eq, gte, lte } from 'drizzle-orm';
+import { configAuditLog, holidays } from '@server/db/schema';
+import { and, eq, gte, lte, sql } from 'drizzle-orm';
+import {
+  fetchConfigAuditLog,
+  type AuditCursor,
+  type AuditLogEntry,
+} from '@server/modules/config-audit-log';
 
 export interface Holiday {
   id?: string;
@@ -8,6 +13,9 @@ export interface Holiday {
   holiday_name: string;
   is_national_holiday: boolean;
 }
+
+export type HolidayAuditCursor = AuditCursor;
+export type HolidayAuditEntry = AuditLogEntry<Holiday>;
 
 type Row = typeof holidays.$inferSelect;
 
@@ -61,5 +69,87 @@ export class HolidaysRepository {
 
   async deleteHoliday(id: string): Promise<void> {
     await db.delete(holidays).where(eq(holidays.id, id));
+  }
+
+  async findById(id: string): Promise<Holiday | null> {
+    const [row] = await db
+      .select()
+      .from(holidays)
+      .where(eq(holidays.id, id))
+      .limit(1);
+    return row ? rowToHoliday(row) : null;
+  }
+
+  async createWithAudit(date: string, name: string, changedBy: string): Promise<Holiday> {
+    return db.transaction(async tx => {
+      const [row] = await tx
+        .insert(holidays)
+        .values({ date, name, isNationalHoliday: true })
+        .returning();
+      const holiday = rowToHoliday(row);
+      await tx.insert(configAuditLog).values({
+        entityType: 'holiday',
+        entityId: holiday.id!,
+        action: 'create',
+        changedBy,
+        oldValue: null,
+        newValue: holiday,
+      });
+      return holiday;
+    });
+  }
+
+  async createManyWithAudit(
+    items: { date: string; name: string }[],
+    changedBy: string,
+  ): Promise<Holiday[]> {
+    return db.transaction(async tx => {
+      const created: Holiday[] = [];
+      for (const item of items) {
+        const [row] = await tx
+          .insert(holidays)
+          .values({ date: item.date, name: item.name, isNationalHoliday: true })
+          .returning();
+        const holiday = rowToHoliday(row);
+        await tx.insert(configAuditLog).values({
+          entityType: 'holiday',
+          entityId: holiday.id!,
+          action: 'create',
+          changedBy,
+          oldValue: null,
+          newValue: holiday,
+        });
+        created.push(holiday);
+      }
+      return created;
+    });
+  }
+
+  async deleteFutureWithAudit(id: string, changedBy: string): Promise<Holiday | null> {
+    return db.transaction(async tx => {
+      const [row] = await tx
+        .delete(holidays)
+        .where(and(
+          eq(holidays.id, id),
+          sql`${holidays.date} > (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')::date`,
+        ))
+        .returning();
+      if (!row) return null;
+
+      const holiday = rowToHoliday(row);
+      await tx.insert(configAuditLog).values({
+        entityType: 'holiday',
+        entityId: holiday.id!,
+        action: 'delete',
+        changedBy,
+        oldValue: holiday,
+        newValue: null,
+      });
+      return holiday;
+    });
+  }
+
+  async fetchAuditLog(cursor: HolidayAuditCursor | null): Promise<HolidayAuditEntry[]> {
+    return fetchConfigAuditLog<Holiday>('holiday', cursor);
   }
 }

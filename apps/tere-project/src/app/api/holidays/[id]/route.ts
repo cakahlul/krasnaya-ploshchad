@@ -1,11 +1,10 @@
-import { withAuth } from '@server/auth/with-auth';
 import { holidaysService } from '@server/modules/holidays/holidays.service';
+import { withHolidayAuth } from '@server/modules/holidays/holidays-http';
 
 export const dynamic = 'force-dynamic';
 
-export const DELETE = withAuth(async (_req, { params }) => {
+export const DELETE = withHolidayAuth(async (_req, { params, user }) => {
   const { id } = await params!;
-  if (!id) return Response.json({ error: 'id is required' }, { status: 400 });
-  await holidaysService.deleteHoliday(id);
+  await holidaysService.deleteHoliday(id, user.email!);
   return new Response(null, { status: 204 });
 });

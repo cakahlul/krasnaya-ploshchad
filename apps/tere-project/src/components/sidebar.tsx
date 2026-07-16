@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMediaQuery } from 'react-responsive';
 import clsx from 'clsx';
 import { useMemo, useState, useCallback } from 'react';
@@ -8,6 +8,11 @@ import { useThemeColors } from '@src/hooks/useTheme';
 import { useDashboardSummary } from '@src/features/dashboard/hooks/useDashboardSummary';
 import { useMemberProfile } from '@src/features/dashboard/hooks/useMemberProfile';
 import { useBoards } from '@src/features/dashboard/hooks/useBoards';
+import {
+  CONFIG_TABS,
+  DEFAULT_CONFIG_TAB,
+  type ConfigTabId,
+} from '@src/shared/constants/configuration-tabs';
 
 /* ------------------------------------------------------------------ */
 /*  SVG Icons – chunky hand-drawn stroke style                        */
@@ -161,7 +166,7 @@ function IconApiKey({ color }: { color: string }) {
   );
 }
 
-function IconHoliday({ color }: { color: string }) {
+function IconConfiguration({ color }: { color: string }) {
   return (
     <svg
       width="20"
@@ -173,13 +178,8 @@ function IconHoliday({ color }: { color: string }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <rect x="2" y="4" width="16" height="14" rx="2" />
-      <line x1="2" y1="9" x2="18" y2="9" />
-      <line x1="6" y1="2" x2="6" y2="6" />
-      <line x1="14" y1="2" x2="14" y2="6" />
-      <circle cx="12" cy="13" r="0.7" fill={color} stroke="none" />
-      <circle cx="15" cy="12" r="0.5" fill={color} stroke="none" />
-      <circle cx="14" cy="15" r="0.6" fill={color} stroke="none" />
+      <circle cx="10" cy="10" r="2.6" />
+      <path d="M10 2.5v2.2M10 15.3v2.2M17.5 10h-2.2M4.7 10H2.5M15.1 4.9l-1.55 1.55M6.45 13.55 4.9 15.1M15.1 15.1l-1.55-1.55M6.45 6.45 4.9 4.9" />
     </svg>
   );
 }
@@ -193,6 +193,7 @@ interface MenuItem {
   label: string;
   icon: (color: string) => React.ReactNode;
   roles: string[];
+  children?: { tab: ConfigTabId; label: string }[];
 }
 
 const menuItems: MenuItem[] = [
@@ -233,10 +234,11 @@ const menuItems: MenuItem[] = [
     roles: ['Lead'],
   },
   {
-    key: '/dashboard/holiday-management',
-    label: 'Holiday',
-    icon: c => <IconHoliday color={c} />,
+    key: '/dashboard/configuration',
+    label: 'Configuration',
+    icon: c => <IconConfiguration color={c} />,
     roles: ['Lead'],
+    children: CONFIG_TABS.map(t => ({ tab: t.id, label: t.label })),
   },
   {
     key: '/dashboard/mcp-connection',
@@ -286,7 +288,21 @@ export default function Sidebar({
   const isDesktop = useMediaQuery({ minWidth: 1024 });
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isDark, isCrimson, accent, accentL } = useThemeColors();
+
+  const CONFIG_KEY = '/dashboard/configuration';
+  const [expandedKey, setExpandedKey] = useState<string | null>(
+    pathname === CONFIG_KEY ? CONFIG_KEY : null,
+  );
+  // Re-derive expanded state on route change without an effect (React docs:
+  // "adjusting state during render" pattern) — auto-expand on direct nav.
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    if (pathname === CONFIG_KEY) setExpandedKey(CONFIG_KEY);
+  }
+  const activeTab = searchParams.get('tab') as ConfigTabId | null;
 
   // Subscribe reactively to dashboard data filtered by user's managed teams
   const { member, teams: memberTeams } = useMemberProfile();
@@ -320,6 +336,22 @@ export default function Sidebar({
   const handleClick = useCallback(
     (path: string) => {
       router.push(path);
+      if (!isDesktop) onClose();
+    },
+    [router, isDesktop, onClose],
+  );
+
+  const handleParentClick = useCallback((item: MenuItem) => {
+    if (item.children) {
+      setExpandedKey(prev => (prev === item.key ? null : item.key));
+    } else {
+      handleClick(item.key);
+    }
+  }, [handleClick]);
+
+  const handleChildClick = useCallback(
+    (tab: ConfigTabId) => {
+      router.push(`${CONFIG_KEY}?tab=${tab}`);
       if (!isDesktop) onClose();
     },
     [router, isDesktop, onClose],
@@ -525,6 +557,7 @@ export default function Sidebar({
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
         {filteredMenuItems.map(item => {
           const isActive = pathname === item.key;
+          const isExpanded = expandedKey === item.key;
           const iconColor = isActive
             ? accent
             : isDark
@@ -532,44 +565,101 @@ export default function Sidebar({
               : '#6b7280';
 
           return (
-            <button
-              key={item.key}
-              onClick={() => handleClick(item.key)}
-              className={clsx(
-                'w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left text-[13px] transition-all duration-150 relative group',
+            <div key={item.key}>
+              <button
+                onClick={() => handleParentClick(item)}
+                aria-expanded={item.children ? isExpanded : undefined}
+                className={clsx(
+                  'w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left text-[13px] transition-all duration-150 relative group',
+                )}
+                style={{
+                  background: isActive ? activeBg : undefined,
+                  color: isActive ? navTextActive : navTextColor,
+                  fontWeight: isActive ? 600 : 400,
+                  borderLeft: isActive
+                    ? `3px solid ${accent}`
+                    : '3px solid transparent',
+                }}
+                onMouseEnter={e => {
+                  if (!isActive) {
+                    (e.currentTarget as HTMLElement).style.background = hoverBg;
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!isActive) {
+                    (e.currentTarget as HTMLElement).style.background = '';
+                  }
+                }}
+              >
+                {/* Glowing dot for active */}
+                {isActive && (
+                  <span
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full"
+                    style={{
+                      background: accent,
+                      boxShadow: `0 0 6px ${accent}`,
+                    }}
+                  />
+                )}
+                <span className="flex-shrink-0">{item.icon(iconColor)}</span>
+                <span className="truncate flex-1">{item.label}</span>
+                {item.children && (
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke={isActive ? navTextActive : navTextColor}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="flex-shrink-0 transition-transform duration-150"
+                    style={{
+                      transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                    }}
+                  >
+                    <polyline points="5,7 10,13 15,7" />
+                  </svg>
+                )}
+              </button>
+
+              {item.children && isExpanded && (
+                <div className="ml-6 mt-0.5 space-y-0.5">
+                  {item.children.map(child => {
+                    const isChildActive =
+                      pathname === item.key &&
+                      (activeTab === child.tab ||
+                        (!activeTab && child.tab === DEFAULT_CONFIG_TAB));
+                    return (
+                      <button
+                        key={child.tab}
+                        onClick={() => handleChildClick(child.tab)}
+                        className="w-full flex items-center px-3 py-1.5 rounded-lg text-left text-[12px] transition-all duration-150"
+                        style={{
+                          background: isChildActive ? activeBg : undefined,
+                          color: isChildActive ? navTextActive : navTextColor,
+                          fontWeight: isChildActive ? 600 : 400,
+                        }}
+                        onMouseEnter={e => {
+                          if (!isChildActive) {
+                            (e.currentTarget as HTMLElement).style.background =
+                              hoverBg;
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          if (!isChildActive) {
+                            (e.currentTarget as HTMLElement).style.background =
+                              '';
+                          }
+                        }}
+                      >
+                        <span className="truncate">{child.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
-              style={{
-                background: isActive ? activeBg : undefined,
-                color: isActive ? navTextActive : navTextColor,
-                fontWeight: isActive ? 600 : 400,
-                borderLeft: isActive
-                  ? `3px solid ${accent}`
-                  : '3px solid transparent',
-              }}
-              onMouseEnter={e => {
-                if (!isActive) {
-                  (e.currentTarget as HTMLElement).style.background = hoverBg;
-                }
-              }}
-              onMouseLeave={e => {
-                if (!isActive) {
-                  (e.currentTarget as HTMLElement).style.background = '';
-                }
-              }}
-            >
-              {/* Glowing dot for active */}
-              {isActive && (
-                <span
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full"
-                  style={{
-                    background: accent,
-                    boxShadow: `0 0 6px ${accent}`,
-                  }}
-                />
-              )}
-              <span className="flex-shrink-0">{item.icon(iconColor)}</span>
-              <span className="truncate">{item.label}</span>
-            </button>
+            </div>
           );
         })}
       </nav>

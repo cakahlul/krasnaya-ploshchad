@@ -1,19 +1,26 @@
-import { withAuth } from '@server/auth/with-auth';
 import { wpWeightConfigService } from '@server/modules/wp-weight-config/wp-weight-config.service';
+import { withLead } from '@server/modules/wp-weight-config/wp-weight-config-http';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withAuth(async () => {
-  const configs = await wpWeightConfigService.fetchAll();
-  return Response.json(configs);
-});
+export const GET = withLead(async () =>
+  Response.json(await wpWeightConfigService.fetchAll()),
+);
 
-export const POST = withAuth(async (req) => {
-  const body = await req.json();
-  const { effective_date, weights } = body;
-  if (!effective_date || !weights) {
-    return Response.json({ error: 'effective_date and weights are required' }, { status: 400 });
+export const POST = withLead(async (req, { user }) => {
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    body = null;
   }
-  const config = await wpWeightConfigService.create(effective_date, weights);
-  return Response.json(config, { status: 201 });
+  const input = body && typeof body === 'object'
+    ? body as Record<string, unknown>
+    : {};
+  const result = await wpWeightConfigService.create(
+    input.effective_date,
+    input.weights,
+    user.email!,
+  );
+  return Response.json(result.config, { status: result.created ? 201 : 200 });
 });

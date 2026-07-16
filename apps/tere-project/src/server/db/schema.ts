@@ -1,4 +1,6 @@
 import {
+  check,
+  index,
   pgTable,
   uuid,
   text,
@@ -8,6 +10,7 @@ import {
   integer,
   date,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 // members
 export const members = pgTable('members', {
@@ -106,6 +109,35 @@ export const targetWpConfig = pgTable('target_wp_config', {
 // wp weight config
 export const wpWeightConfig = pgTable('wp_weight_config', {
   id: uuid('id').primaryKey().defaultRandom(),
-  effectiveDate: date('effective_date').notNull(),
+  effectiveDate: date('effective_date').notNull().unique(),
   weights: jsonb('weights').$type<Record<string, number>>().notNull(),
 });
+
+// immutable config audit trail
+export const configAuditLog = pgTable('config_audit_log', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  entityType: text('entity_type').notNull(),
+  entityId: text('entity_id').notNull(),
+  action: text('action').notNull(),
+  changedBy: text('changed_by').notNull(),
+  oldValue: jsonb('old_value'),
+  newValue: jsonb('new_value'),
+  changedAt: timestamp('changed_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+}, table => [
+  index('config_audit_log_cursor_idx')
+    .on(table.entityType, table.changedAt.desc(), table.id.desc()),
+  check('config_audit_log_actor_nonblank', sql`btrim(${table.changedBy}) <> ''`),
+  check(
+    'config_audit_log_entity_supported',
+    sql`${table.entityType} in ('wp_weight_config', 'holiday', 'target_wp_config')`,
+  ),
+  check('config_audit_log_action_supported', sql`${table.action} in ('create', 'delete', 'update')`),
+  check(
+    'config_audit_log_snapshot_shape',
+    sql`(${table.action} = 'create' and ${table.oldValue} is null and ${table.newValue} is not null)
+      or (${table.action} = 'delete' and ${table.oldValue} is not null and ${table.newValue} is null)
+      or (${table.action} = 'update' and ${table.oldValue} is not null and ${table.newValue} is not null)`,
+  ),
+]);
