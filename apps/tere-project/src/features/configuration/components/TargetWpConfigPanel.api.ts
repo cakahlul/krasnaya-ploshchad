@@ -49,6 +49,25 @@ export function useDeleteTargetWpConfig() {
   });
 }
 
+export function useUpdateTargetWpConfig() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      id: string;
+      effective_date: string;
+      rates: TargetWpRates;
+    }) =>
+      (
+        await axiosClient.put<TargetWpConfig>(
+          `/target-wp-config/${encodeURIComponent(payload.id)}`,
+          { effective_date: payload.effective_date, rates: payload.rates },
+        )
+      ).data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+  });
+}
+
 // Mirrors target-wp-config.repository.ts getEffectiveRates(): the active
 // config is the one with the greatest effective_date <= today. Given
 // `sortedConfigs` already DESC by effective_date, that's just the first
@@ -72,7 +91,7 @@ export function rateKeysFrom(configs: TargetWpConfig[]): string[] {
 
 export function errorMessage(
   error: unknown,
-  action: 'load' | 'create' | 'delete',
+  action: 'load' | 'create' | 'update' | 'delete',
 ): string {
   if (!axios.isAxiosError<ErrorResponse>(error))
     return `Unable to ${action} target WP configuration.`;

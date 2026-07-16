@@ -21,7 +21,7 @@ const API_PATH: Record<ConfigAuditEntityType, string> = {
 export interface ConfigAuditEntry<T> {
   id: string;
   entity_id: string;
-  action: 'create' | 'delete';
+  action: 'create' | 'update' | 'delete';
   changed_by: string;
   old_value: T | null;
   new_value: T | null;
@@ -40,7 +40,7 @@ interface ErrorResponse {
 }
 
 export function snapshot<T>(entry: ConfigAuditEntry<T>): T | null {
-  return entry.action === 'create' ? entry.new_value : entry.old_value;
+  return entry.action === 'delete' ? entry.old_value : entry.new_value;
 }
 
 export function useConfigAuditLog<T>(entityType: ConfigAuditEntityType) {

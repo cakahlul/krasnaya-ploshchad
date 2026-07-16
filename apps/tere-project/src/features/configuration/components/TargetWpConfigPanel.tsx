@@ -18,6 +18,7 @@ import {
 } from 'antd';
 import {
   DeleteOutlined,
+  EditOutlined,
   PlusOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
@@ -31,6 +32,7 @@ import {
   useCreateTargetWpConfig,
   useDeleteTargetWpConfig,
   useTargetWpConfigs,
+  useUpdateTargetWpConfig,
   type TargetWpConfig,
   type TargetWpRates,
 } from './TargetWpConfigPanel.api';
@@ -71,7 +73,11 @@ function parseRate(value: string): number | null {
 
 export default function TargetWpConfigPanel() {
   const [form] = Form.useForm<FormValues>();
+  const [editForm] = Form.useForm<FormValues>();
   const [isCreateOpen, setCreateOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<TargetWpConfig | null>(
+    null,
+  );
   const today = todayWib();
   const {
     data = [],
@@ -83,6 +89,7 @@ export default function TargetWpConfigPanel() {
   } = useTargetWpConfigs();
   const createConfig = useCreateTargetWpConfig();
   const deleteConfig = useDeleteTargetWpConfig();
+  const updateConfig = useUpdateTargetWpConfig();
   const colors = useThemeColors();
   const { member } = useMemberProfile();
   const isLead = Boolean(member?.isLead);
@@ -125,6 +132,45 @@ export default function TargetWpConfigPanel() {
     }
   };
 
+  const editRateKeys = editingRecord ? Object.keys(editingRecord.rates).sort() : [];
+
+  const openEdit = (record: TargetWpConfig) => {
+    setEditingRecord(record);
+    editForm.setFieldsValue({
+      effective_date: record.effective_date,
+      ...Object.fromEntries(
+        Object.keys(record.rates).map(key => [key, String(record.rates[key] ?? '')]),
+      ),
+    } as FormValues);
+  };
+
+  const closeEdit = () => {
+    if (updateConfig.isPending) return;
+    setEditingRecord(null);
+    editForm.resetFields();
+  };
+
+  const handleEdit = async (values: FormValues) => {
+    if (!editingRecord || updateConfig.isPending) return;
+
+    const rates = Object.fromEntries(
+      editRateKeys.map(key => [key, parseRate(values[key])]),
+    ) as TargetWpRates;
+
+    try {
+      await updateConfig.mutateAsync({
+        id: editingRecord.id,
+        effective_date: values.effective_date,
+        rates,
+      });
+      message.success('Target WP configuration updated.');
+      setEditingRecord(null);
+      editForm.resetFields();
+    } catch (mutationError) {
+      message.error(errorMessage(mutationError, 'update'));
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (deleteConfig.isPending) return;
     try {
@@ -158,41 +204,61 @@ export default function TargetWpConfigPanel() {
     {
       title: 'Action',
       key: 'action',
-      width: 130,
+      width: 190,
       fixed: 'right' as const,
       render: (_: unknown, record: TargetWpConfig) => {
         if (!isLead) return <Typography.Text type="secondary">—</Typography.Text>;
+
+        const editButton = (
+          <Button
+            type="text"
+            icon={<EditOutlined aria-hidden />}
+            onClick={() => openEdit(record)}
+            aria-label={`Edit configuration effective ${record.effective_date}`}
+          >
+            Edit
+          </Button>
+        );
+
         if (record.id === activeConfig?.id) {
-          return <Typography.Text type="secondary">Aktif</Typography.Text>;
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {editButton}
+              <Typography.Text type="secondary">Aktif</Typography.Text>
+            </div>
+          );
         }
         const past = isPastDate(record.effective_date, today);
         return (
-          <Popconfirm
-            title="Delete target WP configuration?"
-            description={
-              past
-                ? 'This configuration has already taken effect and may have historical calculation usage. It will be permanently removed.'
-                : 'This scheduled configuration will be permanently removed.'
-            }
-            okText="Delete"
-            cancelText="Cancel"
-            okButtonProps={{
-              danger: true,
-              loading:
-                deleteConfig.isPending && deleteConfig.variables === record.id,
-            }}
-            onConfirm={() => handleDelete(record.id)}
-          >
-            <Button
-              danger
-              type="text"
-              icon={<DeleteOutlined aria-hidden />}
-              disabled={deleteConfig.isPending}
-              aria-label={`Delete configuration effective ${record.effective_date}`}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            {editButton}
+            <Popconfirm
+              title="Delete target WP configuration?"
+              description={
+                past
+                  ? 'This configuration has already taken effect and may have historical calculation usage. It will be permanently removed.'
+                  : 'This scheduled configuration will be permanently removed.'
+              }
+              okText="Delete"
+              cancelText="Cancel"
+              okButtonProps={{
+                danger: true,
+                loading:
+                  deleteConfig.isPending && deleteConfig.variables === record.id,
+              }}
+              onConfirm={() => handleDelete(record.id)}
             >
-              Delete
-            </Button>
-          </Popconfirm>
+              <Button
+                danger
+                type="text"
+                icon={<DeleteOutlined aria-hidden />}
+                disabled={deleteConfig.isPending}
+                aria-label={`Delete configuration effective ${record.effective_date}`}
+              >
+                Delete
+              </Button>
+            </Popconfirm>
+          </div>
         );
       },
     },
@@ -345,6 +411,78 @@ export default function TargetWpConfigPanel() {
               }}
             >
               {rateKeys.map(key => (
+                <Form.Item
+                  key={key}
+                  name={key}
+                  label={`${key} rate`}
+                  validateTrigger={['onBlur', 'onSubmit']}
+                  rules={[
+                    { required: true, message: `Enter the ${key} rate.` },
+                    {
+                      validator: (_, value) =>
+                        !value || parseRate(value) !== null
+                          ? Promise.resolve()
+                          : Promise.reject(
+                              new Error('Use a number above 0.'),
+                            ),
+                    },
+                  ]}
+                >
+                  <Input
+                    inputMode="decimal"
+                    placeholder="e.g. 6"
+                    autoComplete="off"
+                  />
+                </Form.Item>
+              ))}
+            </div>
+          </Form>
+        </Modal>
+
+        <Modal
+          title="Edit target WP configuration"
+          open={editingRecord !== null}
+          onCancel={closeEdit}
+          okText="Save"
+          cancelText="Cancel"
+          confirmLoading={updateConfig.isPending}
+          cancelButtonProps={{ disabled: updateConfig.isPending }}
+          closable={!updateConfig.isPending}
+          maskClosable={!updateConfig.isPending}
+          keyboard={!updateConfig.isPending}
+          onOk={() => editForm.submit()}
+          destroyOnHidden
+        >
+          {editingRecord && isPastDate(editingRecord.effective_date, today) && (
+            <Alert
+              type="warning"
+              showIcon
+              message="This configuration has already taken effect and may have historical calculation usage."
+              style={{ marginBottom: 16 }}
+            />
+          )}
+          <Form<FormValues>
+            form={editForm}
+            layout="vertical"
+            onFinish={handleEdit}
+            requiredMark="optional"
+          >
+            <Form.Item
+              name="effective_date"
+              label="Effective date"
+              rules={[{ required: true, message: 'Choose an effective date.' }]}
+            >
+              <Input type="date" aria-label="Effective date" />
+            </Form.Item>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: '0 12px',
+              }}
+            >
+              {editRateKeys.map(key => (
                 <Form.Item
                   key={key}
                   name={key}

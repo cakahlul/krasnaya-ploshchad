@@ -96,3 +96,48 @@ task lain masih edit file terkait. Kalau beda dari commit, itu bukan ambiguity b
 fakta baru buat resolve test expectation, dan existing script/dokumentasi (steering, contract
 script lain) yang masih rujuk state lama WAJIB ditandai regression konkret yang perlu fix, bukan
 cuma "flag, do not touch".
+
+## [SLS-16681..16684] Edit form pakai global union rate-keys, bukan keys milik record yang diedit
+
+**Kategori**: dynamic-key data leak saat edit form direuse dari create form.
+
+**Deskripsi**: `TargetWpConfigPanel.tsx` render field rate di modal Create DAN modal Edit
+pakai `rateKeys` yang sama — hasil `rateKeysFrom(data)`, union semua key dari SEMUA row yang
+sudah difetch. Buat Create, itu wajar (row baru emang belum punya keyset). Buat Edit, ini bug:
+kalau row A cuma punya `{junior, medior}` sementara row B (row lain di tabel) punya
+`{lead, staff}`, buka Edit utk row A tetap render 4 field (union), field yang bukan milik row A
+di-pre-fill `''` tapi tetap wajib diisi (`required: true`). Submit `handleEdit` build payload dari
+`rateKeys` (union) juga, bukan `Object.keys(editingRecord.rates)` — hasilnya PUT nginject key
+baru yang gak pernah dimiliki record itu (data corruption), atau malah submit gak bisa jalan
+kalau user gak isi field asing itu. Melanggar requirement eksplisit TRD (EDIT-03: "submitting
+keeps exactly those keys (no keys injected, no keys dropped)").
+
+**Cara benar**: form field list buat Edit WAJIB diturunkan dari `Object.keys(editingRecord.rates)`
+(punya record itu sendiri), bukan dari union semua row yang sudah difetch. Union/global keyset
+cuma valid dipakai di Create (row baru) dan di kolom tabel (union with blank cells, sesuai
+TBL-04). Reviewer WAJIB cek: variable rate-keys yang dipakai buat generate field edit-form itu
+sumbernya dari mana — kalau sama persis dengan yang dipakai Create/table union, curigai
+cross-record key leakage begitu dataset punya row dengan keyset berbeda-beda.
+
+## [SLS-16678..16680] Widen DB check-constraint enum tapi lupa widen semua TS mirror-nya
+
+**Kategori**: enum/union widening tidak lengkap saat nambah aksi baru ke shared audit log.
+
+**Deskripsi**: Migration 0008 widen `config_audit_log_action_supported` + `snapshot_shape`
+CHECK constraint buat allow `action = 'update'` (dipakai `target-wp-config.repository.ts`
+`updateWithAudit`). Tapi union type `AuditLogEntry<T>['action']` di
+`config-audit-log.repository.ts` (shared reader dipakai wp-weight/holiday/target-wp) TETAP
+`'create' | 'delete'` — gak di-widen ke `'update'`. Row hasil query di-cast manual (`as
+AuditLogEntry<T>[]`) jadi tsc gak nangkep. Efek nyata: FE (`ConfigAuditLogPanel.api.ts`) punya
+mirror type sama-sama sempit, dan helper `snapshot()` (`entry.action === 'create' ? new_value :
+old_value`) treat semua non-'create' sebagai 'delete' — buat entry action='update', helper ini
+salah pilih `old_value` (state SEBELUM edit) padahal harusnya `new_value` (state SESUDAH edit).
+Begitu Phase 2 Edit di-deploy, audit log UI nampilin snapshot basi buat tiap row yang baru
+di-edit.
+
+**Cara benar**: begitu nambah value baru ke DB CHECK constraint enum (action/status/type kolom),
+grep SEMUA tempat union TS yang mirror kolom itu (backend shared type + FE duplicate type kalau
+ada) — widen bareng di PR yang sama, jangan biarin cuma constraint DB yang berubah sementara
+compile-time type masih bohong. Reviewer WAJIB grep literal union lama (`'create' | 'delete'` dsb)
+lintas repo (BE dan FE) begitu liat migration nambah enum value, bukan cuma cek file yang executor
+sebut di scope-nya.
