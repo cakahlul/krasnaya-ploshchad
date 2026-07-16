@@ -1,5 +1,17 @@
 # Review Lessons
 
+## [SLS-16640] Pagination "iff" cuma dicek satu arah
+Assertion `next_cursor` untuk keyset pagination sering cuma cek 1 arah: "kalau next_cursor
+!== null maka items.length harus 20". Arah sebaliknya gak dicek: "kalau items.length === 20
+maka next_cursor WAJIB !== null". Bug backend yang truncate 20 row tapi lupa isi next_cursor
+(silent data loss / user gak bisa lanjut ke halaman berikutnya) gak ketangkep. Ditemukan
+berulang di 3 script: wp-weight-config.contract.mjs, holidays-audit.contract.mjs, dan
+target-wp-config-audit.contract.mjs — semua copy pola sama dari `auditPage()`.
+
+Cara benar: `auditPage()` harus assert dua arah: (next_cursor !== null → items.length === 20)
+DAN (items.length === 20 → next_cursor !== null). Reviewer WAJIB cek assertion bidirectional
+tiap ada spec "X iff Y", bukan cuma satu implikasi.
+
 ## Gap: test "parity check" jadi tautologi setelah migrasi selesai
 Waktu refactor in-flight (shared module diekstrak tapi consumer lama belum delegate), test
 "parity" bandingin implementasi lokal vs shared valid selama dua impl masih independen. Begitu
