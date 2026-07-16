@@ -261,8 +261,8 @@ No dashboard page — used by other features via HOFs/hooks.
 Two parallel modules: **Target WP** and **WP Weight**.
 
 ### API routes — Target WP
-- `GET|POST /api/target-wp-config` → `apps/tere-project/src/app/api/target-wp-config/route.ts` (`withAuth`; POST plumbs `user.email` as `changedBy`, SLS-16639)
-- `DELETE /api/target-wp-config/[id]` → `[id]/route.ts` (no GET/PUT — config is create/delete only, no in-place update; `withAuth`, plumbs `changedBy`, unconditional delete — no immutability guard)
+- `GET|POST /api/target-wp-config` → `apps/tere-project/src/app/api/target-wp-config/route.ts` (GET `withAuth`; POST `withLead` — Lead-only, SLS-16645; POST plumbs `user.email` as `changedBy`, SLS-16639; service rejects any rate ≤ 0, SLS-16646)
+- `DELETE /api/target-wp-config/[id]` → `[id]/route.ts` (no GET/PUT — config is create/delete only, no in-place update; `withLead` — Lead-only, SLS-16645; plumbs `changedBy`, unconditional delete — no server-side immutability guard, client-side only)
 - `GET /api/target-wp-config/effective` → effective config for current board
 - `GET /api/target-wp-config/audit-log` → `apps/tere-project/src/app/api/target-wp-config/audit-log/route.ts` — thin wrapper, `withLead` guard (SLS-16639)
 
@@ -275,12 +275,12 @@ Two parallel modules: **Target WP** and **WP Weight**.
 ### Server modules
 - `apps/tere-project/src/server/modules/target-wp-config/`
   - `target-wp-config.service.ts`, `target-wp-config.repository.ts`
-  - `target-wp-config-http.ts` — `withLead` (reuses `withRole('Lead', ...)`), mirrors `holidays-http.ts`/`wp-weight-config-http.ts` pattern; only `withLead` exported this phase (mutation routes stay on plain `withAuth`, no HTTP normalization change) (SLS-16639)
+  - `target-wp-config-http.ts` — `withLead` (reuses `withRole('Lead', ...)`), mirrors `holidays-http.ts`/`wp-weight-config-http.ts` pattern; `withLead` now guards both mutation routes (POST/DELETE, SLS-16645) as well as the audit-log route (SLS-16639)
 - `apps/tere-project/src/server/modules/wp-weight-config/` — management/effective/audit service, repository, HTTP normalization, and checks
 - `apps/tere-project/src/server/modules/config-audit-log/` — SLS-16620: entity-agnostic shared audit-log module (`fetchConfigAuditLog<T>(entityType, cursor)`, `decodeAuditCursor`, `InvalidAuditCursorError`, `paginate` — page size 20, `{v,changed_at,id}` base64url cursor). `wp-weight-config.repository.ts`/`.service.ts` delegate to it; future audit-log consumers (holiday/target-wp, PRD-04) should reuse this instead of re-implementing cursor/pagination logic.
 
 ### RBAC note
-- Target WP and Holiday mutation routes use `withAuth` (any signed-in user) — NOT `withLead` like WP Weight's `POST /api/wp-weight-config`. Relevant if/when audit logging extends to these entities (PRD-04): `changed_by` on those entities can be any authenticated user, not Lead-only.
+- Target WP mutation routes (POST/DELETE) are `withLead` (Lead-only, SLS-16645), matching WP Weight. Holiday mutation routes still use `withAuth` (any signed-in user) — its `changed_by` can be any authenticated user, not Lead-only.
 
 ### WP Weight audit storage and index
 - `apps/tere-project/drizzle/0005_config_audit_log.sql` — Phase 2 atomic create/delete snapshots; no backfill
@@ -292,6 +292,10 @@ Two parallel modules: **Target WP** and **WP Weight**.
 - `apps/tere-project/src/features/dashboard/hooks/useTargetWpConfig.ts`
 - `apps/tere-project/src/features/dashboard/hooks/useWpWeightConfig.ts`
 
+### Target WP rollout QA (Phase 1 UI — SLS-16673..16677, authored ahead of implementation)
+- `apps/tere-project/scripts/target-wp-config-ui.contract.mjs` — new, non-audit live API checks: server-side `rate > 0` rejection (defense-in-depth vs client bypass), list `effective_date` DESC ordering, dynamic/disjoint rate-key rendering. Complements `target-wp-config-audit.contract.mjs` (Phase 2, audit-only) without duplicating it.
+- `apps/tere-project/src/features/configuration/TARGET_WP_CONFIG_QA_MATRIX.md` — Phase 1 table/badges/create/delete/error-handling/audit-integration matrix. Flags a BLOCKING AMBIGUITY: current `POST`/`DELETE /api/target-wp-config[/id]` are `withAuth` (not Lead-gated), contradicting this phase's task brief which expects 403 for non-Lead — confirm resolution before executing RBAC-tagged cases. Also flags the `/effective` endpoint returning only a flat `rates` object (no `id`), making value-based Aktif-badge matching unreliable if two rows share identical rates.
+
 ### WP Weight rollout QA
 - `apps/tere-project/scripts/wp-weight-config.contract.mjs` — safe live API/auth/shape checks, including Phase 3 audit log
 - `apps/tere-project/src/server/modules/wp-weight-config/wp-weight-config-audit.contract.test.ts` — gated isolated-DB atomicity and keyset pagination contract
@@ -301,20 +305,22 @@ Two parallel modules: **Target WP** and **WP Weight**.
 
 ## Configuration
 
-Tab-switcher around `/dashboard/configuration?tab={id}`. Holiday reuses Holiday Management, WP Weight management shipped in Phase 1, its atomic audit trail shipped in Phase 2, and the read-only Audit Log UI is the final Phase 3. Target WP remains a stub and is outside this rollout.
+Tab-switcher around `/dashboard/configuration?tab={id}`. Holiday reuses Holiday Management, WP Weight management shipped in Phase 1, its atomic audit trail shipped in Phase 2, the read-only Audit Log UI shipped Phase 3, and Target WP Config Management UI shipped Phase 1 (SLS-16647..16672, Epic SLS-16468) — folded into the same shared Audit Log tab, no sub-tab.
 
 ### Page
 - `apps/tere-project/src/app/dashboard/configuration/page.tsx` — `RoleBasedRoute allowedRoles={['Lead']}` + `Suspense` wrapping `ConfigurationTabs` (required since it reads `useSearchParams`)
 
 ### Feature module
 - `apps/tere-project/src/features/configuration/`
-  - `components/ConfigurationTabs.tsx` — resolves `?tab=`, renders Holiday, WP Weight management, or WP Weight Audit Log; Target WP alone remains `ComingSoon`.
-  - `components/WpWeightConfigPanel.tsx` + `WpWeightConfigPanel.api.ts` — Phase 1 Lead-only create/list/delete UI and query/mutation hooks.
-  - `components/ConfigAuditLogPanel.tsx` — SLS-16621 generic `<T>` audit-log table (base columns: Changed at/Action/Changed by + caller-supplied `snapshotColumns`); server order, WIB `<time>`, loading/error/empty/load-more states. Props: `{ entityType: 'wp-weight-config'|'holiday', label, snapshotColumns }`.
-  - `components/ConfigAuditLogPanel.api.ts` — generic `useConfigAuditLog<T>(entityType)` infinite query, key `[entityType,'audit-log']`, API path `/${entityType}/audit-log`, opaque server cursor. Exports `ConfigAuditEntry<T>`, `snapshot()`, `configAuditErrorMessage()`.
+  - `components/ConfigurationTabs.tsx` — resolves `?tab=`, renders Holiday, WP Weight management, Target WP management, or the shared Audit Log tab (WP Weight + Target WP audit panels stacked).
+  - `components/WpWeightConfigPanel.tsx` + `WpWeightConfigPanel.api.ts` — Phase 1 Lead-only create/list/delete UI and query/mutation hooks. Static `WEIGHT_KEYS`.
+  - `components/TargetWpConfigPanel.tsx` + `TargetWpConfigPanel.api.ts` — Phase 1 Target WP Config Management UI (SLS-16647..16672): create/list/delete over `GET|POST /api/target-wp-config`, `DELETE /api/target-wp-config/[id]`, `GET /api/target-wp-config/effective?date=`. `rates` keys are **dynamic** (from API, no hardcoded key list like WP Weight's `WEIGHT_KEYS`) — table columns and create-modal fields derived via `rateKeysFrom()`. Row badges: "Aktif" (`isActiveConfig()` — deep-equal match against `/effective?date=today`, since that endpoint returns bare rates with no id) and "Sudah lewat" (`isPastDate()` — independent, `effective_date < today`). Delete disabled/non-actionable on the active row (no immutability guard server-side — client-only rule); extra warning shown when deleting a past-dated non-active row (historical usage). Lead-only via `member.isLead` (not `UserAccess.role`), mirrors `WpWeightConfigPanel` create/delete pending + error-retention (no reset) pattern. No Edit/PUT (Phase 2).
+  - `components/ConfigAuditLogPanel.tsx` — SLS-16621 generic `<T>` audit-log table (base columns: Changed at/Action/Changed by + caller-supplied `snapshotColumns`); server order, WIB `<time>`, loading/error/empty/load-more states. Props: `{ entityType: 'wp-weight-config'|'holiday'|'target-wp-config', label, snapshotColumns }`.
+  - `components/ConfigAuditLogPanel.api.ts` — generic `useConfigAuditLog<T>(entityType)` infinite query, key `[entityType,'audit-log']`, API path `/${entityType}/audit-log` (via `API_PATH` map — `target-wp-config` is 1:1, unlike `holiday`→`holidays`), opaque server cursor. Exports `ConfigAuditEntry<T>`, `snapshot()`, `configAuditErrorMessage()`.
   - `components/WpWeightAuditLogPanel.tsx` — Phase 3 thin wrapper: calls `ConfigAuditLogPanel` with `entityType="wp-weight-config"`, `label="WP Weight"`, WP-weight `snapshotColumns` (Effective date + weight keys). No own API file anymore (folded into `ConfigAuditLogPanel.api.ts`).
+  - `components/TargetWpAuditLogPanel.tsx` — SLS-16672 wrapper: calls own `useConfigAuditLog<TargetWpConfig>('target-wp-config')` (same query key as the `ConfigAuditLogPanel` it renders, so no duplicate fetch) only to derive dynamic rate-key columns from loaded snapshots, then renders `ConfigAuditLogPanel` with `entityType="target-wp-config"`, `label="Target WP"`. Rendered stacked with `WpWeightAuditLogPanel` inside `ConfigurationTabs.tsx`'s `audit-log` tab — no separate sub-tab.
   - `components/HolidayAuditLogPanel.tsx` — SLS-16619/16621 thin wrapper: calls `ConfigAuditLogPanel` with `entityType="holiday"`, `label="Holiday"`, Holiday `snapshotColumns` (Date/Name/National holiday from `holiday_date`/`holiday_name`/`is_national_holiday`). Rendered inside `ConfigurationTabs.tsx` under the List/Calendar toggle for `activeTab === 'holiday'` (both modes). **Known defect**: `entityType="holiday"` (singular) drives the request URL `/${entityType}/audit-log` → `/api/holiday/audit-log`, but the real route folder is plural `/api/holidays/audit-log` — see `HOLIDAY_AUDIT_QA_MATRIX.md`.
-  - `components/ComingSoon.tsx` — generic "coming soon" stub, no API call.
+  - `components/ComingSoon.tsx` — generic "coming soon" stub, no API call. No longer used by any `ConfigurationTabs.tsx` tab (Target WP shipped) — kept for future stub tabs.
 
 ### Holiday audit QA
 - `apps/tere-project/src/features/configuration/HOLIDAY_AUDIT_QA_MATRIX.md` — SLS-16619 Phase 1 UI/a11y matrix adapted from `WP_WEIGHT_CONFIG_QA_MATRIX.md`'s `P3-UI-01..08`/`P3-A11Y-01`; documents the `entityType` singular/plural route mismatch above and a WP Weight regression check.

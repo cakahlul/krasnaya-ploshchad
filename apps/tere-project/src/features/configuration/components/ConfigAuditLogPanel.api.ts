@@ -4,7 +4,10 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import axios, { type AxiosError } from 'axios';
 import axiosClient from '@src/lib/axiosClient';
 
-export type ConfigAuditEntityType = 'wp-weight-config' | 'holiday';
+export type ConfigAuditEntityType =
+  | 'wp-weight-config'
+  | 'holiday'
+  | 'target-wp-config';
 
 // entityType is the cache-key/domain name; API_PATH is the actual URL segment
 // (e.g. 'holiday' entity → plural '/holidays' route). Keep both in sync when
@@ -12,6 +15,7 @@ export type ConfigAuditEntityType = 'wp-weight-config' | 'holiday';
 const API_PATH: Record<ConfigAuditEntityType, string> = {
   'wp-weight-config': 'wp-weight-config',
   holiday: 'holidays',
+  'target-wp-config': 'target-wp-config',
 };
 
 export interface ConfigAuditEntry<T> {

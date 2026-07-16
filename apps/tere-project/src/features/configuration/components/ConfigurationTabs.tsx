@@ -11,9 +11,10 @@ import {
 import HolidayCalendar from '@src/features/holiday-management/components/HolidayCalendar';
 import BulkInsert from '@src/features/holiday-management/components/BulkInsert';
 import HolidayListView from '@src/features/holiday-management/components/HolidayListView';
-import ComingSoon from './ComingSoon';
 import WpWeightConfigPanel from './WpWeightConfigPanel';
+import TargetWpConfigPanel from './TargetWpConfigPanel';
 import WpWeightAuditLogPanel from './WpWeightAuditLogPanel';
+import TargetWpAuditLogPanel from './TargetWpAuditLogPanel';
 import HolidayAuditLogPanel from './HolidayAuditLogPanel';
 
 const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
@@ -183,8 +184,13 @@ export default function ConfigurationTabs() {
       )}
 
       {activeTab === 'wp-weight' && <WpWeightConfigPanel />}
-      {activeTab === 'target-wp' && <ComingSoon label="Target WP Config" />}
-      {activeTab === 'audit-log' && <WpWeightAuditLogPanel />}
+      {activeTab === 'target-wp' && <TargetWpConfigPanel />}
+      {activeTab === 'audit-log' && (
+        <div className="space-y-8">
+          <WpWeightAuditLogPanel />
+          <TargetWpAuditLogPanel />
+        </div>
+      )}
     </div>
   );
 }

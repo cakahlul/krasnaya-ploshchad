@@ -55,3 +55,44 @@ Audit/changed_by test sering cuma cek "actor A creates → changed_by=A", lupa c
 B mutates (delete/update) → changed_by harus jadi B, bukan A. Contoh benar:
 `holidays-audit.contract.mjs` — Member delete holiday buatan Lead, assert changed_by=memberEmail
 bukan leadEmail. Pola ini standar tiap ada audit trail multi-actor.
+
+## [SLS-16667/16668] Derive "current/active" state by value-match against a bare endpoint, not by re-deriving from already-fetched list
+
+**Kategori**: state derivation pattern / redundant network call yang buggy.
+
+**Deskripsi**: `TargetWpConfigPanel` nentuin badge "Aktif" pakai `isActiveConfig()` — deep-equal
+`row.rates` vs response `/effective?date=today` (endpoint itu cuma return bare `rates`, tanpa
+`id`/`effective_date`). Kalau ada 2 row `rates`-nya byte-identical (past aktif vs future
+scheduled, gampang terjadi kalau reuse default value), KEDUA row ke-badge "Aktif" sekaligus —
+row future yang belum efektif pun ikut ke-badge aktif. Delete-guard ("disable delete row aktif")
+ikut kena bug yang sama karena pakai fungsi yang sama. Root cause: pilih "match-by-value ke hasil
+API kedua" padahal server-side selection logic-nya sepele (`getEffectiveRates`: baris
+`effective_date <= today` paling baru dari list yang SAMA persis dengan yang sudah difetch
+`GET /api/target-wp-config`). Sibling module `WpWeightConfigPanel` justru sudah pakai pendekatan
+benar: pure date-comparison client-side (`isFutureWibDate`), tanpa endpoint kedua tanpa
+value-match.
+
+**Cara benar**: kalau server selection logic buat "current/effective X" cuma butuh field yang
+udah ada di list yang sudah difetch (misal `effective_date <= today`, ambil terbaru), REPLIKASI
+logic itu client-side dari list yang ada (`sortedData[0]` yang lolos filter) — jangan fetch
+endpoint kedua terus value-match hasilnya ke row. Value-match cuma valid kalau field pembanding
+constraint-nya UNIK (misal id/primary key), bukan field non-unique kayak angka rate yang gampang
+duplicate. Reviewer WAJIB trace balik ke repository/service buat lihat SELECTION LOGIC asli
+sebelum approve pendekatan "badge aktif via endpoint terpisah" — kalau logic itu sepele dan
+replikatable dari data yang sudah ada di tangan FE, endpoint kedua + value-match adalah red flag.
+
+## Kategori: cek state RBAC/guard pakai `git show HEAD` doang di ronde eksekusi paralel
+
+qa-executor/reviewer verifikasi status guard route (withAuth vs withLead) cuma via
+`git show HEAD` / commit, gak cross-check working tree aktual. Di ronde eksekusi paralel,
+be-executor bisa ubah guard di file yang sama TANPA commit dulu (uncommitted working tree change)
+di ronde yang sama qa nulis test. Hasil: qa nge-flag "blocking ambiguity" yang sebenarnya udah
+resolved di kode aktual, dan biarin existing contract script (target-wp-config-audit.contract.mjs
+assert member create 201/delete 204) yang bakal break gak ke-flag sebagai regression konkret.
+
+**Cara benar**: kalau nge-cek state guard/RBAC route buat nulis test case, WAJIB Read file
+route.ts aktual di working tree (bukan git show HEAD/committed), apalagi di ronde paralel yang
+task lain masih edit file terkait. Kalau beda dari commit, itu bukan ambiguity buat di-ask — itu
+fakta baru buat resolve test expectation, dan existing script/dokumentasi (steering, contract
+script lain) yang masih rujuk state lama WAJIB ditandai regression konkret yang perlu fix, bukan
+cuma "flag, do not touch".
