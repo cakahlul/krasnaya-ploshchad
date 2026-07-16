@@ -4,9 +4,12 @@
 // Mirrors the pattern established in scripts/wp-weight-config.contract.mjs and
 // scripts/holidays-audit.contract.mjs, adapted for Target WP's specifics:
 //   - rates keys are open (not a fixed set) — only checked as plain object of numbers.
-//   - POST/DELETE are NOT Lead-gated (any signed-in user; withAuth, not withLead).
-//   - DELETE has no immutability guard — past-dated configs delete with 204, not 409.
+//   - POST/DELETE are Lead-gated (withLead) as of Phase 1 — Member gets 403 FORBIDDEN on both.
+//   - DELETE has no immutability guard — past-dated configs delete with 204, not 409 (Lead-only).
 //   - No unique constraint on effective_date — no idempotent-retry / conflict behavior to test.
+//   - Cross-actor changed_by coverage (different actor creates vs deletes) now needs two Lead
+//     identities to exercise since Member can no longer mutate; out of scope here with a single
+//     LEAD_TOKEN — changed_by-tracks-actor is still verified per single-actor create/delete below.
 //
 // Required env:
 //   BASE_URL      - e.g. http://localhost:3000
@@ -24,7 +27,7 @@ const baseUrl = required('BASE_URL').replace(/\/$/, '');
 const leadToken = required('LEAD_TOKEN');
 const memberToken = required('MEMBER_TOKEN');
 const leadEmail = decodeJwtEmail(leadToken, 'LEAD_TOKEN');
-const memberEmail = decodeJwtEmail(memberToken, 'MEMBER_TOKEN');
+decodeJwtEmail(memberToken, 'MEMBER_TOKEN'); // validated but no longer needed as a value — Member can't mutate, so changed_by never equals it
 const configPath = '/api/target-wp-config';
 const auditPath = `${configPath}/audit-log`;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -236,7 +239,7 @@ async function main() {
   status(initialAudit, 200, 'Lead audit list');
   auditPage(initialAudit.body, 'Lead audit list');
 
-  // --- POST /api/target-wp-config: NOT Lead-gated (any signed-in user) -------
+  // --- POST /api/target-wp-config: Lead-gated (withLead), Member forbidden --
   const memberDate = addDays(jakartaToday(), 3650);
   const memberRates = { junior: 10, medior: 20, senior: 30, 'individual contributor': 5 };
 
@@ -249,20 +252,22 @@ async function main() {
     'Unauthenticated create',
   );
 
-  const memberCreate = await request(configPath, {
-    method: 'POST',
-    token: memberToken,
-    body: { effective_date: memberDate, rates: memberRates },
-  });
-  status(memberCreate, 201, 'Member create');
-  config(memberCreate.body, memberDate, memberRates, 'Member create');
-  createdIds.add(memberCreate.body.id);
-  const memberCreateAudit = await findAudit(memberCreate.body.id, 'create', 'Member create audit');
-  assert.equal(memberCreateAudit.changed_by, memberEmail, 'Member create audit: changed_by must be actor email');
-  assert.equal(memberCreateAudit.old_value, null, 'Member create audit: expected null old snapshot');
-  config(memberCreateAudit.new_value, memberDate, memberRates, 'Member create audit new snapshot');
+  await expectError(
+    configPath,
+    { method: 'POST', token: memberToken, body: { effective_date: memberDate, rates: memberRates } },
+    403,
+    'FORBIDDEN',
+    null,
+    'Member create',
+  );
+  const listAfterMemberCreate = await request(configPath, { token: leadToken });
+  status(listAfterMemberCreate, 200, 'List after member create attempt');
+  assert(
+    !listAfterMemberCreate.body.some(row => row.effective_date === memberDate),
+    'List after member create attempt: must not have persisted',
+  );
 
-  // Lead can also create — verifies changed_by tracks the actual actor, not a fixed role.
+  // Lead creates — verifies changed_by tracks the actual actor.
   const leadDate = addDays(jakartaToday(), 3651);
   const leadRates = { junior: 11, medior: 21, senior: 31, 'individual contributor': 6 };
   const leadCreate = await request(configPath, {
@@ -276,16 +281,32 @@ async function main() {
   const leadCreateAudit = await findAudit(leadCreate.body.id, 'create', 'Lead create audit');
   assert.equal(leadCreateAudit.changed_by, leadEmail, 'Lead create audit: changed_by must be actor email');
 
-  // --- DELETE /api/target-wp-config/[id]: NOT Lead-gated, no immutability ----
+  // --- DELETE /api/target-wp-config/[id]: Lead-gated (withLead), no immutability ----
   await expectError(`${configPath}/${leadCreate.body.id}`, { method: 'DELETE' }, 401, null, null, 'Unauthenticated delete');
 
-  // Cross-actor delete: Member deletes the config Lead created.
-  const memberDelete = await request(`${configPath}/${leadCreate.body.id}`, { method: 'DELETE', token: memberToken });
-  status(memberDelete, 204, 'Member delete of Lead-created config');
-  assert.equal(memberDelete.body, null, 'Member delete: expected empty body');
+  // Member is forbidden from deleting — row must remain.
+  await expectError(
+    `${configPath}/${leadCreate.body.id}`,
+    { method: 'DELETE', token: memberToken },
+    403,
+    'FORBIDDEN',
+    null,
+    'Member delete of Lead-created config',
+  );
+  const listAfterMemberDelete = await request(configPath, { token: leadToken });
+  status(listAfterMemberDelete, 200, 'List after member delete attempt');
+  assert(
+    listAfterMemberDelete.body.some(row => row.id === leadCreate.body.id),
+    'List after member delete attempt: row must still exist (delete was forbidden)',
+  );
+
+  // Lead deletes their own config — verifies changed_by tracks the deleting actor.
+  const leadDelete = await request(`${configPath}/${leadCreate.body.id}`, { method: 'DELETE', token: leadToken });
+  status(leadDelete, 204, 'Lead delete of own config');
+  assert.equal(leadDelete.body, null, 'Lead delete: expected empty body');
   createdIds.delete(leadCreate.body.id);
   const deleteAudit = await findAudit(leadCreate.body.id, 'delete', 'Delete audit');
-  assert.equal(deleteAudit.changed_by, memberEmail, 'Delete audit: changed_by must be deleting actor, not creator');
+  assert.equal(deleteAudit.changed_by, leadEmail, 'Delete audit: changed_by must be deleting actor');
   config(deleteAudit.old_value, leadDate, leadRates, 'Delete audit old snapshot');
   assert.equal(deleteAudit.new_value, null, 'Delete audit: expected null new snapshot');
 
