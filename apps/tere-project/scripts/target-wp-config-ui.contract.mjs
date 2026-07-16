@@ -1,21 +1,30 @@
 #!/usr/bin/env node
 
-// Live API contract for Target WP config Phase 1 UI-adjacent, NON-audit behavior
-// (SLS-16673/16674 coverage that scripts/target-wp-config-audit.contract.mjs — SLS-16640,
-// Phase 2 — does not exercise). Mirrors the helper style of wp-weight-config.contract.mjs /
-// target-wp-config-audit.contract.mjs.
+// Live API contract for Target WP config Phase 1 + Phase 2 UI-adjacent, NON-audit-log-entry
+// behavior (SLS-16673/16674 Phase 1, SLS-16685/16686 Phase 2 Edit/PUT). Mirrors the helper
+// style of wp-weight-config.contract.mjs / target-wp-config-audit.contract.mjs.
 //
-// Covers:
+// Covers (Phase 1):
 //   - CREATE-09: rate <= 0 rejected server-side (defense-in-depth) even when bypassing the FE,
 //     for zero, negative, and a mixed dynamic-key payload where only one key is invalid.
 //   - TBL-02/TBL-04: GET /api/target-wp-config list is sorted effective_date DESC and renders
 //     arbitrary/dynamic rate keys, not just the default 4.
 //
-// Does NOT re-assert anything already covered by target-wp-config-audit.contract.mjs (audit
-// entries, cursor pagination, cross-actor changed_by, past-date delete, unknown-id delete).
+// Covers (Phase 2, see TARGET_WP_CONFIG_QA_MATRIX.md "Phase 2" section for full IDs):
+//   - EDIT-01: valid PUT /api/target-wp-config/{id} -> 200, row updated (date + rates).
+//   - EDIT-11 (EDIT-RATE-BYPASS-01..03): rate <= 0 sent directly to PUT, bypassing the FE,
+//     rejected 400 VALIDATION_ERROR, target row left unchanged.
+//   - EDIT-12 (EDIT-NOTFOUND-01): PUT to a non-existent id -> 404 NOT_FOUND.
+//   - EDIT-15 (EDIT-FORBIDDEN-01): PUT as non-Lead (Member) -> 403 FORBIDDEN, row unchanged.
 //
-// RBAC (CREATE-10/DELETE-06): POST/DELETE are withLead as of Phase 1 — non-Lead (Member) gets
-// 403 FORBIDDEN on both, same as the audit-log route. Asserted below with MEMBER_TOKEN.
+// Does NOT re-assert anything already covered by target-wp-config-audit.contract.mjs (audit
+// entries, cursor pagination, cross-actor changed_by, past-date delete, unknown-id delete) or
+// the audit-entry assertions for update (EDIT-AUDIT-01..08 — those need an entity_id known
+// ahead of the HTTP call plus DB-level absence checks; left to a target-wp-config-audit.contract
+// extension or the isolated-DB test flagged in the matrix, not duplicated here).
+//
+// RBAC (CREATE-10/DELETE-06/EDIT-15): POST/DELETE/PUT are withLead — non-Lead (Member) gets
+// 403 FORBIDDEN on all three, same as the audit-log route. Asserted below with MEMBER_TOKEN.
 //
 // Required env:
 //   BASE_URL     - e.g. http://localhost:3000
@@ -229,6 +238,119 @@ async function main() {
   assert(
     listAfterMemberDelete.body.some(row => row.id === leadRowCreate.body.id),
     'List after member delete attempt: row must still exist (delete was forbidden)',
+  );
+
+  // --- EDIT-01: valid PUT updates the target row -----------------------------------------
+  const putHappyOriginalDate = addDays(baseDate, 3740);
+  const putHappyCreate = await request(configPath, {
+    method: 'POST',
+    token: leadToken,
+    body: { effective_date: putHappyOriginalDate, rates: { junior: 3 } },
+  });
+  status(putHappyCreate, 201, 'Create row for PUT happy path');
+  createdIds.add(putHappyCreate.body.id);
+
+  const putHappyNewDate = addDays(baseDate, 3741);
+  const putHappyResult = await request(`${configPath}/${putHappyCreate.body.id}`, {
+    method: 'PUT',
+    token: leadToken,
+    body: { effective_date: putHappyNewDate, rates: { junior: 9.5 } },
+  });
+  status(putHappyResult, 200, 'PUT happy path');
+  assert.equal(putHappyResult.body.id, putHappyCreate.body.id, 'PUT happy path: id must be stable');
+  assert.equal(putHappyResult.body.effective_date, putHappyNewDate, 'PUT happy path: effective_date updated');
+  assert.deepEqual(putHappyResult.body.rates, { junior: 9.5 }, 'PUT happy path: rates updated');
+
+  const listAfterPutHappy = await request(configPath, { token: leadToken });
+  status(listAfterPutHappy, 200, 'List after PUT happy path');
+  const putHappyRow = listAfterPutHappy.body.find(row => row.id === putHappyCreate.body.id);
+  assert(putHappyRow, 'List after PUT happy path: row missing');
+  assert.equal(putHappyRow.effective_date, putHappyNewDate, 'List after PUT happy path: date not persisted');
+  assert.deepEqual(putHappyRow.rates, { junior: 9.5 }, 'List after PUT happy path: rates not persisted');
+
+  // --- EDIT-11 (EDIT-RATE-BYPASS-01..03): rate <= 0 rejected server-side on PUT ------------
+  const putBypassCreate = await request(configPath, {
+    method: 'POST',
+    token: leadToken,
+    body: { effective_date: addDays(baseDate, 3742), rates: { junior: 4, medior: 5 } },
+  });
+  status(putBypassCreate, 201, 'Create row for PUT rate-bypass checks');
+  createdIds.add(putBypassCreate.body.id);
+  const putBypassOriginal = putBypassCreate.body;
+
+  const zeroPutResult = await request(`${configPath}/${putBypassCreate.body.id}`, {
+    method: 'PUT',
+    token: leadToken,
+    body: { effective_date: putBypassOriginal.effective_date, rates: { junior: 0, medior: 5 } },
+  });
+  expectRateRejection(zeroPutResult, 'junior', 'Zero rate PUT');
+
+  const negativePutResult = await request(`${configPath}/${putBypassCreate.body.id}`, {
+    method: 'PUT',
+    token: leadToken,
+    body: { effective_date: putBypassOriginal.effective_date, rates: { junior: 4, medior: -5 } },
+  });
+  expectRateRejection(negativePutResult, 'medior', 'Negative rate PUT');
+
+  const mixedPutResult = await request(`${configPath}/${putBypassCreate.body.id}`, {
+    method: 'PUT',
+    token: leadToken,
+    body: {
+      effective_date: putBypassOriginal.effective_date,
+      rates: { lead: 10, staff: 20, intern: 0 },
+    },
+  });
+  expectRateRejection(mixedPutResult, 'intern', 'Mixed dynamic-key rate PUT');
+
+  const listAfterPutRejections = await request(configPath, { token: leadToken });
+  status(listAfterPutRejections, 200, 'List after rejected PUTs');
+  const putBypassRowAfter = listAfterPutRejections.body.find(row => row.id === putBypassCreate.body.id);
+  assert(putBypassRowAfter, 'List after rejected PUTs: row missing');
+  assert.deepEqual(
+    putBypassRowAfter.rates,
+    putBypassOriginal.rates,
+    'List after rejected PUTs: rates must be unchanged by any rejected PUT',
+  );
+  assert.equal(
+    putBypassRowAfter.effective_date,
+    putBypassOriginal.effective_date,
+    'List after rejected PUTs: effective_date must be unchanged',
+  );
+
+  // --- EDIT-12 (EDIT-NOTFOUND-01): PUT to a non-existent id -> 404 -------------------------
+  const notFoundPutResult = await request(`${configPath}/00000000-0000-4000-8000-000000000000`, {
+    method: 'PUT',
+    token: leadToken,
+    body: { effective_date: addDays(baseDate, 3743), rates: { junior: 4 } },
+  });
+  status(notFoundPutResult, 404, 'PUT unknown id');
+  assert.equal(notFoundPutResult.body?.code, 'NOT_FOUND', 'PUT unknown id: expected NOT_FOUND code');
+
+  // --- EDIT-15 (EDIT-FORBIDDEN-01): PUT as non-Lead (Member) -> 403 -----------------------
+  const putForbiddenCreate = await request(configPath, {
+    method: 'POST',
+    token: leadToken,
+    body: { effective_date: addDays(baseDate, 3744), rates: { junior: 4 } },
+  });
+  status(putForbiddenCreate, 201, 'Lead create for member-PUT-forbidden check');
+  createdIds.add(putForbiddenCreate.body.id);
+
+  const memberPutResult = await request(`${configPath}/${putForbiddenCreate.body.id}`, {
+    method: 'PUT',
+    token: memberToken,
+    body: { effective_date: addDays(baseDate, 3745), rates: { junior: 99 } },
+  });
+  status(memberPutResult, 403, 'Member PUT');
+  assert.equal(memberPutResult.body?.code, 'FORBIDDEN', 'Member PUT: expected FORBIDDEN code');
+
+  const listAfterMemberPut = await request(configPath, { token: leadToken });
+  status(listAfterMemberPut, 200, 'List after member PUT attempt');
+  const putForbiddenRowAfter = listAfterMemberPut.body.find(row => row.id === putForbiddenCreate.body.id);
+  assert(putForbiddenRowAfter, 'List after member PUT attempt: row missing');
+  assert.deepEqual(
+    putForbiddenRowAfter.rates,
+    putForbiddenCreate.body.rates,
+    'List after member PUT attempt: rates must be unchanged (PUT was forbidden)',
   );
 
   console.log('Target WP config UI (non-audit) live contract: PASS');
