@@ -57,6 +57,13 @@
       "when": 1783936730513,
       "tag": "0007_config_audit_log_widen_entity_types",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783936730514,
+      "tag": "0008_config_audit_log_allow_update",
+      "breakpoints": true
     }
   ]
 }

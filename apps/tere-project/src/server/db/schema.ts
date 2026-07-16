@@ -133,10 +133,11 @@ export const configAuditLog = pgTable('config_audit_log', {
     'config_audit_log_entity_supported',
     sql`${table.entityType} in ('wp_weight_config', 'holiday', 'target_wp_config')`,
   ),
-  check('config_audit_log_action_supported', sql`${table.action} in ('create', 'delete')`),
+  check('config_audit_log_action_supported', sql`${table.action} in ('create', 'delete', 'update')`),
   check(
     'config_audit_log_snapshot_shape',
     sql`(${table.action} = 'create' and ${table.oldValue} is null and ${table.newValue} is not null)
-      or (${table.action} = 'delete' and ${table.oldValue} is not null and ${table.newValue} is null)`,
+      or (${table.action} = 'delete' and ${table.oldValue} is not null and ${table.newValue} is null)
+      or (${table.action} = 'update' and ${table.oldValue} is not null and ${table.newValue} is not null)`,
   ),
 ]);

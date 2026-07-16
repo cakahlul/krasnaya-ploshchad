@@ -6,7 +6,7 @@ import { AUDIT_PAGE_SIZE, type AuditCursor } from './audit-cursor';
 export interface AuditLogEntry<T> {
   id: string;
   entity_id: string;
-  action: 'create' | 'delete';
+  action: 'create' | 'delete' | 'update';
   changed_by: string;
   old_value: T | null;
   new_value: T | null;

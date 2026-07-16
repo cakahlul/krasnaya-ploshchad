@@ -87,6 +87,40 @@ export class TargetWpConfigRepository {
     });
   }
 
+  async updateWithAudit(
+    id: string,
+    effective_date: string,
+    rates: TargetWpRates,
+    changedBy: string,
+  ): Promise<TargetWpConfig | null> {
+    return db.transaction(async tx => {
+      const [existing] = await tx
+        .select()
+        .from(targetWpConfig)
+        .where(eq(targetWpConfig.id, id));
+      if (!existing) return null;
+
+      const oldConfig = rowToConfig(existing);
+      const [row] = await tx
+        .update(targetWpConfig)
+        .set({ effectiveDate: effective_date, rates })
+        .where(eq(targetWpConfig.id, id))
+        .returning();
+      if (!row) return null;
+
+      const newConfig = rowToConfig(row);
+      await tx.insert(configAuditLog).values({
+        entityType: 'target_wp_config',
+        entityId: newConfig.id!,
+        action: 'update',
+        changedBy,
+        oldValue: oldConfig,
+        newValue: newConfig,
+      });
+      return newConfig;
+    });
+  }
+
   async deleteWithAudit(id: string, changedBy: string): Promise<TargetWpConfig | null> {
     return db.transaction(async tx => {
       const [row] = await tx

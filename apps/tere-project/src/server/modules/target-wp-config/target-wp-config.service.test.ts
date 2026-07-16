@@ -20,6 +20,7 @@ const repo = {
   getEffectiveRates: async () => rates,
   fetchAuditLog: async () => [],
   createWithAudit: async () => existing,
+  updateWithAudit: async () => existing,
   deleteWithAudit: async () => existing,
 };
 
@@ -123,6 +124,48 @@ async function main() {
     );
     assert.equal(calledCreate, false);
   }
+
+  let updatedArgs: unknown[] = [];
+  const updateService = new TargetWpConfigService({
+    ...repo,
+    updateWithAudit: async (id, date, r, actor) => {
+      updatedArgs = [id, date, r, actor];
+      return existing;
+    },
+  });
+  const updated = await updateService.update(existing.id, '2026-07-15', rates, 'lead@amarbank.co.id');
+  assert.equal(updated, existing);
+  assert.deepEqual(updatedArgs, [existing.id, '2026-07-15', rates, 'lead@amarbank.co.id']);
+
+  for (const badRates of [
+    { ...rates, junior: 0 },
+    { ...rates, senior: -1 },
+  ]) {
+    let calledUpdate = false;
+    await assert.rejects(
+      new TargetWpConfigService({
+        ...repo,
+        updateWithAudit: async () => {
+          calledUpdate = true;
+          return existing;
+        },
+      }).update(existing.id, '2026-07-15', badRates, 'lead@amarbank.co.id'),
+      (error: unknown) => error instanceof TargetWpConfigError
+        && error.status === 400
+        && error.code === 'VALIDATION_ERROR',
+    );
+    assert.equal(calledUpdate, false);
+  }
+
+  await assert.rejects(
+    new TargetWpConfigService({
+      ...repo,
+      updateWithAudit: async () => null,
+    }).update('missing-id', '2026-07-15', rates, 'lead@amarbank.co.id'),
+    (error: unknown) => error instanceof TargetWpConfigError
+      && error.status === 404
+      && error.code === 'NOT_FOUND',
+  );
 
   let deletedBy = '';
   const deleteService = new TargetWpConfigService({

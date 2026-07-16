@@ -11,7 +11,7 @@ import {
   InvalidAuditCursorError,
 } from '@server/modules/config-audit-log';
 
-export type TargetWpConfigErrorCode = 'VALIDATION_ERROR';
+export type TargetWpConfigErrorCode = 'VALIDATION_ERROR' | 'NOT_FOUND';
 
 export class TargetWpConfigError extends Error {
   constructor(
@@ -39,8 +39,23 @@ function decodeAuditCursor(cursor: string) {
 
 type Repository = Pick<
   TargetWpConfigRepository,
-  'createWithAudit' | 'deleteWithAudit' | 'fetchAuditLog' | 'fetchAll' | 'getEffectiveRates'
+  | 'createWithAudit'
+  | 'updateWithAudit'
+  | 'deleteWithAudit'
+  | 'fetchAuditLog'
+  | 'fetchAll'
+  | 'getEffectiveRates'
 >;
+
+function assertPositiveRates(rates: TargetWpRates): void {
+  for (const [level, rate] of Object.entries(rates)) {
+    if (!(rate > 0)) {
+      throw new TargetWpConfigError('VALIDATION_ERROR', 'rate harus > 0', 400, {
+        [level]: 'rate harus > 0',
+      });
+    }
+  }
+}
 
 export class TargetWpConfigService {
   private cache = new MemoryCache(60 * 60 * 1000); // 60 minutes
@@ -67,15 +82,24 @@ export class TargetWpConfigService {
   }
 
   async create(effective_date: string, rates: TargetWpRates, changedBy: string): Promise<TargetWpConfig> {
-    for (const [level, rate] of Object.entries(rates)) {
-      if (!(rate > 0)) {
-        throw new TargetWpConfigError('VALIDATION_ERROR', 'rate harus > 0', 400, {
-          [level]: 'rate harus > 0',
-        });
-      }
-    }
+    assertPositiveRates(rates);
     this.cache.invalidate();
     return this.repo.createWithAudit(effective_date, rates, changedBy);
+  }
+
+  async update(
+    id: string,
+    effective_date: string,
+    rates: TargetWpRates,
+    changedBy: string,
+  ): Promise<TargetWpConfig> {
+    assertPositiveRates(rates);
+    this.cache.invalidate();
+    const updated = await this.repo.updateWithAudit(id, effective_date, rates, changedBy);
+    if (!updated) {
+      throw new TargetWpConfigError('NOT_FOUND', 'target wp config not found', 404);
+    }
+    return updated;
   }
 
   async delete(id: string, changedBy: string): Promise<void> {
