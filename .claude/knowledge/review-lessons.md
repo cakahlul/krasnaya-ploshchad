@@ -141,3 +141,13 @@ ada) — widen bareng di PR yang sama, jangan biarin cuma constraint DB yang ber
 compile-time type masih bohong. Reviewer WAJIB grep literal union lama (`'create' | 'delete'` dsb)
 lintas repo (BE dan FE) begitu liat migration nambah enum value, bukan cuma cek file yang executor
 sebut di scope-nya.
+
+## Render performance / correctness — recursive tree render needs multi-node cycle guard
+- Category: render safety (client tree building)
+- Seen: epic-explorer buildTree.ts (SLS-16806). Single-node self-cycle guarded via `attached` Set, but a 2-node parentKey cycle (A→B, B→A) would attach A under B AND B under A, producing a cyclic object graph. A recursive renderer (MobileCards) over that graph infinite-loops / stack-overflows.
+- Correct way: when building a tree consumed by recursive render, guard against ALL cycles, not just self-reference — e.g. skip attaching a node under a descendant of itself, or cap render depth. (In this case source is Jira parent links which are a strict DAG, so low real-world risk — but any future tree from untrusted/loopy data must guard.)
+
+## Authz: authorize against the RESOURCE's owner, not a client-supplied scope param
+- Category: Security / Broken Access Control (OWASP A01)
+- Seen in: epic-explorer.service.getEpicDetail — access check ran on `project` query param, but the fetched resource was identified by `epicKey` (which encodes its OWN project). A caller could pass a project they DO have access to while requesting an `epicKey` from a project they do NOT, leaking the epic header (summary/description/assignee/dates).
+- Correct way: when a resource id already encodes its scope (e.g. Jira issue key `PROJ-123`), derive the scope FROM the id (`projectOf(epicKey)`) and authorize on that. Never trust a separate client-supplied scope param that can disagree with the resource id. If both are accepted, validate they match before the access check.
