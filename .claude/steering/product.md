@@ -19,6 +19,7 @@ Team managers need consolidated insights from Jira workflow data and effective t
 ## Core Features (Tere Project)
 - **Sprint Reporting**: Performance reports per sprint based on Jira issues, story points, complexity, and WP (work points) weights.
 - **Dashboard**: Aggregated team productivity metrics and visualizations.
+- **Epic Explorer**: Read-only page to pick one Jira Epic and view its metadata, full child/subtask hierarchy, and rolled-up WP/SP metrics (reuses the sprint-reporting complexity/WP strategies). RBAC: Lead + Member, project-scoped.
 - **Bug Monitoring**: Track and visualize bug trends across projects.
 - **Talent Leave Management**: Calendar view, CRUD for leave records, team grouping, weekend/holiday markers, month navigation.
 - **Holiday Management**: Configure public holidays affecting capacity calculations.

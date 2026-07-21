@@ -12,6 +12,7 @@
 |---|---|
 | Sprint reports / story-point dashboard | [Dashboard / Reports](#dashboard--reports) |
 | Sprint-over-sprint velocity trend | [Dashboard / Reports](#dashboard--reports) |
+| Pick an Epic, view its child/subtask hierarchy + rolled-up WP/SP | [Epic Explorer](#epic-explorer) |
 | Productivity Summary export | [Reports](#reports) |
 | Bug tracking and charts | [Bug Monitoring](#bug-monitoring) |
 | Public-holiday CRUD | [Holiday Management](#holiday-management) |
@@ -82,6 +83,44 @@
 ## Reports
 
 See [Dashboard / Reports](#dashboard--reports) — Reports lives in the dashboard feature module.
+
+---
+
+## Epic Explorer
+
+**Read-only page (Phase 1/MVP) to pick one Jira Epic and view its metadata + full child/subtask hierarchy + rolled-up WP/SP metrics. Reuses the existing reports complexity/WP strategies — no new metric logic.**
+
+### Page
+- `apps/tere-project/src/app/dashboard/epic-explorer/page.tsx` — `RoleBasedRoute`-gated (Lead + Member); route `/dashboard/epic-explorer`
+
+### Feature module (frontend)
+- `apps/tere-project/src/features/epic-explorer/`
+  - `components/` — `ProjectSelect.tsx`, `EpicSearch.tsx`, `EpicInfoCard.tsx`, `HierarchyTree.tsx`, `DescendantDetail.tsx`, `MetricsPanel.tsx`, `StatusBadge.tsx`, `StateViews.tsx`
+  - `hooks/useEpicExplorer.ts`
+  - `store/explorerStore.ts` — Zustand (selected project/epic/descendant)
+  - `api/epic-explorer.api.ts` — client API wrapper; `api/explorerError.ts` — error mapping
+  - `types/epic-explorer.types.ts`
+  - `utils/buildTree.ts` (+ `buildTree.test.ts`), `utils/format.ts`
+
+### API routes
+- `GET /api/report/epics` → `apps/tere-project/src/app/api/report/epics/route.ts` — **shared with Dashboard/Reports; MODIFIED**: added a project-wide epic-list branch (returns `ExplorerEpicListItem[]`) when called with no sprint/date params
+- `GET /api/report/epics/[key]` → `apps/tere-project/src/app/api/report/epics/[key]/route.ts` — epic detail + hierarchy + metrics (`EpicDetailResponse`)
+
+### Server module
+- `apps/tere-project/src/server/modules/reports/` (shares the reports module — no separate module)
+  - `epic-explorer.service.ts` — detail assembly + project-level authz (via `members.teams`) + `EpicExplorerError`
+  - `epic-explorer.metrics.ts` (+ `epic-explorer.metrics.test.ts`) — descendant build + WP/SP roll-up via `strategies/` `issueProcessingStrategyFactory` + `wpWeightConfigService`
+  - `reports.repository.ts` — **MODIFIED**: added `fetchProjectEpics`, `fetchIssueByKey`, `fetchEpicWithDescendants` (BFS)
+
+### Shared types
+- `apps/tere-project/src/shared/types/report.types.ts` — **MODIFIED**: Explorer contract types (`ExplorerEpicListItem`, `EpicDetailResponse`, `ExplorerDescendant`, `ExplorerMetrics`, etc.)
+
+### Sidebar
+- `apps/tere-project/src/components/sidebar.tsx` — **MODIFIED**: added Epic Explorer `menuItems` entry + `IconEpicExplorer`
+
+### Notes
+- **RBAC**: Lead + Member. Project-level scope enforced server-side in `epic-explorer.service.ts` against the caller's `members.teams`.
+- **No new server module**: Epic Explorer lives inside the existing `reports` module and reuses its complexity/WP strategies (`strategies/`) and `wpWeightConfigService` — do not duplicate metric logic.
 
 ---
 

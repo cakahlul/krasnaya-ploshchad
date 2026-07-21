@@ -59,6 +59,28 @@ function IconTeamReporting({ color }: { color: string }) {
   );
 }
 
+function IconEpicExplorer({ color }: { color: string }) {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke={color}
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="6" cy="4" r="2" />
+      <circle cx="14" cy="10" r="2" />
+      <circle cx="6" cy="16" r="2" />
+      <path d="M6 6v8" />
+      <path d="M6 10h6" />
+      <path d="M12 10h0" />
+    </svg>
+  );
+}
+
 function IconProductivity({ color }: { color: string }) {
   return (
     <svg
@@ -207,6 +229,12 @@ const menuItems: MenuItem[] = [
     key: '/dashboard/reports',
     label: 'Team Reporting',
     icon: c => <IconTeamReporting color={c} />,
+    roles: ['Lead', 'Member'],
+  },
+  {
+    key: '/dashboard/epic-explorer',
+    label: 'Epic Explorer',
+    icon: c => <IconEpicExplorer color={c} />,
     roles: ['Lead', 'Member'],
   },
   {
