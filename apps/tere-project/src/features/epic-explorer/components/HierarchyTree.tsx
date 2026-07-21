@@ -1,15 +1,14 @@
 'use client';
 
 import { useMemo, useState, type KeyboardEvent } from 'react';
-import { Table } from 'antd';
-import type { ColumnsType } from 'antd/es/table';
-import { useMediaQuery } from 'react-responsive';
+import { Modal } from 'antd';
 import { useThemeColors } from '@src/hooks/useTheme';
 import type { ExplorerDescendant } from '../types/epic-explorer.types';
 import { buildTree } from '../utils/buildTree';
 import { flattenTree, type FlatRow } from '../utils/flattenTree';
 import { StatusBadge } from './StatusBadge';
 import { spOrNA, num } from '../utils/format';
+import { issueTypeStyle } from '../utils/issueTypeStyle';
 import DescendantDetail from './DescendantDetail';
 import DescendantControls from './DescendantControls';
 import {
@@ -21,10 +20,8 @@ import {
 } from '../utils/filterSort';
 
 const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
-const INDENT = 16;
-const TABLE_Y = 560; // fixed viewport height — antd `virtual` requires scroll.y
-const TABLE_X = 1000; // sum of column widths — antd `virtual` requires scroll.x
-const MOBILE_PAGE = 50; // Load-more chunk / initial cap
+const INDENT = 22;
+const PAGE = 60; // windowed render chunk / initial cap (perf on big trees)
 
 function activate(e: KeyboardEvent, fn: () => void) {
   if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
@@ -34,17 +31,16 @@ function activate(e: KeyboardEvent, fn: () => void) {
 }
 
 /**
- * Descendant hierarchy (SLS-16806, virtualized in SLS-16902). filter+sort and
- * tree-build run over the WHOLE fetched array; only the RENDER is windowed.
+ * Descendant hierarchy — colorful card tree (replaces the monotone antd Table).
+ * filter+sort and tree-build run over the WHOLE fetched array; only the RENDER
+ * is windowed (PAGE-sized slice + Load-more), so large epics stay fast.
  * Pipeline: filterSortDescendants(full) → buildTree(filtered) →
- * flattenTree(roots, expandedKeys) → windowed render (desktop antd virtual
- * Table / mobile flat cards + Load-more). antd's own expandable/nested tree
- * does NOT work with `virtual`, so the FLAT rows ARE the tree (indent via
- * `depth`, own caret cell toggling a local expandedKeys set).
+ * flattenTree(roots, expandedKeys) → windowed card render. Each row is an issue
+ * card with a type-colored accent bar, glyph, WP/SP pills and a status badge;
+ * clicking a card opens the detail Modal.
  *
- * INVARIANT: the roll-up metrics panel + authz "N hidden" note + "Showing X of
- * Y" upstream stay bound to the FULL `descendants` — the windowed/filtered view
- * is never fed to them.
+ * INVARIANT: the roll-up metrics panel + authz "N hidden" note stay bound to the
+ * FULL `descendants` — the windowed/filtered view is never fed to them.
  */
 export default function HierarchyTree({
   descendants,
@@ -54,20 +50,14 @@ export default function HierarchyTree({
   epicKey: string;
 }) {
   const c = useThemeColors();
-  const isMobile = useMediaQuery({ maxWidth: 767 });
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   // Local-only state (NOT Zustand / URL / query key) — filtering never refetches.
   const [filters, setFilters] = useState<DescendantFilters>(DEFAULT_FILTERS);
   const [sort, setSort] = useState<SortSpec>(DEFAULT_SORT);
-  // Track COLLAPSED keys (empty default = everything expanded, matching the
-  // previous always-expanded behavior). New/filtered rows default to expanded
-  // without extra bookkeeping.
+  // Track COLLAPSED keys (empty default = everything expanded).
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-  const [mobileVisible, setMobileVisible] = useState(MOBILE_PAGE);
+  const [visible, setVisible] = useState(PAGE);
 
-  // Filtered/sorted view of the ALREADY-fetched set. The roll-up summary + authz
-  // "N items hidden" note upstream stay bound to the FULL `descendants` and are
-  // never fed this array — only the tree render consumes it.
   const filtered = useMemo(
     () => filterSortDescendants(descendants, filters, sort, epicKey),
     [descendants, filters, sort, epicKey],
@@ -75,7 +65,6 @@ export default function HierarchyTree({
 
   const roots = useMemo(() => buildTree(filtered, epicKey), [filtered, epicKey]);
 
-  // Positive expanded set derived from the collapsed set over the visible keys.
   const expandedKeys = useMemo(() => {
     const s = new Set<string>();
     for (const d of filtered) if (!collapsed.has(d.key)) s.add(d.key);
@@ -97,168 +86,138 @@ export default function HierarchyTree({
       return next;
     });
 
-  const caret = (row: FlatRow) => {
-    if (!row.hasChildren) {
-      return <span aria-hidden style={{ display: 'inline-block', width: 20 }} />;
-    }
-    return (
-      <button
-        type="button"
-        data-qa="explorer-hierarchy-row-toggle"
-        aria-label={`${row.isExpanded ? 'Collapse' : 'Expand'} ${row.node.key}`}
-        aria-expanded={row.isExpanded}
-        onClick={e => {
-          e.stopPropagation(); // do not also select the row
-          toggle(row.node.key);
-        }}
-        onKeyDown={e => {
-          // caret handles its own Enter/Space — stop the row's select handler.
-          if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') e.stopPropagation();
-        }}
-        style={{
-          width: 20,
-          height: 20,
-          padding: 0,
-          border: 'none',
-          background: 'transparent',
-          cursor: 'pointer',
-          color: c.rowCol,
-          fontSize: 11,
-          lineHeight: '20px',
-        }}
-      >
-        {row.isExpanded ? '▾' : '▸'}
-      </button>
-    );
-  };
-
-  const columns: ColumnsType<FlatRow> = [
-    {
-      title: 'Key',
-      dataIndex: ['node', 'key'],
-      width: 240,
-      render: (_, row) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, paddingLeft: row.depth * INDENT }}>
-          {caret(row)}
-          <span>{row.node.key}</span>
-        </div>
-      ),
-    },
-    { title: 'Summary', dataIndex: ['node', 'summary'], width: 360, ellipsis: true },
-    { title: 'Type', dataIndex: ['node', 'issueType'], width: 110 },
-    {
-      title: 'Status',
-      width: 150,
-      render: (_, row) => <StatusBadge status={row.node.status} category={row.node.statusCategory} />,
-    },
-    { title: 'WP', width: 70, render: (_, row) => num(row.node.weightPoint) },
-    { title: 'SP', width: 70, render: (_, row) => spOrNA(row.node.storyPoint) },
-  ];
-
-  const detail = selected ? (
-    <div style={{ marginTop: 16 }}>
-      <DescendantDetail item={selected} />
-    </div>
-  ) : null;
-
-  const controls = (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
-      <DescendantControls
-        descendants={descendants}
-        filters={filters}
-        sort={sort}
-        onFiltersChange={setFilters}
-        onSortChange={setSort}
-      />
-      {/* Filter-result count — distinct from the roll-up summary, which counts the FULL set. */}
-      <span
-        data-qa="explorer-filter-count"
-        role="status"
-        aria-live="polite"
-        style={{ fontSize: 12, fontWeight: 600, color: c.subCol, fontFamily: sans }}
-      >
-        Showing {filtered.length} of {descendants.length}
-      </span>
-    </div>
-  );
-
-  if (isMobile) {
-    const shown = flatRows.slice(0, mobileVisible);
-    return (
-      <div>
-        {controls}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {shown.map(row => (
-            <MobileCard
-              key={row.node.key}
-              row={row}
-              selected={row.node.key === selectedKey}
-              onSelect={setSelectedKey}
-              onToggle={toggle}
-              c={c}
-            />
-          ))}
-        </div>
-        {mobileVisible < flatRows.length && (
-          <button
-            type="button"
-            data-qa="explorer-hierarchy-load-more"
-            onClick={() => setMobileVisible(v => v + MOBILE_PAGE)}
-            style={{
-              marginTop: 12,
-              width: '100%',
-              padding: '10px 12px',
-              borderRadius: 10,
-              border: `1px solid ${c.cardBrd}`,
-              background: c.cardBg,
-              color: c.rowCol,
-              fontFamily: sans,
-              fontWeight: 700,
-              fontSize: 12.5,
-              cursor: 'pointer',
-            }}
-          >
-            Load more ({flatRows.length - mobileVisible} remaining)
-          </button>
-        )}
-        {detail}
-      </div>
-    );
-  }
+  const shown = flatRows.slice(0, visible);
 
   return (
-    <div className="tere-table">
-      {controls}
-      <Table<FlatRow>
-        virtual
-        scroll={{ y: TABLE_Y, x: TABLE_X }}
-        columns={columns}
-        dataSource={flatRows}
-        rowKey={row => row.node.key}
-        pagination={false}
-        size="small"
+    <div style={{ fontFamily: sans }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+        <DescendantControls
+          descendants={descendants}
+          filters={filters}
+          sort={sort}
+          onFiltersChange={setFilters}
+          onSortChange={setSort}
+        />
+        <span
+          data-qa="explorer-filter-count"
+          role="status"
+          aria-live="polite"
+          style={{ fontSize: 12, fontWeight: 600, color: c.subCol }}
+        >
+          Showing {filtered.length} of {descendants.length}
+        </span>
+      </div>
+
+      <div
+        role="tree"
         aria-label="Epic child issue hierarchy"
-        aria-rowcount={flatRows.length}
-        onRow={(record, index) => ({
-          role: 'button',
-          tabIndex: 0,
-          'aria-rowindex': (index ?? 0) + 1,
-          'aria-label': `${record.node.key}: ${record.node.summary}. ${record.node.status}`,
-          'aria-pressed': record.node.key === selectedKey,
-          style: {
+        style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+      >
+        {shown.map(row => (
+          <IssueCard
+            key={row.node.key}
+            row={row}
+            selected={row.node.key === selectedKey}
+            onSelect={setSelectedKey}
+            onToggle={toggle}
+            c={c}
+          />
+        ))}
+      </div>
+
+      {visible < flatRows.length && (
+        <button
+          type="button"
+          data-qa="explorer-hierarchy-load-more"
+          onClick={() => setVisible(v => v + PAGE)}
+          style={{
+            marginTop: 12,
+            width: '100%',
+            padding: '11px 12px',
+            borderRadius: 12,
+            border: `1px dashed ${c.cardBrd}`,
+            background: c.headBg,
+            color: c.accent,
+            fontFamily: sans,
+            fontWeight: 700,
+            fontSize: 12.5,
             cursor: 'pointer',
-            background: record.node.key === selectedKey ? c.headBg : undefined,
-          },
-          onClick: () => setSelectedKey(record.node.key),
-          onKeyDown: (e: KeyboardEvent) => activate(e, () => setSelectedKey(record.node.key)),
-        })}
-      />
-      {detail}
+          }}
+        >
+          Load more ({flatRows.length - visible} remaining)
+        </button>
+      )}
+
+      <Modal
+        open={!!selected}
+        onCancel={() => setSelectedKey(null)}
+        footer={null}
+        width={520}
+        title={null}
+        styles={{ body: { padding: 0 } }}
+        destroyOnClose
+      >
+        {selected && <DescendantDetail item={selected} />}
+      </Modal>
     </div>
   );
 }
 
-function MobileCard({
+function Assignee({ name, c }: { name: string | null; c: ReturnType<typeof useThemeColors> }) {
+  const label = name && name.trim() !== '' ? name : 'Unassigned';
+  const initial = name && name.trim() !== '' ? name.trim()[0].toUpperCase() : '?';
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 2, minWidth: 0 }}>
+      <span
+        aria-hidden
+        style={{
+          width: 16,
+          height: 16,
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 999,
+          background: name ? c.accent : c.iconBg,
+          color: name ? '#fff' : c.subCol,
+          fontSize: 9,
+          fontWeight: 700,
+        }}
+      >
+        {initial}
+      </span>
+      <span style={{ fontSize: 11, color: c.subCol, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {label}
+      </span>
+    </span>
+  );
+}
+
+function Pill({ label, value, tone, c }: { label: string; value: React.ReactNode; tone: string; c: ReturnType<typeof useThemeColors> }) {
+  return (
+    <span
+      title={label}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'baseline',
+        gap: 4,
+        padding: '2px 8px',
+        borderRadius: 999,
+        background: c.iconBg,
+        border: `1px solid ${c.cardBrd}`,
+        fontSize: 11,
+        fontWeight: 700,
+        color: tone,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <span style={{ fontSize: 9, fontWeight: 600, opacity: 0.7, color: c.subCol }}>{label}</span>
+      {value}
+    </span>
+  );
+}
+
+function IssueCard({
   row,
   selected,
   onSelect,
@@ -272,60 +231,127 @@ function MobileCard({
   c: ReturnType<typeof useThemeColors>;
 }) {
   const node = row.node;
+  const ts = issueTypeStyle(node.issueType, c);
+
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-label={`${node.key}: ${node.summary}. ${node.status}`}
-      aria-pressed={selected}
-      onClick={() => onSelect(node.key)}
-      onKeyDown={e => activate(e, () => onSelect(node.key))}
-      style={{
-        marginLeft: row.depth * INDENT,
-        background: selected ? c.headBg : c.cardBg,
-        border: `1px solid ${c.cardBrd}`,
-        borderRadius: 10,
-        padding: '10px 12px',
-        cursor: 'pointer',
-        fontFamily: sans,
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {row.hasChildren && (
-            <button
-              type="button"
-              data-qa="explorer-hierarchy-row-toggle"
-              aria-label={`${row.isExpanded ? 'Collapse' : 'Expand'} ${node.key}`}
-              aria-expanded={row.isExpanded}
-              onClick={e => {
-                e.stopPropagation();
-                onToggle(node.key);
-              }}
-              onKeyDown={e => {
-                if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') e.stopPropagation();
-              }}
-              style={{
-                width: 20,
-                height: 20,
-                padding: 0,
-                border: 'none',
-                background: 'transparent',
-                cursor: 'pointer',
-                color: c.rowCol,
-                fontSize: 11,
-              }}
-            >
-              {row.isExpanded ? '▾' : '▸'}
-            </button>
-          )}
-          <span style={{ fontSize: 12, fontWeight: 700, color: c.rowCol }}>{node.key}</span>
+    <div style={{ display: 'flex', alignItems: 'stretch', marginLeft: row.depth * INDENT }}>
+      {/* Connector guide for nested rows */}
+      {row.depth > 0 && (
+        <span
+          aria-hidden
+          style={{ width: 12, marginRight: 6, borderLeft: `2px solid ${c.cardBrd}`, borderBottom: `2px solid ${c.cardBrd}`, borderBottomLeftRadius: 8, marginTop: -4, marginBottom: 18 }}
+        />
+      )}
+
+      <div
+        role="treeitem"
+        aria-level={row.depth + 1}
+        aria-expanded={row.hasChildren ? row.isExpanded : undefined}
+        aria-selected={selected}
+        tabIndex={0}
+        aria-label={`${node.key}: ${node.summary}. ${node.status}`}
+        onClick={() => onSelect(node.key)}
+        onKeyDown={e => activate(e, () => onSelect(node.key))}
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          minWidth: 0,
+          padding: '10px 14px',
+          borderRadius: 12,
+          background: selected ? ts.bg : c.cardBg,
+          // Per-side borders so the accent left bar is NEVER clobbered by a
+          // borderColor hover mutation (that bug made the color vanish on hover).
+          borderTop: `1px solid ${selected ? ts.accent : c.cardBrd}`,
+          borderRight: `1px solid ${selected ? ts.accent : c.cardBrd}`,
+          borderBottom: `1px solid ${selected ? ts.accent : c.cardBrd}`,
+          borderLeft: `4px solid ${ts.accent}`,
+          cursor: 'pointer',
+          transition: 'transform 0.12s ease, box-shadow 0.12s ease',
+          boxShadow: selected ? `0 4px 16px -6px ${ts.accent}66` : 'none',
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.transform = 'translateY(-1px)';
+          e.currentTarget.style.boxShadow = `0 6px 18px -8px ${ts.accent}55`;
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = selected ? `0 4px 16px -6px ${ts.accent}66` : 'none';
+        }}
+      >
+        {/* Expand caret */}
+        {row.hasChildren ? (
+          <button
+            type="button"
+            data-qa="explorer-hierarchy-row-toggle"
+            aria-label={`${row.isExpanded ? 'Collapse' : 'Expand'} ${node.key}`}
+            aria-expanded={row.isExpanded}
+            onClick={e => {
+              e.stopPropagation();
+              onToggle(node.key);
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') e.stopPropagation();
+            }}
+            style={{
+              width: 22,
+              height: 22,
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 6,
+              border: 'none',
+              background: c.iconBg,
+              cursor: 'pointer',
+              color: c.rowCol,
+              fontSize: 11,
+              transition: 'transform 0.15s ease',
+              transform: row.isExpanded ? 'rotate(90deg)' : 'none',
+            }}
+          >
+            ▸
+          </button>
+        ) : (
+          <span aria-hidden style={{ width: 22, flexShrink: 0 }} />
+        )}
+
+        {/* Type glyph chip */}
+        <span
+          aria-hidden
+          style={{
+            width: 30,
+            height: 30,
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 8,
+            background: ts.bg,
+            fontSize: 15,
+          }}
+        >
+          {ts.glyph}
         </span>
-        <StatusBadge status={node.status} category={node.statusCategory} />
-      </div>
-      <div style={{ fontSize: 12.5, color: c.rowCol, marginTop: 4 }}>{node.summary}</div>
-      <div style={{ fontSize: 11, color: c.subCol, marginTop: 4 }}>
-        {node.issueType} · WP {num(node.weightPoint)} · SP {spOrNA(node.storyPoint)}
+
+        {/* Key + summary + assignee */}
+        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1, gap: 1 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: ts.accent, letterSpacing: 0.2 }}>
+            {node.key}
+          </span>
+          <span style={{ fontSize: 13, color: c.rowCol, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {node.summary || '—'}
+          </span>
+          <Assignee name={node.assignee} c={c} />
+        </div>
+
+        {/* Metrics + status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <Pill label="WP" value={num(node.weightPoint)} tone={c.rowCol} c={c} />
+          <Pill label="SP" value={spOrNA(node.storyPoint)} tone={c.rowCol} c={c} />
+          <StatusBadge status={node.status} category={node.statusCategory} />
+        </div>
       </div>
     </div>
   );

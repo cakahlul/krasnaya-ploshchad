@@ -56,7 +56,12 @@ export interface JiraFieldEntity {
   customfield_11444: JiraCustomFieldEntity;
   customfield_11312: JiraCustomFieldEntity;
   customfield_11543: JiraCustomFieldEntity[];
-  /** Sprint field: array of sprint objects, chronological (Jira appends). */
+  /**
+   * Sprint field: array of sprint objects, chronological (Jira appends).
+   * On THIS Jira instance the active sprint field is `customfield_10007`
+   * (verified against live data); `customfield_10020` is always undefined here.
+   */
+  customfield_10007?: Array<{ name?: string; state?: string }>;
   customfield_10020?: Array<{ name?: string; state?: string }>;
   issuetype: JiraIssueTypeEntity;
   created?: string;
@@ -235,10 +240,16 @@ export interface ExplorerEpicInfo {
   status: string;
   statusCategory: string;
   assignee: string | null;
-  /** Plain text only — ADF sanitized server-side, never HTML. */
-  description: string | null;
+  /**
+   * Raw Jira description: ADF document (object) or plain string, passthrough.
+   * NEVER rendered via dangerouslySetInnerHTML — the client walks the ADF tree
+   * into React elements (see features/epic-explorer/utils/adfToReact.tsx).
+   */
+  description: unknown;
   created: string | null;
   updated: string | null;
+  /** Active sprint name; null = "No Sprint". Same resolution as ExplorerDescendant.sprint. */
+  sprint: string | null;
 }
 
 /** 'product' | 'techDebt' — derived from the issue categorizer. */
@@ -270,6 +281,8 @@ export interface ExplorerDescendant {
   missingMetricData: boolean;
   /** Active sprint name; null = "No Sprint". Resolution: active state, else last element, else null. */
   sprint: string | null;
+  /** Raw Jira description: ADF document (object) or plain string, passthrough. See ExplorerEpicInfo.description. */
+  description: unknown;
   /** ISO 8601, passthrough of Jira fields.updated ('' if absent). */
   updatedAt: string;
 }

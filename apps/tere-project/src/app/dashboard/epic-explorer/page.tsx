@@ -13,6 +13,7 @@ import {
 import { errorStatus, errorMessage } from '@src/features/epic-explorer/api/explorerError';
 import ProjectSelect from '@src/features/epic-explorer/components/ProjectSelect';
 import EpicSearch from '@src/features/epic-explorer/components/EpicSearch';
+import '@src/features/dashboard/components/FilterReport.css';
 import EpicInfoCard from '@src/features/epic-explorer/components/EpicInfoCard';
 import MetricsPanel from '@src/features/epic-explorer/components/MetricsPanel';
 import HierarchyTree from '@src/features/epic-explorer/components/HierarchyTree';
@@ -106,24 +107,58 @@ function DetailArea() {
 }
 
 function ExplorerContent() {
-  const { titleCol, subCol } = useThemeColors();
+  const { titleCol, subCol, statusPurpleBg, statusPurpleBrd } = useThemeColors();
+  const project = useExplorerStore(s => s.project);
+  const epicKey = useExplorerStore(s => s.epicKey);
   useExplorerUrlSync();
 
   return (
     <div className="p-6 tere-table tere-tabs tere-input">
       <div className="max-w-6xl mx-auto">
-        <div style={{ marginBottom: 18 }}>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: titleCol, margin: 0, fontFamily: sans, letterSpacing: -0.3 }}>
-            Epic Explorer
-          </h2>
-          <p style={{ color: subCol, margin: '4px 0 0', fontSize: 12.5, fontFamily: sans }}>
-            Inspect an epic&apos;s child hierarchy and rolled-up metrics
-          </p>
+        <div style={{ marginBottom: 18, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span
+            aria-hidden
+            style={{
+              width: 44,
+              height: 44,
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 12,
+              background: statusPurpleBg,
+              border: `1px solid ${statusPurpleBrd}`,
+              fontSize: 22,
+            }}
+          >
+            🧭
+          </span>
+          <div>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: titleCol, margin: 0, fontFamily: sans, letterSpacing: -0.3 }}>
+              Epic Explorer
+            </h2>
+            <p style={{ color: subCol, margin: '4px 0 0', fontSize: 12.5, fontFamily: sans }}>
+              Inspect an epic&apos;s child hierarchy and rolled-up metrics
+            </p>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
-          <ProjectSelect />
-          <EpicSearch />
+        <div className="filter-bar">
+          <div className="filter-bar__row">
+            <ProjectSelect />
+            <div className="filter-bar__divider" />
+            <EpicSearch />
+          </div>
+          <div className="filter-bar__hint">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
+            </svg>
+            {!project
+              ? 'Select a project to begin'
+              : !epicKey
+                ? 'Select an epic to view its hierarchy and metrics'
+                : `Exploring ${epicKey}`}
+          </div>
         </div>
 
         <DetailArea />

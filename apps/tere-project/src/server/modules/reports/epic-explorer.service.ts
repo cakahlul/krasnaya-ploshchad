@@ -15,13 +15,14 @@ import type {
 import type { CallerIdentity } from '@server/auth/with-auth-or-api-key';
 import { membersService } from '@server/modules/members/members.service';
 import { wpWeightConfigService } from '@server/modules/wp-weight-config/wp-weight-config.service';
+import { targetWpConfigService } from '@server/modules/target-wp-config/target-wp-config.service';
 import { todayInWib } from '@server/modules/wp-weight-config/wp-weight-config-date';
 import * as repo from './reports.repository';
 import {
   buildDescendant,
   rollupMetrics,
   resolveStatusCategory,
-  adfToPlainText,
+  resolveSprint,
 } from './epic-explorer.metrics';
 
 export class EpicExplorerError extends Error {
@@ -98,9 +99,10 @@ function toEpicInfo(epic: JiraIssueEntity): ExplorerEpicInfo {
     status: epic.fields.status?.name ?? 'Unknown',
     statusCategory: resolveStatusCategory(epic).name,
     assignee: epic.fields.assignee?.displayName ?? null,
-    description: adfToPlainText(epic.fields.description),
+    description: epic.fields.description ?? null,
     created: epic.fields.created ?? null,
     updated: epic.fields.updated ?? null,
+    sprint: resolveSprint(epic.fields.customfield_10007),
   };
 }
 
@@ -152,6 +154,7 @@ export async function getEpicDetail(
 
   const effectiveDate = todayInWib();
   const weights = await wpWeightConfigService.getEffectiveWeights(effectiveDate);
+  const dailyTargetWPByLevel = await targetWpConfigService.getEffectiveRates(effectiveDate);
 
   const allMembers = await membersService.findAll();
   const rosterAccountIds = new Set(
@@ -160,9 +163,21 @@ export async function getEpicDetail(
       .filter((id): id is string => !!id)
       .map(id => id.toLowerCase()),
   );
+  // SP fallback (customfield_10005 empty) needs the assignee's level-based daily
+  // rate — same source Team Reporting uses (targetWpConfigService), keyed by accountId.
+  const dailyRateByAccountId = new Map(
+    allMembers
+      .filter((m): m is typeof m & { jiraId: string } => !!m.jiraId)
+      .map(m => [m.jiraId.toLowerCase(), dailyTargetWPByLevel[m.level] ?? 8]),
+  );
 
   const descendants: ExplorerDescendant[] = visible.map(issue =>
-    buildDescendant(issue, weights, rosterAccountIds),
+    buildDescendant(
+      issue,
+      weights,
+      rosterAccountIds,
+      dailyRateByAccountId.get(issue.fields.assignee?.accountId?.toLowerCase() ?? '') ?? 8,
+    ),
   );
 
   return {

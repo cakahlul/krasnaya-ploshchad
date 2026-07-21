@@ -2,8 +2,11 @@
  * Epic Explorer metrics roll-up (SLS-16808) — pure functions, no DB/network.
  *
  * WP + meeting SP are derived by REUSING `issueProcessingStrategyFactory`
- * (appendix weights via `wpWeights`), never hand-rolled. Story Points use the
- * raw Jira field (customfield_10005), roster-gated by the caller.
+ * (appendix weights via `wpWeights`), never hand-rolled. Story Points prefer
+ * the raw Jira field (customfield_10005) when Jira has it populated; when
+ * absent, fall back to Team Reporting's own WP→SP conversion
+ * (`weightPoint * (8 / dailyRate)`, mirroring reports.service.ts's `spBase`)
+ * so tickets with no raw SP field still get a derived value instead of N/A.
  */
 import type {
   JiraIssueEntity,
@@ -70,11 +73,15 @@ export function resolveSprint(sprints: Array<{ name?: string; state?: string }> 
  * Builds the public descendant row for one issue.
  * @param rosterAccountIds lowercase Jira accountIds of roster members; storyPoint
  *   is null (N/A) when the assignee is unassigned or not on the roster.
+ * @param dailyRate the assignee's level-based daily target WP (Team Reporting's
+ *   `dailyTargetWPByLevel[level]`, default 8), used only as the SP fallback
+ *   when Jira's customfield_10005 is empty.
  */
 export function buildDescendant(
   issue: JiraIssueEntity,
   wpWeights: WpWeights | undefined,
   rosterAccountIds: Set<string>,
+  dailyRate = 8,
 ): ExplorerDescendant {
   const strategies = issueProcessingStrategyFactory.createStrategies(issue, wpWeights);
   const { name: statusCategory } = resolveStatusCategory(issue);
@@ -105,8 +112,18 @@ export function buildDescendant(
   const rawSp = issue.fields.customfield_10005;
   // Meeting SP flows via spMeeting/extractMeetingSP; excluding it here prevents
   // a meeting ticket with customfield_10005 double-counting into product/techDebt.
+  // spBase mirrors reports.service.ts: (8 * workingDays) / (dailyRate * workingDays) = 8 / dailyRate.
+  // Fallback only when there IS a weightPoint — a ticket with neither raw SP nor
+  // WP data stays N/A (null), not a misleading 0.
+  const spBase = dailyRate > 0 ? 8 / dailyRate : 0;
   const storyPoint =
-    attributable && !isMeeting && typeof rawSp === 'number' ? rawSp : null;
+    !attributable || isMeeting
+      ? null
+      : typeof rawSp === 'number'
+        ? rawSp
+        : weightPoint > 0
+          ? round2(weightPoint * spBase)
+          : null;
 
   const issueTypeName = issue.fields.issuetype?.name ?? 'Unknown';
   const isDefect = issueTypeName === 'Defect' || issueTypeName === 'Bug';
@@ -128,7 +145,8 @@ export function buildDescendant(
     spMeeting: round2(spMeeting),
     isDefect,
     missingMetricData,
-    sprint: resolveSprint(issue.fields.customfield_10020),
+    sprint: resolveSprint(issue.fields.customfield_10007),
+    description: issue.fields.description ?? null,
     updatedAt: issue.fields.updated ?? '',
   };
 }
@@ -211,41 +229,4 @@ export function rollupMetrics(descendants: ExplorerDescendant[]): ExplorerMetric
     missingMetricCount: missingMetricData.length,
     missingMetricData,
   };
-}
-
-/** ADF (Atlassian Document Format) or plain string → plain text. */
-export function adfToPlainText(description: unknown): string | null {
-  if (description == null) return null;
-  if (typeof description === 'string') return description.trim() || null;
-  if (typeof description !== 'object') return null;
-
-  const blocks: string[] = [];
-  const walk = (node: unknown, buf: string[]): void => {
-    if (!node || typeof node !== 'object') return;
-    const n = node as { type?: string; text?: string; content?: unknown[] };
-    if (n.type === 'text' && typeof n.text === 'string') buf.push(n.text);
-    if (n.type === 'hardBreak') buf.push('\n');
-    if (Array.isArray(n.content)) {
-      // Block-level nodes flush to their own line.
-      const isBlock =
-        n.type === 'paragraph' ||
-        n.type === 'heading' ||
-        n.type === 'listItem' ||
-        n.type === 'blockquote' ||
-        n.type === 'codeBlock';
-      if (isBlock) {
-        const inner: string[] = [];
-        n.content.forEach(c => walk(c, inner));
-        const line = inner.join('').trim();
-        if (line) blocks.push(line);
-      } else {
-        n.content.forEach(c => walk(c, buf));
-      }
-    }
-  };
-  const root: string[] = [];
-  walk(description, root);
-  if (root.length) blocks.push(root.join('').trim());
-  const text = blocks.filter(Boolean).join('\n').trim();
-  return text || null;
 }

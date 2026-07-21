@@ -95,12 +95,13 @@ See [Dashboard / Reports](#dashboard--reports) — Reports lives in the dashboar
 
 ### Feature module (frontend)
 - `apps/tere-project/src/features/epic-explorer/`
-  - `components/` — `ProjectSelect.tsx`, `EpicSearch.tsx`, `EpicInfoCard.tsx`, `HierarchyTree.tsx`, `DescendantDetail.tsx`, `MetricsPanel.tsx`, `StatusBadge.tsx`, `StateViews.tsx`
+  - `components/` — `ProjectSelect.tsx`, `EpicSearch.tsx`, `EpicInfoCard.tsx` (gradient type-accent header), `HierarchyTree.tsx` (**colorful card tree — NOT an antd Table**: type-colored accent cards, glyph chips, WP/SP pills, expand carets, connector guides; windowed via PAGE-sized slice + Load-more, no `react-responsive`/virtual Table; clicking a card opens the detail antd `Modal`), `DescendantDetail.tsx` (rendered inside the Modal, type-accent header), `MetricsPanel.tsx` (per-metric colored stat tiles), `StatusBadge.tsx`, `StateViews.tsx`
   - `hooks/useEpicExplorer.ts`
   - `store/explorerStore.ts` — Zustand (selected project/epic/descendant)
   - `api/epic-explorer.api.ts` — client API wrapper; `api/explorerError.ts` — error mapping
   - `types/epic-explorer.types.ts`
-  - `utils/buildTree.ts` (+ `buildTree.test.ts`), `utils/flattenTree.ts` (+ `flattenTree.test.ts`) — pre-order DFS flatten of the tree into visible rows for the antd virtual Table (SLS-16901), `utils/format.ts`, `utils/explorerParams.ts` (+ `explorerParams.test.ts`) — deep-link URL⇄state param mapping (SLS-16894)
+  - `utils/buildTree.ts` (+ `buildTree.test.ts`), `utils/flattenTree.ts` (+ `flattenTree.test.ts`) — pre-order DFS flatten of the tree into visible rows for the antd virtual Table (SLS-16901), `utils/format.ts`, `utils/explorerParams.ts` (+ `explorerParams.test.ts`) — deep-link URL⇄state param mapping (SLS-16894), `utils/adfToReact.tsx` — Jira ADF (Atlassian Document Format) → React renderer for descriptions (`AdfDescription`, `hasDescription`); walks the ADF tree into React elements, NEVER `dangerouslySetInnerHTML` (link hrefs scheme-checked); used by `EpicInfoCard`/`DescendantDetail`. `utils/issueTypeStyle.ts` — maps Jira issue type → `{accent,bg,glyph,label}` from the theme status palette (Epic/Story/Task/Sub-task/Bug); drives the colorful hierarchy cards + detail header
+  - `components/FrSelect.tsx` — generic single-select on the shared `.fr-select` CSS (dashboard `FilterReport.css`); replaced all antd `Select`/`Input.Search` in the filter controls for visual parity with Team Reporting
 
 ### API routes
 - `GET /api/report/epics` → `apps/tere-project/src/app/api/report/epics/route.ts` — **shared with Dashboard/Reports; MODIFIED**: added a project-wide epic-list branch (returns `ExplorerEpicListItem[]`) when called with no sprint/date params
@@ -108,12 +109,12 @@ See [Dashboard / Reports](#dashboard--reports) — Reports lives in the dashboar
 
 ### Server module
 - `apps/tere-project/src/server/modules/reports/` (shares the reports module — no separate module)
-  - `epic-explorer.service.ts` — detail assembly + project-level authz (via `members.teams`) + `EpicExplorerError`
-  - `epic-explorer.metrics.ts` (+ `epic-explorer.metrics.test.ts`) — descendant build + WP/SP roll-up via `strategies/` `issueProcessingStrategyFactory` + `wpWeightConfigService`
-  - `reports.repository.ts` — **MODIFIED**: added `fetchProjectEpics`, `fetchIssueByKey`, `fetchEpicWithDescendants` (BFS)
+  - `epic-explorer.service.ts` — detail assembly + project-level authz (via `members.teams`) + `EpicExplorerError`. Fetches `wpWeightConfigService` weights AND `targetWpConfigService.getEffectiveRates(todayInWib())` (`dailyTargetWPByLevel`), builds an `accountId → dailyRate` map from `members` (level → rate), passes each descendant's assignee rate into `buildDescendant` for the SP fallback. `description` (epic + descendant) passed through RAW (ADF object/string) — no longer server-flattened.
+  - `epic-explorer.metrics.ts` (+ `epic-explorer.metrics.test.ts`) — descendant build + WP/SP roll-up via `strategies/` `issueProcessingStrategyFactory` + `wpWeightConfigService`. **SP**: prefers raw `customfield_10005`; when absent, falls back to Team Reporting's WP→SP conversion `round2(weightPoint * (8 / dailyRate))` (spBase, mirrors `reports.service.ts`), guarded on `weightPoint > 0` so no-data tickets stay N/A. `adfToPlainText` REMOVED (description now rendered client-side, not flattened).
+  - `reports.repository.ts` — **MODIFIED**: added `fetchProjectEpics`, `fetchIssueByKey`, `fetchEpicWithDescendants` (BFS). `DESCENDANT_FIELDS` + `EPIC_FIELDS` += `description` and `customfield_10007` (**sprint field on this Jira instance — verified live; `customfield_10020` is always undefined here**).
 
 ### Shared types
-- `apps/tere-project/src/shared/types/report.types.ts` — **MODIFIED**: Explorer contract types (`ExplorerEpicListItem`, `EpicDetailResponse`, `ExplorerDescendant`, `ExplorerMetrics`, etc.)
+- `apps/tere-project/src/shared/types/report.types.ts` — **MODIFIED**: Explorer contract types (`ExplorerEpicListItem`, `EpicDetailResponse`, `ExplorerDescendant`, `ExplorerMetrics`, etc.). `ExplorerEpicInfo` += `sprint: string | null`; `description` on both `ExplorerEpicInfo` + `ExplorerDescendant` is now `unknown` (raw ADF/string passthrough, rendered client-side) — was `string | null` (server-flattened plain text).
 
 ### Sidebar
 - `apps/tere-project/src/components/sidebar.tsx` — **MODIFIED**: added Epic Explorer `menuItems` entry + `IconEpicExplorer`

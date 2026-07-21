@@ -11,7 +11,6 @@ import {
   rollupMetrics,
   resolveStatusCategory,
   resolveSprint,
-  adfToPlainText,
 } from './epic-explorer.metrics';
 
 const WEIGHTS: WpWeights = { 'Very Low': 1, Low: 2, Medium: 4, High: 8 };
@@ -123,18 +122,43 @@ assert.equal(empty.storyPoint.total, null);
 assert.equal(empty.completionByCount.percent, 0);
 assert.equal(empty.composition.productPercent, 0);
 
-// ── adfToPlainText ────────────────────────────────────────────────────────────
-assert.equal(adfToPlainText(null), null);
-assert.equal(adfToPlainText('  hi  '), 'hi');
-assert.equal(adfToPlainText(''), null);
-const adf = {
-  type: 'doc',
-  content: [
-    { type: 'paragraph', content: [{ type: 'text', text: 'Line one' }] },
-    { type: 'paragraph', content: [{ type: 'text', text: 'Line ' }, { type: 'text', text: 'two' }] },
-  ],
-};
-assert.equal(adfToPlainText(adf), 'Line one\nLine two');
+// ── SP fallback: raw customfield_10005 wins; else weightPoint * (8/dailyRate) ──
+// raw SP present → used as-is regardless of dailyRate
+const rawWins = buildDescendant(
+  issue({ customfield_11543: [{ value: 'ALL-High' }] as never, customfield_10005: 5 }),
+  WEIGHTS,
+  ROSTER,
+  4, // dailyRate ignored when raw SP present
+);
+assert.equal(rawWins.storyPoint, 5, 'raw SP wins over fallback');
+// raw SP absent, roster assignee → fallback WP * (8/dailyRate); High=8, dailyRate=8 → 8
+const fallbackDefault = buildDescendant(
+  issue({ customfield_11543: [{ value: 'ALL-High' }] as never, customfield_10005: undefined }),
+  WEIGHTS,
+  ROSTER,
+);
+assert.equal(fallbackDefault.storyPoint, 8, 'no raw SP → WP*(8/8)=8 at default rate');
+// dailyRate=4 (junior-ish) → 8 * (8/4) = 16
+const fallbackJunior = buildDescendant(
+  issue({ customfield_11543: [{ value: 'ALL-High' }] as never, customfield_10005: undefined }),
+  WEIGHTS,
+  ROSTER,
+  4,
+);
+assert.equal(fallbackJunior.storyPoint, 16, 'no raw SP → WP*(8/4)=16');
+// non-roster → still null even with fallback available
+const fallbackNonRoster = buildDescendant(
+  issue({ assignee: { accountId: 'acc-other' } as never, customfield_11543: [{ value: 'ALL-High' }] as never }),
+  WEIGHTS,
+  ROSTER,
+  4,
+);
+assert.equal(fallbackNonRoster.storyPoint, null, 'non-roster → null even with fallback');
+
+// ── description passthrough (raw ADF/string, NOT flattened server-side) ───────
+const adfDoc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'hi' }] }] };
+assert.deepEqual(buildDescendant(issue({ description: adfDoc }), WEIGHTS, ROSTER).description, adfDoc, 'ADF passed through raw');
+assert.equal(buildDescendant(issue({ description: undefined }), WEIGHTS, ROSTER).description, null, 'absent description → null');
 
 // ── resolveSprint: active → last element → null (SLS-16893) ───────────────────
 // (1) active state wins even when not last
@@ -157,7 +181,7 @@ assert.equal(resolveSprint(undefined), null, 'absent → null');
 // buildDescendant wires sprint + updatedAt passthrough
 const withSprint = buildDescendant(
   issue({
-    customfield_10020: [{ name: 'Past', state: 'closed' }, { name: 'Current', state: 'active' }] as never,
+    customfield_10007: [{ name: 'Past', state: 'closed' }, { name: 'Current', state: 'active' }] as never,
     updated: '2026-07-21T10:00:00.000+0700',
   }),
   WEIGHTS,

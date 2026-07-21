@@ -6,14 +6,32 @@ import { spOrNA, num, pct, ratioPct } from '../utils/format';
 
 const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
 
-function Stat({ label, value }: { label: string; value: React.ReactNode }) {
+function Stat({
+  label,
+  value,
+  accent,
+  bg,
+}: {
+  label: string;
+  value: React.ReactNode;
+  accent?: string;
+  bg?: string;
+}) {
   const c = useThemeColors();
   return (
-    <div style={{ background: c.headBg, border: `1px solid ${c.cardBrd}`, borderRadius: 10, padding: '10px 12px' }}>
+    <div
+      style={{
+        background: bg ?? c.headBg,
+        border: `1px solid ${c.cardBrd}`,
+        borderLeft: `3px solid ${accent ?? c.accent}`,
+        borderRadius: 10,
+        padding: '10px 12px',
+      }}
+    >
       <div style={{ fontSize: 10.5, fontWeight: 600, color: c.subCol, textTransform: 'uppercase', letterSpacing: 0.3 }}>
         {label}
       </div>
-      <div style={{ fontSize: 16, fontWeight: 700, color: c.titleCol, marginTop: 3 }}>{value}</div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: accent ?? c.titleCol, marginTop: 3 }}>{value}</div>
     </div>
   );
 }
@@ -49,14 +67,16 @@ export default function MetricsPanel({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
         <Stat
           label="Completion (by count)"
+          accent={c.statusSuccess}
+          bg={c.statusSuccessBg}
           value={`${pct(metrics.completionByCount?.percent)} (${num(metrics.completionByCount?.done)}/${num(metrics.completionByCount?.total)})`}
         />
-        <Stat label="WP total" value={num(wp?.total)} />
-        <Stat label="WP product / tech-debt" value={`${num(wp?.product)} / ${num(wp?.techDebt)}`} />
-        <Stat label="SP total" value={spOrNA(sp?.total)} />
-        <Stat label="SP product / tech-debt" value={`${spOrNA(sp?.product)} / ${spOrNA(sp?.techDebt)}`} />
-        <Stat label="SP meeting" value={spOrNA(sp?.meeting)} />
-        <Stat label="Defects" value={num(metrics.defectCount)} />
+        <Stat label="WP total" accent={c.statusPurple} bg={c.statusPurpleBg} value={num(wp?.total)} />
+        <Stat label="WP product / tech-debt" accent={c.statusPurple} value={`${num(wp?.product)} / ${num(wp?.techDebt)}`} />
+        <Stat label="SP total" accent={c.statusInfo} bg={c.statusInfoBg} value={spOrNA(sp?.total)} />
+        <Stat label="SP product / tech-debt" accent={c.statusInfo} value={`${spOrNA(sp?.product)} / ${spOrNA(sp?.techDebt)}`} />
+        <Stat label="SP meeting" accent={c.statusOrange} bg={c.statusOrangeBg} value={spOrNA(sp?.meeting)} />
+        <Stat label="Defects" accent={c.statusDanger} bg={c.statusDangerBg} value={num(metrics.defectCount)} />
       </div>
 
       {/* Composition */}
