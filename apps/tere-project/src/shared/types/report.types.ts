@@ -37,9 +37,18 @@ export interface JiraParentEntity {
   };
 }
 
+export interface JiraStatusEntity {
+  name: string;
+  statusCategory?: {
+    key?: string;
+    name?: string;
+    colorName?: string;
+  };
+}
+
 export interface JiraFieldEntity {
   summary: string;
-  customfield_10005: number;
+  customfield_10005?: number;
   customfield_10865: JiraCustomFieldEntity;
   assignee: JiraAssigneeEntity;
   customfield_10796: JiraCustomFieldEntity;
@@ -49,8 +58,12 @@ export interface JiraFieldEntity {
   customfield_11543: JiraCustomFieldEntity[];
   issuetype: JiraIssueTypeEntity;
   created?: string;
+  updated?: string;
   resolutiondate?: string;
   resolution?: { name: string };
+  status?: JiraStatusEntity;
+  /** ADF document (Atlassian Document Format) or plain string; sanitized to text before exposure. */
+  description?: unknown;
   parent?: JiraParentEntity;
 }
 
@@ -198,4 +211,136 @@ export interface GetReportResponseDto {
   sprintEndDate?: string;
   sprintName?: string;
   sprintId?: number;
+}
+
+// ── Epic Explorer (SLS-16795 / Epic SLS-16789) ───────────────────────────────
+// Canonical FE/BE contract for the Epic Explorer feature. FE imports from here.
+
+/** GET /api/report/epics?project=KEY (no sprint/date) → 200 ExplorerEpicListItem[] */
+export interface ExplorerEpicListItem {
+  key: string;
+  summary: string;
+  /** Jira status name, e.g. "In Progress". */
+  status: string;
+  /** Jira status category NAME: 'To Do' | 'In Progress' | 'Done'. */
+  statusCategory: string;
+}
+
+/** Epic header info for the detail response (description already sanitized to plain text). */
+export interface ExplorerEpicInfo {
+  key: string;
+  summary: string;
+  status: string;
+  statusCategory: string;
+  assignee: string | null;
+  /** Plain text only — ADF sanitized server-side, never HTML. */
+  description: string | null;
+  created: string | null;
+  updated: string | null;
+}
+
+/** 'product' | 'techDebt' — derived from the issue categorizer. */
+export type ExplorerCategory = 'product' | 'techDebt';
+
+/** A descendant issue under the epic (whole hierarchy). */
+export interface ExplorerDescendant {
+  key: string;
+  summary: string;
+  issueType: string;
+  status: string;
+  statusCategory: string;
+  assignee: string | null;
+  assigneeAccountId: string | null;
+  /** Direct parent issue key (epic key for top-level children). */
+  parentKey: string | null;
+  /** Appendix WP level 'Very Low'|'Low'|'Medium'|'High', or null (meeting / no data). */
+  appendixLevel: string | null;
+  category: ExplorerCategory;
+  /** Weight Points for this issue (meeting tickets contribute 0). */
+  weightPoint: number;
+  isMeeting: boolean;
+  /** Raw Jira Story Points; null = N/A (unassigned or non-roster assignee, or no SP field). */
+  storyPoint: number | null;
+  /** Meeting Story Points (from ALL-Meeting appendix). */
+  spMeeting: number;
+  isDefect: boolean;
+  /** true when the issue has no WP appendix data (customfield_11543 empty). */
+  missingMetricData: boolean;
+}
+
+/** Weight Point roll-up (numeric legs, 0 allowed). */
+export interface ExplorerWeightPoint {
+  product: number;
+  techDebt: number;
+  total: number;
+}
+
+/** Story Point roll-up; any leg null = N/A (no attributable data). */
+export interface ExplorerStoryPoint {
+  product: number | null;
+  techDebt: number | null;
+  meeting: number | null;
+  total: number | null;
+}
+
+export interface ExplorerStatusCounts {
+  toDo: number;
+  inProgress: number;
+  done: number;
+}
+
+export interface ExplorerCompletionByCount {
+  done: number;
+  total: number;
+  percent: number;
+}
+
+export interface ExplorerComposition {
+  productPercent: number;
+  techDebtPercent: number;
+}
+
+export interface ExplorerCoverage {
+  withMetricData: number;
+  total: number;
+}
+
+/** Aggregate metrics for the epic's (accessible) descendant tree. */
+export interface ExplorerMetrics {
+  statusCounts: ExplorerStatusCounts;
+  completionByCount: ExplorerCompletionByCount;
+  weightPoint: ExplorerWeightPoint;
+  storyPoint: ExplorerStoryPoint;
+  composition: ExplorerComposition;
+  defectCount: number;
+  coverage: ExplorerCoverage;
+  missingMetricCount: number;
+  /** Keys of descendants missing WP appendix data. */
+  missingMetricData: string[];
+}
+
+/** Visibility info: descendants hidden because caller can't access their project. */
+export interface ExplorerAuthz {
+  hiddenCount: number;
+  totalFetched: number;
+}
+
+/** WP weight config applied when computing the metrics. */
+export interface ExplorerWpConfig {
+  effectiveDate: string;
+  weights: Record<string, number>;
+}
+
+/** GET /api/report/epics/[key]?project=KEY → 200 */
+export interface EpicDetailResponse {
+  epic: ExplorerEpicInfo;
+  descendants: ExplorerDescendant[];
+  metrics: ExplorerMetrics;
+  authz: ExplorerAuthz;
+  wpConfig: ExplorerWpConfig;
+}
+
+/** Error body for both Epic Explorer endpoints. */
+export interface ExplorerErrorBody {
+  message: string;
 }

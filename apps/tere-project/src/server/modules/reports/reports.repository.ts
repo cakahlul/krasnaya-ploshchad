@@ -108,6 +108,54 @@ export async function fetchOpenSprintData(project: string, assignees: string[], 
   return paginate(jql, REPORT_FIELDS);
 }
 
+// ── Epic Explorer (SLS-16802) ────────────────────────────────────────────────
+// Descendant tree: NOT assignee-filtered. Includes `status` for status roll-up;
+// epic header additionally needs description/created/updated.
+const DESCENDANT_FIELDS = `${REPORT_FIELDS},status`;
+const EPIC_FIELDS = `${REPORT_FIELDS},status,description,created,updated`;
+
+/** Project-wide epic list (NOT assignee-filtered). */
+export async function fetchProjectEpics(project: string): Promise<JiraIssueEntity[]> {
+  const jql = `${buildProjectFilter(project)} AND issuetype = Epic ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
+  return paginate(jql, 'summary,status');
+}
+
+/** Fetch a single issue by key. Returns null on empty result. Propagates Jira errors. */
+export async function fetchIssueByKey(key: string): Promise<JiraIssueEntity | null> {
+  const jql = `issuekey = ${key}`;
+  const issues = await paginate(jql, EPIC_FIELDS);
+  return issues[0] ?? null;
+}
+
+/**
+ * Fetch an epic plus its FULL descendant tree (all levels) via BFS on `parent`.
+ * NOT assignee-filtered. Dedupes by key. Propagates Jira errors to the caller.
+ */
+export async function fetchEpicWithDescendants(
+  epicKey: string,
+): Promise<{ epic: JiraIssueEntity | null; descendants: JiraIssueEntity[] }> {
+  const epic = await fetchIssueByKey(epicKey);
+  if (!epic) return { epic: null, descendants: [] };
+
+  const byKey = new Map<string, JiraIssueEntity>();
+  let frontier = [epicKey];
+  while (frontier.length > 0) {
+    // ponytail: single `parent in (...)` per BFS level — JQL clause has a width
+    // ceiling (~1k terms / URL length). Fine for real epic breadth; if a level's
+    // frontier ever exceeds it, chunk `frontier` into batches and merge results.
+    const jql = `parent in (${frontier.join(',')}) ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
+    const children = await paginate(jql, DESCENDANT_FIELDS);
+    const next: string[] = [];
+    for (const child of children) {
+      if (child.key === epicKey || byKey.has(child.key)) continue;
+      byKey.set(child.key, child);
+      next.push(child.key);
+    }
+    frontier = next;
+  }
+  return { epic, descendants: Array.from(byKey.values()) };
+}
+
 export async function fetchPlannedWPData(project: string, assignees: string[], sprint: string, isSubtaskType?: boolean): Promise<JiraIssueEntity[]> {
   if (assignees.length === 0) return [];
   const sprintIds = sprint.split(',').map(s => s.trim()).filter(Boolean);
