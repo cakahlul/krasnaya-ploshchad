@@ -56,6 +56,17 @@ function extractMeetingSP(
 }
 
 /**
+ * Resolves the "current" sprint name from Jira's customfield_10020 array.
+ * Priority: sprint with state==='active' → last element (Jira appends
+ * chronologically) → null ("No Sprint"). NOT [0] (that is the oldest).
+ */
+export function resolveSprint(sprints: Array<{ name?: string; state?: string }> | undefined): string | null {
+  if (!sprints || sprints.length === 0) return null;
+  const active = sprints.find(s => s?.state === 'active');
+  return (active ?? sprints[sprints.length - 1])?.name ?? null;
+}
+
+/**
  * Builds the public descendant row for one issue.
  * @param rosterAccountIds lowercase Jira accountIds of roster members; storyPoint
  *   is null (N/A) when the assignee is unassigned or not on the roster.
@@ -117,6 +128,8 @@ export function buildDescendant(
     spMeeting: round2(spMeeting),
     isDefect,
     missingMetricData,
+    sprint: resolveSprint(issue.fields.customfield_10020),
+    updatedAt: issue.fields.updated ?? '',
   };
 }
 

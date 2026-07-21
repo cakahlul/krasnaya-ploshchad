@@ -56,6 +56,8 @@ export interface JiraFieldEntity {
   customfield_11444: JiraCustomFieldEntity;
   customfield_11312: JiraCustomFieldEntity;
   customfield_11543: JiraCustomFieldEntity[];
+  /** Sprint field: array of sprint objects, chronological (Jira appends). */
+  customfield_10020?: Array<{ name?: string; state?: string }>;
   issuetype: JiraIssueTypeEntity;
   created?: string;
   updated?: string;
@@ -266,6 +268,10 @@ export interface ExplorerDescendant {
   isDefect: boolean;
   /** true when the issue has no WP appendix data (customfield_11543 empty). */
   missingMetricData: boolean;
+  /** Active sprint name; null = "No Sprint". Resolution: active state, else last element, else null. */
+  sprint: string | null;
+  /** ISO 8601, passthrough of Jira fields.updated ('' if absent). */
+  updatedAt: string;
 }
 
 /** Weight Point roll-up (numeric legs, 0 allowed). */
