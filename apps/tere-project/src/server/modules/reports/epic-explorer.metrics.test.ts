@@ -10,6 +10,7 @@ import {
   buildDescendant,
   rollupMetrics,
   resolveStatusCategory,
+  resolveSprint,
   adfToPlainText,
 } from './epic-explorer.metrics';
 
@@ -134,5 +135,39 @@ const adf = {
   ],
 };
 assert.equal(adfToPlainText(adf), 'Line one\nLine two');
+
+// ── resolveSprint: active → last element → null (SLS-16893) ───────────────────
+// (1) active state wins even when not last
+assert.equal(
+  resolveSprint([{ name: 'S1', state: 'closed' }, { name: 'S2', state: 'active' }, { name: 'S3', state: 'future' }]),
+  'S2',
+  'active sprint wins',
+);
+// (2) no active → LAST element (Jira appends chronologically), NOT [0]
+assert.equal(
+  resolveSprint([{ name: 'Old', state: 'closed' }, { name: 'Newer', state: 'closed' }]),
+  'Newer',
+  'no active → last element',
+);
+assert.equal(resolveSprint([{ name: 'Only', state: 'closed' }]), 'Only', 'single closed → that name');
+// (3) empty / absent → null
+assert.equal(resolveSprint([]), null, 'empty → null');
+assert.equal(resolveSprint(undefined), null, 'absent → null');
+
+// buildDescendant wires sprint + updatedAt passthrough
+const withSprint = buildDescendant(
+  issue({
+    customfield_10020: [{ name: 'Past', state: 'closed' }, { name: 'Current', state: 'active' }] as never,
+    updated: '2026-07-21T10:00:00.000+0700',
+  }),
+  WEIGHTS,
+  ROSTER,
+);
+assert.equal(withSprint.sprint, 'Current');
+assert.equal(withSprint.updatedAt, '2026-07-21T10:00:00.000+0700', 'updatedAt raw passthrough');
+// no sprint field + no updated → null sprint, '' updatedAt
+const bare = buildDescendant(issue({}), WEIGHTS, ROSTER);
+assert.equal(bare.sprint, null);
+assert.equal(bare.updatedAt, '', 'absent updated → empty string');
 
 console.log('epic-explorer.metrics self-check: PASS');

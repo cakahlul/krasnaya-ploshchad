@@ -1,9 +1,15 @@
 'use client';
 
+import { Suspense } from 'react';
+import { Button } from 'antd';
+import { ReloadOutlined } from '@ant-design/icons';
 import RoleBasedRoute from '@src/components/RoleBasedRoute';
 import { useThemeColors } from '@src/hooks/useTheme';
 import { useExplorerStore } from '@src/features/epic-explorer/store/explorerStore';
-import { useEpicDetail } from '@src/features/epic-explorer/hooks/useEpicExplorer';
+import {
+  useEpicDetail,
+  useExplorerUrlSync,
+} from '@src/features/epic-explorer/hooks/useEpicExplorer';
 import { errorStatus, errorMessage } from '@src/features/epic-explorer/api/explorerError';
 import ProjectSelect from '@src/features/epic-explorer/components/ProjectSelect';
 import EpicSearch from '@src/features/epic-explorer/components/EpicSearch';
@@ -26,7 +32,7 @@ function DetailArea() {
   const epicKey = useExplorerStore(s => s.epicKey);
   const c = useThemeColors();
 
-  const { data, isLoading, isError, error, isFetching } = useEpicDetail(project, epicKey);
+  const { data, isLoading, isError, error, isFetching, refetch } = useEpicDetail(project, epicKey);
 
   if (!project || !epicKey) {
     return (
@@ -36,9 +42,10 @@ function DetailArea() {
     );
   }
 
+  let body: React.ReactNode;
   if (isLoading || isFetching) {
-    return (
-      <div style={{ marginTop: 16 }} aria-busy="true">
+    body = (
+      <div aria-busy="true">
         {[160, 120, 240].map((h, i) => (
           <div
             key={i}
@@ -48,61 +55,89 @@ function DetailArea() {
         ))}
       </div>
     );
-  }
-
-  // Error branching strictly on HTTP status — never on empty body (SLS-16813).
-  if (isError) {
+  } else if (isError) {
+    // Error branching strictly on HTTP status — never on empty body (SLS-16813).
     const status = errorStatus(error);
-    if (status === 401) return <Unauthorized />;
-    if (status === 403) return <NoAccess />;
-    if (status === 404) return <NotFound />;
-    if (status === 502) return <JiraError detail={errorMessage(error)} />;
-    return <JiraError detail={errorMessage(error)} />;
+    if (status === 401) body = <Unauthorized />;
+    else if (status === 403) body = <NoAccess />;
+    else if (status === 404) body = <NotFound />;
+    else if (status === 502) body = <JiraError detail={errorMessage(error)} />;
+    else body = <JiraError detail={errorMessage(error)} />;
+  } else if (!data) {
+    body = <JiraError />;
+  } else {
+    // 200 with no descendants is a real, distinct state — not an error.
+    const isEmpty = (data.descendants?.length ?? 0) === 0;
+    body = (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <EpicInfoCard epic={data.epic} />
+        {data.authz?.hiddenCount > 0 && <PartialAuthzNote hiddenCount={data.authz.hiddenCount} />}
+        <MetricsPanel metrics={data.metrics} wpConfig={data.wpConfig} />
+        {isEmpty ? (
+          <EmptyEpic />
+        ) : (
+          <HierarchyTree descendants={data.descendants} epicKey={data.epic.key} />
+        )}
+      </div>
+    );
   }
 
-  if (!data) return <JiraError />;
+  // Toolbar stays mounted across loading/error/success so the refresh button
+  // shows its spinner while isFetching (SLS-16896 / FR-08). Double-click safe:
+  // React Query dedupes concurrent fetches by the detail query key, and the
+  // button is disabled while loading.
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <Button
+          data-qa="explorer-refresh"
+          aria-label="Refresh epic detail"
+          icon={<ReloadOutlined />}
+          loading={isFetching}
+          onClick={() => refetch()}
+          size="small"
+        >
+          Refresh
+        </Button>
+      </div>
+      {body}
+    </div>
+  );
+}
 
-  // 200 with no descendants is a real, distinct state — not an error.
-  const isEmpty = (data.descendants?.length ?? 0) === 0;
+function ExplorerContent() {
+  const { titleCol, subCol } = useThemeColors();
+  useExplorerUrlSync();
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16 }}>
-      <EpicInfoCard epic={data.epic} />
-      {data.authz?.hiddenCount > 0 && <PartialAuthzNote hiddenCount={data.authz.hiddenCount} />}
-      <MetricsPanel metrics={data.metrics} wpConfig={data.wpConfig} />
-      {isEmpty ? (
-        <EmptyEpic />
-      ) : (
-        <HierarchyTree descendants={data.descendants} epicKey={data.epic.key} />
-      )}
+    <div className="p-6 tere-table tere-tabs tere-input">
+      <div className="max-w-6xl mx-auto">
+        <div style={{ marginBottom: 18 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: titleCol, margin: 0, fontFamily: sans, letterSpacing: -0.3 }}>
+            Epic Explorer
+          </h2>
+          <p style={{ color: subCol, margin: '4px 0 0', fontSize: 12.5, fontFamily: sans }}>
+            Inspect an epic&apos;s child hierarchy and rolled-up metrics
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
+          <ProjectSelect />
+          <EpicSearch />
+        </div>
+
+        <DetailArea />
+      </div>
     </div>
   );
 }
 
 export default function EpicExplorerPage() {
-  const { titleCol, subCol } = useThemeColors();
-
   return (
     <RoleBasedRoute allowedRoles={['Lead', 'Member']}>
-      <div className="p-6 tere-table tere-tabs tere-input">
-        <div className="max-w-6xl mx-auto">
-          <div style={{ marginBottom: 18 }}>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: titleCol, margin: 0, fontFamily: sans, letterSpacing: -0.3 }}>
-              Epic Explorer
-            </h2>
-            <p style={{ color: subCol, margin: '4px 0 0', fontSize: 12.5, fontFamily: sans }}>
-              Inspect an epic&apos;s child hierarchy and rolled-up metrics
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
-            <ProjectSelect />
-            <EpicSearch />
-          </div>
-
-          <DetailArea />
-        </div>
-      </div>
+      <Suspense fallback={null}>
+        <ExplorerContent />
+      </Suspense>
     </RoleBasedRoute>
   );
 }

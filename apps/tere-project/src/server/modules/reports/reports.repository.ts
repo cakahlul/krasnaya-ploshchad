@@ -111,7 +111,7 @@ export async function fetchOpenSprintData(project: string, assignees: string[], 
 // ── Epic Explorer (SLS-16802) ────────────────────────────────────────────────
 // Descendant tree: NOT assignee-filtered. Includes `status` for status roll-up;
 // epic header additionally needs description/created/updated.
-const DESCENDANT_FIELDS = `${REPORT_FIELDS},status`;
+const DESCENDANT_FIELDS = `${REPORT_FIELDS},status,updated,customfield_10020`;
 const EPIC_FIELDS = `${REPORT_FIELDS},status,description,created,updated`;
 
 /** Project-wide epic list (NOT assignee-filtered). */
