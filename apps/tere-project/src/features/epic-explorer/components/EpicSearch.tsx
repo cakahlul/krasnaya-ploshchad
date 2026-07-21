@@ -1,10 +1,10 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Select } from 'antd';
 import { useExplorerStore } from '../store/explorerStore';
 import { useEpicList } from '../hooks/useEpicExplorer';
 import { errorStatus } from '../api/explorerError';
+import { FrSelect } from './FrSelect';
 
 const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
 
@@ -47,26 +47,31 @@ export default function EpicSearch() {
   }
 
   return (
-    <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontFamily: sans }}>
-      <span style={{ fontSize: 12, fontWeight: 600, opacity: 0.7 }}>Epic</span>
-      <Select
+    <div className="filter-bar__group" style={{ fontFamily: sans }}>
+      <label className="filter-bar__label">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12">
+          <path d="M15.98 1.804a1 1 0 00-1.96 0l-.24 1.192a1 1 0 01-.784.785l-1.192.238a1 1 0 000 1.962l1.192.238a1 1 0 01.785.785l.238 1.192a1 1 0 001.962 0l.238-1.192a1 1 0 01.785-.785l1.192-.238a1 1 0 000-1.962l-1.192-.238a1 1 0 01-.785-.785l-.238-1.192zM6.949 5.684a1 1 0 00-1.898 0l-.683 2.051a1 1 0 01-.633.633l-2.051.683a1 1 0 000 1.898l2.051.684a1 1 0 01.633.632l.683 2.051a1 1 0 001.898 0l.683-2.051a1 1 0 01.633-.633l2.051-.683a1 1 0 000-1.898l-2.051-.683a1 1 0 01-.633-.633L6.95 5.684z" />
+        </svg>
+        Epic
+      </label>
+      <FrSelect
         aria-label="Search and select epic"
         placeholder={disabled ? 'Select a project first' : 'Search epic by key or name'}
         disabled={disabled}
         loading={isLoading}
         value={epicKey ?? undefined}
-        onChange={val => setEpicKey(val ?? null)}
+        onChange={val => setEpicKey(val)}
         options={options}
-        style={{ minWidth: 340 }}
+        minWidth={340}
         showSearch
-        optionFilterProp="label"
-        notFoundContent={isLoading ? 'Loading…' : 'No epics found'}
+        allowClear
+        notFoundContent="No epics found"
       />
       {listError && (
         <span role="status" aria-live="polite" style={{ fontSize: 11.5, color: '#ef4444' }}>
           {listError}
         </span>
       )}
-    </label>
+    </div>
   );
 }

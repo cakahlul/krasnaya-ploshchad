@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Input, Select } from 'antd';
 import type { ExplorerDescendant } from '../types/epic-explorer.types';
 import {
   deriveFilterOptions,
@@ -10,6 +9,8 @@ import {
   type SortSpec,
   type SortKey,
 } from '../utils/filterSort';
+import { FrSelect } from './FrSelect';
+import '@src/features/dashboard/components/FilterReport.css';
 
 const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
 
@@ -25,8 +26,8 @@ const SORT_LABELS: Record<SortKey, string> = {
 /** Labelled control wrapper. `data-qa` lands on a queryable DOM element. */
 function Field({ label, qa, children }: { label: string; qa: string; children: React.ReactNode }) {
   return (
-    <label data-qa={qa} style={{ display: 'flex', flexDirection: 'column', gap: 4, fontFamily: sans }}>
-      <span style={{ fontSize: 12, fontWeight: 600, opacity: 0.7 }}>{label}</span>
+    <label data-qa={qa} className="filter-bar__group" style={{ fontFamily: sans }}>
+      <span className="filter-bar__label">{label}</span>
       {children}
     </label>
   );
@@ -61,107 +62,106 @@ export default function DescendantControls({
   ];
 
   return (
-    <div
-      role="group"
-      aria-label="Filter and sort child issues"
-      style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}
-    >
+    <div role="group" aria-label="Filter and sort child issues" className="filter-bar">
+      <div className="filter-bar__row">
       <Field label="Search" qa="explorer-filter-search">
-        <Input.Search
+        <input
+          type="text"
           aria-label="Search by key or summary"
-          allowClear
           placeholder="Key or summary"
           value={filters.search}
           onChange={e => set('search', e.target.value)}
-          style={{ width: 220 }}
+          className="fr-daterange__input"
+          style={{ width: 220, height: 40, borderRadius: 10 }}
         />
       </Field>
 
       <Field label="Status" qa="explorer-filter-status">
-        <Select
+        <FrSelect
           aria-label="Filter by status category"
           allowClear
           placeholder="All statuses"
           value={filters.statusCategory ?? undefined}
-          onChange={v => set('statusCategory', v ?? null)}
+          onChange={v => set('statusCategory', v)}
           options={opts.statusCategories.map(s => ({ value: s, label: s }))}
-          style={{ minWidth: 150 }}
+          minWidth={150}
         />
       </Field>
 
       <Field label="Type" qa="explorer-filter-type">
-        <Select
+        <FrSelect
           aria-label="Filter by issue type"
           allowClear
           placeholder="All types"
           value={filters.issueType ?? undefined}
-          onChange={v => set('issueType', v ?? null)}
+          onChange={v => set('issueType', v)}
           options={opts.issueTypes.map(s => ({ value: s, label: s }))}
-          style={{ minWidth: 130 }}
+          minWidth={140}
         />
       </Field>
 
       <Field label="Assignee" qa="explorer-filter-assignee">
-        <Select
+        <FrSelect
           aria-label="Filter by assignee"
           allowClear
           showSearch
-          optionFilterProp="label"
           placeholder="Anyone"
           value={filters.assignee ?? undefined}
-          onChange={v => set('assignee', v ?? null)}
+          onChange={v => set('assignee', v)}
           options={opts.assignees.map(s => ({ value: s, label: s }))}
-          style={{ minWidth: 160 }}
+          minWidth={160}
+          notFoundContent="No assignees"
         />
       </Field>
 
       <Field label="Sprint" qa="explorer-filter-sprint">
-        <Select
+        <FrSelect
           aria-label="Filter by sprint"
           allowClear
           placeholder="All sprints"
           value={filters.sprint ?? undefined}
-          onChange={v => set('sprint', v ?? null)}
+          onChange={v => set('sprint', v)}
           options={sprintOptions}
-          style={{ minWidth: 150 }}
+          minWidth={150}
         />
       </Field>
 
       <Field label="Level" qa="explorer-filter-scope">
-        <Select
+        <FrSelect
           aria-label="Filter by hierarchy level"
           value={filters.scope}
-          onChange={v => set('scope', v)}
+          onChange={v => set('scope', (v ?? 'all') as DescendantFilters['scope'])}
           options={[
             { value: 'all', label: 'All levels' },
             { value: 'direct', label: 'Direct children' },
             { value: 'subtask', label: 'Subtasks' },
           ]}
-          style={{ minWidth: 150 }}
+          minWidth={150}
         />
       </Field>
 
       <Field label="Sort by" qa="explorer-sort">
         <div style={{ display: 'flex', gap: 6 }}>
-          <Select
+          <FrSelect
             aria-label="Sort field"
             value={sort.key}
-            onChange={v => onSortChange({ ...sort, key: v })}
+            onChange={v => onSortChange({ ...sort, key: (v ?? 'key') as SortKey })}
             options={(Object.keys(SORT_LABELS) as SortKey[]).map(k => ({ value: k, label: SORT_LABELS[k] }))}
-            style={{ minWidth: 150 }}
+            minWidth={150}
           />
-          <Select
+          <FrSelect
             aria-label="Sort direction"
             value={sort.dir}
-            onChange={v => onSortChange({ ...sort, dir: v })}
+            onChange={v => onSortChange({ ...sort, dir: (v ?? 'asc') as SortSpec['dir'] })}
             options={[
               { value: 'asc', label: 'Asc ↑' },
               { value: 'desc', label: 'Desc ↓' },
             ]}
-            style={{ minWidth: 100 }}
+            minWidth={110}
           />
         </div>
       </Field>
+      </div>
     </div>
   );
 }
