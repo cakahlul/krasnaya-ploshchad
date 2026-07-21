@@ -10,6 +10,14 @@ import { buildTree, type TreeNode } from '../utils/buildTree';
 import { StatusBadge } from './StatusBadge';
 import { spOrNA, num } from '../utils/format';
 import DescendantDetail from './DescendantDetail';
+import DescendantControls from './DescendantControls';
+import {
+  filterSortDescendants,
+  DEFAULT_FILTERS,
+  DEFAULT_SORT,
+  type DescendantFilters,
+  type SortSpec,
+} from '../utils/filterSort';
 
 const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
 
@@ -36,8 +44,19 @@ export default function HierarchyTree({
   const c = useThemeColors();
   const isMobile = useMediaQuery({ maxWidth: 767 });
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  // Local-only state (NOT Zustand / URL / query key) — filtering never refetches.
+  const [filters, setFilters] = useState<DescendantFilters>(DEFAULT_FILTERS);
+  const [sort, setSort] = useState<SortSpec>(DEFAULT_SORT);
 
-  const roots = useMemo(() => buildTree(descendants, epicKey), [descendants, epicKey]);
+  // Filtered/sorted view of the ALREADY-fetched set. The roll-up summary + authz
+  // "N items hidden" note upstream stay bound to the FULL `descendants` and are
+  // never fed this array — only the tree render consumes it.
+  const filtered = useMemo(
+    () => filterSortDescendants(descendants, filters, sort, epicKey),
+    [descendants, filters, sort, epicKey],
+  );
+
+  const roots = useMemo(() => buildTree(filtered, epicKey), [filtered, epicKey]);
   const selected = useMemo(
     () => descendants.find(d => d.key === selectedKey) ?? null,
     [descendants, selectedKey],
@@ -63,9 +82,31 @@ export default function HierarchyTree({
     </div>
   ) : null;
 
+  const controls = (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
+      <DescendantControls
+        descendants={descendants}
+        filters={filters}
+        sort={sort}
+        onFiltersChange={setFilters}
+        onSortChange={setSort}
+      />
+      {/* Filter-result count — distinct from the roll-up summary, which counts the FULL set. */}
+      <span
+        data-qa="explorer-filter-count"
+        role="status"
+        aria-live="polite"
+        style={{ fontSize: 12, fontWeight: 600, color: c.subCol, fontFamily: sans }}
+      >
+        Showing {filtered.length} of {descendants.length}
+      </span>
+    </div>
+  );
+
   if (isMobile) {
     return (
       <div>
+        {controls}
         <MobileCards nodes={roots} depth={0} selectedKey={selectedKey} onSelect={setSelectedKey} />
         {detail}
       </div>
@@ -74,6 +115,7 @@ export default function HierarchyTree({
 
   return (
     <div className="tere-table">
+      {controls}
       <Table<TreeNode>
         columns={columns}
         dataSource={roots}
