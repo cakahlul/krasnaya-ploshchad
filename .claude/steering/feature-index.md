@@ -100,7 +100,7 @@ See [Dashboard / Reports](#dashboard--reports) — Reports lives in the dashboar
   - `store/explorerStore.ts` — Zustand (selected project/epic/descendant)
   - `api/epic-explorer.api.ts` — client API wrapper; `api/explorerError.ts` — error mapping
   - `types/epic-explorer.types.ts`
-  - `utils/buildTree.ts` (+ `buildTree.test.ts`), `utils/format.ts`
+  - `utils/buildTree.ts` (+ `buildTree.test.ts`), `utils/format.ts`, `utils/explorerParams.ts` (+ `explorerParams.test.ts`) — deep-link URL⇄state param mapping (SLS-16894)
 
 ### API routes
 - `GET /api/report/epics` → `apps/tere-project/src/app/api/report/epics/route.ts` — **shared with Dashboard/Reports; MODIFIED**: added a project-wide epic-list branch (returns `ExplorerEpicListItem[]`) when called with no sprint/date params
