@@ -22,6 +22,10 @@ Implement the finite primitive/action surface and all evidenced named icons with
 
 Shared CSS stays owned by BU-P1-03.
 
+**Wave 2 revision contract:** the primitives revision may also carry the explicitly delegated
+BU-P1-03 patch limited to `.beras-code-block`/`.beras-secret-field` narrow overflow rules and their
+foundation regression assertion. Those shared-style paths remain a separate BU-P1-03 review/commit.
+
 ## Contract
 
 Exact exports:

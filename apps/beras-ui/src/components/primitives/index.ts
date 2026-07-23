@@ -1,77 +1,70 @@
-import type { ComponentType } from 'react';
-import type * as T from '../../public/types';
+export { Button, IconButton } from './actions';
+export {
+  BrandMark,
+  Badge,
+  StatusBadge,
+  Tag,
+  Avatar,
+  Card,
+  MetricCard,
+  StatGrid,
+  ProgressMeter,
+  Divider,
+  CodeBlock,
+  SecretField,
+} from './display';
 
-// BU-P1-04: replace this contract stub before the final gate.
-function stub<Props>(name: string): ComponentType<Props> {
-  const Component: ComponentType<Props> = () => { throw new Error(`${name} requires BU-P1-04`); };
-  Component.displayName = `${name}ContractStub`;
-  return Component;
-}
-
-export const BrandMark = stub<T.BrandMarkProps>('BrandMark');
-export const Button = stub<T.ButtonProps>('Button');
-export const IconButton = stub<T.IconButtonProps>('IconButton');
-export const Badge = stub<T.BadgeProps>('Badge');
-export const StatusBadge = stub<T.StatusBadgeProps>('StatusBadge');
-export const Tag = stub<T.TagProps>('Tag');
-export const Avatar = stub<T.AvatarProps>('Avatar');
-export const Card = stub<T.CardProps>('Card');
-export const MetricCard = stub<T.MetricCardProps>('MetricCard');
-export const StatGrid = stub<T.StatGridProps>('StatGrid');
-export const ProgressMeter = stub<T.ProgressMeterProps>('ProgressMeter');
-export const Divider = stub<T.DividerProps>('Divider');
-export const CodeBlock = stub<T.CodeBlockProps>('CodeBlock');
-export const SecretField = stub<T.SecretFieldProps>('SecretField');
-
-export const GoogleIcon = stub<T.BerasIconProps>('GoogleIcon');
-export const SearchIcon = stub<T.BerasIconProps>('SearchIcon');
-export const CloseIcon = stub<T.BerasIconProps>('CloseIcon');
-export const MenuIcon = stub<T.BerasIconProps>('MenuIcon');
-export const ChevronDownIcon = stub<T.BerasIconProps>('ChevronDownIcon');
-export const ChevronLeftIcon = stub<T.BerasIconProps>('ChevronLeftIcon');
-export const ChevronRightIcon = stub<T.BerasIconProps>('ChevronRightIcon');
-export const ArrowRightIcon = stub<T.BerasIconProps>('ArrowRightIcon');
-export const CalendarIcon = stub<T.BerasIconProps>('CalendarIcon');
-export const ClockIcon = stub<T.BerasIconProps>('ClockIcon');
-export const UserIcon = stub<T.BerasIconProps>('UserIcon');
-export const UsersIcon = stub<T.BerasIconProps>('UsersIcon');
-export const UserAddIcon = stub<T.BerasIconProps>('UserAddIcon');
-export const LogoutIcon = stub<T.BerasIconProps>('LogoutIcon');
-export const LockIcon = stub<T.BerasIconProps>('LockIcon');
-export const EyeIcon = stub<T.BerasIconProps>('EyeIcon');
-export const EyeOffIcon = stub<T.BerasIconProps>('EyeOffIcon');
-export const CopyIcon = stub<T.BerasIconProps>('CopyIcon');
-export const ExternalLinkIcon = stub<T.BerasIconProps>('ExternalLinkIcon');
-export const EditIcon = stub<T.BerasIconProps>('EditIcon');
-export const DeleteIcon = stub<T.BerasIconProps>('DeleteIcon');
-export const AddIcon = stub<T.BerasIconProps>('AddIcon');
-export const RemoveIcon = stub<T.BerasIconProps>('RemoveIcon');
-export const MinusCircleIcon = stub<T.BerasIconProps>('MinusCircleIcon');
-export const ReloadIcon = stub<T.BerasIconProps>('ReloadIcon');
-export const SyncIcon = stub<T.BerasIconProps>('SyncIcon');
-export const LoadingIcon = stub<T.BerasIconProps>('LoadingIcon');
-export const DownloadIcon = stub<T.BerasIconProps>('DownloadIcon');
-export const SpreadsheetIcon = stub<T.BerasIconProps>('SpreadsheetIcon');
-export const BugIcon = stub<T.BerasIconProps>('BugIcon');
-export const CheckIcon = stub<T.BerasIconProps>('CheckIcon');
-export const CheckCircleIcon = stub<T.BerasIconProps>('CheckCircleIcon');
-export const WarningIcon = stub<T.BerasIconProps>('WarningIcon');
-export const ErrorIcon = stub<T.BerasIconProps>('ErrorIcon');
-export const InfoIcon = stub<T.BerasIconProps>('InfoIcon');
-export const DatabaseIcon = stub<T.BerasIconProps>('DatabaseIcon');
-export const CodeIcon = stub<T.BerasIconProps>('CodeIcon');
-export const JsonIcon = stub<T.BerasIconProps>('JsonIcon');
-export const LinkIcon = stub<T.BerasIconProps>('LinkIcon');
-export const TagIcon = stub<T.BerasIconProps>('TagIcon');
-export const TrendUpIcon = stub<T.BerasIconProps>('TrendUpIcon');
-export const ChartIcon = stub<T.BerasIconProps>('ChartIcon');
-export const FilterIcon = stub<T.BerasIconProps>('FilterIcon');
-export const TeamIcon = stub<T.BerasIconProps>('TeamIcon');
-export const ExperimentIcon = stub<T.BerasIconProps>('ExperimentIcon');
-export const MoreIcon = stub<T.BerasIconProps>('MoreIcon');
-export const HomeIcon = stub<T.BerasIconProps>('HomeIcon');
-export const ReportIcon = stub<T.BerasIconProps>('ReportIcon');
-export const SettingsIcon = stub<T.BerasIconProps>('SettingsIcon');
-export const HolidayIcon = stub<T.BerasIconProps>('HolidayIcon');
-export const TreeIcon = stub<T.BerasIconProps>('TreeIcon');
-export const KeyIcon = stub<T.BerasIconProps>('KeyIcon');
+export {
+  GoogleIcon,
+  SearchIcon,
+  CloseIcon,
+  MenuIcon,
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ArrowRightIcon,
+  CalendarIcon,
+  ClockIcon,
+  UserIcon,
+  UsersIcon,
+  UserAddIcon,
+  LogoutIcon,
+  LockIcon,
+  EyeIcon,
+  EyeOffIcon,
+  CopyIcon,
+  ExternalLinkIcon,
+  EditIcon,
+  DeleteIcon,
+  AddIcon,
+  RemoveIcon,
+  MinusCircleIcon,
+  ReloadIcon,
+  SyncIcon,
+  LoadingIcon,
+  DownloadIcon,
+  SpreadsheetIcon,
+  BugIcon,
+  CheckIcon,
+  CheckCircleIcon,
+  WarningIcon,
+  ErrorIcon,
+  InfoIcon,
+  DatabaseIcon,
+  CodeIcon,
+  JsonIcon,
+  LinkIcon,
+  TagIcon,
+  TrendUpIcon,
+  ChartIcon,
+  FilterIcon,
+  TeamIcon,
+  ExperimentIcon,
+  MoreIcon,
+  HomeIcon,
+  ReportIcon,
+  SettingsIcon,
+  HolidayIcon,
+  TreeIcon,
+  KeyIcon,
+} from './icons';
