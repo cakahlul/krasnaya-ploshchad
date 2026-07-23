@@ -1,0 +1,5007 @@
+[
+  {
+    "sourcePath": "apps/tere-project/src/app/dashboard/bug-monitoring/page.tsx",
+    "currentDependencies": [
+      "antd",
+      "framer-motion"
+    ],
+    "removedRuntimeCoupling": [
+      "board data",
+      "RBAC",
+      "bug hooks",
+      "Jira/domain shaping"
+    ],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "State: status and retry remain visible at narrow width",
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "Chart: responsive SVG and long-label containment"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "State: live region, retry and reduced motion",
+      "Dense: overflow region is focusable and labelled",
+      "Chart: semantic data equivalent and non-color markers",
+      "Motion: reduced-motion static equivalent"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S01:bug-monitoring-view",
+        "description": "Page header, view switch, tabs, bug states, list, statistics, trend and table.",
+        "disposition": "canonicalized into BugMonitoringView",
+        "canonicalExports": [
+          "BugMonitoringView",
+          "Tabs"
+        ],
+        "caseIds": [
+          "composition/bug-monitoring/loading",
+          "composition/bug-monitoring/empty",
+          "composition/bug-monitoring/error",
+          "composition/bug-monitoring/populated",
+          "navigation/tabs/default",
+          "navigation/tabs/selection"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "default",
+          "selection"
+        ],
+        "rationale": "One fixture-driven presentational view replaces the orchestration-bound page tree.",
+        "evidenceIds": [
+          "evidence:composition/bug-monitoring/loading:visual:source-s01",
+          "evidence:composition/bug-monitoring/empty:visual:source-s01",
+          "evidence:composition/bug-monitoring/error:visual:source-s01",
+          "evidence:composition/bug-monitoring/populated:visual:source-s01",
+          "evidence:navigation/tabs/default:visual:source-s01",
+          "evidence:navigation/tabs/selection:visual:source-s01"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/app/dashboard/configuration/page.tsx",
+    "currentDependencies": [
+      "React",
+      "Next.js"
+    ],
+    "removedRuntimeCoupling": [
+      "RBAC",
+      "route orchestration",
+      "Suspense orchestration"
+    ],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S02:configuration-view",
+        "description": "Configuration shell and loading fallback.",
+        "disposition": "canonicalized into ConfigurationView",
+        "canonicalExports": [
+          "ConfigurationView"
+        ],
+        "caseIds": [
+          "composition/configuration/loading",
+          "composition/configuration/error",
+          "composition/configuration/populated"
+        ],
+        "requiredStates": [
+          "loading",
+          "error",
+          "populated"
+        ],
+        "rationale": "Configuration panels remain presentational while routing and access checks stay outside Beras.",
+        "evidenceIds": [
+          "evidence:composition/configuration/loading:visual:source-s02",
+          "evidence:composition/configuration/error:visual:source-s02",
+          "evidence:composition/configuration/populated:visual:source-s02"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/app/dashboard/epic-explorer/page.tsx",
+    "currentDependencies": [
+      "antd",
+      "@ant-design/icons"
+    ],
+    "removedRuntimeCoupling": [
+      "Zustand store",
+      "query execution",
+      "RBAC",
+      "Jira mapping"
+    ],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "Form: fields and actions stack at narrow width",
+      "Select: long options fit the narrow popover",
+      "Tree: deep hierarchy remains operable at narrow width",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "Form: labels, errors, keyboard submit and cancel",
+      "Select: complete keyboard behavior and accessible option names",
+      "Tree: roving tree keyboard and ARIA levels",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S03:epic-explorer-view",
+        "description": "Header, filter bar, asynchronous action, states and epic detail regions.",
+        "disposition": "canonicalized into EpicExplorerView",
+        "canonicalExports": [
+          "EpicExplorerView"
+        ],
+        "caseIds": [
+          "composition/epic-explorer/loading",
+          "composition/epic-explorer/empty",
+          "composition/epic-explorer/error",
+          "composition/epic-explorer/populated"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated"
+        ],
+        "rationale": "Typed view data and events replace store, query and Jira coupling.",
+        "evidenceIds": [
+          "evidence:composition/epic-explorer/loading:visual:source-s03",
+          "evidence:composition/epic-explorer/empty:visual:source-s03",
+          "evidence:composition/epic-explorer/error:visual:source-s03",
+          "evidence:composition/epic-explorer/populated:visual:source-s03"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/app/dashboard/holiday-management/page.tsx",
+    "currentDependencies": [
+      "Next.js"
+    ],
+    "removedRuntimeCoupling": [
+      "routing redirect"
+    ],
+    "responsiveConcerns": [],
+    "accessibilityConcerns": [],
+    "artifacts": [
+      {
+        "id": "source:S04:holiday-redirect-boundary",
+        "description": "Redirect-only route; destination context is the holiday-management composition.",
+        "disposition": "non-visual business boundary",
+        "canonicalExports": [],
+        "caseIds": [
+          "composition/holiday-management/populated"
+        ],
+        "requiredStates": [
+          "populated"
+        ],
+        "rationale": "The redirect renders no artifact and is not copied into Beras.",
+        "evidenceIds": [
+          "evidence:composition/holiday-management/populated:visual:source-s04"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/app/dashboard/layout.tsx",
+    "currentDependencies": [
+      "antd"
+    ],
+    "removedRuntimeCoupling": [
+      "auth/session query",
+      "HTTP interceptor",
+      "router",
+      "RBAC"
+    ],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "State: status and retry remain visible at narrow width",
+      "Overlay: 320px overflow keeps actions visible"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "State: live region, retry and reduced motion",
+      "Overlay: focus containment, focus return and Escape"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S05:app-shell",
+        "description": "Sidebar, topbar, main, loading and access-state shells.",
+        "disposition": "canonicalized into AppShell",
+        "canonicalExports": [
+          "AppShell",
+          "AccessState",
+          "PageSkeleton"
+        ],
+        "caseIds": [
+          "layout/app-shell/desktop",
+          "layout/app-shell/mobile-closed",
+          "layout/app-shell/mobile-open",
+          "layout/app-shell/long-navigation",
+          "feedback/access-state/loading",
+          "feedback/access-state/denied",
+          "feedback/access-state/not-registered"
+        ],
+        "requiredStates": [
+          "desktop",
+          "mobile-closed",
+          "mobile-open",
+          "long-navigation",
+          "loading",
+          "denied",
+          "not-registered"
+        ],
+        "rationale": "Presentational shell and access states are separated from session and permission orchestration.",
+        "evidenceIds": [
+          "evidence:layout/app-shell/desktop:visual:source-s05",
+          "evidence:layout/app-shell/mobile-closed:visual:source-s05",
+          "evidence:layout/app-shell/mobile-open:visual:source-s05",
+          "evidence:layout/app-shell/long-navigation:visual:source-s05",
+          "evidence:feedback/access-state/loading:visual:source-s05",
+          "evidence:feedback/access-state/denied:visual:source-s05",
+          "evidence:feedback/access-state/not-registered:visual:source-s05"
+        ]
+      },
+      {
+        "id": "source:S05:fixed-mobile-offset",
+        "description": "Known fixed left:252px mobile offset in the Tere layout.",
+        "disposition": "not ported: dead CSS or known defect",
+        "canonicalExports": [
+          "AppShell"
+        ],
+        "caseIds": [
+          "layout/app-shell/mobile-closed",
+          "layout/app-shell/mobile-open"
+        ],
+        "requiredStates": [
+          "mobile-closed",
+          "mobile-open"
+        ],
+        "rationale": "Beras uses a one-column mobile shell and overlay drawer instead of reserving the desktop offset.",
+        "evidenceIds": [
+          "evidence:layout/app-shell/mobile-closed:visual:source-s05",
+          "evidence:layout/app-shell/mobile-open:visual:source-s05"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/app/dashboard/mcp-connection/page.tsx",
+    "currentDependencies": [
+      "React",
+      "Next.js"
+    ],
+    "removedRuntimeCoupling": [
+      "routing wrapper"
+    ],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "Form: fields and actions stack at narrow width",
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "Overlay: 320px overflow keeps actions visible",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "Form: labels, errors, keyboard submit and cancel",
+      "Dense: overflow region is focusable and labelled",
+      "Overlay: focus containment, focus return and Escape",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S06:mcp-connection-view",
+        "description": "Route wrapper and visible MCP connection destination.",
+        "disposition": "canonicalized into McpConnectionView",
+        "canonicalExports": [
+          "McpConnectionView"
+        ],
+        "caseIds": [
+          "composition/mcp-connection/loading",
+          "composition/mcp-connection/empty",
+          "composition/mcp-connection/error",
+          "composition/mcp-connection/populated"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated"
+        ],
+        "rationale": "Only the destination presentation is retained; routing remains consumer-owned.",
+        "evidenceIds": [
+          "evidence:composition/mcp-connection/loading:visual:source-s06",
+          "evidence:composition/mcp-connection/empty:visual:source-s06",
+          "evidence:composition/mcp-connection/error:visual:source-s06",
+          "evidence:composition/mcp-connection/populated:visual:source-s06"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/app/dashboard/page.tsx",
+    "currentDependencies": [
+      "React",
+      "Next.js",
+      "dayjs"
+    ],
+    "removedRuntimeCoupling": [
+      "Firebase",
+      "data hooks",
+      "router",
+      "date aggregation",
+      "dashboard aggregation"
+    ],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "Select: long options fit the narrow popover",
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "Select: complete keyboard behavior and accessible option names",
+      "Dense: overflow region is focusable and labelled",
+      "State: live region, retry and reduced motion",
+      "Text: heading and link semantics with safe overflow"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S07:dashboard-overview",
+        "description": "Dashboard header, search, statistic cards, sprint stack, board summaries and bug snapshot.",
+        "disposition": "canonicalized into DashboardOverview",
+        "canonicalExports": [
+          "DashboardOverview"
+        ],
+        "caseIds": [
+          "composition/dashboard-overview/loading",
+          "composition/dashboard-overview/empty",
+          "composition/dashboard-overview/error",
+          "composition/dashboard-overview/populated",
+          "composition/dashboard-overview/overflow"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "overflow"
+        ],
+        "rationale": "All computed dashboard data is supplied as typed presentational props.",
+        "evidenceIds": [
+          "evidence:composition/dashboard-overview/loading:visual:source-s07",
+          "evidence:composition/dashboard-overview/empty:visual:source-s07",
+          "evidence:composition/dashboard-overview/error:visual:source-s07",
+          "evidence:composition/dashboard-overview/populated:visual:source-s07",
+          "evidence:composition/dashboard-overview/overflow:visual:source-s07"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/app/dashboard/productivity-summary/page.tsx",
+    "currentDependencies": [
+      "React",
+      "Next.js"
+    ],
+    "removedRuntimeCoupling": [
+      "auth",
+      "routing wrapper"
+    ],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "Form: fields and actions stack at narrow width",
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "Form: labels, errors, keyboard submit and cancel",
+      "Dense: overflow region is focusable and labelled",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S08:productivity-summary-view",
+        "description": "Productivity summary route destination.",
+        "disposition": "canonicalized into ProductivitySummaryView",
+        "canonicalExports": [
+          "ProductivitySummaryView"
+        ],
+        "caseIds": [
+          "composition/productivity-summary/loading",
+          "composition/productivity-summary/empty",
+          "composition/productivity-summary/error",
+          "composition/productivity-summary/populated"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated"
+        ],
+        "rationale": "The route wrapper is omitted; the destination view remains fixture-driven.",
+        "evidenceIds": [
+          "evidence:composition/productivity-summary/loading:visual:source-s08",
+          "evidence:composition/productivity-summary/empty:visual:source-s08",
+          "evidence:composition/productivity-summary/error:visual:source-s08",
+          "evidence:composition/productivity-summary/populated:visual:source-s08"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/app/dashboard/reports/page.tsx",
+    "currentDependencies": [
+      "React",
+      "Next.js"
+    ],
+    "removedRuntimeCoupling": [
+      "hooks",
+      "store",
+      "repository",
+      "RBAC",
+      "report transforms"
+    ],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "Select: long options fit the narrow popover",
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "Chart: responsive SVG and long-label containment",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "Select: complete keyboard behavior and accessible option names",
+      "Dense: overflow region is focusable and labelled",
+      "Chart: semantic data equivalent and non-color markers",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S09:reports-view",
+        "description": "Report header, filters, team table and sprint trend.",
+        "disposition": "canonicalized into ReportsView",
+        "canonicalExports": [
+          "ReportsView"
+        ],
+        "caseIds": [
+          "composition/reports/loading",
+          "composition/reports/empty",
+          "composition/reports/error",
+          "composition/reports/populated",
+          "composition/reports/overflow"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "overflow"
+        ],
+        "rationale": "Tere retains fetching and calculations; Beras receives display-ready data.",
+        "evidenceIds": [
+          "evidence:composition/reports/loading:visual:source-s09",
+          "evidence:composition/reports/empty:visual:source-s09",
+          "evidence:composition/reports/error:visual:source-s09",
+          "evidence:composition/reports/populated:visual:source-s09",
+          "evidence:composition/reports/overflow:visual:source-s09"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/app/dashboard/talent-leave/page.tsx",
+    "currentDependencies": [
+      "antd"
+    ],
+    "removedRuntimeCoupling": [
+      "leave stores",
+      "leave hooks",
+      "permissions",
+      "export behavior"
+    ],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "Form: fields and actions stack at narrow width",
+      "Cal: narrow calendar grid and boundary dates",
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "Overlay: 320px overflow keeps actions visible",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "Form: labels, errors, keyboard submit and cancel",
+      "Cal: calendar grid, boundary state and roving keyboard",
+      "Dense: overflow region is focusable and labelled",
+      "Overlay: focus containment, focus return and Escape",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S10:talent-leave-view",
+        "description": "Header, date controls, view switch, leave list/calendar, dialog and toast states.",
+        "disposition": "canonicalized into TalentLeaveView",
+        "canonicalExports": [
+          "TalentLeaveView"
+        ],
+        "caseIds": [
+          "composition/talent-leave/loading",
+          "composition/talent-leave/empty",
+          "composition/talent-leave/error",
+          "composition/talent-leave/list",
+          "composition/talent-leave/calendar",
+          "composition/talent-leave/dialog-open",
+          "composition/talent-leave/success",
+          "composition/talent-leave/failure"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "list",
+          "calendar",
+          "dialog-open",
+          "success",
+          "failure"
+        ],
+        "rationale": "Mutations, exports and permission decisions remain consumer events.",
+        "evidenceIds": [
+          "evidence:composition/talent-leave/loading:visual:source-s10",
+          "evidence:composition/talent-leave/empty:visual:source-s10",
+          "evidence:composition/talent-leave/error:visual:source-s10",
+          "evidence:composition/talent-leave/list:visual:source-s10",
+          "evidence:composition/talent-leave/calendar:visual:source-s10",
+          "evidence:composition/talent-leave/dialog-open:visual:source-s10",
+          "evidence:composition/talent-leave/success:visual:source-s10",
+          "evidence:composition/talent-leave/failure:visual:source-s10"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/app/dashboard/team-members/page.tsx",
+    "currentDependencies": [
+      "React",
+      "Next.js"
+    ],
+    "removedRuntimeCoupling": [
+      "routing wrapper"
+    ],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "Form: fields and actions stack at narrow width",
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "Overlay: 320px overflow keeps actions visible",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "Form: labels, errors, keyboard submit and cancel",
+      "Dense: overflow region is focusable and labelled",
+      "Overlay: focus containment, focus return and Escape",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S11:team-members-view",
+        "description": "Team members route destination and dialog state.",
+        "disposition": "canonicalized into TeamMembersView",
+        "canonicalExports": [
+          "TeamMembersView"
+        ],
+        "caseIds": [
+          "composition/team-members/loading",
+          "composition/team-members/empty",
+          "composition/team-members/error",
+          "composition/team-members/populated",
+          "composition/team-members/dialog-open"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "dialog-open"
+        ],
+        "rationale": "The route wrapper is a boundary; the visible destination is canonical.",
+        "evidenceIds": [
+          "evidence:composition/team-members/loading:visual:source-s11",
+          "evidence:composition/team-members/empty:visual:source-s11",
+          "evidence:composition/team-members/error:visual:source-s11",
+          "evidence:composition/team-members/populated:visual:source-s11",
+          "evidence:composition/team-members/dialog-open:visual:source-s11"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/app/icon.tsx",
+    "currentDependencies": [
+      "Next.js ImageResponse"
+    ],
+    "removedRuntimeCoupling": [
+      "metadata image generation"
+    ],
+    "responsiveConcerns": [],
+    "accessibilityConcerns": [
+      "Icon: decorative icons hidden and informative icons named"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S12:brand-mark",
+        "description": "Generated application brand icon.",
+        "disposition": "canonicalized into BrandMark",
+        "canonicalExports": [
+          "BrandMark"
+        ],
+        "caseIds": [
+          "primitive/brand-mark/default",
+          "primitive/brand-mark/compact"
+        ],
+        "requiredStates": [
+          "default",
+          "compact"
+        ],
+        "rationale": "BrandMark preserves the visual identity while Next metadata generation stays outside the package.",
+        "evidenceIds": [
+          "evidence:primitive/brand-mark/default:visual:source-s12",
+          "evidence:primitive/brand-mark/compact:visual:source-s12"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/app/layout.tsx",
+    "currentDependencies": [
+      "next/font",
+      "@vercel/analytics",
+      "@vercel/speed-insights"
+    ],
+    "removedRuntimeCoupling": [
+      "metadata",
+      "analytics",
+      "query/provider setup"
+    ],
+    "responsiveConcerns": [
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "Text: heading and link semantics with safe overflow"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S13:font-and-light-foundation",
+        "description": "apps/tere-project/src/app/layout.tsx#font-loading: Space Grotesk and IBM Plex Mono at weights 400/500/600/700 plus the light app foundation.",
+        "disposition": "implemented",
+        "canonicalExports": [
+          "BERAS_TOKEN_NAMES",
+          "berasLightTokenReference"
+        ],
+        "caseIds": [
+          "foundation/typography/sans",
+          "foundation/typography/mono",
+          "foundation/typography/weights",
+          "foundation/light-theme/tokens",
+          "foundation/light-theme/contrast"
+        ],
+        "requiredStates": [
+          "sans",
+          "mono",
+          "weights",
+          "tokens",
+          "contrast"
+        ],
+        "rationale": "Exact font families and weights are retained with system fallbacks and local runtime assets.",
+        "evidenceIds": [
+          "evidence:foundation/typography/sans:visual:source-s13",
+          "evidence:foundation/typography/mono:visual:source-s13",
+          "evidence:foundation/typography/weights:visual:source-s13",
+          "evidence:foundation/light-theme/tokens:visual:source-s13",
+          "evidence:foundation/light-theme/contrast:visual:source-s13"
+        ]
+      },
+      {
+        "id": "source:S13:root-provider-boundary",
+        "description": "Root metadata, analytics and provider composition.",
+        "disposition": "non-visual business boundary",
+        "canonicalExports": [],
+        "caseIds": [],
+        "requiredStates": [],
+        "rationale": "Metadata, analytics and runtime providers do not belong in the presentational package.",
+        "evidenceIds": []
+      },
+      {
+        "id": "stylesheet:apps/tere-project/src/app/globals.css#light-foundation-and-scoped-components",
+        "description": "apps/tere-project/src/app/globals.css light tokens, root styles, auth/ADF/loading and Ant component intent.",
+        "disposition": "implemented",
+        "canonicalExports": [
+          "BERAS_TOKEN_NAMES",
+          "berasLightTokenReference",
+          "AdfContent",
+          "DataTable",
+          "Dialog",
+          "AppShell"
+        ],
+        "caseIds": [
+          "foundation/light-theme/tokens",
+          "foundation/light-theme/contrast",
+          "content/adf/rich",
+          "composition/sign-in/default",
+          "feedback/loading-overlay/waiting",
+          "data-display/bug-table/populated"
+        ],
+        "requiredStates": [
+          "tokens",
+          "contrast",
+          "rich",
+          "default",
+          "waiting",
+          "populated"
+        ],
+        "rationale": "Light intent is consolidated into semantic tokens, a [data-beras-root] reset and prefixed component CSS.",
+        "evidenceIds": [
+          "evidence:foundation/light-theme/tokens:visual:source-s13",
+          "evidence:foundation/light-theme/contrast:visual:source-s13",
+          "evidence:content/adf/rich:visual:source-s13",
+          "evidence:composition/sign-in/default:visual:source-s13",
+          "evidence:feedback/loading-overlay/waiting:visual:source-s13",
+          "evidence:data-display/bug-table/populated:visual:source-s13"
+        ]
+      },
+      {
+        "id": "stylesheet:apps/tere-project/src/app/globals.css#broad-reset-and-legacy-overrides",
+        "description": "apps/tere-project/src/app/globals.css broad consumer reset/scrollbar, Ant overrides and duplicated legacy utilities.",
+        "disposition": "not ported: dead CSS or known defect",
+        "canonicalExports": [
+          "AppShell",
+          "DataTable",
+          "Dialog"
+        ],
+        "caseIds": [
+          "layout/app-shell/desktop",
+          "data-display/bug-table/populated",
+          "overlay/legal-dialog/overflow"
+        ],
+        "requiredStates": [
+          "desktop",
+          "populated",
+          "overflow"
+        ],
+        "rationale": "Unscoped consumer resets, library-specific overrides and duplicate utilities are intentionally not shipped.",
+        "evidenceIds": [
+          "evidence:layout/app-shell/desktop:visual:source-s13",
+          "evidence:data-display/bug-table/populated:visual:source-s13",
+          "evidence:overlay/legal-dialog/overflow:visual:source-s13"
+        ]
+      },
+      {
+        "id": "stylesheet:apps/tere-project/src/app/globals.css#void-crimson-selectors",
+        "description": "apps/tere-project/src/app/globals.css .void/.crimson rules and socialist theme-switch visuals.",
+        "disposition": "inventory-only: void/crimson",
+        "canonicalExports": [
+          "BERAS_TOKEN_NAMES"
+        ],
+        "caseIds": [
+          "foundation/light-theme/tokens"
+        ],
+        "requiredStates": [
+          "tokens"
+        ],
+        "rationale": "Void and crimson remain auditable inventory only and emit no Beras selector or token value.",
+        "evidenceIds": [
+          "evidence:foundation/light-theme/tokens:visual:source-s13"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/app/page.tsx",
+    "currentDependencies": [
+      "Next.js"
+    ],
+    "removedRuntimeCoupling": [
+      "routing redirect"
+    ],
+    "responsiveConcerns": [],
+    "accessibilityConcerns": [],
+    "artifacts": [
+      {
+        "id": "source:S14:root-redirect-boundary",
+        "description": "Root redirect with no rendered artifact.",
+        "disposition": "non-visual business boundary",
+        "canonicalExports": [],
+        "caseIds": [],
+        "requiredStates": [],
+        "rationale": "No visual export or catalog case is required for a redirect-only entrypoint.",
+        "evidenceIds": []
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/app/sign-in/Stat3DScene.tsx",
+    "currentDependencies": [
+      "@react-three/fiber",
+      "@react-three/drei",
+      "@react-spring/three",
+      "three"
+    ],
+    "removedRuntimeCoupling": [
+      "Three render engine",
+      "random positions"
+    ],
+    "responsiveConcerns": [
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "Motion: reduced-motion static equivalent",
+      "Text: heading and link semantics with safe overflow",
+      "Icon: decorative icons hidden and informative icons named"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S15:stat-3d-scene",
+        "description": "Perspective bars, labels/tooltips, sparkles, grid and pointer hover/parallax.",
+        "disposition": "canonicalized into Stat3DScene",
+        "canonicalExports": [
+          "Stat3DScene"
+        ],
+        "caseIds": [
+          "visualization/stat-3d-scene/default",
+          "visualization/stat-3d-scene/focus",
+          "visualization/stat-3d-scene/pointer",
+          "visualization/stat-3d-scene/reduced-motion",
+          "visualization/stat-3d-scene/narrow"
+        ],
+        "requiredStates": [
+          "default",
+          "focus",
+          "pointer",
+          "reduced-motion",
+          "narrow"
+        ],
+        "rationale": "Native semantic DOM and CSS 3D preserve the live visual and focus behavior without Three or randomness.",
+        "evidenceIds": [
+          "evidence:visualization/stat-3d-scene/default:visual:source-s15",
+          "evidence:visualization/stat-3d-scene/focus:visual:source-s15",
+          "evidence:visualization/stat-3d-scene/pointer:visual:source-s15",
+          "evidence:visualization/stat-3d-scene/reduced-motion:visual:source-s15",
+          "evidence:visualization/stat-3d-scene/narrow:visual:source-s15"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/app/sign-in/page.tsx",
+    "currentDependencies": [
+      "framer-motion"
+    ],
+    "removedRuntimeCoupling": [
+      "Firebase auth",
+      "session",
+      "router",
+      "legal storage"
+    ],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "Form: fields and actions stack at narrow width",
+      "Overlay: 320px overflow keeps actions visible",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "Form: labels, errors, keyboard submit and cancel",
+      "Overlay: focus containment, focus return and Escape",
+      "State: live region, retry and reduced motion",
+      "Motion: reduced-motion static equivalent"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S16:sign-in-view",
+        "description": "Navy authentication hero, brand/features, sign-in panel, Google action, legal dialog, loading and error.",
+        "disposition": "canonicalized into SignInView",
+        "canonicalExports": [
+          "AuthLayout",
+          "SignInView",
+          "LegalContentDialog",
+          "Stat3DScene"
+        ],
+        "caseIds": [
+          "composition/sign-in/default",
+          "composition/sign-in/validation",
+          "composition/sign-in/pending",
+          "composition/sign-in/error",
+          "composition/sign-in/legal-open",
+          "composition/sign-in/narrow"
+        ],
+        "requiredStates": [
+          "default",
+          "validation",
+          "pending",
+          "error",
+          "legal-open",
+          "narrow"
+        ],
+        "rationale": "The navy hero is a light-product component variant; authentication and persistence remain external.",
+        "evidenceIds": [
+          "evidence:composition/sign-in/default:visual:source-s16",
+          "evidence:composition/sign-in/validation:visual:source-s16",
+          "evidence:composition/sign-in/pending:visual:source-s16",
+          "evidence:composition/sign-in/error:visual:source-s16",
+          "evidence:composition/sign-in/legal-open:visual:source-s16",
+          "evidence:composition/sign-in/narrow:visual:source-s16"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/app/sign-up/page.tsx",
+    "currentDependencies": [
+      "React",
+      "Next.js"
+    ],
+    "removedRuntimeCoupling": [
+      "signup",
+      "auth",
+      "router"
+    ],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "Form: fields and actions stack at narrow width",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "Form: labels, errors, keyboard submit and cancel",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S17:sign-up-view",
+        "description": "Signup card, fields, helper, error and action.",
+        "disposition": "canonicalized into SignUpView",
+        "canonicalExports": [
+          "AuthLayout",
+          "SignUpView"
+        ],
+        "caseIds": [
+          "composition/sign-up/default",
+          "composition/sign-up/validation",
+          "composition/sign-up/pending",
+          "composition/sign-up/error",
+          "composition/sign-up/success",
+          "composition/sign-up/narrow"
+        ],
+        "requiredStates": [
+          "default",
+          "validation",
+          "pending",
+          "error",
+          "success",
+          "narrow"
+        ],
+        "rationale": "Controlled fields and presentational events replace authentication orchestration.",
+        "evidenceIds": [
+          "evidence:composition/sign-up/default:visual:source-s17",
+          "evidence:composition/sign-up/validation:visual:source-s17",
+          "evidence:composition/sign-up/pending:visual:source-s17",
+          "evidence:composition/sign-up/error:visual:source-s17",
+          "evidence:composition/sign-up/success:visual:source-s17",
+          "evidence:composition/sign-up/narrow:visual:source-s17"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/components/AxiosErrorInterceptor.tsx",
+    "currentDependencies": [
+      "antd",
+      "axios"
+    ],
+    "removedRuntimeCoupling": [
+      "Axios interceptor",
+      "auth/session mapping",
+      "error mapping"
+    ],
+    "responsiveConcerns": [
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "State: live region, retry and reduced motion",
+      "Motion: reduced-motion static equivalent"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S18:toast-visual",
+        "description": "Global success/error notification visual.",
+        "disposition": "canonicalized into Toast",
+        "canonicalExports": [
+          "Toast",
+          "ToastViewport"
+        ],
+        "caseIds": [
+          "feedback/toast/success",
+          "feedback/toast/error",
+          "feedback/toast/long-content",
+          "feedback/toast/reduced-motion"
+        ],
+        "requiredStates": [
+          "success",
+          "error",
+          "long-content",
+          "reduced-motion"
+        ],
+        "rationale": "The reusable notification surface is retained as controlled toast state.",
+        "evidenceIds": [
+          "evidence:feedback/toast/success:visual:source-s18",
+          "evidence:feedback/toast/error:visual:source-s18",
+          "evidence:feedback/toast/long-content:visual:source-s18",
+          "evidence:feedback/toast/reduced-motion:visual:source-s18"
+        ]
+      },
+      {
+        "id": "source:S18:axios-interceptor-boundary",
+        "description": "Global Axios interception and session-aware error mapping.",
+        "disposition": "non-visual business boundary",
+        "canonicalExports": [],
+        "caseIds": [],
+        "requiredStates": [],
+        "rationale": "Network interception and authentication policy remain consumer runtime concerns.",
+        "evidenceIds": []
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/components/LegalModal.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [
+      "caller-owned legal content and open state"
+    ],
+    "responsiveConcerns": [
+      "Overlay: 320px overflow keeps actions visible",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "Overlay: focus containment, focus return and Escape",
+      "Text: heading and link semantics with safe overflow"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S19:legal-dialog",
+        "description": "Legal dialog title, body and action.",
+        "disposition": "canonicalized into LegalContentDialog",
+        "canonicalExports": [
+          "LegalContentDialog"
+        ],
+        "caseIds": [
+          "overlay/legal-dialog/terms",
+          "overlay/legal-dialog/privacy",
+          "overlay/legal-dialog/overflow",
+          "overlay/legal-dialog/narrow"
+        ],
+        "requiredStates": [
+          "terms",
+          "privacy",
+          "overflow",
+          "narrow"
+        ],
+        "rationale": "A controlled native dialog replaces the ad hoc modal shell.",
+        "evidenceIds": [
+          "evidence:overlay/legal-dialog/terms:visual:source-s19",
+          "evidence:overlay/legal-dialog/privacy:visual:source-s19",
+          "evidence:overlay/legal-dialog/overflow:visual:source-s19",
+          "evidence:overlay/legal-dialog/narrow:visual:source-s19"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/components/LoadingScreen.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [
+      "random timer",
+      "progress timer",
+      "session scene choice"
+    ],
+    "responsiveConcerns": [
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "State: live region, retry and reduced motion",
+      "Motion: reduced-motion static equivalent"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S20:loading-overlay",
+        "description": "Full-screen illustrated loading scenes, progress and tips.",
+        "disposition": "canonicalized into LoadingOverlay",
+        "canonicalExports": [
+          "LoadingOverlay",
+          "LoadingIllustration"
+        ],
+        "caseIds": [
+          "feedback/loading-overlay/waiting",
+          "feedback/loading-overlay/data",
+          "feedback/loading-overlay/progress",
+          "feedback/loading-overlay/reduced-motion"
+        ],
+        "requiredStates": [
+          "waiting",
+          "data",
+          "progress",
+          "reduced-motion"
+        ],
+        "rationale": "Scene and progress are controlled and deterministic; randomness and timers are removed.",
+        "evidenceIds": [
+          "evidence:feedback/loading-overlay/waiting:visual:source-s20",
+          "evidence:feedback/loading-overlay/data:visual:source-s20",
+          "evidence:feedback/loading-overlay/progress:visual:source-s20",
+          "evidence:feedback/loading-overlay/reduced-motion:visual:source-s20"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/components/PageSkeleton.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "State: live region, retry and reduced motion",
+      "Motion: reduced-motion static equivalent"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S21:page-skeleton",
+        "description": "Page, header, card and table skeleton.",
+        "disposition": "canonicalized into PageSkeleton",
+        "canonicalExports": [
+          "PageSkeleton",
+          "Skeleton"
+        ],
+        "caseIds": [
+          "feedback/page-skeleton/default",
+          "feedback/page-skeleton/dense",
+          "feedback/page-skeleton/reduced-motion"
+        ],
+        "requiredStates": [
+          "default",
+          "dense",
+          "reduced-motion"
+        ],
+        "rationale": "One decorative, assistive-technology-hidden skeleton family covers the page shapes.",
+        "evidenceIds": [
+          "evidence:feedback/page-skeleton/default:visual:source-s21",
+          "evidence:feedback/page-skeleton/dense:visual:source-s21",
+          "evidence:feedback/page-skeleton/reduced-motion:visual:source-s21"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/components/RoleBasedRoute.tsx",
+    "currentDependencies": [
+      "React",
+      "Next.js"
+    ],
+    "removedRuntimeCoupling": [
+      "RBAC",
+      "member lookup",
+      "router"
+    ],
+    "responsiveConcerns": [
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "State: live region, retry and reduced motion",
+      "Text: heading and link semantics with safe overflow"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S22:access-state",
+        "description": "Loading, denied and not-registered route fallbacks.",
+        "disposition": "canonicalized into AccessState",
+        "canonicalExports": [
+          "LoadingOverlay",
+          "AccessState"
+        ],
+        "caseIds": [
+          "feedback/access-state/loading",
+          "feedback/access-state/denied",
+          "feedback/access-state/not-registered"
+        ],
+        "requiredStates": [
+          "loading",
+          "denied",
+          "not-registered"
+        ],
+        "rationale": "Visible access fallbacks become controlled presentational states.",
+        "evidenceIds": [
+          "evidence:feedback/access-state/loading:visual:source-s22",
+          "evidence:feedback/access-state/denied:visual:source-s22",
+          "evidence:feedback/access-state/not-registered:visual:source-s22"
+        ]
+      },
+      {
+        "id": "source:S22:rbac-boundary",
+        "description": "Role and member lookup used to decide route access.",
+        "disposition": "non-visual business boundary",
+        "canonicalExports": [],
+        "caseIds": [],
+        "requiredStates": [],
+        "rationale": "Authorization remains in Tere and is never inferred by Beras.",
+        "evidenceIds": []
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/components/ThemeToggle.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [
+      "DOM class mutation",
+      "localStorage",
+      "theme state"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "Select: long options fit the narrow popover"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "Select: complete keyboard behavior and accessible option names"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S23:segmented-control",
+        "description": "Segmented control chrome from the unused theme toggle.",
+        "disposition": "canonicalized into SegmentedControl",
+        "canonicalExports": [
+          "SegmentedControl"
+        ],
+        "caseIds": [
+          "form/segmented-control/default",
+          "form/segmented-control/selection",
+          "form/segmented-control/disabled"
+        ],
+        "requiredStates": [
+          "default",
+          "selection",
+          "disabled"
+        ],
+        "rationale": "The generic controlled selection shape remains useful without a theme-switch API.",
+        "evidenceIds": [
+          "evidence:form/segmented-control/default:visual:source-s23",
+          "evidence:form/segmented-control/selection:visual:source-s23",
+          "evidence:form/segmented-control/disabled:visual:source-s23"
+        ]
+      },
+      {
+        "id": "source:S23:void-crimson-options",
+        "description": "Void and crimson theme options and switching behavior.",
+        "disposition": "inventory-only: void/crimson",
+        "canonicalExports": [
+          "SegmentedControl"
+        ],
+        "caseIds": [
+          "form/segmented-control/selection"
+        ],
+        "requiredStates": [
+          "selection"
+        ],
+        "rationale": "Options remain recorded but are not exposed as a Beras theme or emitted CSS.",
+        "evidenceIds": [
+          "evidence:form/segmented-control/selection:visual:source-s23"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/components/buttonLoginGoogle.tsx",
+    "currentDependencies": [
+      "@ant-design/icons"
+    ],
+    "removedRuntimeCoupling": [
+      "Google login callback"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "Icon: decorative icons hidden and informative icons named",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S24:oauth-button",
+        "description": "Legacy Google sign-in button and icon.",
+        "disposition": "canonicalized into Button",
+        "canonicalExports": [
+          "Button",
+          "GoogleIcon"
+        ],
+        "caseIds": [
+          "primitive/oauth-button/default",
+          "primitive/oauth-button/focus",
+          "primitive/oauth-button/disabled",
+          "primitive/oauth-button/pending"
+        ],
+        "requiredStates": [
+          "default",
+          "focus",
+          "disabled",
+          "pending"
+        ],
+        "rationale": "The duplicate component is not exported; its live Google action case uses Button and GoogleIcon.",
+        "evidenceIds": [
+          "evidence:primitive/oauth-button/default:visual:source-s24",
+          "evidence:primitive/oauth-button/focus:visual:source-s24",
+          "evidence:primitive/oauth-button/disabled:visual:source-s24",
+          "evidence:primitive/oauth-button/pending:visual:source-s24"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/components/loadingBar.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [
+      "theme hook",
+      "loading state source"
+    ],
+    "responsiveConcerns": [
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "State: live region, retry and reduced motion",
+      "Motion: reduced-motion static equivalent"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S25:loading-bar",
+        "description": "Themed waiting/data loading bar.",
+        "disposition": "canonicalized into LoadingOverlay",
+        "canonicalExports": [
+          "LoadingOverlay"
+        ],
+        "caseIds": [
+          "feedback/loading-overlay/waiting",
+          "feedback/loading-overlay/data",
+          "feedback/loading-overlay/reduced-motion"
+        ],
+        "requiredStates": [
+          "waiting",
+          "data",
+          "reduced-motion"
+        ],
+        "rationale": "A single controlled loading overlay replaces the wrapper and theme dependency.",
+        "evidenceIds": [
+          "evidence:feedback/loading-overlay/waiting:visual:source-s25",
+          "evidence:feedback/loading-overlay/data:visual:source-s25",
+          "evidence:feedback/loading-overlay/reduced-motion:visual:source-s25"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/components/loadingBounce.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [
+      "theme hook"
+    ],
+    "responsiveConcerns": [
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "State: live region, retry and reduced motion",
+      "Motion: reduced-motion static equivalent"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S26:spinner",
+        "description": "Indeterminate bouncing loader.",
+        "disposition": "canonicalized into Spinner",
+        "canonicalExports": [
+          "Spinner",
+          "LoadingOverlay"
+        ],
+        "caseIds": [
+          "feedback/spinner/default",
+          "feedback/spinner/labelled",
+          "feedback/spinner/reduced-motion"
+        ],
+        "requiredStates": [
+          "default",
+          "labelled",
+          "reduced-motion"
+        ],
+        "rationale": "One spinner motion contract replaces the duplicate loader and provides a static reduced-motion state.",
+        "evidenceIds": [
+          "evidence:feedback/spinner/default:visual:source-s26",
+          "evidence:feedback/spinner/labelled:visual:source-s26",
+          "evidence:feedback/spinner/reduced-motion:visual:source-s26"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/components/maintenancePage.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [
+      "window.reload"
+    ],
+    "responsiveConcerns": [
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "State: live region, retry and reduced motion",
+      "Text: heading and link semantics with safe overflow"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S27:maintenance-state",
+        "description": "Maintenance illustration, message and retry action.",
+        "disposition": "canonicalized into MaintenanceState",
+        "canonicalExports": [
+          "MaintenanceState"
+        ],
+        "caseIds": [
+          "feedback/maintenance-state/default",
+          "feedback/maintenance-state/retry-pending",
+          "feedback/maintenance-state/narrow"
+        ],
+        "requiredStates": [
+          "default",
+          "retry-pending",
+          "narrow"
+        ],
+        "rationale": "Retry is emitted through onRetry rather than calling window.reload.",
+        "evidenceIds": [
+          "evidence:feedback/maintenance-state/default:visual:source-s27",
+          "evidence:feedback/maintenance-state/retry-pending:visual:source-s27",
+          "evidence:feedback/maintenance-state/narrow:visual:source-s27"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/components/sidebar.tsx",
+    "currentDependencies": [
+      "react-responsive"
+    ],
+    "removedRuntimeCoupling": [
+      "router/path",
+      "RBAC",
+      "board/member data",
+      "sign-out"
+    ],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "Overlay: 320px overflow keeps actions visible",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "Overlay: focus containment, focus return and Escape",
+      "Text: heading and link semantics with safe overflow",
+      "Icon: decorative icons hidden and informative icons named"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S28:app-sidebar",
+        "description": "Brand, navigation groups, active states, progress summary and mobile drawer.",
+        "disposition": "canonicalized into AppSidebar",
+        "canonicalExports": [
+          "AppSidebar",
+          "NavList",
+          "AppShell"
+        ],
+        "caseIds": [
+          "navigation/app-sidebar/desktop",
+          "navigation/app-sidebar/mobile",
+          "navigation/app-sidebar/active",
+          "navigation/app-sidebar/long-labels"
+        ],
+        "requiredStates": [
+          "desktop",
+          "mobile",
+          "active",
+          "long-labels"
+        ],
+        "rationale": "Native CSS responsive behavior replaces react-responsive; navigation and permissions are typed props.",
+        "evidenceIds": [
+          "evidence:navigation/app-sidebar/desktop:visual:source-s28",
+          "evidence:navigation/app-sidebar/mobile:visual:source-s28",
+          "evidence:navigation/app-sidebar/active:visual:source-s28",
+          "evidence:navigation/app-sidebar/long-labels:visual:source-s28"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/components/topbar.tsx",
+    "currentDependencies": [
+      "antd",
+      "@ant-design/icons"
+    ],
+    "removedRuntimeCoupling": [
+      "query",
+      "auth",
+      "path",
+      "date",
+      "sign-out"
+    ],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "Overlay: 320px overflow keeps actions visible",
+      "Select: long options fit the narrow popover"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "Overlay: focus containment, focus return and Escape",
+      "Select: complete keyboard behavior and accessible option names",
+      "Icon: decorative icons hidden and informative icons named"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S29:app-header",
+        "description": "Greeting, page metadata, sprint stack and account menu.",
+        "disposition": "canonicalized into AppHeader",
+        "canonicalExports": [
+          "AppHeader",
+          "Popover",
+          "SelectField"
+        ],
+        "caseIds": [
+          "navigation/app-header/desktop",
+          "navigation/app-header/mobile",
+          "navigation/app-header/account-open",
+          "navigation/app-header/long-title"
+        ],
+        "requiredStates": [
+          "desktop",
+          "mobile",
+          "account-open",
+          "long-title"
+        ],
+        "rationale": "Header data and account actions are controlled; fixed sidebar-offset math is omitted.",
+        "evidenceIds": [
+          "evidence:navigation/app-header/desktop:visual:source-s29",
+          "evidence:navigation/app-header/mobile:visual:source-s29",
+          "evidence:navigation/app-header/account-open:visual:source-s29",
+          "evidence:navigation/app-header/long-title:visual:source-s29"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/api-keys/components/McpConnectionPage.tsx",
+    "currentDependencies": [
+      "antd",
+      "lucide-react"
+    ],
+    "removedRuntimeCoupling": [
+      "API hook",
+      "origin/config generation",
+      "clipboard",
+      "window behavior"
+    ],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "Form: fields and actions stack at narrow width",
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "Overlay: 320px overflow keeps actions visible",
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "Form: labels, errors, keyboard submit and cancel",
+      "Dense: overflow region is focusable and labelled",
+      "Overlay: focus containment, focus return and Escape",
+      "State: live region, retry and reduced motion",
+      "Text: heading and link semantics with safe overflow"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S30:mcp-connection-page",
+        "description": "Instruction steps, code blocks, API key table, secret field and create/secret dialogs.",
+        "disposition": "canonicalized into McpConnectionView",
+        "canonicalExports": [
+          "McpConnectionView",
+          "InstructionSteps",
+          "CodeBlock",
+          "ApiKeyTable",
+          "SecretField",
+          "Dialog"
+        ],
+        "caseIds": [
+          "composition/mcp-connection/loading",
+          "composition/mcp-connection/empty",
+          "composition/mcp-connection/error",
+          "composition/mcp-connection/populated",
+          "composition/mcp-connection/create-open",
+          "composition/mcp-connection/secret-open"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "create-open",
+          "secret-open"
+        ],
+        "rationale": "Key material is supplied as presentational data and every side effect is emitted to the consumer.",
+        "evidenceIds": [
+          "evidence:composition/mcp-connection/loading:visual:source-s30",
+          "evidence:composition/mcp-connection/empty:visual:source-s30",
+          "evidence:composition/mcp-connection/error:visual:source-s30",
+          "evidence:composition/mcp-connection/populated:visual:source-s30",
+          "evidence:composition/mcp-connection/create-open:visual:source-s30",
+          "evidence:composition/mcp-connection/secret-open:visual:source-s30"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/bug-monitoring/components/BugListView.tsx",
+    "currentDependencies": [
+      "antd"
+    ],
+    "removedRuntimeCoupling": [
+      "fetch hook",
+      "status/priority classification",
+      "Jira link shaping"
+    ],
+    "responsiveConcerns": [
+      "Select: long options fit the narrow popover",
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "Select: complete keyboard behavior and accessible option names",
+      "State: live region, retry and reduced motion",
+      "Text: heading and link semantics with safe overflow",
+      "Icon: decorative icons hidden and informative icons named"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S31:bug-list",
+        "description": "Metric cards, filters, issue rows and loading/empty/error states.",
+        "disposition": "canonicalized into IssueList",
+        "canonicalExports": [
+          "IssueList",
+          "MetricCard",
+          "StatusBadge"
+        ],
+        "caseIds": [
+          "data-display/bug-list/loading",
+          "data-display/bug-list/empty",
+          "data-display/bug-list/error",
+          "data-display/bug-list/populated",
+          "data-display/bug-list/filtered",
+          "data-display/bug-list/long-content"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "filtered",
+          "long-content"
+        ],
+        "rationale": "Semantic tones and safe links arrive pre-shaped as view data.",
+        "evidenceIds": [
+          "evidence:data-display/bug-list/loading:visual:source-s31",
+          "evidence:data-display/bug-list/empty:visual:source-s31",
+          "evidence:data-display/bug-list/error:visual:source-s31",
+          "evidence:data-display/bug-list/populated:visual:source-s31",
+          "evidence:data-display/bug-list/filtered:visual:source-s31",
+          "evidence:data-display/bug-list/long-content:visual:source-s31"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/bug-monitoring/components/BugStatistics.tsx",
+    "currentDependencies": [
+      "antd",
+      "@ant-design/icons",
+      "recharts",
+      "framer-motion"
+    ],
+    "removedRuntimeCoupling": [
+      "Jira status mapping",
+      "statistics calculation"
+    ],
+    "responsiveConcerns": [
+      "Chart: responsive SVG and long-label containment",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Chart: semantic data equivalent and non-color markers",
+      "State: live region, retry and reduced motion",
+      "Motion: reduced-motion static equivalent"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S32:bug-statistics",
+        "description": "Metrics, progress, donut chart and bar chart.",
+        "disposition": "canonicalized into DonutChart",
+        "canonicalExports": [
+          "MetricCard",
+          "ProgressMeter",
+          "DonutChart",
+          "BarChart"
+        ],
+        "caseIds": [
+          "visualization/bug-statistics/empty",
+          "visualization/bug-statistics/single",
+          "visualization/bug-statistics/multiple",
+          "visualization/bug-statistics/long-labels",
+          "visualization/bug-statistics/reduced-motion"
+        ],
+        "requiredStates": [
+          "empty",
+          "single",
+          "multiple",
+          "long-labels",
+          "reduced-motion"
+        ],
+        "rationale": "Normalized series feed native SVG charts; Recharts and motion-library mechanics are not copied.",
+        "evidenceIds": [
+          "evidence:visualization/bug-statistics/empty:visual:source-s32",
+          "evidence:visualization/bug-statistics/single:visual:source-s32",
+          "evidence:visualization/bug-statistics/multiple:visual:source-s32",
+          "evidence:visualization/bug-statistics/long-labels:visual:source-s32",
+          "evidence:visualization/bug-statistics/reduced-motion:visual:source-s32"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/bug-monitoring/components/BugTable.tsx",
+    "currentDependencies": [
+      "antd",
+      "framer-motion"
+    ],
+    "removedRuntimeCoupling": [
+      "Jira URL shaping",
+      "status mapping"
+    ],
+    "responsiveConcerns": [
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Dense: overflow region is focusable and labelled",
+      "State: live region, retry and reduced motion",
+      "Motion: reduced-motion static equivalent",
+      "Icon: decorative icons hidden and informative icons named"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S33:bug-table",
+        "description": "Tabs, sortable/paged bug rows, badges, avatars and row action.",
+        "disposition": "canonicalized into DataTable",
+        "canonicalExports": [
+          "Tabs",
+          "DataTable",
+          "StatusBadge"
+        ],
+        "caseIds": [
+          "data-display/bug-table/loading",
+          "data-display/bug-table/empty",
+          "data-display/bug-table/error",
+          "data-display/bug-table/populated",
+          "data-display/bug-table/sort",
+          "data-display/bug-table/selection",
+          "data-display/bug-table/overflow"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "sort",
+          "selection",
+          "overflow"
+        ],
+        "rationale": "Native DataTable preserves the active table intent despite the old stylesheet being unloaded.",
+        "evidenceIds": [
+          "evidence:data-display/bug-table/loading:visual:source-s33",
+          "evidence:data-display/bug-table/empty:visual:source-s33",
+          "evidence:data-display/bug-table/error:visual:source-s33",
+          "evidence:data-display/bug-table/populated:visual:source-s33",
+          "evidence:data-display/bug-table/sort:visual:source-s33",
+          "evidence:data-display/bug-table/selection:visual:source-s33",
+          "evidence:data-display/bug-table/overflow:visual:source-s33"
+        ]
+      },
+      {
+        "id": "stylesheet:apps/tere-project/src/app/bug-monitoring.css#tab-and-table-intent",
+        "description": "apps/tere-project/src/app/bug-monitoring.css .custom-modern-tabs plus Ant tab/table overrides and pulse-red status intent.",
+        "disposition": "canonicalized into DataTable",
+        "canonicalExports": [
+          "Tabs",
+          "DataTable",
+          "StatusBadge"
+        ],
+        "caseIds": [
+          "navigation/tabs/default",
+          "navigation/tabs/selection",
+          "data-display/bug-table/populated",
+          "data-display/bug-table/sort",
+          "data-display/bug-table/overflow"
+        ],
+        "requiredStates": [
+          "default",
+          "selection",
+          "populated",
+          "sort",
+          "overflow"
+        ],
+        "rationale": "Intended tab, table and priority status appearance moves to prefixed component CSS.",
+        "evidenceIds": [
+          "evidence:navigation/tabs/default:visual:source-s33",
+          "evidence:navigation/tabs/selection:visual:source-s33",
+          "evidence:data-display/bug-table/populated:visual:source-s33",
+          "evidence:data-display/bug-table/sort:visual:source-s33",
+          "evidence:data-display/bug-table/overflow:visual:source-s33"
+        ]
+      },
+      {
+        "id": "stylesheet:apps/tere-project/src/app/bug-monitoring.css#unloaded-and-unused-selectors",
+        "description": "apps/tere-project/src/app/bug-monitoring.css is never imported; .high-priority-bug, shimmer and .skeleton-shimmer have no live TSX use.",
+        "disposition": "not ported: dead CSS or known defect",
+        "canonicalExports": [
+          "StatusBadge",
+          "Skeleton"
+        ],
+        "caseIds": [
+          "data-display/bug-table/populated",
+          "feedback/page-skeleton/default"
+        ],
+        "requiredStates": [
+          "populated",
+          "default"
+        ],
+        "rationale": "Unloaded and unreferenced selectors are recorded but not recreated as a compatibility layer.",
+        "evidenceIds": [
+          "evidence:data-display/bug-table/populated:visual:source-s33",
+          "evidence:feedback/page-skeleton/default:visual:source-s33"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/bug-monitoring/components/BugTrendChart.tsx",
+    "currentDependencies": [
+      "antd",
+      "recharts",
+      "framer-motion",
+      "dayjs"
+    ],
+    "removedRuntimeCoupling": [
+      "bug bucketing",
+      "range calculation"
+    ],
+    "responsiveConcerns": [
+      "Chart: responsive SVG and long-label containment",
+      "Form: fields and actions stack at narrow width",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Chart: semantic data equivalent and non-color markers",
+      "Form: labels, errors, keyboard submit and cancel",
+      "State: live region, retry and reduced motion",
+      "Motion: reduced-motion static equivalent"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S34:bug-trend",
+        "description": "Range and segment controls, area trend, tooltip and loading/error states.",
+        "disposition": "canonicalized into BugTrendPanel",
+        "canonicalExports": [
+          "BugTrendPanel",
+          "SegmentedControl",
+          "DateRangeField",
+          "AreaChart"
+        ],
+        "caseIds": [
+          "visualization/bug-trend/loading",
+          "visualization/bug-trend/empty",
+          "visualization/bug-trend/error",
+          "visualization/bug-trend/single",
+          "visualization/bug-trend/multiple",
+          "visualization/bug-trend/custom-range",
+          "visualization/bug-trend/reduced-motion"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "single",
+          "multiple",
+          "custom-range",
+          "reduced-motion"
+        ],
+        "rationale": "The consumer supplies buckets; native controls and SVG replace dayjs, Recharts and Framer Motion.",
+        "evidenceIds": [
+          "evidence:visualization/bug-trend/loading:visual:source-s34",
+          "evidence:visualization/bug-trend/empty:visual:source-s34",
+          "evidence:visualization/bug-trend/error:visual:source-s34",
+          "evidence:visualization/bug-trend/single:visual:source-s34",
+          "evidence:visualization/bug-trend/multiple:visual:source-s34",
+          "evidence:visualization/bug-trend/custom-range:visual:source-s34",
+          "evidence:visualization/bug-trend/reduced-motion:visual:source-s34"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/configuration/components/ComingSoon.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [],
+    "responsiveConcerns": [
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "State: live region, retry and reduced motion",
+      "Text: heading and link semantics with safe overflow",
+      "Icon: decorative icons hidden and informative icons named"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S35:coming-soon-state",
+        "description": "Icon, title and description placeholder.",
+        "disposition": "canonicalized into StateView",
+        "canonicalExports": [
+          "StateView"
+        ],
+        "caseIds": [
+          "feedback/state-view/empty",
+          "feedback/state-view/coming-soon"
+        ],
+        "requiredStates": [
+          "empty",
+          "coming-soon"
+        ],
+        "rationale": "The zero-incoming source remains represented by a live generic state case.",
+        "evidenceIds": [
+          "evidence:feedback/state-view/empty:visual:source-s35",
+          "evidence:feedback/state-view/coming-soon:visual:source-s35"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/configuration/components/ConfigAuditLogPanel.tsx",
+    "currentDependencies": [
+      "antd",
+      "@ant-design/icons"
+    ],
+    "removedRuntimeCoupling": [
+      "query",
+      "reload",
+      "timezone formatting",
+      "domain formatting"
+    ],
+    "responsiveConcerns": [
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "Dense: overflow region is focusable and labelled",
+      "State: live region, retry and reduced motion",
+      "Text: heading and link semantics with safe overflow"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S36:audit-log",
+        "description": "Audit table, loading/error state, reload and load-more action.",
+        "disposition": "canonicalized into AuditLogPanel",
+        "canonicalExports": [
+          "AuditLogPanel"
+        ],
+        "caseIds": [
+          "data-display/audit-log/loading",
+          "data-display/audit-log/empty",
+          "data-display/audit-log/error",
+          "data-display/audit-log/populated",
+          "data-display/audit-log/load-more",
+          "data-display/audit-log/long-content"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "load-more",
+          "long-content"
+        ],
+        "rationale": "Rows and actions are controlled; querying and formatting remain outside the package.",
+        "evidenceIds": [
+          "evidence:data-display/audit-log/loading:visual:source-s36",
+          "evidence:data-display/audit-log/empty:visual:source-s36",
+          "evidence:data-display/audit-log/error:visual:source-s36",
+          "evidence:data-display/audit-log/populated:visual:source-s36",
+          "evidence:data-display/audit-log/load-more:visual:source-s36",
+          "evidence:data-display/audit-log/long-content:visual:source-s36"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/configuration/components/ConfigurationTabs.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [
+      "URL/query state"
+    ],
+    "responsiveConcerns": [
+      "Select: long options fit the narrow popover",
+      "Dense: labelled inner overflow owns horizontal scroll"
+    ],
+    "accessibilityConcerns": [
+      "Select: complete keyboard behavior and accessible option names",
+      "Dense: overflow region is focusable and labelled"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S37:configuration-tabs",
+        "description": "Configuration tab navigation.",
+        "disposition": "canonicalized into Tabs",
+        "canonicalExports": [
+          "Tabs"
+        ],
+        "caseIds": [
+          "navigation/configuration-tabs/default",
+          "navigation/configuration-tabs/selection",
+          "navigation/configuration-tabs/focus",
+          "navigation/configuration-tabs/overflow"
+        ],
+        "requiredStates": [
+          "default",
+          "selection",
+          "focus",
+          "overflow"
+        ],
+        "rationale": "The consumer controls the selected key instead of the component reading URL state.",
+        "evidenceIds": [
+          "evidence:navigation/configuration-tabs/default:visual:source-s37",
+          "evidence:navigation/configuration-tabs/selection:visual:source-s37",
+          "evidence:navigation/configuration-tabs/focus:visual:source-s37",
+          "evidence:navigation/configuration-tabs/overflow:visual:source-s37"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/configuration/components/HolidayAuditLogPanel.tsx",
+    "currentDependencies": [
+      "antd types"
+    ],
+    "removedRuntimeCoupling": [
+      "holiday domain row shaping"
+    ],
+    "responsiveConcerns": [
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "Dense: overflow region is focusable and labelled",
+      "State: live region, retry and reduced motion",
+      "Text: heading and link semantics with safe overflow"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S38:holiday-audit",
+        "description": "Holiday audit columns and change snapshots.",
+        "disposition": "canonicalized into AuditLogPanel",
+        "canonicalExports": [
+          "AuditLogPanel"
+        ],
+        "caseIds": [
+          "data-display/holiday-audit/loading",
+          "data-display/holiday-audit/empty",
+          "data-display/holiday-audit/error",
+          "data-display/holiday-audit/populated",
+          "data-display/holiday-audit/long-content"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "long-content"
+        ],
+        "rationale": "Specialized display columns remain a typed composition while domain shaping stays external.",
+        "evidenceIds": [
+          "evidence:data-display/holiday-audit/loading:visual:source-s38",
+          "evidence:data-display/holiday-audit/empty:visual:source-s38",
+          "evidence:data-display/holiday-audit/error:visual:source-s38",
+          "evidence:data-display/holiday-audit/populated:visual:source-s38",
+          "evidence:data-display/holiday-audit/long-content:visual:source-s38"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/configuration/components/TargetWpAuditLogPanel.tsx",
+    "currentDependencies": [
+      "antd types"
+    ],
+    "removedRuntimeCoupling": [
+      "dynamic rate shaping",
+      "target-WP domain shaping"
+    ],
+    "responsiveConcerns": [
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "Dense: overflow region is focusable and labelled",
+      "State: live region, retry and reduced motion",
+      "Text: heading and link semantics with safe overflow"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S39:target-wp-audit",
+        "description": "Target-WP audit rows and rate snapshots.",
+        "disposition": "canonicalized into AuditLogPanel",
+        "canonicalExports": [
+          "AuditLogPanel"
+        ],
+        "caseIds": [
+          "data-display/target-wp-audit/loading",
+          "data-display/target-wp-audit/empty",
+          "data-display/target-wp-audit/error",
+          "data-display/target-wp-audit/populated",
+          "data-display/target-wp-audit/long-content"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "long-content"
+        ],
+        "rationale": "The panel receives display-ready rates and rows.",
+        "evidenceIds": [
+          "evidence:data-display/target-wp-audit/loading:visual:source-s39",
+          "evidence:data-display/target-wp-audit/empty:visual:source-s39",
+          "evidence:data-display/target-wp-audit/error:visual:source-s39",
+          "evidence:data-display/target-wp-audit/populated:visual:source-s39",
+          "evidence:data-display/target-wp-audit/long-content:visual:source-s39"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/configuration/components/TargetWpConfigPanel.tsx",
+    "currentDependencies": [
+      "antd",
+      "@ant-design/icons"
+    ],
+    "removedRuntimeCoupling": [
+      "hooks",
+      "domain validation",
+      "WIB rules",
+      "mutations"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "Overlay: 320px overflow keeps actions visible",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "Dense: overflow region is focusable and labelled",
+      "Overlay: focus containment, focus return and Escape",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S40:target-wp-config",
+        "description": "Configuration table, create/edit form dialog, confirmation and messages.",
+        "disposition": "canonicalized into ConfigFormDialog",
+        "canonicalExports": [
+          "DataTable",
+          "ConfigFormDialog",
+          "ConfirmDialog"
+        ],
+        "caseIds": [
+          "composition/target-wp-config/loading",
+          "composition/target-wp-config/empty",
+          "composition/target-wp-config/error",
+          "composition/target-wp-config/populated",
+          "composition/target-wp-config/create",
+          "composition/target-wp-config/edit",
+          "composition/target-wp-config/validation",
+          "composition/target-wp-config/confirm",
+          "composition/target-wp-config/pending"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "create",
+          "edit",
+          "validation",
+          "confirm",
+          "pending"
+        ],
+        "rationale": "Domain validation and mutations stay in Tere; Beras renders controlled values and errors.",
+        "evidenceIds": [
+          "evidence:composition/target-wp-config/loading:visual:source-s40",
+          "evidence:composition/target-wp-config/empty:visual:source-s40",
+          "evidence:composition/target-wp-config/error:visual:source-s40",
+          "evidence:composition/target-wp-config/populated:visual:source-s40",
+          "evidence:composition/target-wp-config/create:visual:source-s40",
+          "evidence:composition/target-wp-config/edit:visual:source-s40",
+          "evidence:composition/target-wp-config/validation:visual:source-s40",
+          "evidence:composition/target-wp-config/confirm:visual:source-s40",
+          "evidence:composition/target-wp-config/pending:visual:source-s40"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/configuration/components/WpWeightAuditLogPanel.tsx",
+    "currentDependencies": [
+      "antd types"
+    ],
+    "removedRuntimeCoupling": [
+      "WP-weight domain row shaping"
+    ],
+    "responsiveConcerns": [
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "Dense: overflow region is focusable and labelled",
+      "State: live region, retry and reduced motion",
+      "Text: heading and link semantics with safe overflow"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S41:wp-weight-audit",
+        "description": "WP-weight audit rows and changed values.",
+        "disposition": "canonicalized into AuditLogPanel",
+        "canonicalExports": [
+          "AuditLogPanel"
+        ],
+        "caseIds": [
+          "data-display/wp-weight-audit/loading",
+          "data-display/wp-weight-audit/empty",
+          "data-display/wp-weight-audit/error",
+          "data-display/wp-weight-audit/populated",
+          "data-display/wp-weight-audit/long-content"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "long-content"
+        ],
+        "rationale": "The row formatter remains outside the canonical audit panel.",
+        "evidenceIds": [
+          "evidence:data-display/wp-weight-audit/loading:visual:source-s41",
+          "evidence:data-display/wp-weight-audit/empty:visual:source-s41",
+          "evidence:data-display/wp-weight-audit/error:visual:source-s41",
+          "evidence:data-display/wp-weight-audit/populated:visual:source-s41",
+          "evidence:data-display/wp-weight-audit/long-content:visual:source-s41"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/configuration/components/WpWeightConfigPanel.tsx",
+    "currentDependencies": [
+      "antd",
+      "@ant-design/icons"
+    ],
+    "removedRuntimeCoupling": [
+      "hooks",
+      "domain validation",
+      "mutations"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "Overlay: 320px overflow keeps actions visible",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "Dense: overflow region is focusable and labelled",
+      "Overlay: focus containment, focus return and Escape",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S42:wp-weight-config",
+        "description": "WP-weight table, create/edit form, confirmation and messages.",
+        "disposition": "canonicalized into ConfigFormDialog",
+        "canonicalExports": [
+          "DataTable",
+          "ConfigFormDialog",
+          "ConfirmDialog"
+        ],
+        "caseIds": [
+          "composition/wp-weight-config/loading",
+          "composition/wp-weight-config/empty",
+          "composition/wp-weight-config/error",
+          "composition/wp-weight-config/populated",
+          "composition/wp-weight-config/create",
+          "composition/wp-weight-config/edit",
+          "composition/wp-weight-config/validation",
+          "composition/wp-weight-config/confirm",
+          "composition/wp-weight-config/pending"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "create",
+          "edit",
+          "validation",
+          "confirm",
+          "pending"
+        ],
+        "rationale": "The repeated configuration shell shares typed presentational variants.",
+        "evidenceIds": [
+          "evidence:composition/wp-weight-config/loading:visual:source-s42",
+          "evidence:composition/wp-weight-config/empty:visual:source-s42",
+          "evidence:composition/wp-weight-config/error:visual:source-s42",
+          "evidence:composition/wp-weight-config/populated:visual:source-s42",
+          "evidence:composition/wp-weight-config/create:visual:source-s42",
+          "evidence:composition/wp-weight-config/edit:visual:source-s42",
+          "evidence:composition/wp-weight-config/validation:visual:source-s42",
+          "evidence:composition/wp-weight-config/confirm:visual:source-s42",
+          "evidence:composition/wp-weight-config/pending:visual:source-s42"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/dashboard/components/DateRangeSelect.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS",
+      "dayjs"
+    ],
+    "removedRuntimeCoupling": [
+      "preset date calculation",
+      "report store"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "Select: long options fit the narrow popover",
+      "Overlay: 320px overflow keeps actions visible"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "Select: complete keyboard behavior and accessible option names",
+      "Overlay: focus containment, focus return and Escape"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S43:date-range-field",
+        "description": "Preset dropdown, two date inputs and apply action.",
+        "disposition": "canonicalized into DateRangeField",
+        "canonicalExports": [
+          "DateRangeField"
+        ],
+        "caseIds": [
+          "form/date-range-field/empty",
+          "form/date-range-field/populated",
+          "form/date-range-field/preset",
+          "form/date-range-field/custom",
+          "form/date-range-field/validation",
+          "form/date-range-field/disabled",
+          "form/date-range-field/narrow"
+        ],
+        "requiredStates": [
+          "empty",
+          "populated",
+          "preset",
+          "custom",
+          "validation",
+          "disabled",
+          "narrow"
+        ],
+        "rationale": "Native ISO date inputs and Intl replace dayjs; calculations remain caller-owned.",
+        "evidenceIds": [
+          "evidence:form/date-range-field/empty:visual:source-s43",
+          "evidence:form/date-range-field/populated:visual:source-s43",
+          "evidence:form/date-range-field/preset:visual:source-s43",
+          "evidence:form/date-range-field/custom:visual:source-s43",
+          "evidence:form/date-range-field/validation:visual:source-s43",
+          "evidence:form/date-range-field/disabled:visual:source-s43",
+          "evidence:form/date-range-field/narrow:visual:source-s43"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/dashboard/components/GlobalSearch.tsx",
+    "currentDependencies": [
+      "antd",
+      "@ant-design/icons"
+    ],
+    "removedRuntimeCoupling": [
+      "debounce",
+      "query",
+      "paging",
+      "router",
+      "domain mapping"
+    ],
+    "responsiveConcerns": [
+      "Select: long options fit the narrow popover",
+      "Overlay: 320px overflow keeps actions visible",
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "Select: complete keyboard behavior and accessible option names",
+      "Overlay: focus containment, focus return and Escape",
+      "State: live region, retry and reduced motion",
+      "Text: heading and link semantics with safe overflow"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S44:global-search",
+        "description": "Search input/dropdown, skeleton, results, paging and detail dialog.",
+        "disposition": "canonicalized into SearchCombobox",
+        "canonicalExports": [
+          "SearchCombobox",
+          "TicketDetailDialog"
+        ],
+        "caseIds": [
+          "form/global-search/idle",
+          "form/global-search/loading",
+          "form/global-search/empty",
+          "form/global-search/error",
+          "form/global-search/populated",
+          "form/global-search/detail-open",
+          "form/global-search/long-content"
+        ],
+        "requiredStates": [
+          "idle",
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "detail-open",
+          "long-content"
+        ],
+        "rationale": "Querying and navigation are callbacks; the search and dialog are controlled presentation.",
+        "evidenceIds": [
+          "evidence:form/global-search/idle:visual:source-s44",
+          "evidence:form/global-search/loading:visual:source-s44",
+          "evidence:form/global-search/empty:visual:source-s44",
+          "evidence:form/global-search/error:visual:source-s44",
+          "evidence:form/global-search/populated:visual:source-s44",
+          "evidence:form/global-search/detail-open:visual:source-s44",
+          "evidence:form/global-search/long-content:visual:source-s44"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/dashboard/components/MemberTaskModal.tsx",
+    "currentDependencies": [
+      "antd",
+      "@ant-design/icons"
+    ],
+    "removedRuntimeCoupling": [
+      "task hook",
+      "sorting",
+      "domain mapping",
+      "legacy HTML source"
+    ],
+    "responsiveConcerns": [
+      "Overlay: 320px overflow keeps actions visible",
+      "Select: long options fit the narrow popover",
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "Overlay: focus containment, focus return and Escape",
+      "Select: complete keyboard behavior and accessible option names",
+      "State: live region, retry and reduced motion",
+      "Text: heading and link semantics with safe overflow"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S45:member-tasks-dialog",
+        "description": "Task dialog, disclosures, ticket cards, badges and rich descriptions.",
+        "disposition": "canonicalized into MemberTasksDialog",
+        "canonicalExports": [
+          "MemberTasksDialog",
+          "AdfContent"
+        ],
+        "caseIds": [
+          "overlay/member-tasks/loading",
+          "overlay/member-tasks/empty",
+          "overlay/member-tasks/error",
+          "overlay/member-tasks/populated",
+          "overlay/member-tasks/expanded",
+          "overlay/member-tasks/long-content"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "expanded",
+          "long-content"
+        ],
+        "rationale": "A controlled dialog renders typed task data and safe ADF/plain content.",
+        "evidenceIds": [
+          "evidence:overlay/member-tasks/loading:visual:source-s45",
+          "evidence:overlay/member-tasks/empty:visual:source-s45",
+          "evidence:overlay/member-tasks/error:visual:source-s45",
+          "evidence:overlay/member-tasks/populated:visual:source-s45",
+          "evidence:overlay/member-tasks/expanded:visual:source-s45",
+          "evidence:overlay/member-tasks/long-content:visual:source-s45"
+        ]
+      },
+      {
+        "id": "source:S45:raw-html-description",
+        "description": "Legacy dangerouslySetInnerHTML description path.",
+        "disposition": "not ported: dead CSS or known defect",
+        "canonicalExports": [
+          "AdfContent"
+        ],
+        "caseIds": [
+          "overlay/member-tasks/long-content"
+        ],
+        "requiredStates": [
+          "long-content"
+        ],
+        "rationale": "Raw HTML is unsafe and is replaced by typed safe React content; sanitation remains a consumer boundary.",
+        "evidenceIds": [
+          "evidence:overlay/member-tasks/long-content:visual:source-s45"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/dashboard/components/MultiSelectSprint.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS",
+      "dayjs"
+    ],
+    "removedRuntimeCoupling": [
+      "sprint grouping",
+      "date formatting",
+      "report store"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "Select: long options fit the narrow popover",
+      "Overlay: 320px overflow keeps actions visible"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "Select: complete keyboard behavior and accessible option names",
+      "Overlay: focus containment, focus return and Escape"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S46:sprint-multiselect",
+        "description": "Grouped searchable sprint multiselect with select-all and draft/apply state.",
+        "disposition": "canonicalized into MultiSelect",
+        "canonicalExports": [
+          "MultiSelect",
+          "SprintOption"
+        ],
+        "caseIds": [
+          "form/sprint-multiselect/empty",
+          "form/sprint-multiselect/populated",
+          "form/sprint-multiselect/search",
+          "form/sprint-multiselect/partial",
+          "form/sprint-multiselect/all",
+          "form/sprint-multiselect/draft",
+          "form/sprint-multiselect/disabled",
+          "form/sprint-multiselect/long-options"
+        ],
+        "requiredStates": [
+          "empty",
+          "populated",
+          "search",
+          "partial",
+          "all",
+          "draft",
+          "disabled",
+          "long-options"
+        ],
+        "rationale": "The consumer supplies groups and labels; the component owns only controlled selection mechanics.",
+        "evidenceIds": [
+          "evidence:form/sprint-multiselect/empty:visual:source-s46",
+          "evidence:form/sprint-multiselect/populated:visual:source-s46",
+          "evidence:form/sprint-multiselect/search:visual:source-s46",
+          "evidence:form/sprint-multiselect/partial:visual:source-s46",
+          "evidence:form/sprint-multiselect/all:visual:source-s46",
+          "evidence:form/sprint-multiselect/draft:visual:source-s46",
+          "evidence:form/sprint-multiselect/disabled:visual:source-s46",
+          "evidence:form/sprint-multiselect/long-options:visual:source-s46"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/dashboard/components/MultiSelectTeam.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [
+      "board source",
+      "report store"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "Select: long options fit the narrow popover",
+      "Overlay: 320px overflow keeps actions visible"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "Select: complete keyboard behavior and accessible option names",
+      "Overlay: focus containment, focus return and Escape"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S47:team-multiselect",
+        "description": "Searchable team multiselect with select-all and draft state.",
+        "disposition": "canonicalized into MultiSelect",
+        "canonicalExports": [
+          "MultiSelect"
+        ],
+        "caseIds": [
+          "form/team-multiselect/empty",
+          "form/team-multiselect/populated",
+          "form/team-multiselect/search",
+          "form/team-multiselect/partial",
+          "form/team-multiselect/all",
+          "form/team-multiselect/draft",
+          "form/team-multiselect/disabled",
+          "form/team-multiselect/long-options"
+        ],
+        "requiredStates": [
+          "empty",
+          "populated",
+          "search",
+          "partial",
+          "all",
+          "draft",
+          "disabled",
+          "long-options"
+        ],
+        "rationale": "Domain boards stay external and one MultiSelect interaction contract is reused.",
+        "evidenceIds": [
+          "evidence:form/team-multiselect/empty:visual:source-s47",
+          "evidence:form/team-multiselect/populated:visual:source-s47",
+          "evidence:form/team-multiselect/search:visual:source-s47",
+          "evidence:form/team-multiselect/partial:visual:source-s47",
+          "evidence:form/team-multiselect/all:visual:source-s47",
+          "evidence:form/team-multiselect/draft:visual:source-s47",
+          "evidence:form/team-multiselect/disabled:visual:source-s47",
+          "evidence:form/team-multiselect/long-options:visual:source-s47"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/dashboard/components/ProductivitySummary.tsx",
+    "currentDependencies": [
+      "antd",
+      "lucide-react",
+      "dayjs"
+    ],
+    "removedRuntimeCoupling": [
+      "Axios",
+      "hooks",
+      "calculation",
+      "permission"
+    ],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "Form: fields and actions stack at narrow width",
+      "Select: long options fit the narrow popover",
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "Form: labels, errors, keyboard submit and cancel",
+      "Select: complete keyboard behavior and accessible option names",
+      "Dense: overflow region is focusable and labelled",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S48:productivity-summary",
+        "description": "Filters, month input, metric cards, table and fetch states.",
+        "disposition": "canonicalized into ProductivitySummaryView",
+        "canonicalExports": [
+          "ProductivitySummaryView",
+          "MonthField",
+          "DataTable"
+        ],
+        "caseIds": [
+          "composition/productivity-summary/loading",
+          "composition/productivity-summary/empty",
+          "composition/productivity-summary/error",
+          "composition/productivity-summary/populated",
+          "composition/productivity-summary/filtered",
+          "composition/productivity-summary/overflow"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "filtered",
+          "overflow"
+        ],
+        "rationale": "Normalized metrics and rows replace HTTP, permission and date coupling.",
+        "evidenceIds": [
+          "evidence:composition/productivity-summary/loading:visual:source-s48",
+          "evidence:composition/productivity-summary/empty:visual:source-s48",
+          "evidence:composition/productivity-summary/error:visual:source-s48",
+          "evidence:composition/productivity-summary/populated:visual:source-s48",
+          "evidence:composition/productivity-summary/filtered:visual:source-s48",
+          "evidence:composition/productivity-summary/overflow:visual:source-s48"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/dashboard/components/ProductivitySummaryExportButton.tsx",
+    "currentDependencies": [
+      "antd",
+      "@ant-design/icons",
+      "framer-motion"
+    ],
+    "removedRuntimeCoupling": [
+      "export hook",
+      "window behavior",
+      "notification"
+    ],
+    "responsiveConcerns": [
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "State: live region, retry and reduced motion",
+      "Motion: reduced-motion static equivalent",
+      "Icon: decorative icons hidden and informative icons named"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S49:productivity-export-button",
+        "description": "Spreadsheet export button, pending and success/failure animation.",
+        "disposition": "canonicalized into Button",
+        "canonicalExports": [
+          "Button"
+        ],
+        "caseIds": [
+          "primitive/export-button/disabled",
+          "primitive/export-button/default",
+          "primitive/export-button/pending",
+          "primitive/export-button/success",
+          "primitive/export-button/failure",
+          "primitive/export-button/reduced-motion"
+        ],
+        "requiredStates": [
+          "disabled",
+          "default",
+          "pending",
+          "success",
+          "failure",
+          "reduced-motion"
+        ],
+        "rationale": "The export side effect remains a callback; Button owns only visible action state.",
+        "evidenceIds": [
+          "evidence:primitive/export-button/disabled:visual:source-s49",
+          "evidence:primitive/export-button/default:visual:source-s49",
+          "evidence:primitive/export-button/pending:visual:source-s49",
+          "evidence:primitive/export-button/success:visual:source-s49",
+          "evidence:primitive/export-button/failure:visual:source-s49",
+          "evidence:primitive/export-button/reduced-motion:visual:source-s49"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/dashboard/components/SprintSelect.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS",
+      "dayjs"
+    ],
+    "removedRuntimeCoupling": [
+      "sprint grouping",
+      "date formatting",
+      "report store"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "Select: long options fit the narrow popover",
+      "Overlay: 320px overflow keeps actions visible"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "Select: complete keyboard behavior and accessible option names",
+      "Overlay: focus containment, focus return and Escape"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S50:sprint-combobox",
+        "description": "Legacy grouped searchable single-sprint picker.",
+        "disposition": "canonicalized into Combobox",
+        "canonicalExports": [
+          "Combobox",
+          "SprintOption"
+        ],
+        "caseIds": [
+          "form/sprint-combobox/empty",
+          "form/sprint-combobox/populated",
+          "form/sprint-combobox/search",
+          "form/sprint-combobox/selection",
+          "form/sprint-combobox/disabled",
+          "form/sprint-combobox/long-options"
+        ],
+        "requiredStates": [
+          "empty",
+          "populated",
+          "search",
+          "selection",
+          "disabled",
+          "long-options"
+        ],
+        "rationale": "The unused source remains represented by the same complete combobox pattern.",
+        "evidenceIds": [
+          "evidence:form/sprint-combobox/empty:visual:source-s50",
+          "evidence:form/sprint-combobox/populated:visual:source-s50",
+          "evidence:form/sprint-combobox/search:visual:source-s50",
+          "evidence:form/sprint-combobox/selection:visual:source-s50",
+          "evidence:form/sprint-combobox/disabled:visual:source-s50",
+          "evidence:form/sprint-combobox/long-options:visual:source-s50"
+        ]
+      },
+      {
+        "id": "stylesheet:apps/tere-project/src/features/dashboard/components/SprintSelect.css#grouped-combobox",
+        "description": "apps/tere-project/src/features/dashboard/components/SprintSelect.css search, group, option and status selectors for SprintSelect.",
+        "disposition": "canonicalized into Combobox",
+        "canonicalExports": [
+          "Combobox"
+        ],
+        "caseIds": [
+          "form/sprint-combobox/empty",
+          "form/sprint-combobox/populated",
+          "form/sprint-combobox/search",
+          "form/sprint-combobox/selection",
+          "form/sprint-combobox/disabled",
+          "form/sprint-combobox/long-options"
+        ],
+        "requiredStates": [
+          "empty",
+          "populated",
+          "search",
+          "selection",
+          "disabled",
+          "long-options"
+        ],
+        "rationale": "The legacy single select remains case-covered through the canonical combobox.",
+        "evidenceIds": [
+          "evidence:form/sprint-combobox/empty:visual:source-s50",
+          "evidence:form/sprint-combobox/populated:visual:source-s50",
+          "evidence:form/sprint-combobox/search:visual:source-s50",
+          "evidence:form/sprint-combobox/selection:visual:source-s50",
+          "evidence:form/sprint-combobox/disabled:visual:source-s50",
+          "evidence:form/sprint-combobox/long-options:visual:source-s50"
+        ]
+      },
+      {
+        "id": "stylesheet:apps/tere-project/src/features/dashboard/components/SprintSelect.css#multi-select-and-footer",
+        "description": "apps/tere-project/src/features/dashboard/components/SprintSelect.css multiselect, selected count and footer selectors used by sprint/team controls.",
+        "disposition": "canonicalized into MultiSelect",
+        "canonicalExports": [
+          "MultiSelect"
+        ],
+        "caseIds": [
+          "form/sprint-multiselect/populated",
+          "form/sprint-multiselect/partial",
+          "form/sprint-multiselect/all",
+          "form/sprint-multiselect/draft",
+          "form/sprint-multiselect/long-options",
+          "form/team-multiselect/populated",
+          "form/team-multiselect/partial",
+          "form/team-multiselect/all",
+          "form/team-multiselect/draft",
+          "form/team-multiselect/long-options"
+        ],
+        "requiredStates": [
+          "populated",
+          "partial",
+          "all",
+          "draft",
+          "long-options"
+        ],
+        "rationale": "Shared rich-option and draft/footer intent is consolidated into MultiSelect styles.",
+        "evidenceIds": [
+          "evidence:form/sprint-multiselect/populated:visual:source-s50",
+          "evidence:form/sprint-multiselect/partial:visual:source-s50",
+          "evidence:form/sprint-multiselect/all:visual:source-s50",
+          "evidence:form/sprint-multiselect/draft:visual:source-s50",
+          "evidence:form/sprint-multiselect/long-options:visual:source-s50",
+          "evidence:form/team-multiselect/populated:visual:source-s50",
+          "evidence:form/team-multiselect/partial:visual:source-s50",
+          "evidence:form/team-multiselect/all:visual:source-s50",
+          "evidence:form/team-multiselect/draft:visual:source-s50",
+          "evidence:form/team-multiselect/long-options:visual:source-s50"
+        ]
+      },
+      {
+        "id": "stylesheet:apps/tere-project/src/features/dashboard/components/SprintSelect.css#fixed-dropdown-width",
+        "description": "apps/tere-project/src/features/dashboard/components/SprintSelect.css fixed 320px dropdown geometry on narrow screens.",
+        "disposition": "not ported: dead CSS or known defect",
+        "canonicalExports": [
+          "Combobox",
+          "MultiSelect"
+        ],
+        "caseIds": [
+          "form/sprint-combobox/long-options",
+          "form/sprint-multiselect/long-options",
+          "form/team-multiselect/long-options"
+        ],
+        "requiredStates": [
+          "long-options"
+        ],
+        "rationale": "The Beras popover uses responsive max width and owned overflow instead of forcing viewport overflow.",
+        "evidenceIds": [
+          "evidence:form/sprint-combobox/long-options:visual:source-s50",
+          "evidence:form/sprint-multiselect/long-options:visual:source-s50",
+          "evidence:form/team-multiselect/long-options:visual:source-s50"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/dashboard/components/SprintTrendChart.tsx",
+    "currentDependencies": [
+      "antd",
+      "recharts"
+    ],
+    "removedRuntimeCoupling": [
+      "hooks",
+      "stores",
+      "series transformation"
+    ],
+    "responsiveConcerns": [
+      "Chart: responsive SVG and long-label containment",
+      "Select: long options fit the narrow popover",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Chart: semantic data equivalent and non-color markers",
+      "Select: complete keyboard behavior and accessible option names",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S51:sprint-trend",
+        "description": "Metric switch, line chart, callout and loading/error states.",
+        "disposition": "canonicalized into SprintTrendPanel",
+        "canonicalExports": [
+          "SprintTrendPanel",
+          "LineChart"
+        ],
+        "caseIds": [
+          "visualization/sprint-trend/loading",
+          "visualization/sprint-trend/empty",
+          "visualization/sprint-trend/error",
+          "visualization/sprint-trend/single",
+          "visualization/sprint-trend/multiple",
+          "visualization/sprint-trend/metric-selection",
+          "visualization/sprint-trend/long-labels"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "single",
+          "multiple",
+          "metric-selection",
+          "long-labels"
+        ],
+        "rationale": "Normalized series and callout props feed native SVG presentation.",
+        "evidenceIds": [
+          "evidence:visualization/sprint-trend/loading:visual:source-s51",
+          "evidence:visualization/sprint-trend/empty:visual:source-s51",
+          "evidence:visualization/sprint-trend/error:visual:source-s51",
+          "evidence:visualization/sprint-trend/single:visual:source-s51",
+          "evidence:visualization/sprint-trend/multiple:visual:source-s51",
+          "evidence:visualization/sprint-trend/metric-selection:visual:source-s51",
+          "evidence:visualization/sprint-trend/long-labels:visual:source-s51"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/dashboard/components/TeamSelect.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [
+      "board source",
+      "report store"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "Select: long options fit the narrow popover"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "Select: complete keyboard behavior and accessible option names"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S52:team-select",
+        "description": "Legacy simple team select.",
+        "disposition": "canonicalized into SelectField",
+        "canonicalExports": [
+          "SelectField"
+        ],
+        "caseIds": [
+          "form/team-select/empty",
+          "form/team-select/populated",
+          "form/team-select/selection",
+          "form/team-select/disabled",
+          "form/team-select/long-options"
+        ],
+        "requiredStates": [
+          "empty",
+          "populated",
+          "selection",
+          "disabled",
+          "long-options"
+        ],
+        "rationale": "The unused source is represented with the native single-choice control rather than another custom picker.",
+        "evidenceIds": [
+          "evidence:form/team-select/empty:visual:source-s52",
+          "evidence:form/team-select/populated:visual:source-s52",
+          "evidence:form/team-select/selection:visual:source-s52",
+          "evidence:form/team-select/disabled:visual:source-s52",
+          "evidence:form/team-select/long-options:visual:source-s52"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/dashboard/components/epicSelect.tsx",
+    "currentDependencies": [
+      "@ant-design/icons",
+      "@tanstack/react-query"
+    ],
+    "removedRuntimeCoupling": [
+      "repository",
+      "query",
+      "Jira status grouping",
+      "report store"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "Select: long options fit the narrow popover",
+      "Overlay: 320px overflow keeps actions visible",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "Select: complete keyboard behavior and accessible option names",
+      "Overlay: focus containment, focus return and Escape",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S53:epic-multiselect",
+        "description": "Grouped search, status summaries and multiselect draft/apply.",
+        "disposition": "canonicalized into MultiSelect",
+        "canonicalExports": [
+          "MultiSelect"
+        ],
+        "caseIds": [
+          "form/epic-multiselect/loading",
+          "form/epic-multiselect/empty",
+          "form/epic-multiselect/error",
+          "form/epic-multiselect/populated",
+          "form/epic-multiselect/search",
+          "form/epic-multiselect/partial",
+          "form/epic-multiselect/draft",
+          "form/epic-multiselect/long-options"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "search",
+          "partial",
+          "draft",
+          "long-options"
+        ],
+        "rationale": "Repository and Jira statuses are pre-shaped; MultiSelect handles only interaction and display.",
+        "evidenceIds": [
+          "evidence:form/epic-multiselect/loading:visual:source-s53",
+          "evidence:form/epic-multiselect/empty:visual:source-s53",
+          "evidence:form/epic-multiselect/error:visual:source-s53",
+          "evidence:form/epic-multiselect/populated:visual:source-s53",
+          "evidence:form/epic-multiselect/search:visual:source-s53",
+          "evidence:form/epic-multiselect/partial:visual:source-s53",
+          "evidence:form/epic-multiselect/draft:visual:source-s53",
+          "evidence:form/epic-multiselect/long-options:visual:source-s53"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/dashboard/components/filterReport.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS",
+      "dayjs"
+    ],
+    "removedRuntimeCoupling": [
+      "stores",
+      "hooks",
+      "RBAC",
+      "filter visibility rules"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "Select: long options fit the narrow popover",
+      "Shell: 320px drawer/grid with no page overflow"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "Select: complete keyboard behavior and accessible option names",
+      "Shell: landmarks and logical focus order"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S54:report-filter-bar",
+        "description": "Filter-bar layout combining date, team, sprint and epic controls.",
+        "disposition": "canonicalized into FilterBar",
+        "canonicalExports": [
+          "FilterBar"
+        ],
+        "caseIds": [
+          "form/report-filter-bar/default",
+          "form/report-filter-bar/partial",
+          "form/report-filter-bar/complete",
+          "form/report-filter-bar/disabled",
+          "form/report-filter-bar/narrow",
+          "form/report-filter-bar/overflow"
+        ],
+        "requiredStates": [
+          "default",
+          "partial",
+          "complete",
+          "disabled",
+          "narrow",
+          "overflow"
+        ],
+        "rationale": "Visibility and values are controlled by the consumer.",
+        "evidenceIds": [
+          "evidence:form/report-filter-bar/default:visual:source-s54",
+          "evidence:form/report-filter-bar/partial:visual:source-s54",
+          "evidence:form/report-filter-bar/complete:visual:source-s54",
+          "evidence:form/report-filter-bar/disabled:visual:source-s54",
+          "evidence:form/report-filter-bar/narrow:visual:source-s54",
+          "evidence:form/report-filter-bar/overflow:visual:source-s54"
+        ]
+      },
+      {
+        "id": "stylesheet:apps/tere-project/src/features/dashboard/components/FilterReport.css#filter-and-control-groups",
+        "description": "apps/tere-project/src/features/dashboard/components/FilterReport.css filter layout, select trigger/dropdown/options, date presets/inputs, multiselect checks/counts and animations.",
+        "disposition": "canonicalized into FilterBar",
+        "canonicalExports": [
+          "FilterBar",
+          "Combobox",
+          "MultiSelect",
+          "DateRangeField"
+        ],
+        "caseIds": [
+          "form/report-filter-bar/default",
+          "form/report-filter-bar/narrow",
+          "form/report-filter-bar/overflow",
+          "form/combobox/populated",
+          "form/combobox/long-options",
+          "form/sprint-multiselect/populated",
+          "form/sprint-multiselect/long-options",
+          "form/date-range-field/populated",
+          "form/date-range-field/narrow"
+        ],
+        "requiredStates": [
+          "default",
+          "narrow",
+          "overflow",
+          "populated",
+          "long-options"
+        ],
+        "rationale": "Equivalent control styles collapse to semantic prefixed CSS; motion receives a reduced-motion override.",
+        "evidenceIds": [
+          "evidence:form/report-filter-bar/default:visual:source-s54",
+          "evidence:form/report-filter-bar/narrow:visual:source-s54",
+          "evidence:form/report-filter-bar/overflow:visual:source-s54",
+          "evidence:form/combobox/populated:visual:source-s54",
+          "evidence:form/combobox/long-options:visual:source-s54",
+          "evidence:form/sprint-multiselect/populated:visual:source-s54",
+          "evidence:form/sprint-multiselect/long-options:visual:source-s54",
+          "evidence:form/date-range-field/populated:visual:source-s54",
+          "evidence:form/date-range-field/narrow:visual:source-s54"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/dashboard/components/teamPerformance.tsx",
+    "currentDependencies": [
+      "antd Tooltip"
+    ],
+    "removedRuntimeCoupling": [
+      "report calculations"
+    ],
+    "responsiveConcerns": [
+      "Text: long content wraps or uses owned overflow",
+      "Overlay: 320px overflow keeps actions visible",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Text: heading and link semantics with safe overflow",
+      "Overlay: focus containment, focus return and Escape",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S55:team-performance",
+        "description": "Metric grid, statistic cards, progress and explanatory tooltips.",
+        "disposition": "canonicalized into StatGrid",
+        "canonicalExports": [
+          "StatGrid",
+          "MetricCard",
+          "ProgressMeter",
+          "Popover"
+        ],
+        "caseIds": [
+          "data-display/team-performance/empty",
+          "data-display/team-performance/populated",
+          "data-display/team-performance/long-labels",
+          "data-display/team-performance/narrow"
+        ],
+        "requiredStates": [
+          "empty",
+          "populated",
+          "long-labels",
+          "narrow"
+        ],
+        "rationale": "The caller supplies calculated values and semantic tones.",
+        "evidenceIds": [
+          "evidence:data-display/team-performance/empty:visual:source-s55",
+          "evidence:data-display/team-performance/populated:visual:source-s55",
+          "evidence:data-display/team-performance/long-labels:visual:source-s55",
+          "evidence:data-display/team-performance/narrow:visual:source-s55"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/dashboard/components/teamTable.tsx",
+    "currentDependencies": [
+      "antd",
+      "lucide-react"
+    ],
+    "removedRuntimeCoupling": [
+      "transforms",
+      "stores",
+      "configuration",
+      "member hooks",
+      "formulas",
+      "clipboard"
+    ],
+    "responsiveConcerns": [
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "Overlay: 320px overflow keeps actions visible",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Dense: overflow region is focusable and labelled",
+      "Overlay: focus containment, focus return and Escape",
+      "State: live region, retry and reduced motion",
+      "Icon: decorative icons hidden and informative icons named"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S56:team-metrics-table",
+        "description": "Metrics table, info popover, copy action, selection toolbar and task dialog.",
+        "disposition": "canonicalized into TeamMetricsTable",
+        "canonicalExports": [
+          "TeamMetricsTable",
+          "DataTable",
+          "Popover",
+          "MemberTasksDialog"
+        ],
+        "caseIds": [
+          "data-display/team-metrics-table/loading",
+          "data-display/team-metrics-table/empty",
+          "data-display/team-metrics-table/error",
+          "data-display/team-metrics-table/populated",
+          "data-display/team-metrics-table/sort",
+          "data-display/team-metrics-table/selection",
+          "data-display/team-metrics-table/overflow",
+          "data-display/team-metrics-table/tasks-open"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "sort",
+          "selection",
+          "overflow",
+          "tasks-open"
+        ],
+        "rationale": "Formulas and side effects stay consumer-owned; the table and overlays are presentational.",
+        "evidenceIds": [
+          "evidence:data-display/team-metrics-table/loading:visual:source-s56",
+          "evidence:data-display/team-metrics-table/empty:visual:source-s56",
+          "evidence:data-display/team-metrics-table/error:visual:source-s56",
+          "evidence:data-display/team-metrics-table/populated:visual:source-s56",
+          "evidence:data-display/team-metrics-table/sort:visual:source-s56",
+          "evidence:data-display/team-metrics-table/selection:visual:source-s56",
+          "evidence:data-display/team-metrics-table/overflow:visual:source-s56",
+          "evidence:data-display/team-metrics-table/tasks-open:visual:source-s56"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/epic-explorer/components/DescendantControls.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [
+      "domain filter execution",
+      "domain sort execution"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "Select: long options fit the narrow popover"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "Select: complete keyboard behavior and accessible option names"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S57:tree-controls",
+        "description": "Search, filter and sort controls for descendants.",
+        "disposition": "canonicalized into FilterBar",
+        "canonicalExports": [
+          "FilterBar",
+          "TextField",
+          "SelectField"
+        ],
+        "caseIds": [
+          "form/tree-controls/default",
+          "form/tree-controls/populated",
+          "form/tree-controls/disabled",
+          "form/tree-controls/narrow"
+        ],
+        "requiredStates": [
+          "default",
+          "populated",
+          "disabled",
+          "narrow"
+        ],
+        "rationale": "The controls emit criteria and do not execute domain filtering.",
+        "evidenceIds": [
+          "evidence:form/tree-controls/default:visual:source-s57",
+          "evidence:form/tree-controls/populated:visual:source-s57",
+          "evidence:form/tree-controls/disabled:visual:source-s57",
+          "evidence:form/tree-controls/narrow:visual:source-s57"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/epic-explorer/components/DescendantDetail.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [
+      "Jira issue shaping",
+      "domain formatting"
+    ],
+    "responsiveConcerns": [
+      "Text: long content wraps or uses owned overflow",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Text: heading and link semantics with safe overflow",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S58:issue-detail",
+        "description": "Issue definition list, status and ADF detail.",
+        "disposition": "canonicalized into DefinitionList",
+        "canonicalExports": [
+          "DefinitionList",
+          "StatusBadge",
+          "AdfContent"
+        ],
+        "caseIds": [
+          "data-display/issue-detail/empty",
+          "data-display/issue-detail/populated",
+          "data-display/issue-detail/long-content",
+          "data-display/issue-detail/overflow"
+        ],
+        "requiredStates": [
+          "empty",
+          "populated",
+          "long-content",
+          "overflow"
+        ],
+        "rationale": "Only formatted safe values and typed content reach the detail surface.",
+        "evidenceIds": [
+          "evidence:data-display/issue-detail/empty:visual:source-s58",
+          "evidence:data-display/issue-detail/populated:visual:source-s58",
+          "evidence:data-display/issue-detail/long-content:visual:source-s58",
+          "evidence:data-display/issue-detail/overflow:visual:source-s58"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/epic-explorer/components/EpicInfoCard.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [
+      "Jira issue data",
+      "Jira link shaping"
+    ],
+    "responsiveConcerns": [
+      "Text: long content wraps or uses owned overflow",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Text: heading and link semantics with safe overflow",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S59:epic-info",
+        "description": "Epic summary card, definitions, status and ADF content.",
+        "disposition": "canonicalized into Card",
+        "canonicalExports": [
+          "Card",
+          "DefinitionList",
+          "StatusBadge",
+          "AdfContent"
+        ],
+        "caseIds": [
+          "data-display/epic-info/empty",
+          "data-display/epic-info/populated",
+          "data-display/epic-info/long-content"
+        ],
+        "requiredStates": [
+          "empty",
+          "populated",
+          "long-content"
+        ],
+        "rationale": "Domain values and safe links are supplied by the caller.",
+        "evidenceIds": [
+          "evidence:data-display/epic-info/empty:visual:source-s59",
+          "evidence:data-display/epic-info/populated:visual:source-s59",
+          "evidence:data-display/epic-info/long-content:visual:source-s59"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/epic-explorer/components/EpicSearch.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [
+      "store",
+      "query",
+      "status mapping"
+    ],
+    "responsiveConcerns": [
+      "Select: long options fit the narrow popover",
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "Select: complete keyboard behavior and accessible option names",
+      "State: live region, retry and reduced motion",
+      "Text: heading and link semantics with safe overflow"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S60:epic-search",
+        "description": "Searchable epic results with loading and error states.",
+        "disposition": "canonicalized into SearchCombobox",
+        "canonicalExports": [
+          "SearchCombobox"
+        ],
+        "caseIds": [
+          "form/epic-search/idle",
+          "form/epic-search/loading",
+          "form/epic-search/empty",
+          "form/epic-search/error",
+          "form/epic-search/populated",
+          "form/epic-search/long-options"
+        ],
+        "requiredStates": [
+          "idle",
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "long-options"
+        ],
+        "rationale": "The query and store are removed; options and view state are controlled.",
+        "evidenceIds": [
+          "evidence:form/epic-search/idle:visual:source-s60",
+          "evidence:form/epic-search/loading:visual:source-s60",
+          "evidence:form/epic-search/empty:visual:source-s60",
+          "evidence:form/epic-search/error:visual:source-s60",
+          "evidence:form/epic-search/populated:visual:source-s60",
+          "evidence:form/epic-search/long-options:visual:source-s60"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/epic-explorer/components/FrSelect.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "Select: long options fit the narrow popover",
+      "Overlay: 320px overflow keeps actions visible"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "Select: complete keyboard behavior and accessible option names",
+      "Overlay: focus containment, focus return and Escape"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S61:combobox",
+        "description": "Custom searchable single-select dropdown.",
+        "disposition": "canonicalized into Combobox",
+        "canonicalExports": [
+          "Combobox"
+        ],
+        "caseIds": [
+          "form/combobox/empty",
+          "form/combobox/populated",
+          "form/combobox/search",
+          "form/combobox/selection",
+          "form/combobox/clear",
+          "form/combobox/disabled",
+          "form/combobox/long-options"
+        ],
+        "requiredStates": [
+          "empty",
+          "populated",
+          "search",
+          "selection",
+          "clear",
+          "disabled",
+          "long-options"
+        ],
+        "rationale": "One complete accessible combobox replaces the ad hoc dropdown mechanics.",
+        "evidenceIds": [
+          "evidence:form/combobox/empty:visual:source-s61",
+          "evidence:form/combobox/populated:visual:source-s61",
+          "evidence:form/combobox/search:visual:source-s61",
+          "evidence:form/combobox/selection:visual:source-s61",
+          "evidence:form/combobox/clear:visual:source-s61",
+          "evidence:form/combobox/disabled:visual:source-s61",
+          "evidence:form/combobox/long-options:visual:source-s61"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/epic-explorer/components/HierarchyTree.tsx",
+    "currentDependencies": [
+      "antd"
+    ],
+    "removedRuntimeCoupling": [
+      "tree construction",
+      "filtering",
+      "sorting",
+      "query",
+      "domain actions"
+    ],
+    "responsiveConcerns": [
+      "Tree: deep hierarchy remains operable at narrow width",
+      "Overlay: 320px overflow keeps actions visible",
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "Tree: roving tree keyboard and ARIA levels",
+      "Overlay: focus containment, focus return and Escape",
+      "State: live region, retry and reduced motion",
+      "Text: heading and link semantics with safe overflow"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S62:issue-tree",
+        "description": "Nested issue tree, rows, load-more and ticket detail dialog.",
+        "disposition": "canonicalized into IssueTree",
+        "canonicalExports": [
+          "IssueTree",
+          "TicketDetailDialog"
+        ],
+        "caseIds": [
+          "data-display/issue-tree/empty",
+          "data-display/issue-tree/loading",
+          "data-display/issue-tree/error",
+          "data-display/issue-tree/collapsed",
+          "data-display/issue-tree/expanded",
+          "data-display/issue-tree/selected",
+          "data-display/issue-tree/deep",
+          "data-display/issue-tree/load-more",
+          "data-display/issue-tree/detail-open"
+        ],
+        "requiredStates": [
+          "empty",
+          "loading",
+          "error",
+          "collapsed",
+          "expanded",
+          "selected",
+          "deep",
+          "load-more",
+          "detail-open"
+        ],
+        "rationale": "Typed tree data replaces domain processing and roving focus fixes the all-items-tab-stop defect.",
+        "evidenceIds": [
+          "evidence:data-display/issue-tree/empty:visual:source-s62",
+          "evidence:data-display/issue-tree/loading:visual:source-s62",
+          "evidence:data-display/issue-tree/error:visual:source-s62",
+          "evidence:data-display/issue-tree/collapsed:visual:source-s62",
+          "evidence:data-display/issue-tree/expanded:visual:source-s62",
+          "evidence:data-display/issue-tree/selected:visual:source-s62",
+          "evidence:data-display/issue-tree/deep:visual:source-s62",
+          "evidence:data-display/issue-tree/load-more:visual:source-s62",
+          "evidence:data-display/issue-tree/detail-open:visual:source-s62"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/epic-explorer/components/MetricsPanel.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [
+      "business metric calculation",
+      "domain formatting"
+    ],
+    "responsiveConcerns": [
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "State: live region, retry and reduced motion",
+      "Text: heading and link semantics with safe overflow"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S63:epic-metrics",
+        "description": "Metrics, statistic cards, definitions and callout.",
+        "disposition": "canonicalized into StatGrid",
+        "canonicalExports": [
+          "StatGrid",
+          "MetricCard",
+          "DefinitionList",
+          "Callout"
+        ],
+        "caseIds": [
+          "data-display/epic-metrics/empty",
+          "data-display/epic-metrics/populated",
+          "data-display/epic-metrics/optional",
+          "data-display/epic-metrics/long-content",
+          "data-display/epic-metrics/narrow"
+        ],
+        "requiredStates": [
+          "empty",
+          "populated",
+          "optional",
+          "long-content",
+          "narrow"
+        ],
+        "rationale": "Values arrive ready to display; no calculation is copied.",
+        "evidenceIds": [
+          "evidence:data-display/epic-metrics/empty:visual:source-s63",
+          "evidence:data-display/epic-metrics/populated:visual:source-s63",
+          "evidence:data-display/epic-metrics/optional:visual:source-s63",
+          "evidence:data-display/epic-metrics/long-content:visual:source-s63",
+          "evidence:data-display/epic-metrics/narrow:visual:source-s63"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/epic-explorer/components/ProjectSelect.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [
+      "project hook",
+      "store",
+      "deduplication"
+    ],
+    "responsiveConcerns": [
+      "Select: long options fit the narrow popover",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Select: complete keyboard behavior and accessible option names",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S64:project-combobox",
+        "description": "Searchable project picker and async states.",
+        "disposition": "canonicalized into Combobox",
+        "canonicalExports": [
+          "Combobox"
+        ],
+        "caseIds": [
+          "form/project-combobox/loading",
+          "form/project-combobox/empty",
+          "form/project-combobox/error",
+          "form/project-combobox/populated",
+          "form/project-combobox/search",
+          "form/project-combobox/selection"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "search",
+          "selection"
+        ],
+        "rationale": "Project loading and deduplication remain external.",
+        "evidenceIds": [
+          "evidence:form/project-combobox/loading:visual:source-s64",
+          "evidence:form/project-combobox/empty:visual:source-s64",
+          "evidence:form/project-combobox/error:visual:source-s64",
+          "evidence:form/project-combobox/populated:visual:source-s64",
+          "evidence:form/project-combobox/search:visual:source-s64",
+          "evidence:form/project-combobox/selection:visual:source-s64"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/epic-explorer/components/StateViews.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [],
+    "responsiveConcerns": [
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "State: live region, retry and reduced motion",
+      "Motion: reduced-motion static equivalent",
+      "Text: heading and link semantics with safe overflow"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S65:state-view",
+        "description": "Shared loading, empty, error and retry callouts.",
+        "disposition": "canonicalized into StateView",
+        "canonicalExports": [
+          "StateView",
+          "Callout"
+        ],
+        "caseIds": [
+          "feedback/state-view/loading",
+          "feedback/state-view/empty",
+          "feedback/state-view/error",
+          "feedback/state-view/retry"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "retry"
+        ],
+        "rationale": "One shared state surface covers catalog and feature cases.",
+        "evidenceIds": [
+          "evidence:feedback/state-view/loading:visual:source-s65",
+          "evidence:feedback/state-view/empty:visual:source-s65",
+          "evidence:feedback/state-view/error:visual:source-s65",
+          "evidence:feedback/state-view/retry:visual:source-s65"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/epic-explorer/components/StatusBadge.tsx",
+    "currentDependencies": [
+      "React",
+      "native CSS"
+    ],
+    "removedRuntimeCoupling": [
+      "Jira category-to-tone mapping"
+    ],
+    "responsiveConcerns": [
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "Text: heading and link semantics with safe overflow",
+      "Icon: decorative icons hidden and informative icons named"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S66:status-badge",
+        "description": "Semantic status pill and glyph.",
+        "disposition": "canonicalized into StatusBadge",
+        "canonicalExports": [
+          "StatusBadge"
+        ],
+        "caseIds": [
+          "primitive/status-badge/neutral",
+          "primitive/status-badge/info",
+          "primitive/status-badge/success",
+          "primitive/status-badge/warning",
+          "primitive/status-badge/danger",
+          "primitive/status-badge/long-label"
+        ],
+        "requiredStates": [
+          "neutral",
+          "info",
+          "success",
+          "warning",
+          "danger",
+          "long-label"
+        ],
+        "rationale": "The caller supplies a semantic tone instead of a Jira category.",
+        "evidenceIds": [
+          "evidence:primitive/status-badge/neutral:visual:source-s66",
+          "evidence:primitive/status-badge/info:visual:source-s66",
+          "evidence:primitive/status-badge/success:visual:source-s66",
+          "evidence:primitive/status-badge/warning:visual:source-s66",
+          "evidence:primitive/status-badge/danger:visual:source-s66",
+          "evidence:primitive/status-badge/long-label:visual:source-s66"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/holiday-management/components/BulkInsert.tsx",
+    "currentDependencies": [
+      "antd",
+      "lucide-react"
+    ],
+    "removedRuntimeCoupling": [
+      "JSON parsing",
+      "domain schema validation",
+      "API call",
+      "messages"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "State: live region, retry and reduced motion",
+      "Text: heading and link semantics with safe overflow"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S67:json-import",
+        "description": "JSON textarea, instructions, action and result state.",
+        "disposition": "canonicalized into JsonImportPanel",
+        "canonicalExports": [
+          "JsonImportPanel",
+          "TextAreaField",
+          "Callout"
+        ],
+        "caseIds": [
+          "form/json-import/empty",
+          "form/json-import/validation",
+          "form/json-import/ready",
+          "form/json-import/pending",
+          "form/json-import/success",
+          "form/json-import/failure"
+        ],
+        "requiredStates": [
+          "empty",
+          "validation",
+          "ready",
+          "pending",
+          "success",
+          "failure"
+        ],
+        "rationale": "Parsing and domain validation remain callback boundaries; the panel displays controlled state.",
+        "evidenceIds": [
+          "evidence:form/json-import/empty:visual:source-s67",
+          "evidence:form/json-import/validation:visual:source-s67",
+          "evidence:form/json-import/ready:visual:source-s67",
+          "evidence:form/json-import/pending:visual:source-s67",
+          "evidence:form/json-import/success:visual:source-s67",
+          "evidence:form/json-import/failure:visual:source-s67"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/holiday-management/components/HolidayCalendar.tsx",
+    "currentDependencies": [
+      "antd",
+      "lucide-react",
+      "framer-motion",
+      "dayjs"
+    ],
+    "removedRuntimeCoupling": [
+      "holiday hooks",
+      "date/domain logic",
+      "mutations"
+    ],
+    "responsiveConcerns": [
+      "Cal: narrow calendar grid and boundary dates",
+      "Form: fields and actions stack at narrow width",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Cal: calendar grid, boundary state and roving keyboard",
+      "Form: labels, errors, keyboard submit and cancel",
+      "State: live region, retry and reduced motion",
+      "Motion: reduced-motion static equivalent"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S68:holiday-calendar",
+        "description": "Month grid, holiday/current/range states, navigation and actions.",
+        "disposition": "canonicalized into HolidayCalendar",
+        "canonicalExports": [
+          "HolidayCalendar"
+        ],
+        "caseIds": [
+          "calendar/holiday-calendar/empty",
+          "calendar/holiday-calendar/populated",
+          "calendar/holiday-calendar/selection",
+          "calendar/holiday-calendar/range",
+          "calendar/holiday-calendar/boundary",
+          "calendar/holiday-calendar/dense",
+          "calendar/holiday-calendar/narrow",
+          "calendar/holiday-calendar/reduced-motion"
+        ],
+        "requiredStates": [
+          "empty",
+          "populated",
+          "selection",
+          "range",
+          "boundary",
+          "dense",
+          "narrow",
+          "reduced-motion"
+        ],
+        "rationale": "Native date math and CSS replace dayjs and Framer Motion; pointer and keyboard selection remain equivalent.",
+        "evidenceIds": [
+          "evidence:calendar/holiday-calendar/empty:visual:source-s68",
+          "evidence:calendar/holiday-calendar/populated:visual:source-s68",
+          "evidence:calendar/holiday-calendar/selection:visual:source-s68",
+          "evidence:calendar/holiday-calendar/range:visual:source-s68",
+          "evidence:calendar/holiday-calendar/boundary:visual:source-s68",
+          "evidence:calendar/holiday-calendar/dense:visual:source-s68",
+          "evidence:calendar/holiday-calendar/narrow:visual:source-s68",
+          "evidence:calendar/holiday-calendar/reduced-motion:visual:source-s68"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/holiday-management/components/HolidayFormModal.tsx",
+    "currentDependencies": [
+      "antd",
+      "dayjs"
+    ],
+    "removedRuntimeCoupling": [
+      "mutations",
+      "domain validation",
+      "date rules"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "Overlay: 320px overflow keeps actions visible",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "Overlay: focus containment, focus return and Escape",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S69:holiday-form",
+        "description": "Create/edit holiday fields, existing dates, delete and confirmation states.",
+        "disposition": "canonicalized into HolidayFormDialog",
+        "canonicalExports": [
+          "HolidayFormDialog",
+          "ConfirmDialog"
+        ],
+        "caseIds": [
+          "overlay/holiday-form/create",
+          "overlay/holiday-form/edit",
+          "overlay/holiday-form/validation",
+          "overlay/holiday-form/existing",
+          "overlay/holiday-form/confirm",
+          "overlay/holiday-form/pending",
+          "overlay/holiday-form/error",
+          "overlay/holiday-form/narrow"
+        ],
+        "requiredStates": [
+          "create",
+          "edit",
+          "validation",
+          "existing",
+          "confirm",
+          "pending",
+          "error",
+          "narrow"
+        ],
+        "rationale": "Mutation decisions remain outside the controlled form dialog.",
+        "evidenceIds": [
+          "evidence:overlay/holiday-form/create:visual:source-s69",
+          "evidence:overlay/holiday-form/edit:visual:source-s69",
+          "evidence:overlay/holiday-form/validation:visual:source-s69",
+          "evidence:overlay/holiday-form/existing:visual:source-s69",
+          "evidence:overlay/holiday-form/confirm:visual:source-s69",
+          "evidence:overlay/holiday-form/pending:visual:source-s69",
+          "evidence:overlay/holiday-form/error:visual:source-s69",
+          "evidence:overlay/holiday-form/narrow:visual:source-s69"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/holiday-management/components/HolidayListView.tsx",
+    "currentDependencies": [
+      "antd",
+      "dayjs"
+    ],
+    "removedRuntimeCoupling": [
+      "hooks",
+      "sorting",
+      "upcoming grouping",
+      "domain actions"
+    ],
+    "responsiveConcerns": [
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "State: live region, retry and reduced motion",
+      "Text: heading and link semantics with safe overflow",
+      "Icon: decorative icons hidden and informative icons named"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S70:holiday-list",
+        "description": "Statistics, sections, date badges, holiday rows/actions and fetch states.",
+        "disposition": "canonicalized into HolidayList",
+        "canonicalExports": [
+          "HolidayList",
+          "MetricCard"
+        ],
+        "caseIds": [
+          "data-display/holiday-list/loading",
+          "data-display/holiday-list/empty",
+          "data-display/holiday-list/error",
+          "data-display/holiday-list/populated",
+          "data-display/holiday-list/long-content",
+          "data-display/holiday-list/narrow"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "long-content",
+          "narrow"
+        ],
+        "rationale": "Sections and rows are supplied in display order with controlled actions.",
+        "evidenceIds": [
+          "evidence:data-display/holiday-list/loading:visual:source-s70",
+          "evidence:data-display/holiday-list/empty:visual:source-s70",
+          "evidence:data-display/holiday-list/error:visual:source-s70",
+          "evidence:data-display/holiday-list/populated:visual:source-s70",
+          "evidence:data-display/holiday-list/long-content:visual:source-s70",
+          "evidence:data-display/holiday-list/narrow:visual:source-s70"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/talent-leave/components/DateRangePicker.tsx",
+    "currentDependencies": [
+      "antd",
+      "@ant-design/icons",
+      "dayjs"
+    ],
+    "removedRuntimeCoupling": [
+      "leave store",
+      "date normalization"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "Select: long options fit the narrow popover"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "Select: complete keyboard behavior and accessible option names",
+      "Icon: decorative icons hidden and informative icons named"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S71:leave-date-range",
+        "description": "Leave date-range field and calendar icon.",
+        "disposition": "canonicalized into DateRangeField",
+        "canonicalExports": [
+          "DateRangeField"
+        ],
+        "caseIds": [
+          "form/date-range-field/empty",
+          "form/date-range-field/populated",
+          "form/date-range-field/validation",
+          "form/date-range-field/disabled",
+          "form/date-range-field/narrow"
+        ],
+        "requiredStates": [
+          "empty",
+          "populated",
+          "validation",
+          "disabled",
+          "narrow"
+        ],
+        "rationale": "Native ISO dates and Intl replace dayjs and store coupling.",
+        "evidenceIds": [
+          "evidence:form/date-range-field/empty:visual:source-s71",
+          "evidence:form/date-range-field/populated:visual:source-s71",
+          "evidence:form/date-range-field/validation:visual:source-s71",
+          "evidence:form/date-range-field/disabled:visual:source-s71",
+          "evidence:form/date-range-field/narrow:visual:source-s71"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/talent-leave/components/ExportButton.tsx",
+    "currentDependencies": [
+      "antd",
+      "@ant-design/icons",
+      "framer-motion"
+    ],
+    "removedRuntimeCoupling": [
+      "export hook",
+      "window behavior",
+      "notification"
+    ],
+    "responsiveConcerns": [
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "State: live region, retry and reduced motion",
+      "Motion: reduced-motion static equivalent",
+      "Icon: decorative icons hidden and informative icons named"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S72:leave-export-button",
+        "description": "Spreadsheet asynchronous action with shimmer, pulse and success/failure state.",
+        "disposition": "canonicalized into Button",
+        "canonicalExports": [
+          "Button"
+        ],
+        "caseIds": [
+          "primitive/export-button/disabled",
+          "primitive/export-button/default",
+          "primitive/export-button/pending",
+          "primitive/export-button/success",
+          "primitive/export-button/failure",
+          "primitive/export-button/reduced-motion"
+        ],
+        "requiredStates": [
+          "disabled",
+          "default",
+          "pending",
+          "success",
+          "failure",
+          "reduced-motion"
+        ],
+        "rationale": "The visual state is retained without export/window side effects or motion-library coupling.",
+        "evidenceIds": [
+          "evidence:primitive/export-button/disabled:visual:source-s72",
+          "evidence:primitive/export-button/default:visual:source-s72",
+          "evidence:primitive/export-button/pending:visual:source-s72",
+          "evidence:primitive/export-button/success:visual:source-s72",
+          "evidence:primitive/export-button/failure:visual:source-s72",
+          "evidence:primitive/export-button/reduced-motion:visual:source-s72"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/talent-leave/components/ExportToast.tsx",
+    "currentDependencies": [
+      "@ant-design/icons",
+      "framer-motion"
+    ],
+    "removedRuntimeCoupling": [
+      "caller-provided link and close action"
+    ],
+    "responsiveConcerns": [
+      "State: status and retry remain visible at narrow width",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "State: live region, retry and reduced motion",
+      "Motion: reduced-motion static equivalent",
+      "Text: heading and link semantics with safe overflow",
+      "Icon: decorative icons hidden and informative icons named"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S73:export-toast",
+        "description": "Success/error toast with link, close, progress and sparkles.",
+        "disposition": "canonicalized into Toast",
+        "canonicalExports": [
+          "Toast",
+          "ToastViewport"
+        ],
+        "caseIds": [
+          "feedback/export-toast/success",
+          "feedback/export-toast/error",
+          "feedback/export-toast/long-content",
+          "feedback/export-toast/reduced-motion",
+          "feedback/export-toast/narrow"
+        ],
+        "requiredStates": [
+          "success",
+          "error",
+          "long-content",
+          "reduced-motion",
+          "narrow"
+        ],
+        "rationale": "Deterministic CSS motion and live-region policy replace Framer Motion.",
+        "evidenceIds": [
+          "evidence:feedback/export-toast/success:visual:source-s73",
+          "evidence:feedback/export-toast/error:visual:source-s73",
+          "evidence:feedback/export-toast/long-content:visual:source-s73",
+          "evidence:feedback/export-toast/reduced-motion:visual:source-s73",
+          "evidence:feedback/export-toast/narrow:visual:source-s73"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/talent-leave/components/LeaveCalendar.tsx",
+    "currentDependencies": [
+      "@tanstack/react-table",
+      "antd",
+      "@ant-design/icons"
+    ],
+    "removedRuntimeCoupling": [
+      "stores",
+      "hooks",
+      "grouping",
+      "date/sprint logic"
+    ],
+    "responsiveConcerns": [
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "Cal: narrow calendar grid and boundary dates",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Dense: overflow region is focusable and labelled",
+      "Cal: calendar grid, boundary state and roving keyboard",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S74:legacy-leave-schedule",
+        "description": "Legacy dense team/member/date table with sprint bands and sticky columns.",
+        "disposition": "canonicalized into LeaveScheduleGrid",
+        "canonicalExports": [
+          "LeaveScheduleGrid"
+        ],
+        "caseIds": [
+          "data-display/leave-schedule/loading",
+          "data-display/leave-schedule/empty",
+          "data-display/leave-schedule/error",
+          "data-display/leave-schedule/populated",
+          "data-display/leave-schedule/dense",
+          "data-display/leave-schedule/overflow",
+          "data-display/leave-schedule/narrow"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "dense",
+          "overflow",
+          "narrow"
+        ],
+        "rationale": "The legacy TanStack implementation API is discarded while its distinct dense and overflow intent remains covered.",
+        "evidenceIds": [
+          "evidence:data-display/leave-schedule/loading:visual:source-s74",
+          "evidence:data-display/leave-schedule/empty:visual:source-s74",
+          "evidence:data-display/leave-schedule/error:visual:source-s74",
+          "evidence:data-display/leave-schedule/populated:visual:source-s74",
+          "evidence:data-display/leave-schedule/dense:visual:source-s74",
+          "evidence:data-display/leave-schedule/overflow:visual:source-s74",
+          "evidence:data-display/leave-schedule/narrow:visual:source-s74"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/talent-leave/components/LeaveCalendarSimple.tsx",
+    "currentDependencies": [
+      "antd",
+      "@ant-design/icons"
+    ],
+    "removedRuntimeCoupling": [
+      "store",
+      "hooks",
+      "grouping",
+      "date/sprint logic",
+      "permission"
+    ],
+    "responsiveConcerns": [
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "Cal: narrow calendar grid and boundary dates",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Dense: overflow region is focusable and labelled",
+      "Cal: calendar grid, boundary state and roving keyboard",
+      "State: live region, retry and reduced motion",
+      "Icon: decorative icons hidden and informative icons named"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S75:active-leave-schedule",
+        "description": "Active semantic leave table with team, sprint, date, status and edit states.",
+        "disposition": "canonicalized into LeaveScheduleGrid",
+        "canonicalExports": [
+          "LeaveScheduleGrid"
+        ],
+        "caseIds": [
+          "data-display/leave-schedule/loading",
+          "data-display/leave-schedule/empty",
+          "data-display/leave-schedule/error",
+          "data-display/leave-schedule/populated",
+          "data-display/leave-schedule/dense",
+          "data-display/leave-schedule/selection",
+          "data-display/leave-schedule/overflow",
+          "data-display/leave-schedule/narrow"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "dense",
+          "selection",
+          "overflow",
+          "narrow"
+        ],
+        "rationale": "This active source defines the canonical table behavior; data and permissions remain external.",
+        "evidenceIds": [
+          "evidence:data-display/leave-schedule/loading:visual:source-s75",
+          "evidence:data-display/leave-schedule/empty:visual:source-s75",
+          "evidence:data-display/leave-schedule/error:visual:source-s75",
+          "evidence:data-display/leave-schedule/populated:visual:source-s75",
+          "evidence:data-display/leave-schedule/dense:visual:source-s75",
+          "evidence:data-display/leave-schedule/selection:visual:source-s75",
+          "evidence:data-display/leave-schedule/overflow:visual:source-s75",
+          "evidence:data-display/leave-schedule/narrow:visual:source-s75"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/talent-leave/components/LeaveListView.tsx",
+    "currentDependencies": [
+      "antd",
+      "@ant-design/icons"
+    ],
+    "removedRuntimeCoupling": [
+      "flattening",
+      "day count",
+      "permission",
+      "hooks",
+      "mutations"
+    ],
+    "responsiveConcerns": [
+      "State: status and retry remain visible at narrow width",
+      "Overlay: 320px overflow keeps actions visible",
+      "Text: long content wraps or uses owned overflow"
+    ],
+    "accessibilityConcerns": [
+      "State: live region, retry and reduced motion",
+      "Overlay: focus containment, focus return and Escape",
+      "Text: heading and link semantics with safe overflow",
+      "Icon: decorative icons hidden and informative icons named"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S76:leave-list",
+        "description": "KPIs, leave rows/badges, edit/delete confirmation and fetch states.",
+        "disposition": "canonicalized into LeaveList",
+        "canonicalExports": [
+          "LeaveList",
+          "MetricCard",
+          "ConfirmDialog"
+        ],
+        "caseIds": [
+          "data-display/leave-list/loading",
+          "data-display/leave-list/empty",
+          "data-display/leave-list/error",
+          "data-display/leave-list/populated",
+          "data-display/leave-list/confirm",
+          "data-display/leave-list/pending",
+          "data-display/leave-list/long-content",
+          "data-display/leave-list/narrow"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "confirm",
+          "pending",
+          "long-content",
+          "narrow"
+        ],
+        "rationale": "Day math, permissions and deletion remain consumer logic.",
+        "evidenceIds": [
+          "evidence:data-display/leave-list/loading:visual:source-s76",
+          "evidence:data-display/leave-list/empty:visual:source-s76",
+          "evidence:data-display/leave-list/error:visual:source-s76",
+          "evidence:data-display/leave-list/populated:visual:source-s76",
+          "evidence:data-display/leave-list/confirm:visual:source-s76",
+          "evidence:data-display/leave-list/pending:visual:source-s76",
+          "evidence:data-display/leave-list/long-content:visual:source-s76",
+          "evidence:data-display/leave-list/narrow:visual:source-s76"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/talent-leave/components/LeaveModal.tsx",
+    "currentDependencies": [
+      "antd",
+      "@ant-design/icons",
+      "dayjs"
+    ],
+    "removedRuntimeCoupling": [
+      "stores",
+      "mutations",
+      "date validation",
+      "permissions"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "Overlay: 320px overflow keeps actions visible",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "Overlay: focus containment, focus return and Escape",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S77:leave-form",
+        "description": "Create/edit/read-only dialog with repeatable ranges, date/select/status and delete confirmation.",
+        "disposition": "canonicalized into LeaveFormDialog",
+        "canonicalExports": [
+          "LeaveFormDialog",
+          "FieldGroup",
+          "ConfirmDialog"
+        ],
+        "caseIds": [
+          "overlay/leave-form/create",
+          "overlay/leave-form/edit",
+          "overlay/leave-form/read-only",
+          "overlay/leave-form/validation",
+          "overlay/leave-form/multiple-ranges",
+          "overlay/leave-form/confirm",
+          "overlay/leave-form/pending",
+          "overlay/leave-form/error",
+          "overlay/leave-form/narrow"
+        ],
+        "requiredStates": [
+          "create",
+          "edit",
+          "read-only",
+          "validation",
+          "multiple-ranges",
+          "confirm",
+          "pending",
+          "error",
+          "narrow"
+        ],
+        "rationale": "Controlled ISO data and events replace date, mutation and permission coupling.",
+        "evidenceIds": [
+          "evidence:overlay/leave-form/create:visual:source-s77",
+          "evidence:overlay/leave-form/edit:visual:source-s77",
+          "evidence:overlay/leave-form/read-only:visual:source-s77",
+          "evidence:overlay/leave-form/validation:visual:source-s77",
+          "evidence:overlay/leave-form/multiple-ranges:visual:source-s77",
+          "evidence:overlay/leave-form/confirm:visual:source-s77",
+          "evidence:overlay/leave-form/pending:visual:source-s77",
+          "evidence:overlay/leave-form/error:visual:source-s77",
+          "evidence:overlay/leave-form/narrow:visual:source-s77"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/talent-leave/components/MonthSelector.tsx",
+    "currentDependencies": [
+      "antd",
+      "dayjs"
+    ],
+    "removedRuntimeCoupling": [
+      "leave store",
+      "date conversion"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S78:month-field",
+        "description": "Legacy month picker.",
+        "disposition": "canonicalized into MonthField",
+        "canonicalExports": [
+          "MonthField"
+        ],
+        "caseIds": [
+          "form/month-field/empty",
+          "form/month-field/populated",
+          "form/month-field/disabled",
+          "form/month-field/validation"
+        ],
+        "requiredStates": [
+          "empty",
+          "populated",
+          "disabled",
+          "validation"
+        ],
+        "rationale": "The unused source stays covered by a native month field without dayjs.",
+        "evidenceIds": [
+          "evidence:form/month-field/empty:visual:source-s78",
+          "evidence:form/month-field/populated:visual:source-s78",
+          "evidence:form/month-field/disabled:visual:source-s78",
+          "evidence:form/month-field/validation:visual:source-s78"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/team-members/components/MemberFormModal.tsx",
+    "currentDependencies": [
+      "antd"
+    ],
+    "removedRuntimeCoupling": [
+      "mutations",
+      "member domain types",
+      "validation",
+      "messages"
+    ],
+    "responsiveConcerns": [
+      "Form: fields and actions stack at narrow width",
+      "Select: long options fit the narrow popover",
+      "Overlay: 320px overflow keeps actions visible",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Form: labels, errors, keyboard submit and cancel",
+      "Select: complete keyboard behavior and accessible option names",
+      "Overlay: focus containment, focus return and Escape",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S79:member-form",
+        "description": "Create/edit member form, multiselect, switch, lead callout and actions.",
+        "disposition": "canonicalized into MemberFormDialog",
+        "canonicalExports": [
+          "MemberFormDialog"
+        ],
+        "caseIds": [
+          "overlay/member-form/create",
+          "overlay/member-form/edit",
+          "overlay/member-form/validation",
+          "overlay/member-form/lead",
+          "overlay/member-form/pending",
+          "overlay/member-form/error",
+          "overlay/member-form/narrow"
+        ],
+        "requiredStates": [
+          "create",
+          "edit",
+          "validation",
+          "lead",
+          "pending",
+          "error",
+          "narrow"
+        ],
+        "rationale": "CRUD and permission semantics remain external to the controlled dialog.",
+        "evidenceIds": [
+          "evidence:overlay/member-form/create:visual:source-s79",
+          "evidence:overlay/member-form/edit:visual:source-s79",
+          "evidence:overlay/member-form/validation:visual:source-s79",
+          "evidence:overlay/member-form/lead:visual:source-s79",
+          "evidence:overlay/member-form/pending:visual:source-s79",
+          "evidence:overlay/member-form/error:visual:source-s79",
+          "evidence:overlay/member-form/narrow:visual:source-s79"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/team-members/components/TeamMembersPage.tsx",
+    "currentDependencies": [
+      "antd",
+      "lucide-react"
+    ],
+    "removedRuntimeCoupling": [
+      "member hooks",
+      "board hooks",
+      "delete mutation",
+      "permissions"
+    ],
+    "responsiveConcerns": [
+      "Shell: 320px drawer/grid with no page overflow",
+      "Form: fields and actions stack at narrow width",
+      "Dense: labelled inner overflow owns horizontal scroll",
+      "Overlay: 320px overflow keeps actions visible",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Shell: landmarks and logical focus order",
+      "Form: labels, errors, keyboard submit and cancel",
+      "Dense: overflow region is focusable and labelled",
+      "Overlay: focus containment, focus return and Escape",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S80:team-members-page",
+        "description": "Header, member table, tags, actions, confirmation and form dialog.",
+        "disposition": "canonicalized into TeamMembersView",
+        "canonicalExports": [
+          "TeamMembersView",
+          "DataTable",
+          "MemberFormDialog",
+          "ConfirmDialog"
+        ],
+        "caseIds": [
+          "composition/team-members/loading",
+          "composition/team-members/empty",
+          "composition/team-members/error",
+          "composition/team-members/populated",
+          "composition/team-members/create",
+          "composition/team-members/edit",
+          "composition/team-members/confirm",
+          "composition/team-members/overflow"
+        ],
+        "requiredStates": [
+          "loading",
+          "empty",
+          "error",
+          "populated",
+          "create",
+          "edit",
+          "confirm",
+          "overflow"
+        ],
+        "rationale": "Rows and actions are controlled view data; hooks, deletion and permissions stay in Tere.",
+        "evidenceIds": [
+          "evidence:composition/team-members/loading:visual:source-s80",
+          "evidence:composition/team-members/empty:visual:source-s80",
+          "evidence:composition/team-members/error:visual:source-s80",
+          "evidence:composition/team-members/populated:visual:source-s80",
+          "evidence:composition/team-members/create:visual:source-s80",
+          "evidence:composition/team-members/edit:visual:source-s80",
+          "evidence:composition/team-members/confirm:visual:source-s80",
+          "evidence:composition/team-members/overflow:visual:source-s80"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/features/epic-explorer/utils/adfToReact.tsx",
+    "currentDependencies": [
+      "React"
+    ],
+    "removedRuntimeCoupling": [
+      "Jira document origin"
+    ],
+    "responsiveConcerns": [
+      "Text: long content wraps or uses owned overflow",
+      "Dense: labelled inner overflow owns horizontal scroll"
+    ],
+    "accessibilityConcerns": [
+      "Text: heading and link semantics with safe overflow",
+      "Dense: overflow region is focusable and labelled"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S81:adf-content",
+        "description": "Typed ADF/plain paragraphs, headings, marks, lists, quote, code, rule, panel, table and links.",
+        "disposition": "canonicalized into AdfContent",
+        "canonicalExports": [
+          "AdfContent"
+        ],
+        "caseIds": [
+          "content/adf/empty",
+          "content/adf/plain",
+          "content/adf/rich",
+          "content/adf/table",
+          "content/adf/safe-links",
+          "content/adf/unsafe-link",
+          "content/adf/unknown-node",
+          "content/adf/overflow"
+        ],
+        "requiredStates": [
+          "empty",
+          "plain",
+          "rich",
+          "table",
+          "safe-links",
+          "unsafe-link",
+          "unknown-node",
+          "overflow"
+        ],
+        "rationale": "A safe React tree uses a link-scheme allowlist, retains unknown-node children and never renders raw HTML.",
+        "evidenceIds": [
+          "evidence:content/adf/empty:visual:source-s81",
+          "evidence:content/adf/plain:visual:source-s81",
+          "evidence:content/adf/rich:visual:source-s81",
+          "evidence:content/adf/table:visual:source-s81",
+          "evidence:content/adf/safe-links:visual:source-s81",
+          "evidence:content/adf/unsafe-link:visual:source-s81",
+          "evidence:content/adf/unknown-node:visual:source-s81",
+          "evidence:content/adf/overflow:visual:source-s81"
+        ]
+      }
+    ]
+  },
+  {
+    "sourcePath": "apps/tere-project/src/hooks/useTheme.tsx",
+    "currentDependencies": [
+      "React",
+      "DOM APIs"
+    ],
+    "removedRuntimeCoupling": [
+      "DOM class mutation",
+      "localStorage",
+      "theme provider state"
+    ],
+    "responsiveConcerns": [
+      "Text: long content wraps or uses owned overflow",
+      "State: status and retry remain visible at narrow width"
+    ],
+    "accessibilityConcerns": [
+      "Text: heading and link semantics with safe overflow",
+      "State: live region, retry and reduced motion"
+    ],
+    "artifacts": [
+      {
+        "id": "source:S82:light-theme",
+        "description": "apps/tere-project/src/hooks/useTheme.tsx#theme-behavior: active light token meanings from the theme hook.",
+        "disposition": "implemented",
+        "canonicalExports": [
+          "BERAS_TOKEN_NAMES",
+          "berasLightTokenReference"
+        ],
+        "caseIds": [
+          "foundation/light-theme/tokens",
+          "foundation/light-theme/status",
+          "foundation/light-theme/data-visualization",
+          "foundation/light-theme/contrast"
+        ],
+        "requiredStates": [
+          "tokens",
+          "status",
+          "data-visualization",
+          "contrast"
+        ],
+        "rationale": "Only light semantic meaning becomes Beras tokens.",
+        "evidenceIds": [
+          "evidence:foundation/light-theme/tokens:visual:source-s82",
+          "evidence:foundation/light-theme/status:visual:source-s82",
+          "evidence:foundation/light-theme/data-visualization:visual:source-s82",
+          "evidence:foundation/light-theme/contrast:visual:source-s82"
+        ]
+      },
+      {
+        "id": "source:S82:theme-runtime-boundary",
+        "description": "Theme provider, switch persistence, DOM class mutation and localStorage behavior.",
+        "disposition": "non-visual business boundary",
+        "canonicalExports": [],
+        "caseIds": [],
+        "requiredStates": [],
+        "rationale": "Runtime theme switching is excluded from the presentational light-only package.",
+        "evidenceIds": []
+      },
+      {
+        "id": "source:S82:void-crimson-theme-values",
+        "description": "Void and crimson token objects from the active Tere hook.",
+        "disposition": "inventory-only: void/crimson",
+        "canonicalExports": [
+          "BERAS_TOKEN_NAMES"
+        ],
+        "caseIds": [
+          "foundation/light-theme/tokens"
+        ],
+        "requiredStates": [
+          "tokens"
+        ],
+        "rationale": "Values remain traceable inventory and are not emitted or selectable.",
+        "evidenceIds": [
+          "evidence:foundation/light-theme/tokens:visual:source-s82"
+        ]
+      },
+      {
+        "id": "foundation:apps/tere-project/tailwind.config.ts#light-palette-and-motion",
+        "description": "apps/tere-project/tailwind.config.ts light palette, breakpoint intent and loading motion.",
+        "disposition": "implemented",
+        "canonicalExports": [
+          "BERAS_TOKEN_NAMES",
+          "BERAS_BREAKPOINTS",
+          "berasLightTokenReference"
+        ],
+        "caseIds": [
+          "foundation/light-theme/tokens",
+          "foundation/light-theme/status",
+          "foundation/light-theme/data-visualization",
+          "foundation/light-theme/contrast",
+          "foundation/typography/weights"
+        ],
+        "requiredStates": [
+          "tokens",
+          "status",
+          "data-visualization",
+          "contrast",
+          "weights"
+        ],
+        "rationale": "Semantic tokens and explicit 320/768/1024/1440 metadata replace duplicate palette values and default breakpoint assumptions.",
+        "evidenceIds": [
+          "evidence:foundation/light-theme/tokens:visual:source-s82",
+          "evidence:foundation/light-theme/status:visual:source-s82",
+          "evidence:foundation/light-theme/data-visualization:visual:source-s82",
+          "evidence:foundation/light-theme/contrast:visual:source-s82",
+          "evidence:foundation/typography/weights:visual:source-s82"
+        ]
+      },
+      {
+        "id": "foundation:apps/tere-project/tailwind.config.ts#dark-void-crimson-and-unused-keyframes",
+        "description": "apps/tere-project/tailwind.config.ts darkMode, void/crimson values and unused duplicate keyframes.",
+        "disposition": "inventory-only: void/crimson",
+        "canonicalExports": [
+          "BERAS_TOKEN_NAMES"
+        ],
+        "caseIds": [
+          "foundation/light-theme/tokens"
+        ],
+        "requiredStates": [
+          "tokens"
+        ],
+        "rationale": "Dark, void and crimson output is excluded; duplicate or unused keyframes are not copied.",
+        "evidenceIds": [
+          "evidence:foundation/light-theme/tokens:visual:source-s82"
+        ]
+      }
+    ]
+  }
+]
