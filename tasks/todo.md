@@ -13,12 +13,12 @@ Execution rules and frozen contracts: [`plan.md`](./plan.md). Local tasks only; 
 
 ## Wave 2 — capacity slots 1/3 to 3/3
 
-- [ ] [BU-P1-04 — Primitives and named icons](./beras-ui-phase-1/BU-P1-04-primitives-icons.md)
-- [ ] [BU-P1-06 — Forms, selection, and date entry](./beras-ui-phase-1/BU-P1-06-forms-selection-date.md)
-- [ ] [BU-QA-P1-01 — Static/package test-case plan](./beras-ui-phase-1/BU-QA-P1-01-static-package-plan.md)
-- [ ] Barrier: all executors finished
-- [ ] Barrier: all reviewers returned `STATUS: CLEAN`
-- [ ] Commit all CLEAN tasks individually
+- [x] [BU-P1-04 — Primitives and named icons](./beras-ui-phase-1/BU-P1-04-primitives-icons.md)
+- [x] [BU-P1-06 — Forms, selection, and date entry](./beras-ui-phase-1/BU-P1-06-forms-selection-date.md)
+- [x] [BU-QA-P1-01 — Static/package test-case plan](./beras-ui-phase-1/BU-QA-P1-01-static-package-plan.md)
+- [x] Barrier: all executors finished
+- [x] Barrier: all reviewers returned `STATUS: CLEAN`
+- [x] Commit all CLEAN tasks individually
 
 ## Wave 3 — capacity slots 1/3 to 3/3
 
