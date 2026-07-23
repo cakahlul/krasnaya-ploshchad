@@ -166,6 +166,13 @@ const toRootClass = (name) =>
 
 const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 
+const cssRule = (css, selector) => {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const body = css.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`))?.[1];
+  assert.ok(body, `missing CSS rule: ${selector}`);
+  return body;
+};
+
 const splitSelectorList = (selectorList) => {
   const selectors = [];
   let depth = 0;
@@ -269,7 +276,9 @@ const isBerasScopedSelector = (selector) => {
     const compoundIsScoped = validBranches && berasSelectorMarker.test(normalized);
     const isUniversalTarget =
       normalized.replace(/\*/g, '').replace(/::?[a-z-]+/gi, '').trim() === '';
-    if (!compoundIsScoped && !isUniversalTarget) return false;
+    const isScopedNativeTarget =
+      hasScope && /^[a-z][a-z0-9-]*(?::[a-z-]+|::[a-z-]+)*$/i.test(normalized);
+    if (!compoundIsScoped && !isUniversalTarget && !isScopedNativeTarget) return false;
     hasScope ||= compoundIsScoped;
   }
   return hasScope;
@@ -436,6 +445,139 @@ test('long primitive content stays contained at narrow widths', async () => {
   assert.ok(secretFieldRule, 'missing SecretField root rule');
   assert.match(secretFieldRule, /max-inline-size:\s*100%/);
   assert.match(secretFieldRule, /overflow-wrap:\s*anywhere/);
+});
+
+test('feedback motion targets visual descendants and layouts stay bounded', async () => {
+  const css = stripComments(await read('src/styles/components.css'));
+  const spinner = cssRule(css, '.beras-spinner');
+  const spinnerGlyph = cssRule(css, '.beras-spinner > svg');
+  const loadingIcon = cssRule(css, '.beras-loading-icon');
+  const skeleton = cssRule(css, '.beras-skeleton');
+  const pageSkeleton = cssRule(css, '.beras-page-skeleton');
+  const skeletonShape = cssRule(css, '.beras-skeleton-shape');
+  const pageSkeletonShape = cssRule(css, '.beras-page-skeleton-content > span');
+
+  assert.match(spinner, /display:\s*inline-flex/);
+  assert.match(spinner, /align-items:\s*center/);
+  assert.match(spinner, /gap:\s*var\(--beras-space-2\)/);
+  assert.doesNotMatch(spinner, /\banimation(?:-[a-z-]+)?:/);
+  assert.match(spinnerGlyph, /animation:\s*beras-spin\b/);
+  assert.match(loadingIcon, /animation:\s*beras-spin\b/);
+
+  for (const [name, liveRoot] of [
+    ['Skeleton', skeleton],
+    ['PageSkeleton', pageSkeleton],
+  ]) {
+    assert.doesNotMatch(liveRoot, /\banimation(?:-[a-z-]+)?:/, `${name} root must not animate`);
+    assert.doesNotMatch(liveRoot, /\bbackground(?:-[a-z-]+)?:/, `${name} root must not shimmer`);
+  }
+  assert.match(pageSkeleton, /display:\s*grid/);
+  assert.match(pageSkeleton, /gap:\s*var\(--beras-space-[a-z0-9-]+\)/);
+  assert.match(pageSkeleton, /padding:\s*var\(--beras-space-[a-z0-9-]+\)/);
+  for (const [name, shape] of [
+    ['Skeleton shape', skeletonShape],
+    ['PageSkeleton shape', pageSkeletonShape],
+  ]) {
+    assert.match(shape, /\b(?:min-)?block-size:/, `${name} needs visible geometry`);
+    assert.match(shape, /\bbackground:/, `${name} needs a local shimmer background`);
+    assert.match(shape, /\bbackground-size:\s*200%\s+100%/);
+    assert.match(shape, /\bborder-radius:\s*var\(--beras-radius-[a-z0-9-]+\)/);
+    assert.match(shape, /\banimation:\s*beras-shimmer\b/);
+  }
+
+  const overlay = cssRule(css, '.beras-loading-overlay');
+  const hiddenOverlay = cssRule(css, '.beras-loading-overlay[hidden]');
+  const illustration = cssRule(css, '.beras-loading-illustration');
+  const progress = cssRule(css, '.beras-loading-illustration-progress');
+  assert.match(overlay, /position:\s*fixed/);
+  assert.match(overlay, /inset:\s*0/);
+  assert.match(overlay, /display:\s*grid/);
+  assert.match(overlay, /place-items:\s*center/);
+  assert.match(overlay, /z-index:\s*var\(--beras-layer-dialog\)/);
+  assert.match(overlay, /padding:\s*var\(--beras-space-[a-z0-9-]+\)/);
+  assert.match(hiddenOverlay, /display:\s*none/);
+  assert.match(illustration, /max-inline-size:\s*100%/);
+  assert.match(illustration, /max-block-size:\s*calc\(100dvh\s*-/);
+  assert.match(illustration, /overflow:\s*auto/);
+  assert.match(progress, /display:\s*flex/);
+  assert.match(progress, /min-inline-size:\s*0/);
+
+  const feedbackPanels = cssRule(
+    css,
+    ':where(.beras-state-view, .beras-callout, .beras-maintenance-state, .beras-access-state)',
+  );
+  const toast = cssRule(css, '.beras-toast');
+  const toastViewport = cssRule(css, '.beras-toast-viewport');
+  const toastList = cssRule(css, '.beras-toast-viewport > ol');
+  assert.match(feedbackPanels, /display:\s*grid/);
+  assert.match(feedbackPanels, /gap:\s*var\(--beras-space-[a-z0-9-]+\)/);
+  assert.match(feedbackPanels, /padding:\s*var\(--beras-space-[a-z0-9-]+\)/);
+  assert.match(feedbackPanels, /overflow-wrap:\s*anywhere/);
+  assert.match(toast, /display:\s*grid/);
+  assert.match(toast, /grid-template-columns:\s*minmax\(0,\s*1fr\)\s+auto/);
+  assert.match(toast, /overflow-wrap:\s*anywhere/);
+  assert.match(toastViewport, /position:\s*fixed/);
+  assert.match(toastViewport, /z-index:\s*var\(--beras-layer-toast\)/);
+  assert.match(toastViewport, /inline-size:\s*min\([^;]*100vw/);
+  assert.match(toastViewport, /max-inline-size:\s*calc\(100vw\s*-/);
+  assert.match(toastList, /list-style:\s*none/);
+  assert.match(toastList, /margin:\s*0/);
+  assert.match(toastList, /padding:\s*0/);
+});
+
+test('overlay shared CSS provides scroll, edge, and input containment hooks', async () => {
+  const css = stripComments(await read('src/styles/components.css'));
+  const dialog = cssRule(css, '.beras-dialog');
+  const openDialog = cssRule(css, '.beras-dialog[open]');
+  const dialogBody = cssRule(css, '.beras-dialog__body');
+  const dialogHeader = cssRule(css, '.beras-dialog__header');
+  const dialogFooter = cssRule(css, '.beras-dialog__footer');
+  const drawer = cssRule(css, '.beras-drawer');
+  const startDrawer = cssRule(css, ".beras-drawer[data-beras-variant='start']");
+  const endDrawer = cssRule(css, ".beras-drawer[data-beras-variant='end']");
+  const popover = cssRule(css, '.beras-popover');
+  const popoverPanel = cssRule(css, '.beras-popover__panel');
+  const apiOverflow = cssRule(css, '.beras-api-key-table__overflow');
+  const jsonInput = cssRule(css, '.beras-json-import-panel__input');
+
+  assert.match(dialog, /grid-template-rows:\s*auto\s+minmax\(0,\s*1fr\)\s+auto/);
+  assert.match(dialog, /max-block-size:\s*calc\(100dvh\s*-/);
+  assert.match(dialog, /max-inline-size:\s*min\(/);
+  assert.match(dialog, /overflow:\s*hidden/);
+  assert.match(openDialog, /display:\s*grid/);
+  assert.match(dialogBody, /min-block-size:\s*0/);
+  assert.match(dialogBody, /overflow:\s*auto/);
+  assert.match(dialogBody, /overflow-wrap:\s*anywhere/);
+  assert.match(dialogBody, /padding:\s*var\(--beras-space-[a-z0-9-]+\)/);
+  assert.match(dialogHeader, /padding:\s*var\(--beras-space-[a-z0-9-]+\)/);
+  assert.match(dialogFooter, /display:\s*flex/);
+  assert.match(dialogFooter, /flex:\s*0\s+0\s+auto/);
+  assert.match(dialogFooter, /flex-wrap:\s*wrap/);
+  assert.match(dialogFooter, /gap:\s*var\(--beras-space-[a-z0-9-]+\)/);
+  assert.match(dialogFooter, /padding:\s*var\(--beras-space-[a-z0-9-]+\)/);
+
+  assert.match(drawer, /position:\s*fixed/);
+  assert.match(drawer, /block-size:\s*100dvh/);
+  assert.match(drawer, /inline-size:\s*min\(18rem,\s*88vw\)/);
+  assert.match(drawer, /margin:\s*0/);
+  assert.match(startDrawer, /inset-inline:\s*0\s+auto/);
+  assert.match(endDrawer, /inset-inline:\s*auto\s+0/);
+
+  assert.match(popover, /position:\s*relative/);
+  assert.match(popover, /display:\s*inline-block/);
+  assert.match(popoverPanel, /position:\s*absolute/);
+  assert.match(popoverPanel, /z-index:\s*var\(--beras-layer-dropdown\)/);
+  assert.match(popoverPanel, /inline-size:\s*min\([^;]*100vw/);
+  assert.match(popoverPanel, /max-block-size:\s*min\(/);
+  assert.match(popoverPanel, /overflow:\s*auto/);
+  assert.match(popoverPanel, /overflow-wrap:\s*anywhere/);
+
+  assert.match(apiOverflow, /max-inline-size:\s*100%/);
+  assert.match(apiOverflow, /overflow-x:\s*auto/);
+  assert.match(jsonInput, /inline-size:\s*100%/);
+  assert.match(jsonInput, /max-inline-size:\s*100%/);
+  assert.match(jsonInput, /min-inline-size:\s*0/);
+  assert.match(jsonInput, /resize:\s*vertical/);
 });
 
 test('reduced motion collapses duration and stops looping motion', async () => {

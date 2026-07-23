@@ -26,6 +26,17 @@ containment. The shared CSS owner adds overflow containment for `.beras-code-blo
 for `.beras-secret-field`, plus a regression assertion. The BU-P1-04 executor may carry this tiny
 cross-owner patch in the same revision slot, but it is reviewed and committed as a BU-P1-03 follow-up.
 
+**Wave 3 revision contract:** BU-P1-05 and BU-P1-07 delegate shared visual geometry back to this
+exclusive CSS owner. Feedback motion targets only decorative SVG/skeleton descendants; live-region
+roots remain static. Feedback overlays, illustrations, state panels, toasts, and toast viewport gain
+bounded 320px-safe layout and overflow handling. Overlay hooks `.beras-dialog__header`,
+`.beras-dialog__body`, `.beras-dialog__footer`, `.beras-popover__panel`,
+`.beras-api-key-table__overflow`, and `.beras-json-import-panel__input` gain scroll, wrapping, and
+input containment; drawer start/end placement follows `data-beras-variant`. Static regressions prove
+these selector/property contracts and reduced-motion reach. Computed-style, viewport, and screenshot
+evidence remains owned by BU-P1-15/BU-P1-17 after the catalog route exists; this revision does not
+claim browser evidence.
+
 ## Contract
 
 Exports: `BERAS_BREAKPOINTS`, `BERAS_TOKEN_NAMES`, `berasLightTokenReference`, semantic unions for evidenced `variant`, `size`, and `tone`. Breakpoints are exactly `{ narrow: 320, tablet: 768, desktop: 1024, wide: 1440 }` in documented public metadata; CSS transitions at the matching boundaries.
