@@ -425,6 +425,19 @@ test('stylesheet entrypoint and selectors stay inside the frozen public boundary
   );
 });
 
+test('long primitive content stays contained at narrow widths', async () => {
+  const css = stripComments(await read('src/styles/components.css'));
+  const codeBlockRule = css.match(/\.beras-code-block\s*\{([^}]*)\}/)?.[1];
+  const secretFieldRule = css.match(/\.beras-secret-field\s*\{([^}]*)\}/)?.[1];
+
+  assert.ok(codeBlockRule, 'missing CodeBlock root rule');
+  assert.match(codeBlockRule, /max-inline-size:\s*100%/);
+  assert.match(codeBlockRule, /overflow-x:\s*auto/);
+  assert.ok(secretFieldRule, 'missing SecretField root rule');
+  assert.match(secretFieldRule, /max-inline-size:\s*100%/);
+  assert.match(secretFieldRule, /overflow-wrap:\s*anywhere/);
+});
+
 test('reduced motion collapses duration and stops looping motion', async () => {
   const css = stripComments(
     `${await read('src/styles/base.css')}\n${await read('src/styles/components.css')}`,

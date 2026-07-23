@@ -298,6 +298,16 @@
   box-shadow: var(--beras-shadow-sm);
 }
 
+.beras-code-block {
+  max-inline-size: 100%;
+  overflow-x: auto;
+}
+
+.beras-secret-field {
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+}
+
 :where(.beras-dialog, .beras-confirm-dialog, .beras-legal-content-dialog) {
   max-block-size: calc(100dvh - var(--beras-space-8));
   max-inline-size: min(40rem, calc(100vw - var(--beras-space-8)));

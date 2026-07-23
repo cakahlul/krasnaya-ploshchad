@@ -21,6 +21,11 @@ Implement the light-only semantic foundation, exact font/breakpoint metadata, an
 
 Component tasks own markup/behavior and must use the root-class/data-attribute contract below; CSS fixes return here as revisions.
 
+**Wave 2 revision contract:** BU-P1-04 proved that narrow long code/secret content needs root-level
+containment. The shared CSS owner adds overflow containment for `.beras-code-block` and safe wrapping
+for `.beras-secret-field`, plus a regression assertion. The BU-P1-04 executor may carry this tiny
+cross-owner patch in the same revision slot, but it is reviewed and committed as a BU-P1-03 follow-up.
+
 ## Contract
 
 Exports: `BERAS_BREAKPOINTS`, `BERAS_TOKEN_NAMES`, `berasLightTokenReference`, semantic unions for evidenced `variant`, `size`, and `tone`. Breakpoints are exactly `{ narrow: 320, tablet: 768, desktop: 1024, wide: 1440 }` in documented public metadata; CSS transitions at the matching boundaries.
