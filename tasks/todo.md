@@ -4,12 +4,12 @@ Execution rules and frozen contracts: [`plan.md`](./plan.md). Local tasks only; 
 
 ## Wave 1 — capacity slots 1/3 to 3/3
 
-- [ ] [BU-P1-01 — Workspace, package, and public contract](./beras-ui-phase-1/BU-P1-01-workspace-public-contract.md)
-- [ ] [BU-P1-02 — Frozen inventory and 82-row ledger](./beras-ui-phase-1/BU-P1-02-inventory-ledger.md)
-- [ ] [BU-P1-03 — Foundations and shipped stylesheet](./beras-ui-phase-1/BU-P1-03-foundations-styles.md)
-- [ ] Barrier: all executors finished
-- [ ] Barrier: all three reviewers returned `STATUS: CLEAN`
-- [ ] Commit all CLEAN tasks individually
+- [x] [BU-P1-01 — Workspace, package, and public contract](./beras-ui-phase-1/BU-P1-01-workspace-public-contract.md)
+- [x] [BU-P1-02 — Frozen inventory and 82-row ledger](./beras-ui-phase-1/BU-P1-02-inventory-ledger.md)
+- [x] [BU-P1-03 — Foundations and shipped stylesheet](./beras-ui-phase-1/BU-P1-03-foundations-styles.md)
+- [x] Barrier: all executors finished
+- [x] Barrier: all three reviewers returned `STATUS: CLEAN`
+- [x] Commit all CLEAN tasks individually
 
 ## Wave 2 — capacity slots 1/3 to 3/3
 
