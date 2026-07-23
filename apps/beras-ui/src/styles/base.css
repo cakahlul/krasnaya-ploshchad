@@ -1,0 +1,35 @@
+[data-beras-root] {
+  color-scheme: light;
+  min-inline-size: 0;
+  background: var(--beras-color-page);
+  color: var(--beras-color-text);
+  font-family: var(--beras-font-sans);
+  font-size: var(--beras-font-size-md);
+  line-height: var(--beras-line-height-base);
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+}
+
+[data-beras-root],
+[data-beras-root] *,
+[data-beras-root] *::before,
+[data-beras-root] *::after {
+  box-sizing: border-box;
+}
+
+[data-beras-root] :where(button, input, select, textarea) {
+  font: inherit;
+}
+
+[data-beras-root] :where(img, svg, canvas) {
+  max-inline-size: 100%;
+}
+
+[data-beras-root] :focus-visible {
+  outline: var(--beras-border-width-strong) solid var(--beras-color-focus);
+  outline-offset: 2px;
+}
+
+[data-beras-root] [hidden] {
+  display: none !important;
+}

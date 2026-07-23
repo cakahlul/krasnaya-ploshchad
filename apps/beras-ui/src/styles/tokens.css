@@ -1,0 +1,104 @@
+:root {
+  --beras-color-page: #f2f4f9;
+  --beras-color-surface: #ffffff;
+  --beras-color-surface-subtle: #f8fafc;
+  --beras-color-text: #011d4d;
+  --beras-color-text-muted: #475569;
+  --beras-color-border: #d5dce8;
+  --beras-color-brand: #0f718e;
+  --beras-color-brand-hover: #034078;
+  --beras-color-focus: #0b657b;
+  --beras-color-overlay: rgb(1 29 77 / 0.64);
+
+  --beras-status-success-foreground: #047857;
+  --beras-status-success-background: #ecfdf5;
+  --beras-status-success-border: #6ee7b7;
+  --beras-status-warning-foreground: #92400e;
+  --beras-status-warning-background: #fffbeb;
+  --beras-status-warning-border: #f59e0b;
+  --beras-status-danger-foreground: #b91c1c;
+  --beras-status-danger-background: #fef2f2;
+  --beras-status-danger-border: #fca5a5;
+  --beras-status-info-foreground: #1d4ed8;
+  --beras-status-info-background: #eff6ff;
+  --beras-status-info-border: #93c5fd;
+  --beras-status-neutral-foreground: #475569;
+  --beras-status-neutral-background: #f1f5f9;
+  --beras-status-neutral-border: #cbd5e1;
+
+  --beras-data-1: #1282a2;
+  --beras-data-2: #7c3aed;
+  --beras-data-3: #047857;
+  --beras-data-4: #b91c1c;
+  --beras-data-5: #b45309;
+  --beras-data-6: #034078;
+  --beras-data-7: #be185d;
+  --beras-data-8: #22b8d4;
+  --beras-data-grid: #dbe2ea;
+  --beras-data-axis: #475569;
+  --beras-data-tooltip: #011d4d;
+
+  --beras-font-sans: var(--font-space-grotesk, 'Space Grotesk'), 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --beras-font-mono: var(--font-ibm-plex-mono, 'IBM Plex Mono'), 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  --beras-font-size-xs: 0.75rem;
+  --beras-font-size-sm: 0.875rem;
+  --beras-font-size-md: 1rem;
+  --beras-font-size-lg: 1.125rem;
+  --beras-font-size-xl: 1.5rem;
+  --beras-font-size-2xl: 2rem;
+  --beras-line-height-tight: 1.25;
+  --beras-line-height-base: 1.5;
+  --beras-line-height-relaxed: 1.75;
+  --beras-font-weight-regular: 400;
+  --beras-font-weight-medium: 500;
+  --beras-font-weight-semibold: 600;
+  --beras-font-weight-bold: 700;
+
+  --beras-space-0: 0;
+  --beras-space-1: 0.25rem;
+  --beras-space-2: 0.5rem;
+  --beras-space-3: 0.75rem;
+  --beras-space-4: 1rem;
+  --beras-space-5: 1.25rem;
+  --beras-space-6: 1.5rem;
+  --beras-space-8: 2rem;
+  --beras-space-10: 2.5rem;
+  --beras-space-12: 3rem;
+  --beras-space-16: 4rem;
+  --beras-control-height-sm: 2rem;
+  --beras-control-height-md: 2.5rem;
+  --beras-control-height-lg: 3rem;
+  --beras-content-width: 72rem;
+  --beras-content-max-width: 90rem;
+  --beras-sidebar-width: 15.75rem;
+  --beras-topbar-height: 4rem;
+
+  --beras-border-width: 1px;
+  --beras-border-width-strong: 2px;
+  --beras-radius-sm: 0.25rem;
+  --beras-radius-md: 0.5rem;
+  --beras-radius-lg: 0.75rem;
+  --beras-radius-full: 9999px;
+  --beras-shadow-sm: 0 1px 2px rgb(1 29 77 / 0.08);
+  --beras-shadow-md: 0 8px 24px rgb(1 29 77 / 0.12);
+  --beras-shadow-lg: 0 20px 48px rgb(1 29 77 / 0.16);
+  --beras-shadow-overlay: 0 24px 64px rgb(1 29 77 / 0.22);
+
+  --beras-duration-fast: 120ms;
+  --beras-duration-base: 200ms;
+  --beras-duration-slow: 320ms;
+  --beras-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --beras-ease-emphasized: cubic-bezier(0.2, 0, 0, 1.2);
+
+  --beras-layer-base: 0;
+  --beras-layer-sticky: 100;
+  --beras-layer-dropdown: 200;
+  --beras-layer-drawer: 300;
+  --beras-layer-dialog: 400;
+  --beras-layer-toast: 500;
+
+  --beras-breakpoint-narrow: 320px;
+  --beras-breakpoint-tablet: 768px;
+  --beras-breakpoint-desktop: 1024px;
+  --beras-breakpoint-wide: 1440px;
+}

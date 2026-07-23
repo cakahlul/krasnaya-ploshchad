@@ -1,0 +1,555 @@
+:where(
+  .beras-brand-mark,
+  .beras-button,
+  .beras-icon-button,
+  .beras-badge,
+  .beras-status-badge,
+  .beras-tag,
+  .beras-avatar,
+  .beras-card,
+  .beras-metric-card,
+  .beras-stat-grid,
+  .beras-progress-meter,
+  .beras-divider,
+  .beras-code-block,
+  .beras-secret-field,
+  .beras-google-icon,
+  .beras-search-icon,
+  .beras-close-icon,
+  .beras-menu-icon,
+  .beras-chevron-down-icon,
+  .beras-chevron-left-icon,
+  .beras-chevron-right-icon,
+  .beras-arrow-right-icon,
+  .beras-calendar-icon,
+  .beras-clock-icon,
+  .beras-user-icon,
+  .beras-users-icon,
+  .beras-user-add-icon,
+  .beras-logout-icon,
+  .beras-lock-icon,
+  .beras-eye-icon,
+  .beras-eye-off-icon,
+  .beras-copy-icon,
+  .beras-external-link-icon,
+  .beras-edit-icon,
+  .beras-delete-icon,
+  .beras-add-icon,
+  .beras-remove-icon,
+  .beras-minus-circle-icon,
+  .beras-reload-icon,
+  .beras-sync-icon,
+  .beras-loading-icon,
+  .beras-download-icon,
+  .beras-spreadsheet-icon,
+  .beras-bug-icon,
+  .beras-check-icon,
+  .beras-check-circle-icon,
+  .beras-warning-icon,
+  .beras-error-icon,
+  .beras-info-icon,
+  .beras-database-icon,
+  .beras-code-icon,
+  .beras-json-icon,
+  .beras-link-icon,
+  .beras-tag-icon,
+  .beras-trend-up-icon,
+  .beras-chart-icon,
+  .beras-filter-icon,
+  .beras-team-icon,
+  .beras-experiment-icon,
+  .beras-more-icon,
+  .beras-home-icon,
+  .beras-report-icon,
+  .beras-settings-icon,
+  .beras-holiday-icon,
+  .beras-tree-icon,
+  .beras-key-icon,
+  .beras-text-field,
+  .beras-text-area-field,
+  .beras-switch-field,
+  .beras-checkbox-field,
+  .beras-select-field,
+  .beras-combobox,
+  .beras-search-combobox,
+  .beras-multi-select,
+  .beras-date-field,
+  .beras-month-field,
+  .beras-date-range-field,
+  .beras-field-group,
+  .beras-filter-bar,
+  .beras-segmented-control,
+  .beras-spinner,
+  .beras-skeleton,
+  .beras-page-skeleton,
+  .beras-loading-overlay,
+  .beras-loading-illustration,
+  .beras-state-view,
+  .beras-callout,
+  .beras-toast,
+  .beras-toast-viewport,
+  .beras-maintenance-state,
+  .beras-access-state,
+  .beras-dialog,
+  .beras-confirm-dialog,
+  .beras-legal-content-dialog,
+  .beras-drawer,
+  .beras-popover,
+  .beras-tabs,
+  .beras-pagination,
+  .beras-breadcrumbs,
+  .beras-nav-list,
+  .beras-app-header,
+  .beras-app-sidebar,
+  .beras-page-header,
+  .beras-data-table,
+  .beras-audit-log-panel,
+  .beras-activity-list,
+  .beras-task-list,
+  .beras-issue-list,
+  .beras-holiday-list,
+  .beras-leave-list,
+  .beras-team-metrics-table,
+  .beras-leave-schedule-grid,
+  .beras-definition-list,
+  .beras-instruction-steps,
+  .beras-legend,
+  .beras-donut-chart,
+  .beras-bar-chart,
+  .beras-area-chart,
+  .beras-line-chart,
+  .beras-bug-trend-panel,
+  .beras-sprint-trend-panel,
+  .beras-month-calendar,
+  .beras-holiday-calendar,
+  .beras-issue-tree,
+  .beras-tree-controls,
+  .beras-adf-content,
+  .beras-stat-3d-scene,
+  .beras-member-tasks-dialog,
+  .beras-member-form-dialog,
+  .beras-leave-form-dialog,
+  .beras-holiday-form-dialog,
+  .beras-config-form-dialog,
+  .beras-ticket-detail-dialog,
+  .beras-api-key-table,
+  .beras-json-import-panel,
+  .beras-app-shell,
+  .beras-auth-layout,
+  .beras-sign-in-view,
+  .beras-sign-up-view,
+  .beras-dashboard-overview,
+  .beras-bug-monitoring-view,
+  .beras-configuration-view,
+  .beras-mcp-connection-view,
+  .beras-productivity-summary-view,
+  .beras-reports-view,
+  .beras-epic-explorer-view,
+  .beras-holiday-management-view,
+  .beras-talent-leave-view,
+  .beras-team-members-view
+) {
+  box-sizing: border-box;
+  min-inline-size: 0;
+  color: var(--beras-color-text);
+  font-family: var(--beras-font-sans);
+}
+
+[data-beras-state] {
+  transition-duration: var(--beras-duration-base);
+  transition-timing-function: var(--beras-ease-standard);
+}
+
+[data-beras-tone] {
+  --_beras-component-accent: var(--beras-color-brand);
+  --_beras-component-surface: var(--beras-color-surface-subtle);
+  --_beras-component-border: var(--beras-color-border);
+}
+
+[data-beras-size] {
+  --_beras-component-control-height: var(--beras-control-height-md);
+}
+
+[data-beras-variant] {
+  --_beras-component-background: var(--_beras-component-accent, var(--beras-color-brand));
+}
+
+[data-beras-size='sm'] {
+  --_beras-component-control-height: var(--beras-control-height-sm);
+}
+
+[data-beras-size='lg'] {
+  --_beras-component-control-height: var(--beras-control-height-lg);
+}
+
+[data-beras-tone='success'] {
+  --_beras-component-accent: var(--beras-status-success-foreground);
+  --_beras-component-surface: var(--beras-status-success-background);
+  --_beras-component-border: var(--beras-status-success-border);
+}
+
+[data-beras-tone='warning'] {
+  --_beras-component-accent: var(--beras-status-warning-foreground);
+  --_beras-component-surface: var(--beras-status-warning-background);
+  --_beras-component-border: var(--beras-status-warning-border);
+}
+
+[data-beras-tone='danger'] {
+  --_beras-component-accent: var(--beras-status-danger-foreground);
+  --_beras-component-surface: var(--beras-status-danger-background);
+  --_beras-component-border: var(--beras-status-danger-border);
+}
+
+[data-beras-tone='info'] {
+  --_beras-component-accent: var(--beras-status-info-foreground);
+  --_beras-component-surface: var(--beras-status-info-background);
+  --_beras-component-border: var(--beras-status-info-border);
+}
+
+[data-beras-tone='neutral'] {
+  --_beras-component-accent: var(--beras-status-neutral-foreground);
+  --_beras-component-surface: var(--beras-status-neutral-background);
+  --_beras-component-border: var(--beras-status-neutral-border);
+}
+
+[data-beras-variant='solid'] {
+  border-color: var(--_beras-component-accent);
+  background: var(--_beras-component-accent);
+  color: var(--beras-color-surface);
+}
+
+[data-beras-variant='soft'] {
+  border-color: var(--_beras-component-border);
+  background: var(--_beras-component-surface);
+  color: var(--_beras-component-accent);
+}
+
+[data-beras-variant='outline'] {
+  border-color: var(--_beras-component-border);
+  background: transparent;
+  color: var(--_beras-component-accent);
+}
+
+[data-beras-variant='ghost'] {
+  border-color: transparent;
+  background: transparent;
+  color: var(--_beras-component-accent);
+}
+
+[data-beras-state='loading'],
+[data-beras-state='pending'],
+:where([data-beras-root], [data-beras-root] *)[aria-busy='true'] {
+  cursor: progress;
+}
+
+[data-beras-state='disabled'],
+:where([data-beras-root], [data-beras-root] *)[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+[data-beras-state='error'],
+:where([data-beras-root], [data-beras-root] *)[aria-invalid='true'] {
+  --_beras-component-accent: var(--beras-status-danger-foreground);
+  --_beras-component-surface: var(--beras-status-danger-background);
+  --_beras-component-border: var(--beras-status-danger-border);
+}
+
+:where([data-beras-root], [data-beras-root] *)[aria-expanded],
+:where([data-beras-root], [data-beras-root] *)[aria-selected],
+:where([data-beras-root], [data-beras-root] *)[aria-current],
+:where([data-beras-root], [data-beras-root] *)[aria-pressed] {
+  transition-duration: var(--beras-duration-fast);
+}
+
+:where(.beras-button, .beras-icon-button) {
+  display: inline-flex;
+  min-block-size: var(--_beras-component-control-height, var(--beras-control-height-md));
+  align-items: center;
+  justify-content: center;
+  gap: var(--beras-space-2);
+  padding-inline: var(--beras-space-4);
+  border: var(--beras-border-width) solid var(--_beras-component-accent, var(--beras-color-brand));
+  border-radius: var(--beras-radius-md);
+  background: var(--_beras-component-accent, var(--beras-color-brand));
+  color: var(--beras-color-surface);
+  font-weight: var(--beras-font-weight-semibold);
+  cursor: pointer;
+  transition: background-color var(--beras-duration-fast) var(--beras-ease-standard), border-color var(--beras-duration-fast) var(--beras-ease-standard), color var(--beras-duration-fast) var(--beras-ease-standard), transform var(--beras-duration-fast) var(--beras-ease-standard);
+}
+
+:where(.beras-badge, .beras-status-badge, .beras-tag) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--beras-space-1);
+  padding: var(--beras-space-1) var(--beras-space-2);
+  border: var(--beras-border-width) solid var(--_beras-component-border, var(--beras-color-border));
+  border-radius: var(--beras-radius-full);
+  background: var(--_beras-component-surface, var(--beras-color-surface-subtle));
+  color: var(--_beras-component-accent, var(--beras-color-text));
+  font-size: var(--beras-font-size-xs);
+  font-weight: var(--beras-font-weight-semibold);
+}
+
+:where(.beras-card, .beras-metric-card, .beras-callout, .beras-state-view) {
+  border: var(--beras-border-width) solid var(--_beras-component-border, var(--beras-color-border));
+  border-radius: var(--beras-radius-lg);
+  background: var(--_beras-component-surface, var(--beras-color-surface));
+  box-shadow: var(--beras-shadow-sm);
+}
+
+:where(.beras-dialog, .beras-confirm-dialog, .beras-legal-content-dialog) {
+  max-block-size: calc(100dvh - var(--beras-space-8));
+  max-inline-size: min(40rem, calc(100vw - var(--beras-space-8)));
+  overflow: auto;
+  border: var(--beras-border-width) solid var(--beras-color-border);
+  border-radius: var(--beras-radius-lg);
+  background: var(--beras-color-surface);
+  box-shadow: var(--beras-shadow-overlay);
+  color: var(--beras-color-text);
+}
+
+:where(.beras-dialog, .beras-confirm-dialog, .beras-legal-content-dialog)::backdrop {
+  background: var(--beras-color-overlay);
+}
+
+:where(.beras-data-table, .beras-team-metrics-table, .beras-leave-schedule-grid, .beras-api-key-table, .beras-donut-chart, .beras-bar-chart, .beras-area-chart, .beras-line-chart, .beras-month-calendar, .beras-holiday-calendar, .beras-issue-tree, .beras-adf-content, .beras-stat-3d-scene) {
+  max-inline-size: 100%;
+}
+
+.beras-app-shell {
+  display: grid;
+  min-block-size: 100dvh;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.beras-app-header {
+  inset-inline-start: 0;
+}
+
+.beras-app-sidebar {
+  position: fixed;
+  z-index: var(--beras-layer-drawer);
+  inset: 0 auto 0 0;
+  inline-size: min(18rem, 88vw);
+  transform: translateX(-100%);
+  transition: transform var(--beras-duration-base) var(--beras-ease-standard);
+}
+
+.beras-app-sidebar[data-beras-state='open'],
+.beras-app-sidebar[aria-hidden='false'] {
+  transform: translateX(0);
+}
+
+.beras-stat-3d-scene {
+  --_beras-parallax-x: 0;
+  --_beras-parallax-y: 0;
+  perspective: 60rem;
+}
+
+@keyframes beras-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes beras-shimmer {
+  to {
+    background-position-x: -200%;
+  }
+}
+
+:where(.beras-spinner, .beras-loading-icon) {
+  animation: beras-spin var(--beras-duration-slow) linear infinite;
+}
+
+:where(.beras-skeleton, .beras-page-skeleton) {
+  animation: beras-shimmer 1.2s linear infinite;
+  background-size: 200% 100%;
+}
+
+.beras-foundation-preview {
+  inline-size: min(100%, var(--beras-content-width));
+  padding: var(--beras-space-6);
+}
+
+.beras-foundation-title {
+  margin: 0 0 var(--beras-space-3);
+  font-size: var(--beras-font-size-xl);
+  line-height: var(--beras-line-height-tight);
+}
+
+.beras-foundation-description {
+  color: var(--beras-color-text-muted);
+}
+
+.beras-foundation-font-sans {
+  font-family: var(--beras-font-sans);
+  font-size: var(--beras-font-size-lg);
+}
+
+.beras-foundation-font-mono,
+.beras-foundation-token-name,
+.beras-foundation-token-value {
+  font-family: var(--beras-font-mono);
+}
+
+.beras-foundation-weight-400 {
+  font-weight: var(--beras-font-weight-regular);
+}
+
+.beras-foundation-weight-500 {
+  font-weight: var(--beras-font-weight-medium);
+}
+
+.beras-foundation-weight-600 {
+  font-weight: var(--beras-font-weight-semibold);
+}
+
+.beras-foundation-weight-700 {
+  font-weight: var(--beras-font-weight-bold);
+}
+
+:where(.beras-foundation-token-list, .beras-foundation-data-list, .beras-foundation-contrast-list) {
+  display: grid;
+  gap: var(--beras-space-2);
+  margin: 0;
+  padding: 0;
+}
+
+:where(.beras-foundation-token-row, .beras-foundation-data-item, .beras-foundation-contrast-row) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: var(--beras-space-3);
+  padding-block: var(--beras-space-2);
+  border-block-end: var(--beras-border-width) solid var(--beras-color-border);
+}
+
+.beras-foundation-token-value,
+.beras-foundation-contrast-value {
+  margin: 0;
+  color: var(--beras-color-text-muted);
+  overflow-wrap: anywhere;
+  text-align: start;
+}
+
+.beras-foundation-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--beras-space-2);
+}
+
+.beras-foundation-data-list {
+  list-style: none;
+}
+
+.beras-foundation-data-item {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.beras-foundation-data-swatch {
+  inline-size: var(--beras-space-4);
+  block-size: var(--beras-space-4);
+  border: var(--beras-border-width) solid var(--beras-color-text);
+  border-radius: var(--beras-radius-sm);
+}
+
+.beras-foundation-data-1 {
+  background: var(--beras-data-1);
+}
+
+.beras-foundation-data-2 {
+  background: var(--beras-data-2);
+}
+
+.beras-foundation-data-3 {
+  background: var(--beras-data-3);
+}
+
+.beras-foundation-data-4 {
+  background: var(--beras-data-4);
+}
+
+.beras-foundation-data-5 {
+  background: var(--beras-data-5);
+}
+
+.beras-foundation-data-6 {
+  background: var(--beras-data-6);
+}
+
+.beras-foundation-data-7 {
+  background: var(--beras-data-7);
+}
+
+.beras-foundation-data-8 {
+  background: var(--beras-data-8);
+}
+
+.beras-foundation-data-marker {
+  color: var(--beras-color-text-muted);
+  font-size: var(--beras-font-size-sm);
+}
+
+@media (min-width: 320px) {
+  :where(.beras-drawer, .beras-app-sidebar) {
+    inline-size: min(18rem, 88vw);
+  }
+}
+
+@media (min-width: 768px) {
+  :where(.beras-dialog, .beras-confirm-dialog, .beras-legal-content-dialog) {
+    max-inline-size: min(40rem, calc(100vw - var(--beras-space-12)));
+  }
+
+  :where(.beras-foundation-token-row, .beras-foundation-contrast-row) {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .beras-foundation-data-item {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+  }
+
+  .beras-foundation-token-value,
+  .beras-foundation-contrast-value {
+    overflow-wrap: normal;
+    text-align: end;
+  }
+}
+
+@media (min-width: 1024px) {
+  .beras-app-shell {
+    grid-template-columns: var(--beras-sidebar-width) minmax(0, 1fr);
+  }
+
+  .beras-app-sidebar {
+    position: static;
+    inline-size: var(--beras-sidebar-width);
+    transform: none;
+  }
+}
+
+@media (min-width: 1440px) {
+  :where(.beras-dashboard-overview, .beras-bug-monitoring-view, .beras-configuration-view, .beras-mcp-connection-view, .beras-productivity-summary-view, .beras-reports-view, .beras-epic-explorer-view, .beras-holiday-management-view, .beras-talent-leave-view, .beras-team-members-view) {
+    inline-size: min(100%, var(--beras-content-max-width));
+    margin-inline: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-beras-root],
+  [data-beras-root] *,
+  [data-beras-root] *::before,
+  [data-beras-root] *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+
+  .beras-stat-3d-scene {
+    --_beras-parallax-x: 0;
+    --_beras-parallax-y: 0;
+  }
+}
