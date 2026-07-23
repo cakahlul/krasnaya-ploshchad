@@ -26,6 +26,7 @@
 | Sprint listing / sprint data | [Sprint](#sprint) |
 | Global search (tickets) | [Search](#search) |
 | Sign-in / sign-up / session | [Auth](#auth) |
+| Beras UI package, catalog, and public component contracts | [Beras UI](#beras-ui) |
 | MCP server tools | [MCP Server](#mcp-server) |
 
 ---
@@ -459,6 +460,35 @@ Tab-switcher around `/dashboard/configuration?tab={id}`. Holiday reuses Holiday 
 - `apps/tere-project/src/lib/firebaseAdmin.ts`
 - `apps/tere-project/src/server/lib/firebase-admin.ts`
 - `apps/tere-project/src/server/auth/with-auth.ts`
+
+---
+
+## Beras UI
+
+**Private presentational package and internal catalog. Phase 1 is isolated from Tere: no file under `apps/tere-project/**` is an implementation target, and no Phase 2 consumer adoption is implied.**
+
+### Workspace and package boundary
+- `apps/beras-ui/package.json` — `@krasnaya/beras-ui@0.1.0`, private workspace, exact dependency allowlist and verification scripts
+- `apps/beras-ui/next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `postcss.config.mjs`, `tailwind.config.ts` — Next 16 catalog/tooling configuration
+- `apps/beras-ui/src/public/index.ts` — explicit convenience entrypoint
+- `apps/beras-ui/src/public/components.ts` — explicit component exports grouped by implementation family
+- `apps/beras-ui/src/public/layouts.ts` — explicit shell/auth/composition exports
+- `apps/beras-ui/src/public/foundations.ts` — token metadata, breakpoints, semantic variant types
+- `apps/beras-ui/src/public/types.ts` — public props, view models, shared callbacks, data/chart/calendar/tree/ADF contracts
+- `apps/beras-ui/src/styles/index.css` — only shipped stylesheet entrypoint (`@krasnaya/beras-ui/styles.css`)
+
+### Phase 1 feature paths
+- `apps/beras-ui/src/components/` — presentational family implementations; no Tere runtime/business objects
+- `apps/beras-ui/src/layouts/` — responsive shell, auth, and fixture-driven page compositions
+- `apps/beras-ui/src/foundations/` and `src/styles/` — light-only semantic tokens and scoped `.beras-*` CSS
+- `apps/beras-ui/src/catalog/` and `src/app/` — internal catalog registry and routes, consuming public package entrypoints only
+- `apps/beras-ui/src/fixtures/` — deterministic local display data
+- `apps/beras-ui/src/inventory/` — frozen baseline manifest/ledger and stable schemas
+- `apps/beras-ui/scripts/`, `tests/`, `evidence/phase-1/` — validators, native Node checks, and assembled browser evidence
+
+### Commands
+- Root convenience: `npm run beras:dev`, `npm run beras:build`, `npm run beras:verify`
+- Workspace checks: `lint`, `typecheck`, `test`, `verify:inventory`, `verify:catalog`, `verify:boundaries`, `verify:isolation`, `verify:evidence`
 
 ---
 

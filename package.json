@@ -14,14 +14,17 @@
     "mcp:start": "npm run start --workspace=apps/mcp-server",
     "mcp:release": "npm run release --workspace=apps/mcp-server",
     "mcp:release:minor": "npm run release:minor --workspace=apps/mcp-server",
-    "mcp:release:major": "npm run release:major --workspace=apps/mcp-server"
+    "mcp:release:major": "npm run release:major --workspace=apps/mcp-server",
+    "beras:dev": "npm run dev --workspace=@krasnaya/beras-ui",
+    "beras:build": "npm run build --workspace=@krasnaya/beras-ui",
+    "beras:verify": "npm run verify --workspace=@krasnaya/beras-ui"
   },
   "devDependencies": {
     "prettier": "^3.5.3",
     "typescript": "5.8.2"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20.9.0"
   },
   "packageManager": "npm@10.9.2"
 }

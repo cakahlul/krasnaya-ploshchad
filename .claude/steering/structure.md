@@ -5,6 +5,7 @@
 krasnaya-ploshchad/
 ├── apps/
 │   ├── tere-project/    # Next.js 16 full-stack web app
+│   ├── beras-ui/        # Private presentational package + internal Next.js catalog
 │   └── mcp-server/      # MCP server (published as @esjn/mcp-tere-report)
 ├── .claude/             # Claude Code config, steering, specs, bugs
 ├── package.json         # npm workspaces root
@@ -13,6 +14,36 @@ krasnaya-ploshchad/
 ```
 
 > No `packages/`, no `turbo.json`, no `aioc-service/`. Do NOT recreate them.
+
+## Beras UI (`apps/beras-ui/`)
+
+Phase 1 builds a private package and its internal catalog in one workspace. It does not edit or import Tere runtime/business implementation.
+
+```text
+apps/beras-ui/
+├── package.json
+├── next.config.ts
+├── tsconfig.json
+├── eslint.config.mjs
+├── postcss.config.mjs
+├── tailwind.config.ts
+├── src/
+│   ├── app/             # catalog/docs routes only
+│   ├── public/          # the five explicit TypeScript entrypoints
+│   ├── components/      # presentational implementations by family
+│   ├── layouts/         # shell, auth, and page compositions
+│   ├── foundations/     # token metadata and semantic variant types
+│   ├── styles/          # index.css + tokens/base/components CSS
+│   ├── catalog/         # registry, search, navigation, live cases
+│   ├── fixtures/        # deterministic local display data
+│   ├── inventory/       # baseline manifests, ledger, schemas
+│   └── internal/        # private helpers; never a catalog import target
+├── scripts/             # five static verification scripts
+├── tests/               # native `node:test` checks and consumer fixture
+└── evidence/phase-1/    # assembled browser evidence; not implementation source
+```
+
+Public consumers use only `@krasnaya/beras-ui`, `/components`, `/layouts`, `/foundations`, `/types`, and `/styles.css`. No wildcard export or private source import. Public `className` applies once to the outer element; public `style`, `styles`, `classNames`, `slotProps` are not contracts.
 
 ## Tere Project (`apps/tere-project/`)
 
