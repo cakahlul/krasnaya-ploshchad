@@ -64,6 +64,13 @@
       "when": 1783936730514,
       "tag": "0008_config_audit_log_allow_update",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785227599000,
+      "tag": "0009_reporting_group_and_archive",
+      "breakpoints": true
     }
   ]
 }
