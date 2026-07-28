@@ -142,6 +142,21 @@ compile-time type masih bohong. Reviewer WAJIB grep literal union lama (`'create
 lintas repo (BE dan FE) begitu liat migration nambah enum value, bukan cuma cek file yang executor
 sebut di scope-nya.
 
+## Drizzle migration must match schema source
+
+**Kategori**: migration/schema drift.
+
+**Deskripsi**: Tambah SQL migration + `_journal.json` tanpa update
+`src/server/db/schema.ts` membuat Drizzle source-of-truth tertinggal dari production schema.
+Migration berikutnya yang dijalankan lewat `drizzle-kit generate` bisa mencoba membuat ulang
+kolom/tabel/constraint yang sudah ada, dan application/repository work tidak punya typed mapping
+yang sesuai.
+
+**Cara benar**: setiap Drizzle migration yang menambah/mengubah object harus update schema.ts
+yang merepresentasikan object tersebut dalam change yang sama, atau jangan journal sebagai Drizzle
+migration sampai mapping itu siap. Reviewer wajib bandingkan tiap DDL object dengan schema.ts dan
+perintah release (`drizzle-kit generate`/`migrate`), bukan cuma validasi SQL syntax.
+
 ## Render performance / correctness — recursive tree render needs multi-node cycle guard
 - Category: render safety (client tree building)
 - Seen: epic-explorer buildTree.ts (SLS-16806). Single-node self-cycle guarded via `attached` Set, but a 2-node parentKey cycle (A→B, B→A) would attach A under B AND B under A, producing a cyclic object graph. A recursive renderer (MobileCards) over that graph infinite-loops / stack-overflows.
