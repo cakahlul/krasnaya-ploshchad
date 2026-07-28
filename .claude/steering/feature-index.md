@@ -63,6 +63,7 @@
 - `apps/tere-project/src/server/modules/dashboard/dashboard.service.ts`
 - `apps/tere-project/src/server/modules/reports/`
   - `reports.service.ts`, `reports.repository.ts`, `report-filter.ts`, `productivity-summary.service.ts`
+  - `productivity-summary-range.ts` (+ `productivity-summary-range.test.ts`) — pure raw request adapter for legacy `month`/`year` and canonical inclusive `startMonth`/`endMonth` ranges (strict forms, no mixing, 24-month cap)
   - `strategies/` — issue categorizers + complexity-weight strategies (legacy/new/v3)
 
 ### Shared types
