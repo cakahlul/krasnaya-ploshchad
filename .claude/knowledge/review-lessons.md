@@ -151,3 +151,9 @@ sebut di scope-nya.
 - Category: Security / Broken Access Control (OWASP A01)
 - Seen in: epic-explorer.service.getEpicDetail — access check ran on `project` query param, but the fetched resource was identified by `epicKey` (which encodes its OWN project). A caller could pass a project they DO have access to while requesting an `epicKey` from a project they do NOT, leaking the epic header (summary/description/assignee/dates).
 - Correct way: when a resource id already encodes its scope (e.g. Jira issue key `PROJ-123`), derive the scope FROM the id (`projectOf(epicKey)`) and authorize on that. Never trust a separate client-supplied scope param that can disagree with the resource id. If both are accepted, validate they match before the access check.
+
+## Partial fanout must preserve successful aggregate values
+
+- Category: partial failure aggregation / coverage semantics.
+- Seen in: productivity-summary Group bug-board fanout (SLS-17149). One rejected Group changed the whole month's `bugsRaised` to `null`, discarding successful Group counts even though coverage named the failed Group.
+- Correct way: aggregate every fulfilled result, retain that partial number, and separately record failures/coverage. Use `null` only when no value is available at all; never turn a partial success into either zero or wholly unavailable.
