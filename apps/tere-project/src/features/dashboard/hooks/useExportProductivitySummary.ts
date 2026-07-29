@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import axiosClient from '@src/lib/axiosClient';
+import type { ProductivitySummaryParams } from '../utils/productivity-summary-range';
 
 interface ExportResponse {
   success: boolean;
@@ -12,6 +13,22 @@ interface ExportResponse {
     endDate: string;
   };
   exportedAt: string;
+}
+
+export function buildProductivitySummaryExportPayload(
+  month: number,
+  year: number,
+  accessToken: string,
+  teams?: string[],
+  request?: ProductivitySummaryParams,
+) {
+  if (request) return { ...request, accessToken };
+  return {
+    month: month.toString(),
+    year: year.toString(),
+    accessToken,
+    ...(teams?.length ? { teams: teams.join(',') } : {}),
+  };
 }
 
 export function useExportProductivitySummary() {
@@ -41,16 +58,15 @@ export function useExportProductivitySummary() {
     year: number,
     accessToken: string,
     teams?: string[],
+    request?: ProductivitySummaryParams,
   ): Promise<ExportResponse> => {
     setIsExporting(true);
 
     try {
-      const response = await axiosClient.post('/report/productivity-summary/export', {
-        month: month.toString(),
-        year: year.toString(),
-        accessToken,
-        ...(teams && teams.length > 0 ? { teams: teams.join(',') } : {}),
-      });
+      const response = await axiosClient.post(
+        '/report/productivity-summary/export',
+        buildProductivitySummaryExportPayload(month, year, accessToken, teams, request),
+      );
 
       return response.data;
     } catch (error: any) {
@@ -64,7 +80,12 @@ export function useExportProductivitySummary() {
   /**
    * Complete export flow: Get auth URL → User authorizes → Extract token → Export
    */
-  const startExportFlow = async (month: number, year: number, teams?: string[]) => {
+  const startExportFlow = async (
+    month: number,
+    year: number,
+    teams?: string[],
+    request?: ProductivitySummaryParams,
+  ) => {
     try {
       // Get authorization URL
       const url = await getAuthUrl();
@@ -102,7 +123,7 @@ export function useExportProductivitySummary() {
               window.removeEventListener('message', handleMessage);
 
               // Proceed with export
-              exportToSpreadsheet(month, year, accessToken, teams)
+              exportToSpreadsheet(month, year, accessToken, teams, request)
                 .then(resolve)
                 .catch(reject);
             }
