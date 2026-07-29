@@ -75,6 +75,8 @@ export const boards = pgTable('boards', {
   bugIssueType: text('bug_issue_type'),
   isStoryGrouping: boolean('is_story_grouping').notNull().default(false),
   kanbanCycleStartDate: date('kanban_cycle_start_date'),
+  reportingGroup: text('reporting_group'),
+  reportingBoardLeadEmail: text('reporting_board_lead_email'),
 });
 
 // api keys

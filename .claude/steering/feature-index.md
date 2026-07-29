@@ -64,10 +64,12 @@
 - `apps/tere-project/src/server/modules/reports/`
   - `reports.service.ts`, `reports.repository.ts`, `report-filter.ts`, `productivity-summary.service.ts`
   - `strategies/` — issue categorizers + complexity-weight strategies (legacy/new/v3)
+- `apps/tere-project/src/server/modules/reporting-groups/` — Group/month rule resolver backed by persisted `group_rule_config`; maps nullable board configuration to `Ungrouped`, prevents multi-Group member attribution, and selects existing legacy/new/v3 formulas without changing them (SLS-17147).
 
 ### Shared types
 - `apps/tere-project/src/shared/types/dashboard.types.ts`
 - `apps/tere-project/src/shared/types/report.types.ts`
+- `apps/tere-project/src/shared/types/reporting-group.types.ts` — reporting Group, board configuration, and date-effective rule contract (SLS-17147).
 
 ### Notes
 - **Feature flag** `isShowPlannedWP` — Team Reporting only (NOT dashboard, NOT productivity summary).

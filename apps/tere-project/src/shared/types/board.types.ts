@@ -1,3 +1,5 @@
+import type { ReportingBoardConfiguration } from './reporting-group.types';
+
 export interface BoardEntity {
   boardId: number;
   name: string;
@@ -9,6 +11,8 @@ export interface BoardEntity {
   bugIssueType?: string;
   isStoryGrouping?: boolean;
   kanbanCycleStartDate?: string | null;
+  reportingGroup?: ReportingBoardConfiguration['reportingGroup'];
+  reportingBoardLeadEmail?: ReportingBoardConfiguration['reportingBoardLeadEmail'];
 }
 
 export interface BoardResponse {
@@ -23,4 +27,6 @@ export interface BoardResponse {
   bugIssueType?: string;
   isStoryGrouping?: boolean;
   kanbanCycleStartDate?: string | null;
+  reportingGroup?: ReportingBoardConfiguration['reportingGroup'];
+  reportingBoardLeadEmail?: ReportingBoardConfiguration['reportingBoardLeadEmail'];
 }
