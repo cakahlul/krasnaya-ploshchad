@@ -65,6 +65,7 @@ export default function ProductivitySummary() {
   const startMonth = selectedRange[0].format('YYYY-MM');
   const endMonth = selectedRange[1].format('YYYY-MM');
   const monthCount = inclusiveMonthCount(startMonth, endMonth);
+  const request = buildProductivitySummaryParams(startMonth, endMonth, selectedGroups, 'WP');
 
   const fetchData = async (request: ProductivitySummaryParams) => {
     const validationError = validateProductivitySummaryRange(request.startMonth, request.endMonth);
@@ -88,9 +89,7 @@ export default function ProductivitySummary() {
     }
   };
 
-  const handleCalculate = () => void fetchData(
-    buildProductivitySummaryParams(startMonth, endMonth, selectedGroups, 'WP'),
-  );
+  const handleCalculate = () => void fetchData(request);
 
   const canonicalData = data && 'range' in data ? data : null;
   const legacyData = data && !('range' in data) ? data : null;
@@ -275,6 +274,7 @@ export default function ProductivitySummary() {
         <ProductivitySummaryExportButton
           month={selectedRange[0].month() + 1}
           year={selectedRange[0].year()}
+          request={request}
         />
       </div>
 

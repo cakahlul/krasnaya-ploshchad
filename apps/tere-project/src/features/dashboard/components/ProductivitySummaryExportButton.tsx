@@ -4,16 +4,18 @@ import { FileExcelOutlined, LoadingOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import { useExportProductivitySummary } from '../hooks/useExportProductivitySummary';
 import { motion } from 'framer-motion';
+import type { ProductivitySummaryParams } from '../utils/productivity-summary-range';
 
 interface ProductivitySummaryExportButtonProps {
   month: number;
   year: number;
   teams?: string[];
+  request?: ProductivitySummaryParams;
   onSuccess?: (spreadsheetUrl: string) => void;
   onError?: () => void;
 }
 
-export function ProductivitySummaryExportButton({ month, year, teams, onSuccess, onError }: ProductivitySummaryExportButtonProps) {
+export function ProductivitySummaryExportButton({ month, year, teams, request, onSuccess, onError }: ProductivitySummaryExportButtonProps) {
   const { startExportFlow, isExporting } = useExportProductivitySummary();
   const [isHovered, setIsHovered] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -21,7 +23,7 @@ export function ProductivitySummaryExportButton({ month, year, teams, onSuccess,
 
   const handleExport = async () => {
     try {
-      const result = await startExportFlow(month, year, teams);
+      const result = await startExportFlow(month, year, teams, request);
 
       // Show success animation
       setShowSuccess(true);
@@ -78,6 +80,7 @@ export function ProductivitySummaryExportButton({ month, year, teams, onSuccess,
       className="relative"
     >
       <Button
+        data-qa="productivity-summary-export"
         type="primary"
         icon={
           isExporting ? (
