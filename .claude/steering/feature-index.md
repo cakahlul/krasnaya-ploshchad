@@ -65,6 +65,7 @@
   - `reports.service.ts`, `reports.repository.ts`, `report-filter.ts`, `productivity-summary.service.ts`
   - `productivity-summary-range.ts` (+ `productivity-summary-range.test.ts`) — pure raw request adapter for legacy `month`/`year` and canonical inclusive `startMonth`/`endMonth` ranges (strict forms, no mixing, 24-month cap)
   - `productivity-summary-range.service.ts` (+ `productivity-summary-range.service.test.ts`) — source-aware calendar-month/Group aggregation with injected productivity and live-bug boundaries, explicit coverage/failures, basis routing, and post-aggregation member filtering
+  - `productivity-archive/productivity-archive.ts` (+ `productivity-archive.test.ts`) — immutable archive repository contract, in-memory fake, archive-wins/month-watermark routing, and SP-only historical aggregation (SLS-17157; no DB access)
   - `strategies/` — issue categorizers + complexity-weight strategies (legacy/new/v3)
 
 ### Shared types
