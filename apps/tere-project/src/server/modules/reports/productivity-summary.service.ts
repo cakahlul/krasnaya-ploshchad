@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 import { generateReportByDateRange } from './reports.service';
 import { boardsService } from '@server/modules/boards/boards.service';
+import type { generateProductivitySummaryRange } from './productivity-summary-range.service';
 
 export interface ProductivitySummaryMemberDto {
   name: string;
@@ -34,6 +35,91 @@ export interface ProductivitySummaryResponseDto {
     productivityProduceVsExpected: number;
   };
   details: ProductivitySummaryMemberDto[];
+}
+
+export type ProductivitySummaryRangeResponse = Awaited<ReturnType<typeof generateProductivitySummaryRange>>;
+
+export function buildProductivitySummaryRangeSheet(data: ProductivitySummaryRangeResponse) {
+  const rangeLabel = `${data.range.startMonth} to ${data.range.endMonth}`;
+  const rules = new Map(data.coverage.months.flatMap(month =>
+    month.appliedRules.map(rule => [`${month.month}:${rule.group}`, rule.ruleVersion] as const)
+  ));
+  const failures = data.coverage.months.flatMap(month => month.failures.map(failure => [
+    month.month,
+    failure.scope,
+    failure.group ?? '',
+    failure.board ?? '',
+    failure.reason,
+  ]));
+  const available = (value: number | null) => value ?? '';
+  const values = [
+    ['Productivity Summary', rangeLabel],
+    ['Selected Groups', data.selectedGroups.join(', ')],
+    ['Coverage Complete', data.coverage.complete ? 'Yes' : 'No'],
+    [],
+    ['Month', 'Source', 'Metric Basis', 'Active Members', 'Productivity', 'Bugs Raised'],
+    ...data.chart.map(point => [point.month, point.source, point.metricBasis, available(point.activeMembers), available(point.productivityMetric), available(point.bugsRaised)]),
+    [],
+    ['Details'],
+    ['Group', 'Boards', 'Name', 'Month', 'Source', 'Rule', 'Metric Basis', 'SP Total', 'WP Total', 'Working Days'],
+    ...data.details.flatMap(member => member.monthly.map(month => [
+      member.group,
+      [...member.boards].sort().join(', '),
+      member.name,
+      month.month,
+      month.source,
+      rules.get(`${month.month}:${member.group}`) ?? '',
+      data.metricBasis,
+      available(month.spTotal),
+      available(month.wpTotal),
+      available(month.workingDays),
+    ])),
+    [],
+    ['Coverage Failures'],
+    ['Month', 'Scope', 'Group', 'Board', 'Reason'],
+    ...(failures.length ? failures : [['None']]),
+  ];
+
+  return { title: `Productivity Summary - ${rangeLabel}`, values };
+}
+
+export async function exportProductivitySummaryRangeToSpreadsheet(
+  data: ProductivitySummaryRangeResponse,
+  accessToken: string,
+) {
+  const { title, values } = buildProductivitySummaryRangeSheet(data);
+  const oauth2Client = new google.auth.OAuth2();
+  oauth2Client.setCredentials({ access_token: accessToken });
+  const sheets = google.sheets({ version: 'v4', auth: oauth2Client });
+  const createResponse = await sheets.spreadsheets.create({
+    requestBody: {
+      properties: { title },
+      sheets: [{ properties: { sheetId: 0, title: 'Summary', gridProperties: { rowCount: values.length + 10, columnCount: 10 } } }],
+    },
+  });
+  const spreadsheetId = createResponse.data.spreadsheetId!;
+
+  await sheets.spreadsheets.values.batchUpdate({
+    spreadsheetId,
+    requestBody: { valueInputOption: 'USER_ENTERED', data: [{ range: 'Summary!A1', values }] },
+  });
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: { requests: [
+      { updateSheetProperties: { properties: { sheetId: 0, gridProperties: { frozenRowCount: 5 } }, fields: 'gridProperties.frozenRowCount' } },
+      { repeatCell: { range: { sheetId: 0, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 2 }, cell: { userEnteredFormat: { backgroundColor: { red: 0.4, green: 0.3, blue: 0.7 }, textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true, fontSize: 14 } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } },
+    ] },
+  });
+
+  return {
+    success: true,
+    message: 'Spreadsheet created successfully',
+    spreadsheetTitle: title,
+    spreadsheetUrl: createResponse.data.spreadsheetUrl!,
+    range: data.range,
+    coverage: data.coverage,
+    exportedAt: new Date().toISOString(),
+  };
 }
 
 function formatToYYYYMMDD(date: Date): string {
