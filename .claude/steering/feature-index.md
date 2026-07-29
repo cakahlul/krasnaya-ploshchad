@@ -63,6 +63,7 @@
 - `apps/tere-project/src/server/modules/dashboard/dashboard.service.ts`
 - `apps/tere-project/src/server/modules/reports/`
   - `reports.service.ts`, `reports.repository.ts`, `report-filter.ts`, `productivity-summary.service.ts`
+  - `productivity-archive/productivity-archive.ts` (+ `productivity-archive.test.ts`) — immutable archive repository contract, in-memory fake, archive-wins/month-watermark routing, and SP-only historical aggregation (SLS-17157; no DB access)
   - `strategies/` — issue categorizers + complexity-weight strategies (legacy/new/v3)
 
 ### Shared types
