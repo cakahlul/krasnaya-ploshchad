@@ -42,11 +42,12 @@
 
 ### Feature module (frontend)
 - `apps/tere-project/src/features/dashboard/`
-  - `components/` — `ProductivitySummary.tsx`, `GlobalSearch.tsx`, `ProductivitySummaryExportButton.tsx`, `filterReport.tsx`, `epicSelect.tsx`, `DateRangeSelect.tsx`, `SprintSelect.tsx`, `TeamSelect.tsx`, `MultiSelectSprint.tsx`, `MultiSelectTeam.tsx`, `SprintTrendChart.tsx`
+  - `components/` — `ProductivitySummary.tsx` (+ `ProductivitySummary.contract.test.ts`), `ProductivitySummaryStates.tsx` (+ test), `GlobalSearch.tsx`, `ProductivitySummaryExportButton.tsx`, `filterReport.tsx`, `epicSelect.tsx`, `DateRangeSelect.tsx`, `SprintSelect.tsx`, `TeamSelect.tsx`, `MultiSelectSprint.tsx`, `MultiSelectTeam.tsx`, `SprintTrendChart.tsx`
   - `hooks/` — 18 hooks including `useSprintFetch.ts`, `useMultiTeamSprintFetch.ts`, `useSprintDataTransform.ts`, `useMultiSprintDataTransform.ts`, `useBoards.ts`, `useGlobalSearch.ts`, `useMemberIssues.ts`, `useMemberProfile.ts`, `useTargetWpConfig.ts`, `useWpWeightConfig.ts`, `useTeamReportAutoDefaults.ts`, `useSprintTrend.ts`
   - `repositories/jiraRepository.ts` — client-side Jira data fetcher
   - `store/sprintFilterStore.ts`, `store/teamReportFilterStore.ts` — Zustand
   - `types/dashboard.ts`
+  - `utils/productivity-summary-range.ts` (+ test) — inclusive 1–24 month validation and canonical `startMonth`/`endMonth`/`groups`/`metricBasis` query builder (SLS-17152)
 
 ### API routes
 - `POST /api/dashboard/summary` → `apps/tere-project/src/app/api/dashboard/summary/route.ts`
