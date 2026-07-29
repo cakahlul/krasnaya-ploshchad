@@ -67,10 +67,12 @@
   - `productivity-summary-range.service.ts` (+ `productivity-summary-range.service.test.ts`) — source-aware calendar-month/Group aggregation with injected productivity and live-bug boundaries, explicit coverage/failures, basis routing, and post-aggregation member filtering
   - `productivity-archive/productivity-archive.ts` (+ `productivity-archive.test.ts`) — immutable archive repository contract, in-memory fake, archive-wins/month-watermark routing, and SP-only historical aggregation (SLS-17157; no DB access)
   - `strategies/` — issue categorizers + complexity-weight strategies (legacy/new/v3)
+- `apps/tere-project/src/server/modules/reporting-groups/` — Group/month rule resolver backed by persisted `group_rule_config`; maps nullable board configuration to `Ungrouped`, prevents multi-Group member attribution, and selects existing legacy/new/v3 formulas without changing them (SLS-17147).
 
 ### Shared types
 - `apps/tere-project/src/shared/types/dashboard.types.ts`
 - `apps/tere-project/src/shared/types/report.types.ts`
+- `apps/tere-project/src/shared/types/reporting-group.types.ts` — reporting Group, board configuration, and date-effective rule contract (SLS-17147).
 
 ### Notes
 - **SLS-17150 DB delivery (user-run only; DB integration UNVERIFIED)**: `apps/tere-project/drizzle/0009_reporting_group_and_archive.sql` creates reporting Group/rule and archive persistence objects; matching Drizzle declarations live in `apps/tere-project/src/server/db/schema.ts`. Operator material: `apps/tere-project/docs/database/SLS-17150-rollback.sql`, `SLS-17150-seed-plan.md`, and `SLS-17150-db-impact-report.md`. No application route or server module is included in this scripts/docs-only task.

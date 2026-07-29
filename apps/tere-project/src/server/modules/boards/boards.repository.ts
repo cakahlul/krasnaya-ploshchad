@@ -17,6 +17,8 @@ function rowToEntity(row: Row): BoardEntity & { id: string } {
     bugIssueType: row.bugIssueType ?? undefined,
     isStoryGrouping: row.isStoryGrouping,
     kanbanCycleStartDate: row.kanbanCycleStartDate ?? null,
+    reportingGroup: row.reportingGroup as BoardEntity['reportingGroup'],
+    reportingBoardLeadEmail: row.reportingBoardLeadEmail ?? null,
   };
 }
 
