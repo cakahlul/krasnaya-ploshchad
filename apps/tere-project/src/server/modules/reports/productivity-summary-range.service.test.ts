@@ -93,6 +93,22 @@ async function main() {
   );
   assert.deepEqual(result.details[0].boards, ["L1", "L2"]);
 
+  const multiBoard = await generateProductivitySummaryRange(
+    { months: ["2026-01"], selectedGroups: ["Loan"], metricBasis: "SP" },
+    {
+      loadMonth: async () => ({
+        source: "live", appliedRules: [], members: [
+          { id: "dev@example.com", name: "Dev", group: "Loan", board: "L1", spTotal: 3, wpTotal: 2, workingDays: 10 },
+          { id: "dev@example.com", name: "Dev", group: "Loan", board: "L2", spTotal: 5, wpTotal: 4, workingDays: 10 },
+        ],
+      }),
+      loadBugCount: async () => 0,
+    },
+  );
+  assert.deepEqual(multiBoard.details[0].boards, ["L1", "L2"]);
+  assert.equal(multiBoard.details[0].monthly.length, 1);
+  assert.equal(multiBoard.details[0].monthly[0].spTotal, 8);
+
   const failed = await generateProductivitySummaryRange(
     { months: ["2026-02"], selectedGroups: ["Loan"], metricBasis: "WP" },
     {

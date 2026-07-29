@@ -40,48 +40,47 @@ function formatToYYYYMMDD(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-export async function generateProductivitySummary(month: number, year: number, teams?: string[]): Promise<ProductivitySummaryResponseDto> {
-  const start = new Date(year, month - 1, 1);
-  const end = new Date(year, month, 0);
-  const startDateStr = formatToYYYYMMDD(start);
-  const endDateStr = formatToYYYYMMDD(end);
+export async function generateProductivitySummaryBoard(
+  month: number,
+  year: number,
+  team: string,
+): Promise<ProductivitySummaryMemberDto[]> {
+  const report = await generateReportByDateRange(
+    formatToYYYYMMDD(new Date(year, month - 1, 1)),
+    formatToYYYYMMDD(new Date(year, month, 0)),
+    team,
+  );
+  return (report.issues || []).map(issue => {
+    const wpProduct = issue.weightPointsProduct || 0;
+    const wpTech = issue.weightPointsTechDebt || 0;
+    const wpTotal = issue.totalWeightPoints || 0;
+    const workingDays = issue.workingDays || 0;
+    const averageWp = workingDays > 0 ? wpTotal / workingDays : 0;
+    const targetWp = issue.targetWeightPoints || 0;
+    const expectedAverageWp = workingDays > 0 ? targetWp / workingDays : 0;
+    const spBase = targetWp > 0 ? (8 * workingDays) / targetWp : 0;
+    const spProduct = wpProduct * spBase;
+    const spTechDebt = wpTech * spBase;
+    const spMeeting = issue.spMeeting ?? 0;
+    const spTotal = spProduct + spTechDebt + spMeeting;
+    return {
+      name: issue.member, team, wpProduct, wpTech, wpTotal, workingDays, averageWp,
+      expectedAverageWp, spProduct, spTechDebt, spMeeting, spTotal,
+      wpProductivity: targetWp > 0 ? `${((wpTotal / targetWp) * 100).toFixed(2)}%` : '0.00%',
+      productivityRate: workingDays > 0 ? `${((spTotal / (workingDays * 8)) * 100).toFixed(2)}%` : '0.00%',
+    };
+  });
+}
 
+export async function generateProductivitySummary(month: number, year: number, teams?: string[]): Promise<ProductivitySummaryResponseDto> {
   const boards = await boardsService.findAll();
 
   const filteredBoards = teams && teams.length > 0 ? boards.filter(b => teams.includes(b.shortName)) : boards;
 
-  const teamReports = await Promise.all(
-    filteredBoards.map(board => generateReportByDateRange(startDateStr, endDateStr, board.shortName)
-      .then(report => ({ report, shortName: board.shortName }))
-      .catch(() => null)
-    )
-  );
-
-  const details: ProductivitySummaryMemberDto[] = [];
-
-  for (const entry of teamReports) {
-    if (!entry) continue;
-    for (const issue of entry.report.issues || []) {
-      const wpProduct = issue.weightPointsProduct || 0;
-      const wpTech = issue.weightPointsTechDebt || 0;
-      const wpTotal = issue.totalWeightPoints || 0;
-      const workingDays = issue.workingDays || 0;
-      const averageWp = workingDays > 0 ? wpTotal / workingDays : 0;
-      const targetWp = issue.targetWeightPoints || 0;
-      const expectedAverageWp = workingDays > 0 ? targetWp / workingDays : 0;
-      const displayName = issue.member;
-      const spBase = targetWp > 0 ? (8 * workingDays) / targetWp : 0;
-      const spProduct = wpProduct * spBase;
-      const spTechDebt = wpTech * spBase;
-      // spMeeting comes directly from meeting tickets — already computed in reports.service
-      const spMeeting = issue.spMeeting ?? 0;
-      const spTotal = spProduct + spTechDebt + spMeeting;
-      const wpProductivity = targetWp > 0 ? `${((wpTotal / targetWp) * 100).toFixed(2)}%` : '0.00%';
-      const totalAvailableHours = workingDays * 8;
-      const productivityRate = totalAvailableHours > 0 ? `${((spTotal / totalAvailableHours) * 100).toFixed(2)}%` : '0.00%';
-      details.push({ name: displayName, team: entry.shortName, wpProduct, wpTech, wpTotal, workingDays, averageWp, expectedAverageWp, spProduct, spTechDebt, spMeeting, spTotal, wpProductivity, productivityRate });
-    }
-  }
+  const teamReports = await Promise.all(filteredBoards.map(board =>
+    generateProductivitySummaryBoard(month, year, board.shortName).catch(() => null),
+  ));
+  const details = teamReports.flatMap(report => report ?? []);
   details.sort((a, b) => a.name.localeCompare(b.name));
 
   const totalDaysOfWorks = details.reduce((s, m) => s + m.workingDays, 0);

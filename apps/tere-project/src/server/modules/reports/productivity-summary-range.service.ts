@@ -8,6 +8,7 @@ export interface SourceMember {
   name: string;
   group: ReportingGroup;
   board: string;
+  boards?: string[];
   spTotal: number | null;
   wpTotal: number | null;
   workingDays: number | null;
@@ -46,6 +47,10 @@ export interface Failure {
 
 function reason(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown source failure";
+}
+
+function addAvailable(left: number | null, right: number | null): number | null {
+  return left === null || right === null ? null : left + right;
 }
 
 export async function generateProductivitySummaryRange(
@@ -133,14 +138,23 @@ export async function generateProductivitySummaryRange(
         boards: new Set<string>(),
         monthly: [],
       };
-      aggregate.boards.add(item.board);
-      aggregate.monthly.push({
-        month: month.month,
-        source: month.coverage.source,
-        spTotal: item.spTotal,
-        wpTotal: item.wpTotal,
-        workingDays: item.workingDays,
-      });
+      for (const board of item.boards ?? [item.board]) aggregate.boards.add(board);
+      const existing = aggregate.monthly.find(value => value.month === month.month);
+      if (existing) {
+        existing.spTotal = addAvailable(existing.spTotal, item.spTotal);
+        existing.wpTotal = addAvailable(existing.wpTotal, item.wpTotal);
+        existing.workingDays = existing.workingDays === null || item.workingDays === null
+          ? existing.workingDays ?? item.workingDays
+          : Math.max(existing.workingDays, item.workingDays);
+      } else {
+        aggregate.monthly.push({
+          month: month.month,
+          source: month.coverage.source,
+          spTotal: item.spTotal,
+          wpTotal: item.wpTotal,
+          workingDays: item.workingDays,
+        });
+      }
       members.set(item.id, aggregate);
     }
   const fullDetails = [...members.values()]
