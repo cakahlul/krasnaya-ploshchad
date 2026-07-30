@@ -722,6 +722,9 @@
     --tere-row-brd: #f5f6fb;
     --tere-head-bg: #fafbfd;
     --tere-hover-bg: #f3f4f6;
+    --tere-status-success: #10b981;
+    --tere-status-warning: #d97706;
+    --tere-status-danger: #ef4444;
   }
 
   .void {
@@ -733,6 +736,9 @@
     --tere-row-brd: rgba(255,255,255,0.04);
     --tere-head-bg: rgba(255,255,255,0.03);
     --tere-hover-bg: rgba(255,255,255,0.06);
+    --tere-status-success: #34d399;
+    --tere-status-warning: #f59e0b;
+    --tere-status-danger: #ef4444;
   }
 
   /* Crimson-specific vars */
@@ -745,6 +751,9 @@
     --tere-row-brd: rgba(194,21,24,0.15);
     --tere-head-bg: rgba(194,21,24,0.12);
     --tere-hover-bg: rgba(194,21,24,0.18);
+    --tere-status-success: #FFD700;
+    --tere-status-warning: #FF6B3A;
+    --tere-status-danger: #FF4444;
   }
 
   /* TERE 2.0 Grid background pattern */

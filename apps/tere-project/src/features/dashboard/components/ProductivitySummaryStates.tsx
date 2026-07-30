@@ -14,8 +14,6 @@ import {
 } from 'recharts';
 import type { ProductivitySummaryParams } from '../utils/productivity-summary-range';
 
-const BUG_LINE_COLOR = '#ef4444';
-
 interface ProductivitySummaryChartPoint {
   month: string;
   activeMembers: number | null;
@@ -105,7 +103,7 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
         <section aria-labelledby="productivity-coverage-heading" style={{ background: 'var(--tere-card-bg)', border: '1px solid var(--tere-card-brd)', borderRadius: 12, padding: '12px 16px' }}>
           <details>
             <summary style={{ alignItems: 'center', color: 'var(--tere-title)', cursor: 'pointer', display: 'flex', fontSize: 13, fontWeight: 600, gap: 8 }}>
-              <CheckCircle2 aria-hidden size={17} color={data.coverage.complete ? 'var(--color-accent)' : '#b45309'} />
+              <CheckCircle2 aria-hidden size={17} color={data.coverage.complete ? 'var(--color-accent)' : 'var(--tere-status-warning)'} />
               <span id="productivity-coverage-heading">{data.coverage.complete ? 'All selected months are available' : 'Some source data is unavailable'}</span>
               <span style={{ color: 'var(--tere-sub)', fontSize: 11, fontWeight: 400, marginLeft: 'auto' }}>Coverage details</span>
             </summary>
@@ -211,9 +209,9 @@ function ProductivitySummaryComparisonChart({
               <Legend wrapperStyle={{ color: 'var(--tere-sub)', fontSize: 12 }} />
               <Line yAxisId="count" dataKey="activeMembers" name="Active members" stroke="var(--color-accent)" strokeWidth={2} connectNulls={false} />
               <Line yAxisId="productivity" dataKey="productivityPercent" name="Productivity %" stroke="var(--color-accent-light)" strokeWidth={2} connectNulls={false} />
-              <Line yAxisId="count" dataKey="bugsTotal" name="Total bugs" stroke={BUG_LINE_COLOR} strokeWidth={2} connectNulls={false} />
-              <Line yAxisId="count" dataKey="bugsRaised" name="Bugs raised" stroke="#f59e0b" strokeDasharray="2 3" strokeWidth={2} connectNulls={false} />
-              <Line yAxisId="count" dataKey="bugsDone" name="Bugs done" stroke="#22c55e" strokeWidth={2} connectNulls={false} />
+              <Line yAxisId="count" dataKey="bugsTotal" name="Total bugs" stroke="var(--tere-status-danger)" strokeWidth={2} connectNulls={false} />
+              <Line yAxisId="count" dataKey="bugsRaised" name="Bugs raised" stroke="var(--tere-status-warning)" strokeDasharray="2 3" strokeWidth={2} connectNulls={false} />
+              <Line yAxisId="count" dataKey="bugsDone" name="Bugs done" stroke="var(--tere-status-success)" strokeWidth={2} connectNulls={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>

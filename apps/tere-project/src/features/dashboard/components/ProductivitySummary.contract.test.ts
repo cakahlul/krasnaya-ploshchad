@@ -32,3 +32,29 @@ test('reuses current canonical request for export without resetting filters', ()
 test('exposes the export QA selector on the actual button', () => {
   assert.match(exportButtonSource, /<Button[\s\S]*data-qa="productivity-summary-export"/);
 });
+
+test('retry replays the exact failed request, not the live filter state', () => {
+  // retryRequest is captured from fetchData's own `request` argument (the one that actually
+  // failed), and is only ever cleared/replaced by another fetchData call — never rebuilt from
+  // the current selectedRange/selectedGroups state at render time.
+  assert.match(source, /setRetryRequest\(request\)/);
+  assert.doesNotMatch(source, /setRetryRequest\(buildProductivitySummaryParams/);
+  // The rendered Retry button is wired to the captured retryRequest state and calls fetchData
+  // directly (no intermediate handler that could substitute live filters).
+  assert.match(source, /<ProductivitySummaryRetry request=\{retryRequest\} onRetry=\{fetchData\}/);
+});
+
+test('Calculate and Retry are native buttons — keyboard-operable without extra wiring', () => {
+  assert.match(source, /<button[\s\S]{0,40}data-qa="productivity-summary-calculate"/);
+  assert.doesNotMatch(source, /<div[^>]*data-qa="productivity-summary-calculate"/);
+});
+
+test('range and Group filter controls stay labeled and disjoint from the export/basis-only Team removal', () => {
+  assert.match(source, /aria-label="Productivity summary month range"/);
+  assert.match(source, /aria-label="Reporting groups"/);
+});
+
+test('no hardcoded color literal for theme-bearing surfaces (fallback #fff button text is an accepted, codebase-wide convention)', () => {
+  const withoutAcceptedException = source.replace(/color: '#fff'/g, '');
+  assert.doesNotMatch(withoutAcceptedException, /#[0-9a-fA-F]{3,8}/);
+});

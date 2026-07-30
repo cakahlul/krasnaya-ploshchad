@@ -75,15 +75,34 @@ test('hides comparison chart when capability data is absent, empty, or range has
 });
 
 test('keeps chart nulls as gaps and uses responsive accessible themed primitives', () => {
-  assert.equal((source.match(/connectNulls=\{false\}/g) ?? []).length, 4);
+  assert.equal((source.match(/connectNulls=\{false\}/g) ?? []).length, 5);
   assert.match(source, /<ResponsiveContainer/);
   assert.match(source, /accessibilityLayer/);
   assert.match(source, /<figure[\s\S]*aria-labelledby=/);
   assert.doesNotMatch(source, /role="img"/);
-  for (const token of ['var(--color-accent)', 'var(--color-accent-light)', 'var(--tere-title)']) {
+  for (const token of [
+    'var(--color-accent)',
+    'var(--color-accent-light)',
+    'var(--tere-title)',
+    'var(--tere-status-danger)',
+    'var(--tere-status-warning)',
+    'var(--tere-status-success)',
+  ]) {
     assert.match(source, new RegExp(token.replace(/[()\-]/g, '\\$&')));
   }
-  assert.doesNotMatch(source, /stroke="#ef4444"/);
+});
+
+test('never hardcodes a color literal — every color is a theme token (light/void/crimson)', () => {
+  // Only literal color values allowed are the theme-agnostic SVG chrome recharts needs;
+  // every semantic color (accent, status, text, border) must go through a --tere-*/--color-* token.
+  assert.doesNotMatch(source, /#[0-9a-fA-F]{3,8}/);
+  assert.match(source, /color=\{data\.coverage\.complete \? 'var\(--color-accent\)' : 'var\(--tere-status-warning\)'\}/);
+});
+
+test('narrow-viewport horizontal scroll: chart wrapper scrolls, nothing cropped', () => {
+  assert.match(source, /overflowX: 'auto'/);
+  assert.match(source, /minWidth: 0/);
+  assert.match(source, /minWidth: 560/);
 });
 
 test('retry forwards the exact failed range and Groups', () => {

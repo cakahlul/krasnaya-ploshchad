@@ -194,7 +194,7 @@ export default function ProductivitySummary() {
       render: (val: number) => (
         <span style={{
           fontWeight: 700, color: T.titleCol, fontFamily: mono, fontSize: 13,
-          background: T.isDark ? 'rgba(255,255,255,0.06)' : '#f5f6fb',
+          background: T.iconBg,
           padding: '3px 8px', borderRadius: 6,
         }}>
           {val.toFixed(2)}
