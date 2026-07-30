@@ -21,14 +21,14 @@ const sheet = buildProductivitySummaryRangeSheet({
     ],
   }],
   chart: [
-    { month: "2026-04", activeMembers: 1, productivityMetric: 21, bugsTotal: 4, bugsRaised: 2, source: "archive", metricBasis: "SP" },
+    { month: "2026-04", activeMembers: 1, productivityMetric: 21, productivityPercent: 14.583333, bugsTotal: 4, bugsRaised: 2, source: "archive", metricBasis: "SP" },
     { month: "2026-05", activeMembers: 1, productivityMetric: null, bugsTotal: null, bugsRaised: null, source: "partial", metricBasis: "SP" },
   ],
 });
 
 assert.equal(sheet.title, "Productivity Summary - 2026-04 to 2026-05");
 assert.deepEqual(sheet.values[0], ["Productivity Summary", "2026-04 to 2026-05"]);
-assert.deepEqual(sheet.values[4], ["Month", "Source", "Metric Basis", "Active Members", "Productivity", "Total Bugs", "Bugs Raised"]);
+assert.deepEqual(sheet.values[4], ["Month", "Source", "Metric Basis", "Active Members", "Productivity %", "SP Total", "Total Bugs", "Bugs Raised"]);
 assert.deepEqual(sheet.values[6], ["2026-05", "partial", "SP", 1, "", "", ""]);
 assert.deepEqual(sheet.values[9], ["Group", "Boards", "Name", "Month", "Source", "Rule", "Metric Basis", "SP Total", "WP Total", "Working Days"]);
 assert.deepEqual(sheet.values[10], ["User", "Ambis Mobile, Ambis Web", "Historical Member", "2026-04", "archive", "v3", "SP", 21, "", 18]);

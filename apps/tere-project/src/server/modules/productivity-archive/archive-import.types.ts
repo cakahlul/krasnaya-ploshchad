@@ -22,6 +22,7 @@ export interface NormalizedArchiveRecord {
   readonly sourceStatus: string | null;
   readonly spTotal: number | null;
   readonly spCompleted: number | null;
+  readonly workingDays?: number | null;
   readonly spProvenance: string | null;
   readonly rawRecord: Readonly<Record<string, unknown>>;
 }

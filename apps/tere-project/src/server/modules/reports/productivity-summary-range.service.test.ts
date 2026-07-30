@@ -76,6 +76,7 @@ async function main() {
     2,
     "successful group totals survive a partial bug fanout",
   );
+  assert.equal(result.chart[0].productivityPercent, 100);
   assert.deepEqual(bugCalls, [
     "2025-12:Loan",
     "2025-12:User",

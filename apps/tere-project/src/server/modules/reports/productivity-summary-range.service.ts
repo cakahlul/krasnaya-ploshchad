@@ -174,6 +174,12 @@ export async function generateProductivitySummaryRange(
     const values = (availableMembers ?? []).map((member) =>
       metricBasis === "SP" ? member.spTotal : member.wpTotal,
     );
+    const workingDays = availableMembers && availableMembers.every(member => member.workingDays !== null)
+      ? availableMembers.reduce((sum, member) => sum + (member.workingDays ?? 0), 0)
+      : null;
+    const spTotal = availableMembers && availableMembers.every(member => member.spTotal !== null)
+      ? availableMembers.reduce((sum, member) => sum + (member.spTotal ?? 0), 0)
+      : null;
     return {
       month: month.month,
       activeMembers: availableMembers
@@ -183,6 +189,10 @@ export async function generateProductivitySummaryRange(
         availableMembers && values.every((value) => value !== null)
           ? (values as number[]).reduce((sum, value) => sum + value, 0)
           : null,
+      productivityPercent: spTotal !== null && workingDays !== null && workingDays > 0
+        ? (spTotal / (workingDays * 8)) * 100
+        : null,
+      workingDays,
       bugsRaised: month.bugsRaised,
       bugsTotal: month.bugsTotal,
       source: month.coverage.source,
@@ -213,6 +223,13 @@ export async function generateProductivitySummaryRange(
         (point) => point.productivityMetric !== null,
       )
         ? chart.reduce((sum, point) => sum + point.productivityMetric!, 0)
+        : null,
+      productivityPercent: chart.every(point => point.productivityPercent !== null && point.workingDays !== null)
+        ? (() => {
+          const capacity = chart.reduce((sum, point) => sum + (point.workingDays ?? 0) * 8, 0);
+          const sp = chart.reduce((sum, point) => sum + ((point.productivityPercent ?? 0) / 100) * ((point.workingDays ?? 0) * 8), 0);
+          return capacity > 0 ? (sp / capacity) * 100 : null;
+        })()
         : null,
       bugsRaised: chart.every((point) => point.bugsRaised !== null)
         ? chart.reduce((sum, point) => sum + point.bugsRaised!, 0)

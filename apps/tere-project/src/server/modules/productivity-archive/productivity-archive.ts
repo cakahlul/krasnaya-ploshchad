@@ -20,6 +20,7 @@ export interface ArchiveDeveloperSprint {
   readonly developerNameSnapshot: string;
   readonly sourceStatus: string | null;
   readonly spTotal: number | null;
+  readonly workingDays?: number | null;
 }
 
 export interface ProductivityArchiveRepository {

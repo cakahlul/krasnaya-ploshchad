@@ -21,6 +21,9 @@ export interface Blue2026ArchiveRow {
   readonly spTotal?: unknown;
   readonly spCompleted?: unknown;
   readonly spProvenance?: unknown;
+  readonly workingDays?: unknown;
+  readonly workingDay?: unknown;
+  readonly dayOfWork?: unknown;
 }
 
 const BLUE_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -117,7 +120,9 @@ export function parseBlue2026Archive(rows: readonly Blue2026ArchiveRow[]): Archi
 
     const spTotal = parseNumber(row.spTotal);
     const spCompleted = parseNumber(row.spCompleted);
-    if (spTotal === 'invalid' || spCompleted === 'invalid') {
+    const workingDaysValue = row.workingDays ?? row.workingDay ?? row.dayOfWork;
+    const workingDays = parseNumber(workingDaysValue);
+    if (spTotal === 'invalid' || spCompleted === 'invalid' || workingDays === 'invalid') {
       rejections.push(rejection(rowIndex, 'NONNEGATIVE_NUMBER_REQUIRED'));
       return;
     }
@@ -142,7 +147,7 @@ export function parseBlue2026Archive(rows: readonly Blue2026ArchiveRow[]): Archi
       developerIdentityRaw, developerIdentityNormalized: developerIdentity, developerNameSnapshot: developerName,
       developerLevelRaw: rawText(row.developerLevel), developerLevelNormalized: normalizedText(row.developerLevel),
       mainRoleRaw: rawText(row.mainRole), mainRoleNormalized: normalizedText(row.mainRole), sourceTeam: tribe,
-      sourceFormat: 'blue-2026', sourceStatus: status, spTotal, spCompleted, spProvenance: text(row.spProvenance),
+      sourceFormat: 'blue-2026', sourceStatus: status, spTotal, spCompleted, ...(workingDays === null ? {} : { workingDays }), spProvenance: text(row.spProvenance),
       rawRecord: Object.freeze({ ...row }),
     }));
   });

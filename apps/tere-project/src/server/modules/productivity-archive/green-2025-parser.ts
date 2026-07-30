@@ -24,6 +24,9 @@ export interface Green2025ArchiveRow {
   readonly spMeeting?: unknown;
   readonly spTotal?: unknown;
   readonly spCompleted?: unknown;
+  readonly workingDays?: unknown;
+  readonly workingDay?: unknown;
+  readonly dayOfWork?: unknown;
 }
 
 const NULL_MARKERS = new Set(['', '-']);
@@ -124,6 +127,7 @@ export function parseGreen2025Archive(rows: readonly Green2025ArchiveRow[]): Arc
     const spMeeting = parseNullableNumber(row.spMeeting, 'SP_MEETING', reasons);
     const spTotal = parseNullableNumber(row.spTotal, 'SP_TOTAL', reasons);
     const spCompleted = parseNullableNumber(row.spCompleted, 'SP_COMPLETED', reasons);
+    const workingDays = parseNullableNumber(row.workingDays ?? row.workingDay ?? row.dayOfWork, 'WORKING_DAYS', reasons);
     if (spProduct !== null && spTechDebt !== null && spMeeting !== null && spTotal !== null
       && Math.abs(spTotal - (spProduct + spTechDebt + spMeeting)) > SP_RECONCILIATION_TOLERANCE) {
       reasons.push('SP_TOTAL_RECONCILIATION_MISMATCH');
@@ -149,7 +153,7 @@ export function parseGreen2025Archive(rows: readonly Green2025ArchiveRow[]): Arc
         developerLevelNormalized: nullableText(row.developerLevel)?.toLowerCase() ?? null,
         mainRoleRaw: nullableText(row.mainRole), mainRoleNormalized: nullableText(row.mainRole)?.toLowerCase() ?? null,
         sourceTeam: nullableText(row.sourceTeam), sourceFormat: 'green-2025', sourceStatus: nullableText(row.status),
-        spTotal, spCompleted, spProvenance: 'green-2025', rawRecord: { ...row },
+        spTotal, spCompleted, ...(workingDays === null ? {} : { workingDays }), spProvenance: 'green-2025', rawRecord: { ...row },
       },
     });
   });

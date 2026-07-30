@@ -41,6 +41,7 @@ const archiveRepository: ProductivityArchiveRepository = {
       developerNameSnapshot: String((row.normalizedRecord as { developerNameSnapshot?: unknown }).developerNameSnapshot ?? row.developerIdentityNormalized),
       sourceStatus: row.sourceStatus,
       spTotal: row.spTotal === null ? null : Number(row.spTotal),
+      workingDays: row.workingDays === null ? null : Number(row.workingDays),
     }));
   },
 };
@@ -90,6 +91,10 @@ function archiveMembers(rows: readonly ArchiveDeveloperSprint[], groups: readonl
     };
     if (!member.boards!.includes(board)) member.boards!.push(board);
     member.spTotal! += row.spTotal ?? 0;
+    const workingDays = row.workingDays ?? null;
+    member.workingDays = member.workingDays === null || workingDays === null
+      ? member.workingDays ?? workingDays
+      : member.workingDays + workingDays;
     members.set(row.developerIdentityNormalized, member);
   }
   return { members: [...members.values()], failures };
