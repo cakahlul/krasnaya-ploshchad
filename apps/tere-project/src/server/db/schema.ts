@@ -201,6 +201,7 @@ export const productivityArchiveDeveloperSprint = pgTable('productivity_archive_
   sourceFormat: text('source_format').notNull(),
   sourceStatus: text('source_status'),
   spTotal: numeric('sp_total'),
+  spTarget: numeric('sp_target'),
   workingDays: numeric('working_days'),
   spCompleted: numeric('sp_completed'),
   spProvenance: text('sp_provenance'),

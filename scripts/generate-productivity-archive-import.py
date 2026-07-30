@@ -125,7 +125,7 @@ def raw_json(row: dict[str, object], source_row: int) -> dict[str, object]:
 def archive_record(
     *, row: dict[str, object], source_row: int, source_format: str, start_date: str,
     end_date: str, member_identity: str, historical_only: bool, board_id: int | None,
-    group: str, level: object, main_role: object, sp_total: float | None, working_days: float | None,
+    group: str, level: object, main_role: object, sp_total: float | None, sp_target: float | None, working_days: float | None,
 ) -> dict[str, object]:
     developer = str(row["Developer"]).strip()
     sprint = str(row["Sprint"]).strip()
@@ -156,6 +156,7 @@ def archive_record(
         "sourceFormat": source_format,
         "sourceStatus": str(row.get("Status") or "").strip() or None,
         "spTotal": sp_total,
+        "spTarget": sp_target,
         "workingDays": working_days,
         "spCompleted": None,
         "spProvenance": source_format,
@@ -240,6 +241,7 @@ def main() -> None:
             board_id = int(board["board_id"]) if board and board.get("board_id") else None
             try:
                 sp_total = number(row.get("SP (Total)" if source_format == "green-2025" else "SP Total"))
+                sp_target = number(row.get("SP Target"))
                 working_days = number(next((row.get(key) for key in ("Working Days", "Working Day", "Day of Work") if row.get(key) not in (None, "")), None))
             except ValueError as error:
                 rejected.append({
@@ -251,7 +253,7 @@ def main() -> None:
                 row=row, source_row=source_row, source_format=source_format,
                 start_date=start_date, end_date=end_date, member_identity=identity,
                 historical_only=member is None, board_id=board_id, group=group,
-                level=row.get("Level"), main_role=row.get("Main Role"), sp_total=sp_total, working_days=working_days,
+                level=row.get("Level"), main_role=row.get("Main Role"), sp_total=sp_total, sp_target=sp_target, working_days=working_days,
             ))
 
     duplicate_keys: dict[tuple[str, str, str, str], list[dict[str, object]]] = defaultdict(list)
@@ -368,7 +370,7 @@ SELECT EXISTS (
     board_id_snapshot, board_name_snapshot, reporting_group_snapshot,
     developer_identity_raw, developer_identity_normalized,
     developer_level_raw, developer_level_normalized, main_role_raw, main_role_normalized,
-    source_team, source_format, source_status, sp_total, working_days, sp_completed, sp_provenance,
+    source_team, source_format, source_status, sp_total, sp_target, working_days, sp_completed, sp_provenance,
     raw_record, normalized_record
   )
   SELECT
@@ -380,7 +382,7 @@ SELECT EXISTS (
     payload->>'developerIdentityNormalized', payload->>'developerLevelRaw',
     payload->>'developerLevelNormalized', payload->>'mainRoleRaw', payload->>'mainRoleNormalized',
     payload->>'sourceTeam', payload->>'sourceFormat', payload->>'sourceStatus',
-    NULLIF(payload->>'spTotal', '')::numeric, NULLIF(payload->>'workingDays', '')::numeric,
+    NULLIF(payload->>'spTotal', '')::numeric, NULLIF(payload->>'spTarget', '')::numeric, NULLIF(payload->>'workingDays', '')::numeric,
     NULLIF(payload->>'spCompleted', '')::numeric,
     payload->>'spProvenance', payload->'rawRecord', payload->'normalizedRecord'
   FROM productivity_archive_stage;
@@ -546,7 +548,7 @@ INSERT INTO productivity_archive_developer_sprint (
   board_id_snapshot, board_name_snapshot, reporting_group_snapshot,
   developer_identity_raw, developer_identity_normalized,
   developer_level_raw, developer_level_normalized, main_role_raw, main_role_normalized,
-  source_team, source_format, source_status, sp_total, working_days, sp_completed, sp_provenance,
+  source_team, source_format, source_status, sp_total, sp_target, working_days, sp_completed, sp_provenance,
   raw_record, normalized_record
 )
 SELECT
@@ -558,7 +560,7 @@ SELECT
   payload->>'developerIdentityNormalized', payload->>'developerLevelRaw',
   payload->>'developerLevelNormalized', payload->>'mainRoleRaw', payload->>'mainRoleNormalized',
   payload->>'sourceTeam', payload->>'sourceFormat', payload->>'sourceStatus',
-  NULLIF(payload->>'spTotal', '')::numeric, NULLIF(payload->>'workingDays', '')::numeric,
+  NULLIF(payload->>'spTotal', '')::numeric, NULLIF(payload->>'spTarget', '')::numeric, NULLIF(payload->>'workingDays', '')::numeric,
   NULLIF(payload->>'spCompleted', '')::numeric,
   payload->>'spProvenance', payload->'rawRecord', payload->'normalizedRecord'
 FROM productivity_archive_stage stage

@@ -41,6 +41,7 @@ const archiveRepository: ProductivityArchiveRepository = {
       developerNameSnapshot: String((row.normalizedRecord as { developerNameSnapshot?: unknown }).developerNameSnapshot ?? row.developerIdentityNormalized),
       sourceStatus: row.sourceStatus,
       spTotal: row.spTotal === null ? null : Number(row.spTotal),
+      spTarget: row.spTarget === null ? null : Number(row.spTarget),
       workingDays: row.workingDays === null ? null : Number(row.workingDays),
     }));
   },
@@ -86,11 +87,15 @@ function archiveMembers(rows: readonly ArchiveDeveloperSprint[], groups: readonl
       board,
       boards: [],
       spTotal: 0,
+      spTarget: 0,
       wpTotal: null,
       workingDays: null,
     };
     if (!member.boards!.includes(board)) member.boards!.push(board);
     member.spTotal! += row.spTotal ?? 0;
+    member.spTarget = member.spTarget === null || row.spTarget === null || row.spTarget === undefined
+      ? member.spTarget ?? row.spTarget ?? null
+      : member.spTarget + row.spTarget;
     const workingDays = row.workingDays ?? null;
     member.workingDays = member.workingDays === null || workingDays === null
       ? member.workingDays ?? workingDays
@@ -157,11 +162,12 @@ export function createProductivitySummaryRangePorts(deps: Dependencies): RangeAg
           }
           const existing = current ?? {
             id, name: item.name, group, board,
-            boards: [], spTotal: 0, wpTotal: 0, workingDays: 0,
+            boards: [], spTotal: 0, wpTotal: 0, spTarget: 0, workingDays: 0,
           };
           if (!existing.boards!.includes(board)) existing.boards!.push(board);
           existing.spTotal! += item.spTotal;
           existing.wpTotal! += item.wpTotal;
+          existing.spTarget! += item.workingDays * 8;
           existing.workingDays = Math.max(existing.workingDays ?? 0, item.workingDays);
           members.set(id, existing);
         }

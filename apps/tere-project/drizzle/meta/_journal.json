@@ -92,6 +92,13 @@
       "when": 1785403000000,
       "tag": "0012_productivity_archive_working_days",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1785404000000,
+      "tag": "0013_productivity_archive_sp_target",
+      "breakpoints": true
     }
   ]
 }

@@ -19,6 +19,7 @@ export interface Blue2026ArchiveRow {
   readonly mainRole?: unknown;
   readonly status?: unknown;
   readonly spTotal?: unknown;
+  readonly spTarget?: unknown;
   readonly spCompleted?: unknown;
   readonly spProvenance?: unknown;
   readonly workingDays?: unknown;
@@ -119,10 +120,11 @@ export function parseBlue2026Archive(rows: readonly Blue2026ArchiveRow[]): Archi
     identities.add(duplicateKey);
 
     const spTotal = parseNumber(row.spTotal);
+    const spTarget = parseNumber(row.spTarget);
     const spCompleted = parseNumber(row.spCompleted);
     const workingDaysValue = row.workingDays ?? row.workingDay ?? row.dayOfWork;
     const workingDays = parseNumber(workingDaysValue);
-    if (spTotal === 'invalid' || spCompleted === 'invalid' || workingDays === 'invalid') {
+    if (spTotal === 'invalid' || spTarget === 'invalid' || spCompleted === 'invalid' || workingDays === 'invalid') {
       rejections.push(rejection(rowIndex, 'NONNEGATIVE_NUMBER_REQUIRED'));
       return;
     }
@@ -147,7 +149,7 @@ export function parseBlue2026Archive(rows: readonly Blue2026ArchiveRow[]): Archi
       developerIdentityRaw, developerIdentityNormalized: developerIdentity, developerNameSnapshot: developerName,
       developerLevelRaw: rawText(row.developerLevel), developerLevelNormalized: normalizedText(row.developerLevel),
       mainRoleRaw: rawText(row.mainRole), mainRoleNormalized: normalizedText(row.mainRole), sourceTeam: tribe,
-      sourceFormat: 'blue-2026', sourceStatus: status, spTotal, spCompleted, ...(workingDays === null ? {} : { workingDays }), spProvenance: text(row.spProvenance),
+      sourceFormat: 'blue-2026', sourceStatus: status, spTotal, ...(spTarget === null ? {} : { spTarget }), spCompleted, ...(workingDays === null ? {} : { workingDays }), spProvenance: text(row.spProvenance),
       rawRecord: Object.freeze({ ...row }),
     }));
   });
