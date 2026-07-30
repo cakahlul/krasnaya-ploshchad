@@ -182,22 +182,28 @@ export function createProductivitySummaryRangePorts(deps: Dependencies): RangeAg
       };
     },
     async loadBugCount(month, group) {
+      const start = Date.now();
       const boards = (await deps.findBoards()).filter(board => board.isBugMonitoring && (board.reportingGroup ?? 'Ungrouped') === group);
       const monthEnd = new Date(`${month}-01T00:00:00Z`);
       monthEnd.setUTCMonth(monthEnd.getUTCMonth() + 1, 0);
       const bugs = await Promise.all(boards.map(board => deps.fetchActiveBugs
         ? deps.fetchActiveBugs(board.boardId, monthEnd.toISOString().slice(0, 10))
         : deps.fetchBugs(board.boardId)));
+      console.log(`[telemetry] productivity-summary-range bug-board-call fn=loadBugCount durationMs=${Date.now() - start} month=${month} group=${group} boardCount=${boards.length}`);
       return bugs.flat().length;
     },
     async loadBugRaisedCount(month, group) {
+      const start = Date.now();
       const boards = (await deps.findBoards()).filter(board => board.isBugMonitoring && (board.reportingGroup ?? 'Ungrouped') === group);
       const bugs = await Promise.all(boards.map(board => deps.fetchBugs(board.boardId)));
+      console.log(`[telemetry] productivity-summary-range bug-board-call fn=loadBugRaisedCount durationMs=${Date.now() - start} month=${month} group=${group} boardCount=${boards.length}`);
       return bugs.flat().filter(bug => bug.fields.created.slice(0, 7) === month).length;
     },
     async loadBugDoneCount(month, group) {
+      const start = Date.now();
       const boards = (await deps.findBoards()).filter(board => board.isBugMonitoring && (board.reportingGroup ?? 'Ungrouped') === group);
       const bugs = await Promise.all(boards.map(board => deps.fetchBugs(board.boardId)));
+      console.log(`[telemetry] productivity-summary-range bug-board-call fn=loadBugDoneCount durationMs=${Date.now() - start} month=${month} group=${group} boardCount=${boards.length}`);
       return bugs.flat().filter(bug => bug.fields.resolutiondate?.slice(0, 7) === month).length;
     },
   };

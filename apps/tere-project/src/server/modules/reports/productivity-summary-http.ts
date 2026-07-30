@@ -52,6 +52,19 @@ export async function handleProductivitySummaryGet(
   caller: SummaryCaller | undefined,
   dependencies: ProductivitySummaryHttpDependencies,
 ): Promise<Response> {
+  const start = Date.now();
+  try {
+    return await handleProductivitySummaryGetInner(req, caller, dependencies);
+  } finally {
+    console.log(`[telemetry] productivity-summary-http request durationMs=${Date.now() - start}`);
+  }
+}
+
+async function handleProductivitySummaryGetInner(
+  req: Request,
+  caller: SummaryCaller | undefined,
+  dependencies: ProductivitySummaryHttpDependencies,
+): Promise<Response> {
   const params = new URL(req.url).searchParams;
   const parsed = parseProductivitySummaryRange(params);
   if (!parsed.ok) return Response.json({ message: parsed.message }, { status: 400 });

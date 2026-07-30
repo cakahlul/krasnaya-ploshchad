@@ -60,8 +60,10 @@ export async function generateProductivitySummaryRange(
   input: RangeAggregationInput,
   ports: RangeAggregationPorts,
 ) {
+  const rangeStart = Date.now();
   const loaded = await Promise.all(
     input.months.map(async (month) => {
+      const monthStart = Date.now();
       const [productivity, ...bugs] = await Promise.allSettled([
         ports.loadMonth(month, input.selectedGroups),
         ...input.selectedGroups.map((group) =>
@@ -100,6 +102,14 @@ export async function generateProductivitySummaryRange(
       const fulfilledBugs = bugs.filter(
         (bug): bug is PromiseFulfilledResult<{ total: number; raised: number | null; done: number | null }> => bug.status === "fulfilled",
       );
+      const source: MonthSource = productivityAvailable
+        ? failures.length || monthData?.source === "partial"
+          ? "partial"
+          : monthData!.source
+        : "unavailable";
+      console.log(
+        `[telemetry] productivity-summary-range month durationMs=${Date.now() - monthStart} month=${month} source=${source}`,
+      );
       return {
         month,
         data: monthData,
@@ -114,11 +124,7 @@ export async function generateProductivitySummaryRange(
           : null,
         coverage: {
           month,
-          source: (productivityAvailable
-            ? failures.length || monthData?.source === "partial"
-              ? "partial"
-              : monthData!.source
-            : "unavailable") as MonthSource,
+          source,
           productivityAvailable,
           bugsAvailable,
           appliedRules: monthData?.appliedRules ?? [],
@@ -210,6 +216,13 @@ export async function generateProductivitySummaryRange(
       metricBasis,
     };
   });
+  const sourceDistribution = loaded.reduce<Record<MonthSource, number>>((acc, month) => {
+    acc[month.coverage.source] = (acc[month.coverage.source] ?? 0) + 1;
+    return acc;
+  }, { archive: 0, live: 0, partial: 0, unavailable: 0 });
+  console.log(
+    `[telemetry] productivity-summary-range total durationMs=${Date.now() - rangeStart} monthCount=${input.months.length} distribution=${JSON.stringify(sourceDistribution)}`,
+  );
   return {
     range: {
       startMonth: input.months[0],
