@@ -16,10 +16,11 @@ test('exposes stable range, Group, calculate, and progress QA surfaces', () => {
   }
 });
 
-test('uses the canonical query and does not expose a Team selector', () => {
-  for (const field of ['startMonth', 'endMonth', 'selectedGroups', "'WP'"]) {
+test('uses the SP-only canonical query and does not expose a Team selector', () => {
+  for (const field of ['startMonth', 'endMonth', 'selectedGroups', "'SP'"]) {
     assert.match(source, new RegExp(field));
   }
+  assert.doesNotMatch(source, /selectedGroups, 'WP'/);
   assert.doesNotMatch(source, /MultiSelectTeam|selectedTeams|teamsParam/);
 });
 

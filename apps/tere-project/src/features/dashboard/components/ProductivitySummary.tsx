@@ -65,7 +65,7 @@ export default function ProductivitySummary() {
   const startMonth = selectedRange[0].format('YYYY-MM');
   const endMonth = selectedRange[1].format('YYYY-MM');
   const monthCount = inclusiveMonthCount(startMonth, endMonth);
-  const request = buildProductivitySummaryParams(startMonth, endMonth, selectedGroups, 'WP');
+  const request = buildProductivitySummaryParams(startMonth, endMonth, selectedGroups, 'SP');
 
   const fetchData = async (request: ProductivitySummaryParams) => {
     const validationError = validateProductivitySummaryRange(request.startMonth, request.endMonth);
