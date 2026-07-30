@@ -577,10 +577,17 @@ Database was not accessed while generating this package.
 1. Review `manifest.json`, `rejections.json`, every monthly count, and source fingerprints.
 2. Run migration `drizzle/0009_reporting_group_and_archive.sql` and its post-verification first.
 3. Set approved board/Group/Lead/rule configuration and restart the app to clear board cache.
-4. Supabase SQL Editor: open `supabase_import_all.sql`, review the two operator emails at the top, and click Run.
-5. Run `verify.sql` in the same Supabase SQL Editor, then return complete output for review.
+4. From `apps/tere-project`, generate and import through the repo's Supabase connection:
 
-Optional psql path:
+   ```bash
+   npm run archive:import -- --execute --confirm-project-ref=YOUR_PROJECT_REF
+   ```
+
+5. The runner validates the target, imports one transaction, and requires exactly 18 months / 2,125 coverage rows.
+
+Supabase SQL Editor fallback: open `supabase_import_all.sql`, review the two operator emails, click Run, then run `verify.sql`.
+
+Optional psql fallback:
 
    ```bash
    psql "$DIRECT_URL" \\
