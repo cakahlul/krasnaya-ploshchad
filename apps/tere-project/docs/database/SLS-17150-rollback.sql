@@ -36,6 +36,7 @@ DROP TABLE "group_rule_config";
 ALTER TABLE "boards"
   DROP CONSTRAINT "boards_reporting_board_lead_email_fkey",
   DROP CONSTRAINT "boards_reporting_group_fkey",
+  DROP COLUMN "bug_jql",
   DROP COLUMN "reporting_board_lead_email",
   DROP COLUMN "reporting_group";
 

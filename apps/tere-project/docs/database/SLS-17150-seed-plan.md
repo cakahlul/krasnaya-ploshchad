@@ -21,7 +21,8 @@ The migration deliberately does not infer board Group, reporting Lead, or pre-v3
 2. Obtain approved `members.email` values for each Board Lead, or leave them `NULL` until board-level ownership is known. Group Head ownership is separate and lives only in `reporting_group_config.reporting_lead_email`.
 3. Obtain approved legacy/new chronology for each configured Group before its v3 cutover. Insert only the entries needed to describe that chronology; never invent historical rules.
 4. Apply reviewed board and historical-rule updates in a separate, auditable transaction after the forward migration. A Group rule references an existing `reporting_group_config.code`; every `effective_month` must be the first calendar day.
-5. Verify every active non-bug board has exactly one approved Group or an intentional `NULL`, and that dedicated bug-board configuration remains in existing board fields.
+5. Review `SLS-17150-production-config.sql`. Bug sources are Jira projects (`INCL`, `INCF`, `BUZZ`), not necessarily Agile boards; each stores an independent `bug_jql` for later special-case filtering.
+6. Verify every active non-bug board has exactly one approved Group or an intentional `NULL`, and every bug project has one Group and a non-empty JQL.
 
 Example operator-owned statement shape (values intentionally omitted):
 
