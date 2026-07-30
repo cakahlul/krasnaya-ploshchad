@@ -1,5 +1,6 @@
 import React from 'react';
 import { Alert, Table, Tag } from 'antd';
+import { Activity, Bug, CheckCircle2, Users } from 'lucide-react';
 import type { ReportingGroup } from '@src/shared/types/reporting-group.types';
 import {
   CartesianGrid,
@@ -61,40 +62,58 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
     ? data.selectedGroups
     : [...new Set(data.details?.map(member => member.group) ?? [])];
 
+  const summaryCards = [
+    { label: 'Active members', value: data.summary.activeMembers, icon: Users },
+    { label: `${data.metricBasis} delivered`, value: value(data.summary.productivityMetric), icon: Activity },
+    { label: 'Bugs raised', value: value(data.summary.bugsRaised), icon: Bug },
+  ];
+
   return (
-    <section data-qa="productivity-summary-canonical-result" aria-label="Productivity summary result">
-      <p>{data.range.startMonth} – {data.range.endMonth} · {data.range.monthCount} month{data.range.monthCount === 1 ? '' : 's'}</p>
-      <p><Tag color="blue">{data.metricBasis} basis</Tag> selected by server</p>
-      <dl>
-        <div><dt>Active members</dt><dd>{data.summary.activeMembers}</dd></div>
-        <div><dt>{data.metricBasis} total</dt><dd>{value(data.summary.productivityMetric)}</dd></div>
-        <div><dt>Bugs raised</dt><dd>{value(data.summary.bugsRaised)}</dd></div>
+    <section data-qa="productivity-summary-canonical-result" aria-label="Productivity summary result" style={{ display: 'grid', gap: 16 }}>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <h2 style={{ color: 'var(--tere-title)', fontSize: 18, margin: 0 }}>Performance overview</h2>
+          <p style={{ color: 'var(--tere-sub)', fontSize: 12, margin: '4px 0 0' }}>
+            {data.range.startMonth} – {data.range.endMonth} · {data.range.monthCount} month{data.range.monthCount === 1 ? '' : 's'}
+          </p>
+        </div>
+        <Tag color="blue" style={{ margin: 0 }}>{data.metricBasis} basis</Tag>
+      </header>
+      <dl style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, margin: 0 }}>
+        {summaryCards.map(card => (
+          <div key={card.label} style={{ background: 'var(--tere-card-bg)', border: '1px solid var(--tere-card-brd)', borderRadius: 12, padding: 16 }}>
+            <dt style={{ alignItems: 'center', color: 'var(--tere-sub)', display: 'flex', fontSize: 11, fontWeight: 600, gap: 8, textTransform: 'uppercase', letterSpacing: '.06em' }}>
+              <card.icon aria-hidden size={16} /> {card.label}
+            </dt>
+            <dd style={{ color: 'var(--tere-title)', fontSize: 28, fontWeight: 700, margin: '8px 0 0' }}>{card.value}</dd>
+          </div>
+        ))}
       </dl>
       {data.range.monthCount > 1 && data.chart?.length ? (
         <ProductivitySummaryComparisonChart points={data.chart} metricBasis={data.metricBasis} />
       ) : null}
       {data.coverage && (
-        <section aria-labelledby="productivity-coverage-heading">
-          <h3 id="productivity-coverage-heading">Coverage</h3>
-          <Alert
-            type={data.coverage.complete ? 'success' : 'warning'}
-            showIcon
-            message={data.coverage.complete ? 'Complete' : 'Partial coverage'}
-            description={(
-              <ul>
+        <section aria-labelledby="productivity-coverage-heading" style={{ background: 'var(--tere-card-bg)', border: '1px solid var(--tere-card-brd)', borderRadius: 12, padding: '12px 16px' }}>
+          <details>
+            <summary style={{ alignItems: 'center', color: 'var(--tere-title)', cursor: 'pointer', display: 'flex', fontSize: 13, fontWeight: 600, gap: 8 }}>
+              <CheckCircle2 aria-hidden size={17} color={data.coverage.complete ? 'var(--color-accent)' : '#b45309'} />
+              <span id="productivity-coverage-heading">{data.coverage.complete ? 'All selected months are available' : 'Some source data is unavailable'}</span>
+              <span style={{ color: 'var(--tere-sub)', fontSize: 11, fontWeight: 400, marginLeft: 'auto' }}>Coverage details</span>
+            </summary>
+            {!data.coverage.complete ? <Alert type="warning" showIcon message="Partial coverage" style={{ marginTop: 12 }} /> : null}
+            <ul style={{ color: 'var(--tere-sub)', columns: '220px', fontSize: 11, lineHeight: 1.8, margin: '12px 0 0', paddingLeft: 18 }}>
                 {data.coverage.months.map(month => (
                   <li key={month.month}>
-                    {month.month}: {month.source}; productivity {month.productivityAvailable ? 'available' : 'N/A'}; bugs {month.bugsAvailable ? 'available' : 'N/A'}
+                    {month.month} · {month.source} · productivity {month.productivityAvailable ? 'ready' : 'N/A'} · bugs {month.bugsAvailable ? 'ready' : 'N/A'}
                   </li>
                 ))}
-              </ul>
-            )}
-          />
+            </ul>
+          </details>
         </section>
       )}
       {groups.length > 0 && (
-        <section aria-labelledby="productivity-groups-heading">
-          <h3 id="productivity-groups-heading">Groups</h3>
+        <section aria-labelledby="productivity-groups-heading" style={{ display: 'grid', gap: 12 }}>
+          <h3 id="productivity-groups-heading" style={{ color: 'var(--tere-title)', fontSize: 16, margin: '4px 0 0' }}>Member breakdown</h3>
           {groups.map(group => {
             const members = data.details?.filter(member => member.group === group) ?? [];
             const rows = members.map(member => ({
@@ -108,13 +127,16 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
               })),
             }));
             return (
-              <section key={group} aria-labelledby={`productivity-group-${group}`}>
-                <h4 id={`productivity-group-${group}`}>{group}</h4>
+              <section key={group} aria-labelledby={`productivity-group-${group}`} style={{ background: 'var(--tere-card-bg)', border: '1px solid var(--tere-card-brd)', borderRadius: 12, overflow: 'hidden' }}>
+                <div style={{ alignItems: 'center', borderBottom: '1px solid var(--tere-card-brd)', display: 'flex', justifyContent: 'space-between', padding: '12px 16px' }}>
+                  <h4 id={`productivity-group-${group}`} style={{ color: 'var(--tere-title)', fontSize: 14, margin: 0 }}>{group}</h4>
+                  <Tag style={{ margin: 0 }}>{members.length} members</Tag>
+                </div>
                 {members.length ? (
                   <Table
                     size="small"
                     pagination={false}
-                    defaultExpandAllRows
+                    defaultExpandAllRows={data.range.monthCount === 1}
                     dataSource={rows}
                     columns={[
                       { title: 'Member', dataIndex: 'member' },
