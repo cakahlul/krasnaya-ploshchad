@@ -394,8 +394,8 @@ COMMIT;
     (output / "import_all.sql").write_text(
         "\\set ON_ERROR_STOP on\n" + "\n".join(includes) + "\n", encoding="utf-8"
     )
-    (output / "verify.sql").write_text("""\\set ON_ERROR_STOP on
-SELECT archived_month, row_count, import_batch_id, covered_at
+    generate_supabase_sql(output, months)
+    (output / "verify.sql").write_text("""SELECT archived_month, row_count, import_batch_id, covered_at
 FROM productivity_archive_coverage ORDER BY archived_month;
 
 SELECT target_month, source_format, status, source_file_sha256,
@@ -410,6 +410,145 @@ FROM productivity_archive_developer_sprint
 GROUP BY archived_month, reporting_group_snapshot, source_status
 ORDER BY archived_month, reporting_group_snapshot, source_status;
 """, encoding="utf-8")
+
+
+def generate_supabase_sql(output: Path, months: list[dict[str, object]]) -> None:
+    records = []
+    target_values = []
+    for item in months:
+        records.extend(
+            json.loads(line)
+            for line in Path(str(item["dataFile"])).read_text(encoding="utf-8").splitlines()
+        )
+        target_values.append(
+            "(" + ", ".join([
+                f"DATE {sql_literal(str(item['month']) + '-01')}",
+                sql_literal(str(item["sourceFormat"])),
+                sql_literal(str(item["month"]) + ".jsonl"),
+                sql_literal(str(item["sha256"])),
+                str(int(item["rowCount"])),
+            ]) + ")"
+        )
+    payload = json.dumps(records, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+    expected_total = sum(int(item["rowCount"]) for item in months)
+    if len(records) != expected_total:
+        raise ValueError(f"embedded archive row mismatch: expected {expected_total}, got {len(records)}")
+    delimiter = "$archive_json$"
+    if delimiter in payload:
+        raise ValueError(f"embedded archive payload contains reserved delimiter {delimiter}")
+    target_rows = ",\n  ".join(target_values)
+
+    sql = f"""-- Supabase SQL Editor import. USER-RUN ONLY.
+-- Edit the two email values below before Run. Whole import is one transaction.
+BEGIN;
+
+CREATE TEMP TABLE archive_import_operator (
+  operator_id text NOT NULL,
+  data_owner_approved_by text NOT NULL
+) ON COMMIT DROP;
+INSERT INTO archive_import_operator VALUES
+  ('ahlul.esasjana@amarbank.co.id', 'ahlul.esasjana@amarbank.co.id');
+
+CREATE TEMP TABLE archive_import_target (
+  target_month date PRIMARY KEY,
+  import_batch_id uuid NOT NULL DEFAULT gen_random_uuid(),
+  source_format text NOT NULL,
+  source_file_name text NOT NULL,
+  source_file_sha256 text NOT NULL,
+  expected_rows integer NOT NULL,
+  should_import boolean NOT NULL DEFAULT true
+) ON COMMIT DROP;
+INSERT INTO archive_import_target (
+  target_month, source_format, source_file_name, source_file_sha256, expected_rows
+) VALUES
+  {target_rows};
+
+UPDATE archive_import_target target
+SET should_import = NOT EXISTS (
+  SELECT 1 FROM productivity_archive_import_batch batch
+  WHERE batch.target_month = target.target_month
+    AND batch.source_file_sha256 = target.source_file_sha256
+    AND batch.status = 'validated'
+);
+
+CREATE TEMP TABLE productivity_archive_stage (payload jsonb NOT NULL) ON COMMIT DROP;
+INSERT INTO productivity_archive_stage(payload)
+SELECT value FROM jsonb_array_elements({delimiter}{payload}{delimiter}::jsonb);
+
+DO $validation$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM archive_import_target target
+    LEFT JOIN productivity_archive_stage stage
+      ON (stage.payload->>'archivedMonth')::date = target.target_month
+     AND stage.payload->>'sourceFormat' = target.source_format
+    GROUP BY target.target_month, target.expected_rows
+    HAVING COUNT(stage.payload) <> target.expected_rows
+  ) THEN
+    RAISE EXCEPTION 'archive row count or contract mismatch';
+  END IF;
+END
+$validation$;
+
+DELETE FROM productivity_archive_coverage coverage
+USING archive_import_target target
+WHERE target.should_import AND coverage.archived_month = target.target_month;
+
+DELETE FROM productivity_archive_developer_sprint archive
+USING archive_import_target target
+WHERE target.should_import AND archive.archived_month = target.target_month;
+
+INSERT INTO productivity_archive_import_batch (
+  id, target_month, source_format, status, source_file_name, source_file_sha256,
+  normalized_summary, validated_at, created_by
+)
+SELECT target.import_batch_id, target.target_month, target.source_format, 'validated',
+       target.source_file_name, target.source_file_sha256,
+       jsonb_build_object('rowCount', target.expected_rows,
+                          'dataOwnerApprovedBy', operator.data_owner_approved_by),
+       now(), operator.operator_id
+FROM archive_import_target target
+CROSS JOIN archive_import_operator operator
+WHERE target.should_import;
+
+INSERT INTO productivity_archive_developer_sprint (
+  import_batch_id, archived_month, sprint_id, sprint_name, sprint_start_date, sprint_end_date,
+  board_id_snapshot, board_name_snapshot, reporting_group_snapshot,
+  developer_identity_raw, developer_identity_normalized,
+  developer_level_raw, developer_level_normalized, main_role_raw, main_role_normalized,
+  source_team, source_format, source_status, sp_total, sp_completed, sp_provenance,
+  raw_record, normalized_record
+)
+SELECT
+  target.import_batch_id, (payload->>'archivedMonth')::date,
+  payload->>'sprintId', payload->>'sprintName',
+  (payload->>'sprintStartDate')::date, (payload->>'sprintEndDate')::date,
+  NULLIF(payload->>'boardIdSnapshot', '')::integer, payload->>'boardNameSnapshot',
+  payload->>'reportingGroupSnapshot', payload->>'developerIdentityRaw',
+  payload->>'developerIdentityNormalized', payload->>'developerLevelRaw',
+  payload->>'developerLevelNormalized', payload->>'mainRoleRaw', payload->>'mainRoleNormalized',
+  payload->>'sourceTeam', payload->>'sourceFormat', payload->>'sourceStatus',
+  NULLIF(payload->>'spTotal', '')::numeric, NULLIF(payload->>'spCompleted', '')::numeric,
+  payload->>'spProvenance', payload->'rawRecord', payload->'normalizedRecord'
+FROM productivity_archive_stage stage
+JOIN archive_import_target target
+  ON target.target_month = (stage.payload->>'archivedMonth')::date
+ AND target.should_import;
+
+INSERT INTO productivity_archive_coverage (archived_month, import_batch_id, row_count)
+SELECT target.target_month, target.import_batch_id, target.expected_rows
+FROM archive_import_target target
+WHERE target.should_import;
+
+SELECT target_month, expected_rows,
+       CASE WHEN should_import THEN 'IMPORTED' ELSE 'ALREADY_IMPORTED' END AS result
+FROM archive_import_target
+ORDER BY target_month;
+
+COMMIT;
+"""
+    (output / "supabase_import_all.sql").write_text(sql, encoding="utf-8")
 
 
 def generate_readme(output: Path, manifest: dict[str, object]) -> None:
@@ -438,13 +577,10 @@ Database was not accessed while generating this package.
 1. Review `manifest.json`, `rejections.json`, every monthly count, and source fingerprints.
 2. Run migration `drizzle/0009_reporting_group_and_archive.sql` and its post-verification first.
 3. Set approved board/Group/Lead/rule configuration and restart the app to clear board cache.
-4. Set operator identities only in the local shell; do not commit them:
+4. Supabase SQL Editor: open `supabase_import_all.sql`, review the two operator emails at the top, and click Run.
+5. Run `verify.sql` in the same Supabase SQL Editor, then return complete output for review.
 
-   ```bash
-   export PGOPTIONS='-c statement_timeout=0'
-   ```
-
-5. From this directory, run:
+Optional psql path:
 
    ```bash
    psql "$DIRECT_URL" \\
@@ -454,9 +590,9 @@ Database was not accessed while generating this package.
      -f import_all.sql
    ```
 
-6. Run `psql "$DIRECT_URL" -v ON_ERROR_STOP=1 -f verify.sql` and return complete output for review.
+Then run `psql "$DIRECT_URL" -v ON_ERROR_STOP=1 -f verify.sql`.
 
-Each month is its own transaction. Identical fingerprint re-runs are no-ops. A changed month atomically replaces only that month. Do not edit JSONL after review; fingerprint mismatch changes import identity.
+The Supabase import is one transaction for all 18 months. Identical fingerprint re-runs are no-ops. A changed month replaces only that month inside the transaction. Do not edit generated SQL after review; fingerprint mismatch changes import identity.
 """
     (output / "README.md").write_text(text, encoding="utf-8")
 
