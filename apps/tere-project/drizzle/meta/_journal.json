@@ -78,6 +78,13 @@
       "when": 1785398400000,
       "tag": "0010_bug_project_jql",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1785402000000,
+      "tag": "0011_member_lifecycle",
+      "breakpoints": true
     }
   ]
 }

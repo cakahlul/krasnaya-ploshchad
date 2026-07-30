@@ -25,6 +25,8 @@ export const members = pgTable('members', {
   level: text('level').notNull(),
   isLead: boolean('is_lead').notNull().default(false),
   teams: jsonb('teams').$type<string[]>().notNull().default([]),
+  joinDate: date('join_date').notNull().default('2025-01-01'),
+  resignDate: date('resign_date'),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),

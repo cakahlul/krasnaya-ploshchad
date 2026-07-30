@@ -54,12 +54,18 @@ interface Dependencies {
   resolveRule(group: ReportingGroup, month: string): Promise<{ ruleVersion: RuleVersion }>;
 }
 
-function archiveMembers(rows: readonly ArchiveDeveloperSprint[], groups: readonly ReportingGroup[]) {
+function archiveMembers(rows: readonly ArchiveDeveloperSprint[], groups: readonly ReportingGroup[], roster: readonly MemberResponse[], month: string) {
   const members = new Map<string, SourceMember>();
+  const lifecycle = new Map(roster.map(member => [member.email.trim().toLowerCase(), member]));
   const ambiguous = new Set<string>();
   const failures: NonNullable<MonthSourceResult['failures']> = [];
   for (const row of rows) {
-    if (row.sourceStatus === 'N' || (row.spTotal ?? 0) <= 0) continue;
+    const memberLifecycle = lifecycle.get(row.developerIdentityNormalized);
+    if (!memberLifecycle) {
+      failures.push({ scope: 'productivity', reason: `MEMBER_LIFECYCLE_UNRESOLVED:${row.developerIdentityNormalized}` });
+      continue;
+    }
+    if (memberLifecycle.joinDate > `${month}-31` || (memberLifecycle.resignDate && memberLifecycle.resignDate < `${month}-01`)) continue;
     const group = row.reportingGroupSnapshot ?? 'Ungrouped';
     if (!groups.includes(group)) continue;
     if (ambiguous.has(row.developerIdentityNormalized)) continue;
@@ -93,7 +99,8 @@ export function createProductivitySummaryRangePorts(deps: Dependencies): RangeAg
     async loadMonth(month, groups): Promise<MonthSourceResult> {
       const routed = await deps.routeMonth(month);
       if (routed.source !== 'live') {
-        const archived = routed.rows ? archiveMembers(routed.rows, groups) : { members: [], failures: [] };
+        const roster = await deps.findMembers();
+        const archived = routed.rows ? archiveMembers(routed.rows, groups, roster, month) : { members: [], failures: [] };
         const failures = [
           ...(routed.failure ? [{ scope: 'productivity' as const, reason: routed.failure.reason }] : []),
           ...archived.failures,

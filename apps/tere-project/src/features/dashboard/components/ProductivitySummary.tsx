@@ -294,6 +294,8 @@ export default function ProductivitySummary() {
           <DatePicker.RangePicker
             data-qa="productivity-summary-range"
             picker="month"
+            minDate={dayjs('2025-01-01')}
+            maxDate={dayjs()}
             value={selectedRange}
             onChange={(dates) => {
               if (dates?.[0] && dates[1]) setSelectedRange([dates[0], dates[1]]);

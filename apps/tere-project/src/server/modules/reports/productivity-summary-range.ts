@@ -25,6 +25,7 @@ interface RawRequestParams {
 }
 
 const MONTH_PATTERN = /^([1-9]\d{3})-(0[1-9]|1[0-2])$/;
+const EARLIEST_MONTH = '2025-01';
 
 function parseMonth(value: string): [number, number] | null {
   const match = MONTH_PATTERN.exec(value);
@@ -72,6 +73,8 @@ export function parseProductivitySummaryRange(
     if (!parseMonth(startMonth) || !parseMonth(endMonth)) {
       return { ok: false, message: "startMonth and endMonth must use YYYY-MM" };
     }
+    if (startMonth < EARLIEST_MONTH || endMonth < EARLIEST_MONTH)
+      return { ok: false, message: "date range cannot start before January 2025" };
 
     const months = enumerateMonths(startMonth, endMonth);
     if (months.length === 0)
@@ -92,6 +95,8 @@ export function parseProductivitySummaryRange(
 
   const parsedMonth = Number(month);
   const parsedYear = Number(year);
+  if (parsedYear < 2025)
+    return { ok: false, message: "date range cannot start before January 2025" };
   return {
     ok: true,
     value: {

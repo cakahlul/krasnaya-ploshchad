@@ -12,13 +12,17 @@ test('accepts an inclusive same-month range', () => {
 });
 
 test('counts a leap-year boundary by calendar month', () => {
-  assert.equal(inclusiveMonthCount('2024-02', '2024-03'), 2);
+  assert.equal(inclusiveMonthCount('2025-02', '2025-03'), 2);
+});
+
+test('rejects ranges before January 2025', () => {
+  assert.match(validateProductivitySummaryRange('2024-12', '2025-01')!, /January 2025/);
 });
 
 test('rejects reversed and 25-month ranges while accepting 24 months', () => {
   assert.match(validateProductivitySummaryRange('2026-03', '2026-02')!, /must not be after/);
-  assert.equal(validateProductivitySummaryRange('2024-02', '2026-01'), null);
-  assert.match(validateProductivitySummaryRange('2024-01', '2026-01')!, /24 months/);
+  assert.equal(validateProductivitySummaryRange('2025-01', '2026-12'), null);
+  assert.match(validateProductivitySummaryRange('2025-01', '2027-01')!, /24 months/);
 });
 
 test('builds only canonical Group-scoped query fields', () => {

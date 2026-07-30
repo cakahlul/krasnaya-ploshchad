@@ -35,12 +35,12 @@ test('loads live productivity by Group boards and counts every bug created in mo
 test('loads archive rows with historical Group and board snapshots', async () => {
   const ports = createProductivitySummaryRangePorts({
     findBoards: async () => [],
-    findMembers: async () => [],
+    findMembers: async () => [{ email: 'dev@example.com', joinDate: '2025-01-01', resignDate: '2026-06-30' }] as never,
     loadBoard: async () => { throw new Error('must not load live'); },
     routeMonth: async () => ({
       source: 'archive', metricBasis: 'SP', failure: null,
       rows: [
-        { developerIdentityNormalized: 'dev@example.com', developerNameSnapshot: 'Dev', reportingGroupSnapshot: 'User', boardNameSnapshot: 'Historical Board', boardIdSnapshot: 9, spTotal: 3, sourceStatus: 'Y' },
+        { developerIdentityNormalized: 'dev@example.com', developerNameSnapshot: 'Dev', reportingGroupSnapshot: 'User', boardNameSnapshot: 'Historical Board', boardIdSnapshot: 9, spTotal: 3, sourceStatus: 'N' },
         { developerIdentityNormalized: 'dev@example.com', developerNameSnapshot: 'Dev', reportingGroupSnapshot: 'User', boardNameSnapshot: 'Second Historical Board', boardIdSnapshot: 10, spTotal: 5, sourceStatus: 'Y' },
       ] as never,
     }),
@@ -74,7 +74,7 @@ test('excludes a live identity attributed to multiple Groups', async () => {
 
 test('excludes an archive identity attributed to multiple Groups', async () => {
   const ports = createProductivitySummaryRangePorts({
-    findBoards: async () => [], findMembers: async () => [],
+    findBoards: async () => [], findMembers: async () => [{ email: 'dev@example.com', joinDate: '2025-01-01', resignDate: null }] as never,
     loadBoard: async () => { throw new Error('must not load live'); },
     routeMonth: async () => ({ source: 'archive', metricBasis: 'SP', failure: null, rows: [
       { developerIdentityNormalized: 'dev@example.com', developerNameSnapshot: 'Dev', reportingGroupSnapshot: 'Loan', boardNameSnapshot: 'LN', spTotal: 1, sourceStatus: 'Y' },

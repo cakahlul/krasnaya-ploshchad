@@ -42,4 +42,9 @@ ALTER TABLE "boards"
 
 DROP TABLE "reporting_group_config";
 
+ALTER TABLE "members"
+  DROP CONSTRAINT "members_lifecycle_dates_ordered",
+  DROP COLUMN "resign_date",
+  DROP COLUMN "join_date";
+
 COMMIT;

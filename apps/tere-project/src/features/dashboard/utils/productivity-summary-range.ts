@@ -15,6 +15,7 @@ export function inclusiveMonthCount(startMonth: string, endMonth: string): numbe
 }
 
 export function validateProductivitySummaryRange(startMonth: string, endMonth: string): string | null {
+  if (startMonth < '2025-01' || endMonth < '2025-01') return 'Date range cannot start before January 2025.';
   const count = inclusiveMonthCount(startMonth, endMonth);
   if (count < 1) return 'Start month must not be after end month.';
   if (count > 24) return 'Date range must not exceed 24 months.';

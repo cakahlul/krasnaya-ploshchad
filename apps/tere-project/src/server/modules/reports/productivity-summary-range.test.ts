@@ -26,11 +26,11 @@ function rejected(values: Record<string, string | undefined>, message: string) {
 }
 
 // Legacy stays a one-month request, retaining the exact month/year inputs.
-assert.deepEqual(parsed({ month: "2", year: "2024" }), {
+assert.deepEqual(parsed({ month: "2", year: "2025" }), {
   kind: "legacy",
   month: 2,
-  year: 2024,
-  months: ["2024-02"],
+  year: 2025,
+  months: ["2025-02"],
 });
 
 // Canonical ranges are inclusive and cross year boundaries correctly.
@@ -41,30 +41,30 @@ assert.deepEqual(parsed({ startMonth: "2025-12", endMonth: "2026-02" }), {
   months: ["2025-12", "2026-01", "2026-02"],
 });
 
-assert.deepEqual(parsed({ startMonth: "2024-02", endMonth: "2024-02" }), {
+assert.deepEqual(parsed({ startMonth: "2025-02", endMonth: "2025-02" }), {
   kind: "range",
-  startMonth: "2024-02",
-  endMonth: "2024-02",
-  months: ["2024-02"],
+  startMonth: "2025-02",
+  endMonth: "2025-02",
+  months: ["2025-02"],
 });
 
-assert.deepEqual(parsed({ startMonth: "2024-02", endMonth: "2024-03" }).months, [
-  "2024-02",
-  "2024-03",
+assert.deepEqual(parsed({ startMonth: "2025-02", endMonth: "2025-03" }).months, [
+  "2025-02",
+  "2025-03",
 ]);
 
 // Exactly 24 months is allowed; a 25th month is rejected.
 assert.equal(
-  parsed({ startMonth: "2024-01", endMonth: "2025-12" }).months.length,
+  parsed({ startMonth: "2025-01", endMonth: "2026-12" }).months.length,
   24,
 );
 rejected(
-  { startMonth: "2024-01", endMonth: "2026-01" },
+  { startMonth: "2025-01", endMonth: "2027-01" },
   "range must not exceed 24 months",
 );
 
 // Raw forms are exclusive and strict at the boundary.
-const leadingZeroLegacy = parsed({ month: "02", year: "2024" });
+const leadingZeroLegacy = parsed({ month: "02", year: "2025" });
 assert.equal(leadingZeroLegacy.kind, "legacy");
 if (leadingZeroLegacy.kind === "legacy")
   assert.equal(leadingZeroLegacy.month, 2);
@@ -81,18 +81,19 @@ const invalidCases: Array<[
   [{ month: "2x", year: "2024" }, "month must be an integer from 1 to 12"],
   [{ month: "2", year: "0000" }, "year must be a four-digit integer"],
   [{ month: "2", year: "2024x" }, "year must be a four-digit integer"],
-  [{ startMonth: "2024-01" }, "startMonth and endMonth are required"],
-  [{ startMonth: "", endMonth: "2024-01" }, "startMonth and endMonth are required"],
-  [{ startMonth: "2024-01", endMonth: "" }, "startMonth and endMonth are required"],
-  [{ startMonth: "2024-1", endMonth: "2024-02" }, "startMonth and endMonth must use YYYY-MM"],
-  [{ startMonth: "year-01", endMonth: "2024-02" }, "startMonth and endMonth must use YYYY-MM"],
-  [{ startMonth: "2024-01", endMonth: "2024-2" }, "startMonth and endMonth must use YYYY-MM"],
-  [{ startMonth: "2024-13", endMonth: "2024-12" }, "startMonth and endMonth must use YYYY-MM"],
+  [{ startMonth: "2025-01" }, "startMonth and endMonth are required"],
+  [{ startMonth: "", endMonth: "2025-01" }, "startMonth and endMonth are required"],
+  [{ startMonth: "2025-01", endMonth: "" }, "startMonth and endMonth are required"],
+  [{ startMonth: "2025-1", endMonth: "2025-02" }, "startMonth and endMonth must use YYYY-MM"],
+  [{ startMonth: "year-01", endMonth: "2025-02" }, "startMonth and endMonth must use YYYY-MM"],
+  [{ startMonth: "2025-01", endMonth: "2025-2" }, "startMonth and endMonth must use YYYY-MM"],
+  [{ startMonth: "2025-13", endMonth: "2025-12" }, "startMonth and endMonth must use YYYY-MM"],
   [{ startMonth: "0000-01", endMonth: "0000-01" }, "startMonth and endMonth must use YYYY-MM"],
-  [{ startMonth: "2024-03", endMonth: "2024-02" }, "startMonth must not be after endMonth"],
-  [{ startMonth: "2024-01", endMonth: "2026-01" }, "range must not exceed 24 months"],
+  [{ startMonth: "2024-12", endMonth: "2025-01" }, "date range cannot start before January 2025"],
+  [{ startMonth: "2025-03", endMonth: "2025-02" }, "startMonth must not be after endMonth"],
+  [{ startMonth: "2025-01", endMonth: "2027-01" }, "range must not exceed 24 months"],
   [
-    { month: "2", year: "2024", startMonth: "2024-02", endMonth: "2024-02" },
+    { month: "2", year: "2025", startMonth: "2025-02", endMonth: "2025-02" },
     "legacy and canonical range parameters cannot be mixed",
   ],
 ];

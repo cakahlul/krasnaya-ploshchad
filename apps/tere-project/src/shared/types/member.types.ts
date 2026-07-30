@@ -9,6 +9,8 @@ export interface MemberEntity {
   level: Level;
   teams: string[];
   isLead?: boolean;
+  joinDate: string;
+  resignDate?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,6 +24,8 @@ export interface MemberResponse {
   level: Level;
   teams: string[];
   isLead?: boolean;
+  joinDate: string;
+  resignDate: string | null;
   createdAt: string;
   updatedAt: string;
 }

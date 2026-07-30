@@ -30,6 +30,8 @@ class MembersService {
       level: dto.level,
       teams: dto.teams,
       isLead: dto.isLead ?? false,
+      joinDate: '2025-01-01',
+      resignDate: null,
       createdAt: now,
       updatedAt: now,
     };
@@ -109,6 +111,8 @@ class MembersService {
       level: entity.level,
       teams: entity.teams,
       isLead: entity.isLead ?? false,
+      joinDate: entity.joinDate,
+      resignDate: entity.resignDate ?? null,
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),
     };

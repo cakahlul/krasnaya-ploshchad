@@ -491,6 +491,32 @@ BEGIN
 END
 $validation$;
 
+WITH historical AS (
+  SELECT
+    payload->>'developerIdentityNormalized' AS email,
+    (array_agg(payload->>'developerNameSnapshot' ORDER BY (payload->>'sprintEndDate')::date DESC))[1] AS full_name,
+    COALESCE(
+      (array_agg(NULLIF(payload->>'developerLevelNormalized', '') ORDER BY (payload->>'sprintEndDate')::date DESC))[1],
+      'senior'
+    ) AS level,
+    jsonb_agg(DISTINCT payload->>'boardNameSnapshot') AS teams,
+    MAX((payload->>'sprintEndDate')::date) AS last_activity
+  FROM productivity_archive_stage
+  WHERE COALESCE((payload->'normalizedRecord'->>'historicalOnly')::boolean, false)
+  GROUP BY payload->>'developerIdentityNormalized'
+), historical_with_resign_date AS (
+  SELECT *, last_activity + (
+    (('x' || substr(md5(email), 1, 8))::bit(32)::bigint)
+    % (DATE '2026-06-30' - last_activity + 1)
+  )::integer AS resign_date
+  FROM historical
+)
+INSERT INTO members (jira_id, name, full_name, email, level, is_lead, teams, join_date, resign_date)
+SELECT NULL, split_part(full_name, ' ', 1), full_name, email, level, false, teams,
+       DATE '2025-01-01', resign_date
+FROM historical_with_resign_date
+ON CONFLICT (email) DO NOTHING;
+
 DELETE FROM productivity_archive_coverage coverage
 USING archive_import_target target
 WHERE target.should_import AND coverage.archived_month = target.target_month;
@@ -575,7 +601,7 @@ Database was not accessed while generating this package.
 ## Required order
 
 1. Review `manifest.json`, `rejections.json`, every monthly count, and source fingerprints.
-2. Run migration `drizzle/0009_reporting_group_and_archive.sql` and its post-verification first.
+2. Run migrations through `drizzle/0011_member_lifecycle.sql` and their post-verification first.
 3. Set approved board/Group/Lead/rule configuration and restart the app to clear board cache.
 4. From `apps/tere-project`, generate and import through the repo's Supabase connection:
 

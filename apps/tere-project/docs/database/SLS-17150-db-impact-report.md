@@ -7,6 +7,7 @@ Status: **DB integration UNVERIFIED**. These are static, user-run artifacts only
 | Object | Change | Purpose |
 | --- | --- | --- |
 | `boards` | nullable `reporting_group`, `reporting_board_lead_email`, `bug_jql`, two FKs | current live reporting Group, distinct Board Lead, and independently editable JQL per bug project; `NULL` Group means `Ungrouped` |
+| `members` | `join_date` defaulted to `2025-01-01`, nullable `resign_date` | lifecycle source for historical active-member filtering |
 | `reporting_group_config` | new configuration table | supported Groups and optional Group Head in `reporting_lead_email`; separate from Board Lead |
 | `group_rule_config` + `group_rule_config_lookup_idx` | new effective-dated rule table and `(reporting_group, effective_month DESC)` index | latest Group rule lookup at a report month |
 | `productivity_archive_import_batch` + month/status index | new import audit table | source, normalized summary, validation/rejection evidence |
@@ -20,8 +21,9 @@ Status: **DB integration UNVERIFIED**. These are static, user-run artifacts only
 3. Run `drizzle/0009_reporting_group_and_archive.sql` once in a controlled maintenance window. It is one transaction; DDL, nullable board-column backfill, and deterministic Group/v3 seeds commit together or roll back together.
 4. Run `drizzle/0010_bug_project_jql.sql`; it adds one nullable column and preserves all existing bug-query behavior.
 5. Review and run `docs/database/SLS-17150-production-config.sql`. Its three JQL values are independent and may be customized before execution.
-6. Run separately reviewed Lead and historical legacy/new rule updates, if any, in their own transaction.
-7. Run post-verification queries, including plan checks. Do not enable Group/archive routing until results are reviewed.
+6. Run `drizzle/0011_member_lifecycle.sql`, then rerun the root `archive:import` command to backfill historical members idempotently.
+7. Run separately reviewed Lead and historical legacy/new rule updates, if any, in their own transaction.
+8. Run post-verification queries, including plan checks. Do not enable Group/archive routing until results are reviewed.
 
 ## Lock, scan, write, and duration expectations
 

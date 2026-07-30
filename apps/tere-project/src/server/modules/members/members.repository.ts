@@ -16,6 +16,8 @@ function rowToEntity(row: Row): MemberEntity {
     level: row.level as Level,
     isLead: row.isLead,
     teams: row.teams ?? [],
+    joinDate: row.joinDate,
+    resignDate: row.resignDate,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -30,6 +32,8 @@ function entityToInsert(data: Omit<MemberEntity, 'id'>) {
     level: data.level,
     isLead: data.isLead ?? false,
     teams: data.teams ?? [],
+    joinDate: data.joinDate,
+    resignDate: data.resignDate ?? null,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   };
@@ -70,6 +74,8 @@ export class MembersRepository {
     if (data.level !== undefined) patch.level = data.level;
     if (data.isLead !== undefined) patch.isLead = data.isLead;
     if (data.teams !== undefined) patch.teams = data.teams;
+    if (data.joinDate !== undefined) patch.joinDate = data.joinDate;
+    if (data.resignDate !== undefined) patch.resignDate = data.resignDate;
     patch.updatedAt = data.updatedAt ?? new Date();
 
     const [row] = await db.update(members).set(patch).where(eq(members.id, id)).returning();
