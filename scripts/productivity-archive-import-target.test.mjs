@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { assertSupabaseTarget } from './productivity-archive-import-target';
+import { assertSupabaseTarget } from './productivity-archive-import-target.mjs';
 
 test('accepts only the explicitly confirmed Supabase project', () => {
   assert.doesNotThrow(() => assertSupabaseTarget(

@@ -4,11 +4,11 @@ import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { config } from 'dotenv';
 import postgres from 'postgres';
-import { assertSupabaseTarget } from './productivity-archive-import-target';
+import { assertSupabaseTarget } from './productivity-archive-import-target.mjs';
 
 config({ path: 'apps/tere-project/.env', quiet: true });
 
-async function main(): Promise<void> {
+async function main() {
   const downloads = join(homedir(), 'Downloads');
   const output = join(downloads, 'productivity-archive-import-phase1');
   const execute = process.argv.includes('--execute');
@@ -36,7 +36,7 @@ async function main(): Promise<void> {
 
   const sql = postgres(databaseUrl, { prepare: false, max: 1, connect_timeout: 15 });
   try {
-    const [schema] = await sql<[{ archive_table: string | null; coverage_table: string | null }]>`
+    const [schema] = await sql`
     SELECT to_regclass('public.productivity_archive_developer_sprint')::text AS archive_table,
            to_regclass('public.productivity_archive_coverage')::text AS coverage_table
   `;
@@ -45,7 +45,7 @@ async function main(): Promise<void> {
     const importSql = readFileSync(join(output, 'supabase_import_all.sql'), 'utf8');
     await sql.unsafe(importSql);
 
-    const [result] = await sql<[{ months: number; rows: number }]>`
+    const [result] = await sql`
     SELECT COUNT(*)::integer AS months, COALESCE(SUM(row_count), 0)::integer AS rows
     FROM productivity_archive_coverage
     WHERE archived_month BETWEEN DATE '2025-01-01' AND DATE '2026-06-01'
