@@ -52,7 +52,7 @@ test('loads archive rows with historical Group and board snapshots', async () =>
   assert.equal(month.source, 'archive');
   assert.deepEqual(month.members[0], { id: 'dev@example.com', name: 'Dev', group: 'User', board: 'Historical Board', boards: ['Historical Board', 'Second Historical Board'], spTotal: 8, wpTotal: null, workingDays: null });
   assert.deepEqual(month.appliedRules, []);
-  assert.deepEqual(month.failures, [{ scope: 'productivity', group: 'User', reason: 'ARCHIVE_RULE_METADATA_UNAVAILABLE' }]);
+  assert.deepEqual(month.failures, []);
 });
 
 test('excludes a live identity attributed to multiple Groups', async () => {

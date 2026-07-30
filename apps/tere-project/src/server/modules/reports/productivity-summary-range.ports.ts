@@ -97,7 +97,6 @@ export function createProductivitySummaryRangePorts(deps: Dependencies): RangeAg
         const failures = [
           ...(routed.failure ? [{ scope: 'productivity' as const, reason: routed.failure.reason }] : []),
           ...archived.failures,
-          ...groups.map(group => ({ scope: 'productivity' as const, group, reason: 'ARCHIVE_RULE_METADATA_UNAVAILABLE' })),
         ];
         return {
           source: routed.source,
