@@ -83,7 +83,7 @@ export class BugMonitoringRepository {
             jql,
             maxResults: MAX_RESULTS,
             startAt,
-            fields: ['summary', 'status', 'priority', 'assignee', 'created', 'updated', 'resolution'].join(','),
+            fields: ['summary', 'status', 'priority', 'assignee', 'created', 'updated', 'resolution', 'resolutiondate'].join(','),
           },
           timeout: TIMEOUT,
         }),

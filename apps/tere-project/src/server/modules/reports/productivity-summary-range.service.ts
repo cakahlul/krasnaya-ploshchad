@@ -31,6 +31,7 @@ export interface RangeAggregationPorts {
   ): Promise<MonthSourceResult>;
   loadBugCount(month: string, group: ReportingGroup): Promise<number>;
   loadBugRaisedCount?(month: string, group: ReportingGroup): Promise<number>;
+  loadBugDoneCount?(month: string, group: ReportingGroup): Promise<number>;
 }
 
 export interface RangeAggregationInput {
@@ -69,6 +70,9 @@ export async function generateProductivitySummaryRange(
             raised: ports.loadBugRaisedCount
               ? await ports.loadBugRaisedCount(month, group)
               : null,
+            done: ports.loadBugDoneCount
+              ? await ports.loadBugDoneCount(month, group)
+              : null,
           }))(),
         ),
       ]);
@@ -94,7 +98,7 @@ export async function generateProductivitySummaryRange(
         && (monthData.availability?.productivity ?? true);
       const bugsAvailable = bugs.every((bug) => bug.status === "fulfilled");
       const fulfilledBugs = bugs.filter(
-        (bug): bug is PromiseFulfilledResult<{ total: number; raised: number | null }> => bug.status === "fulfilled",
+        (bug): bug is PromiseFulfilledResult<{ total: number; raised: number | null; done: number | null }> => bug.status === "fulfilled",
       );
       return {
         month,
@@ -104,6 +108,9 @@ export async function generateProductivitySummaryRange(
           : null,
         bugsRaised: fulfilledBugs.length
           ? fulfilledBugs.reduce((sum, bug) => sum + (bug.value.raised ?? bug.value.total), 0)
+          : null,
+        bugsDone: fulfilledBugs.length
+          ? fulfilledBugs.reduce((sum, bug) => sum + (bug.value.done ?? 0), 0)
           : null,
         coverage: {
           month,
@@ -198,6 +205,7 @@ export async function generateProductivitySummaryRange(
         : null,
       bugsRaised: month.bugsRaised,
       bugsTotal: month.bugsTotal,
+      bugsDone: month.bugsDone,
       source: month.coverage.source,
       metricBasis,
     };
@@ -239,6 +247,9 @@ export async function generateProductivitySummaryRange(
         : null,
       bugsTotal: chart.every((point) => point.bugsTotal !== null)
         ? chart.reduce((sum, point) => sum + point.bugsTotal!, 0)
+        : null,
+      bugsDone: chart.every((point) => point.bugsDone !== null)
+        ? chart.reduce((sum, point) => sum + point.bugsDone!, 0)
         : null,
     },
     details: input.callerName

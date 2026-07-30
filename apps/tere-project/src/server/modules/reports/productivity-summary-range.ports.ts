@@ -95,7 +95,7 @@ function archiveMembers(rows: readonly ArchiveDeveloperSprint[], groups: readonl
     member.spTotal! += row.spTotal ?? 0;
     member.spTarget = member.spTarget === null || row.spTarget === null || row.spTarget === undefined
       ? member.spTarget ?? row.spTarget ?? null
-      : member.spTarget + row.spTarget;
+      : (member.spTarget ?? 0) + row.spTarget;
     const workingDays = row.workingDays ?? null;
     member.workingDays = member.workingDays === null || workingDays === null
       ? member.workingDays ?? workingDays
@@ -194,6 +194,11 @@ export function createProductivitySummaryRangePorts(deps: Dependencies): RangeAg
       const boards = (await deps.findBoards()).filter(board => board.isBugMonitoring && (board.reportingGroup ?? 'Ungrouped') === group);
       const bugs = await Promise.all(boards.map(board => deps.fetchBugs(board.boardId)));
       return bugs.flat().filter(bug => bug.fields.created.slice(0, 7) === month).length;
+    },
+    async loadBugDoneCount(month, group) {
+      const boards = (await deps.findBoards()).filter(board => board.isBugMonitoring && (board.reportingGroup ?? 'Ungrouped') === group);
+      const bugs = await Promise.all(boards.map(board => deps.fetchBugs(board.boardId)));
+      return bugs.flat().filter(bug => bug.fields.resolutiondate?.slice(0, 7) === month).length;
     },
   };
 }

@@ -44,6 +44,7 @@ export interface JiraBugFieldsEntity {
   created: string;
   updated: string;
   resolution: { name: string } | null;
+  resolutiondate?: string | null;
 }
 
 export interface JiraBugEntity {
