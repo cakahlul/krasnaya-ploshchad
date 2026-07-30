@@ -6,7 +6,7 @@ import { config } from 'dotenv';
 import postgres from 'postgres';
 import { assertSupabaseTarget } from './productivity-archive-import-target';
 
-config({ path: '.env', quiet: true });
+config({ path: 'apps/tere-project/.env', quiet: true });
 
 async function main(): Promise<void> {
   const downloads = join(homedir(), 'Downloads');

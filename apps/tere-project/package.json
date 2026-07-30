@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
-    "archive:import": "node --import tsx scripts/import-productivity-archive.ts"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@ant-design/icons": "^5.6.1",

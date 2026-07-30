@@ -17,10 +17,14 @@
     "mcp:release:major": "npm run release:major --workspace=apps/mcp-server",
     "beras:dev": "npm run dev --workspace=@krasnaya/beras-ui",
     "beras:build": "npm run build --workspace=@krasnaya/beras-ui",
-    "beras:verify": "npm run verify --workspace=@krasnaya/beras-ui"
+    "beras:verify": "npm run verify --workspace=@krasnaya/beras-ui",
+    "archive:import": "node --import tsx scripts/import-productivity-archive.ts"
   },
   "devDependencies": {
+    "dotenv": "^17.4.2",
+    "postgres": "^3.4.9",
     "prettier": "^3.5.3",
+    "tsx": "^4.22.3",
     "typescript": "5.8.2"
   },
   "engines": {
