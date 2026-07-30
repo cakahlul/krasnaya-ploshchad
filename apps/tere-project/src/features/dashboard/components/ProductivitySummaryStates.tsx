@@ -14,6 +14,8 @@ import {
 } from 'recharts';
 import type { ProductivitySummaryParams } from '../utils/productivity-summary-range';
 
+const BUG_LINE_COLOR = '#ef4444';
+
 interface ProductivitySummaryChartPoint {
   month: string;
   activeMembers: number | null;
@@ -202,7 +204,7 @@ function ProductivitySummaryComparisonChart({
               <Legend wrapperStyle={{ color: 'var(--tere-sub)', fontSize: 12 }} />
               <Line yAxisId="count" dataKey="activeMembers" name="Active members" stroke="var(--color-accent)" strokeWidth={2} connectNulls={false} />
               <Line yAxisId="productivity" dataKey="productivityMetric" name={`${metricBasis} productivity`} stroke="var(--color-accent-light)" strokeWidth={2} connectNulls={false} />
-              <Line yAxisId="count" dataKey="bugsRaised" name="Bugs raised" stroke="var(--tere-title)" strokeDasharray="2 3" strokeWidth={2} connectNulls={false} />
+              <Line yAxisId="count" dataKey="bugsRaised" name="Bugs raised" stroke={BUG_LINE_COLOR} strokeDasharray="2 3" strokeWidth={2} connectNulls={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
