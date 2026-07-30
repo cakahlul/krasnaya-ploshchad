@@ -98,6 +98,7 @@ export const boards = pgTable('boards', {
   isShowPlannedWP: boolean('is_show_planned_wp').notNull().default(false),
   isBugMonitoring: boolean('is_bug_monitoring').notNull().default(false),
   bugIssueType: text('bug_issue_type'),
+  bugJql: text('bug_jql'),
   isStoryGrouping: boolean('is_story_grouping').notNull().default(false),
   kanbanCycleStartDate: date('kanban_cycle_start_date'),
   reportingGroup: text('reporting_group'),

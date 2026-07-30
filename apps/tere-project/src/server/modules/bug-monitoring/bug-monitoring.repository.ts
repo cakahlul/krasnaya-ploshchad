@@ -7,6 +7,12 @@ const TIMEOUT = parseInt(process.env.JIRA_REQUEST_TIMEOUT ?? '30000', 10);
 const MAX_RETRY = parseInt(process.env.JIRA_RETRY_ATTEMPTS ?? '3', 10);
 const BASE_RETRY_DELAY = 1000;
 
+export function buildBugJql(board: { shortName: string; bugIssueType?: string; bugJql?: string }): string {
+  if (board.bugJql?.trim()) return board.bugJql.trim();
+  const issueTypeClause = board.bugIssueType ? ` AND issuetype = ${board.bugIssueType}` : '';
+  return `project = ${board.shortName}${issueTypeClause} ORDER BY created DESC`;
+}
+
 function isRetryable(error: unknown): boolean {
   if (typeof error === 'object' && error !== null) {
     const e = error as { response?: { status?: number }; code?: string };
@@ -39,8 +45,7 @@ export class BugMonitoringRepository {
     const board = boards.find(b => b.boardId === boardId && b.isBugMonitoring);
     if (!board) throw new Error(`No bug monitoring board found for boardId ${boardId}`);
 
-    const issueTypeClause = board.bugIssueType ? ` AND issuetype = ${board.bugIssueType}` : '';
-    const jql = `project = ${board.shortName}${issueTypeClause} ORDER BY created DESC`;
+    const jql = buildBugJql(board);
     const searchUrl = '/rest/api/3/search/jql';
     const allBugs: JiraBugEntity[] = [];
     let startAt = 0;

@@ -15,6 +15,7 @@ function rowToEntity(row: Row): BoardEntity & { id: string } {
     isShowPlannedWP: row.isShowPlannedWP,
     isBugMonitoring: row.isBugMonitoring,
     bugIssueType: row.bugIssueType ?? undefined,
+    bugJql: row.bugJql ?? undefined,
     isStoryGrouping: row.isStoryGrouping,
     kanbanCycleStartDate: row.kanbanCycleStartDate ?? null,
     reportingGroup: row.reportingGroup as BoardEntity['reportingGroup'],

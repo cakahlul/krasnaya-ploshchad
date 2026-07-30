@@ -24,6 +24,7 @@ export class BoardsService {
       isShowPlannedWP: e.isShowPlannedWP,
       isBugMonitoring: e.isBugMonitoring,
       bugIssueType: e.bugIssueType,
+      bugJql: e.bugJql,
       isStoryGrouping: e.isStoryGrouping,
       kanbanCycleStartDate: e.kanbanCycleStartDate,
       reportingGroup: e.reportingGroup,

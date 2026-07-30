@@ -9,6 +9,7 @@ export interface BoardEntity {
   isShowPlannedWP?: boolean;
   isBugMonitoring?: boolean;
   bugIssueType?: string;
+  bugJql?: string;
   isStoryGrouping?: boolean;
   kanbanCycleStartDate?: string | null;
   reportingGroup?: ReportingBoardConfiguration['reportingGroup'];
@@ -25,6 +26,7 @@ export interface BoardResponse {
   isShowPlannedWP?: boolean;
   isBugMonitoring?: boolean;
   bugIssueType?: string;
+  bugJql?: string;
   isStoryGrouping?: boolean;
   kanbanCycleStartDate?: string | null;
   reportingGroup?: ReportingBoardConfiguration['reportingGroup'];
