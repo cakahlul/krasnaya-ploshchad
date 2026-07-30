@@ -13,6 +13,17 @@ export function buildBugJql(board: { shortName: string; bugIssueType?: string; b
   return `project = ${board.shortName}${issueTypeClause} ORDER BY created DESC`;
 }
 
+export function buildBugSnapshotJql(
+  board: { shortName: string; bugIssueType?: string; bugJql?: string },
+  monthEnd: string,
+): string {
+  const nextMonth = new Date(`${monthEnd}T00:00:00Z`);
+  nextMonth.setUTCDate(nextMonth.getUTCDate() + 1);
+  const nextMonthStart = nextMonth.toISOString().slice(0, 10);
+  const base = buildBugJql(board).replace(/\s+ORDER BY\s+[\s\S]*$/i, '');
+  return `${base} AND created < "${nextMonthStart}" AND (resolutiondate >= "${nextMonthStart}" OR resolution IS EMPTY) ORDER BY created DESC`;
+}
+
 function isRetryable(error: unknown): boolean {
   if (typeof error === 'object' && error !== null) {
     const e = error as { response?: { status?: number }; code?: string };
@@ -45,7 +56,21 @@ export class BugMonitoringRepository {
     const board = boards.find(b => b.boardId === boardId && b.isBugMonitoring);
     if (!board) throw new Error(`No bug monitoring board found for boardId ${boardId}`);
 
-    const jql = buildBugJql(board);
+    return this.fetchBugs(board, buildBugJql(board));
+  }
+
+  async fetchActiveBugsByBoardAtMonthEnd(boardId: number, monthEnd: string): Promise<JiraBugEntity[]> {
+    const boards = await boardsService.findAll();
+    const board = boards.find(b => b.boardId === boardId && b.isBugMonitoring);
+    if (!board) throw new Error(`No bug monitoring board found for boardId ${boardId}`);
+
+    return this.fetchBugs(board, buildBugSnapshotJql(board, monthEnd));
+  }
+
+  private async fetchBugs(
+    board: { shortName: string; bugIssueType?: string; bugJql?: string },
+    jql: string,
+  ): Promise<JiraBugEntity[]> {
     const searchUrl = '/rest/api/3/search/jql';
     const allBugs: JiraBugEntity[] = [];
     let startAt = 0;

@@ -7,7 +7,7 @@ const board = (overrides: Record<string, unknown>) => ({
 }) as never;
 const bug = (created: string) => ({ fields: { created } }) as never;
 
-test('loads live productivity by Group boards and counts every bug created in month', async () => {
+test('loads live productivity by Group boards and counts active bugs at month end', async () => {
   const ports = createProductivitySummaryRangePorts({
     findBoards: async () => [
       board({ boardId: 1, shortName: 'LN', reportingGroup: 'Loan' }),
@@ -29,7 +29,8 @@ test('loads live productivity by Group boards and counts every bug created in mo
   assert.equal(month.source, 'partial');
   assert.deepEqual(month.members[0], { id: 'dev@example.com', name: 'Dev', group: 'Loan', board: 'LN', boards: ['LN', 'LN2'], spTotal: 10, wpTotal: 6, workingDays: 1 });
   assert.deepEqual(month.failures, [{ scope: 'productivity', group: 'Loan', board: 'BROKEN', reason: 'Jira unavailable' }]);
-  assert.equal(await ports.loadBugCount('2026-01', 'Loan'), 2);
+  assert.equal(await ports.loadBugCount('2026-01', 'Loan'), 3);
+  assert.equal(await ports.loadBugRaisedCount?.('2026-01', 'Loan'), 2);
 });
 
 test('loads archive rows with historical Group and board snapshots', async () => {

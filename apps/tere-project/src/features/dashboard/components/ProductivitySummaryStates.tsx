@@ -20,6 +20,7 @@ interface ProductivitySummaryChartPoint {
   month: string;
   activeMembers: number | null;
   productivityMetric: number | null;
+  bugsTotal?: number | null;
   bugsRaised: number | null;
 }
 
@@ -41,6 +42,7 @@ export interface CanonicalProductivitySummary {
   summary: {
     activeMembers: number;
     productivityMetric: number | null;
+    bugsTotal?: number | null;
     bugsRaised: number | null;
   };
   chart?: ProductivitySummaryChartPoint[];
@@ -67,7 +69,7 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
   const summaryCards = [
     { label: 'Active members', value: data.summary.activeMembers, icon: Users },
     { label: `${data.metricBasis} delivered`, value: value(data.summary.productivityMetric), icon: Activity },
-    { label: 'Bugs raised', value: value(data.summary.bugsRaised), icon: Bug },
+    { label: 'Total bugs', value: value(data.summary.bugsTotal ?? data.summary.bugsRaised), icon: Bug },
   ];
 
   return (
@@ -183,7 +185,7 @@ function ProductivitySummaryComparisonChart({
           Monthly comparison
         </h3>
         <p id="productivity-summary-comparison-description" style={{ color: 'var(--tere-sub)', fontSize: 12, margin: '4px 0 12px' }}>
-          Active members, {metricBasis} productivity, and Bugs raised. Missing source values remain gaps.
+          Active members, {metricBasis} productivity, total active bugs, and bugs raised in month. Missing source values remain gaps.
         </p>
       </figcaption>
       <div style={{ minWidth: 0, overflowX: 'auto' }}>
@@ -204,7 +206,8 @@ function ProductivitySummaryComparisonChart({
               <Legend wrapperStyle={{ color: 'var(--tere-sub)', fontSize: 12 }} />
               <Line yAxisId="count" dataKey="activeMembers" name="Active members" stroke="var(--color-accent)" strokeWidth={2} connectNulls={false} />
               <Line yAxisId="productivity" dataKey="productivityMetric" name={`${metricBasis} productivity`} stroke="var(--color-accent-light)" strokeWidth={2} connectNulls={false} />
-              <Line yAxisId="count" dataKey="bugsRaised" name="Bugs raised" stroke={BUG_LINE_COLOR} strokeDasharray="2 3" strokeWidth={2} connectNulls={false} />
+              <Line yAxisId="count" dataKey="bugsTotal" name="Total bugs" stroke={BUG_LINE_COLOR} strokeWidth={2} connectNulls={false} />
+              <Line yAxisId="count" dataKey="bugsRaised" name="Bugs raised" stroke="#f59e0b" strokeDasharray="2 3" strokeWidth={2} connectNulls={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -212,7 +215,7 @@ function ProductivitySummaryComparisonChart({
       <table className="sr-only">
         <caption>Monthly comparison values; N/A means source data is unavailable.</caption>
         <thead>
-          <tr><th>Month</th><th>Active members</th><th>{metricBasis} productivity</th><th>Bugs raised</th></tr>
+          <tr><th>Month</th><th>Active members</th><th>{metricBasis} productivity</th><th>Total bugs</th><th>Bugs raised</th></tr>
         </thead>
         <tbody>
           {points.map(point => (
@@ -220,6 +223,7 @@ function ProductivitySummaryComparisonChart({
               <th scope="row">{point.month}</th>
               <td>{value(point.activeMembers)}</td>
               <td>{value(point.productivityMetric)}</td>
+              <td>{value(point.bugsTotal ?? null)}</td>
               <td>{value(point.bugsRaised)}</td>
             </tr>
           ))}

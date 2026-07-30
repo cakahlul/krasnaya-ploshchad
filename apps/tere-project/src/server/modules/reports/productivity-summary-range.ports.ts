@@ -51,6 +51,7 @@ interface Dependencies {
   loadBoard(month: number, year: number, team: string): Promise<ProductivitySummaryMemberDto[]>;
   routeMonth(month: string): ReturnType<typeof routeProductivityMonth>;
   fetchBugs(boardId: number): Promise<JiraBugEntity[]>;
+  fetchActiveBugs?(boardId: number, monthEnd: string): Promise<JiraBugEntity[]>;
   resolveRule(group: ReportingGroup, month: string): Promise<{ ruleVersion: RuleVersion }>;
 }
 
@@ -171,6 +172,15 @@ export function createProductivitySummaryRangePorts(deps: Dependencies): RangeAg
     },
     async loadBugCount(month, group) {
       const boards = (await deps.findBoards()).filter(board => board.isBugMonitoring && (board.reportingGroup ?? 'Ungrouped') === group);
+      const monthEnd = new Date(`${month}-01T00:00:00Z`);
+      monthEnd.setUTCMonth(monthEnd.getUTCMonth() + 1, 0);
+      const bugs = await Promise.all(boards.map(board => deps.fetchActiveBugs
+        ? deps.fetchActiveBugs(board.boardId, monthEnd.toISOString().slice(0, 10))
+        : deps.fetchBugs(board.boardId)));
+      return bugs.flat().length;
+    },
+    async loadBugRaisedCount(month, group) {
+      const boards = (await deps.findBoards()).filter(board => board.isBugMonitoring && (board.reportingGroup ?? 'Ungrouped') === group);
       const bugs = await Promise.all(boards.map(board => deps.fetchBugs(board.boardId)));
       return bugs.flat().filter(bug => bug.fields.created.slice(0, 7) === month).length;
     },
@@ -184,5 +194,6 @@ export const productivitySummaryRangePorts = createProductivitySummaryRangePorts
   loadBoard: generateProductivitySummaryBoard,
   routeMonth: month => routeProductivityMonth(`${month}-01`, archiveRepository),
   fetchBugs: boardId => bugRepository.fetchBugsByBoard(boardId),
+  fetchActiveBugs: (boardId, monthEnd) => bugRepository.fetchActiveBugsByBoardAtMonthEnd(boardId, monthEnd),
   resolveRule: (group, month) => reportingGroupService.resolveRule(group, month),
 });

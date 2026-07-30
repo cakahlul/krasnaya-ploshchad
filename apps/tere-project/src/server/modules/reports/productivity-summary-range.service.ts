@@ -29,6 +29,7 @@ export interface RangeAggregationPorts {
     groups: ReportingGroup[],
   ): Promise<MonthSourceResult>;
   loadBugCount(month: string, group: ReportingGroup): Promise<number>;
+  loadBugRaisedCount?(month: string, group: ReportingGroup): Promise<number>;
 }
 
 export interface RangeAggregationInput {
@@ -62,7 +63,12 @@ export async function generateProductivitySummaryRange(
       const [productivity, ...bugs] = await Promise.allSettled([
         ports.loadMonth(month, input.selectedGroups),
         ...input.selectedGroups.map((group) =>
-          ports.loadBugCount(month, group),
+          (async () => ({
+            total: await ports.loadBugCount(month, group),
+            raised: ports.loadBugRaisedCount
+              ? await ports.loadBugRaisedCount(month, group)
+              : null,
+          }))(),
         ),
       ]);
       const failures: Failure[] = productivity.status === "fulfilled"
@@ -87,13 +93,16 @@ export async function generateProductivitySummaryRange(
         && (monthData.availability?.productivity ?? true);
       const bugsAvailable = bugs.every((bug) => bug.status === "fulfilled");
       const fulfilledBugs = bugs.filter(
-        (bug): bug is PromiseFulfilledResult<number> => bug.status === "fulfilled",
+        (bug): bug is PromiseFulfilledResult<{ total: number; raised: number | null }> => bug.status === "fulfilled",
       );
       return {
         month,
         data: monthData,
+        bugsTotal: fulfilledBugs.length
+          ? fulfilledBugs.reduce((sum, bug) => sum + bug.value.total, 0)
+          : null,
         bugsRaised: fulfilledBugs.length
-          ? fulfilledBugs.reduce((sum, bug) => sum + bug.value, 0)
+          ? fulfilledBugs.reduce((sum, bug) => sum + (bug.value.raised ?? bug.value.total), 0)
           : null,
         coverage: {
           month,
@@ -175,6 +184,7 @@ export async function generateProductivitySummaryRange(
           ? (values as number[]).reduce((sum, value) => sum + value, 0)
           : null,
       bugsRaised: month.bugsRaised,
+      bugsTotal: month.bugsTotal,
       source: month.coverage.source,
       metricBasis,
     };
@@ -206,6 +216,9 @@ export async function generateProductivitySummaryRange(
         : null,
       bugsRaised: chart.every((point) => point.bugsRaised !== null)
         ? chart.reduce((sum, point) => sum + point.bugsRaised!, 0)
+        : null,
+      bugsTotal: chart.every((point) => point.bugsTotal !== null)
+        ? chart.reduce((sum, point) => sum + point.bugsTotal!, 0)
         : null,
     },
     details: input.callerName

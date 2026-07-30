@@ -12,7 +12,7 @@ const sheet = buildProductivitySummaryRangeSheet({
       { month: "2026-05", source: "partial", productivityAvailable: true, bugsAvailable: false, appliedRules: [{ group: "User", ruleVersion: "v3" }], failures: [{ scope: "bugs", group: "User", board: "USR Bugs", reason: "Jira timeout" }] },
     ],
   },
-  summary: { activeMembers: 1, productivityMetric: null, bugsRaised: null },
+  summary: { activeMembers: 1, productivityMetric: null, bugsTotal: null, bugsRaised: null },
   details: [{
     name: "Historical Member", group: "User", boards: ["Ambis Web", "Ambis Mobile"],
     monthly: [
@@ -21,15 +21,15 @@ const sheet = buildProductivitySummaryRangeSheet({
     ],
   }],
   chart: [
-    { month: "2026-04", activeMembers: 1, productivityMetric: 21, bugsRaised: 2, source: "archive", metricBasis: "SP" },
-    { month: "2026-05", activeMembers: 1, productivityMetric: null, bugsRaised: null, source: "partial", metricBasis: "SP" },
+    { month: "2026-04", activeMembers: 1, productivityMetric: 21, bugsTotal: 4, bugsRaised: 2, source: "archive", metricBasis: "SP" },
+    { month: "2026-05", activeMembers: 1, productivityMetric: null, bugsTotal: null, bugsRaised: null, source: "partial", metricBasis: "SP" },
   ],
 });
 
 assert.equal(sheet.title, "Productivity Summary - 2026-04 to 2026-05");
 assert.deepEqual(sheet.values[0], ["Productivity Summary", "2026-04 to 2026-05"]);
-assert.deepEqual(sheet.values[4], ["Month", "Source", "Metric Basis", "Active Members", "Productivity", "Bugs Raised"]);
-assert.deepEqual(sheet.values[6], ["2026-05", "partial", "SP", 1, "", ""]);
+assert.deepEqual(sheet.values[4], ["Month", "Source", "Metric Basis", "Active Members", "Productivity", "Total Bugs", "Bugs Raised"]);
+assert.deepEqual(sheet.values[6], ["2026-05", "partial", "SP", 1, "", "", ""]);
 assert.deepEqual(sheet.values[9], ["Group", "Boards", "Name", "Month", "Source", "Rule", "Metric Basis", "SP Total", "WP Total", "Working Days"]);
 assert.deepEqual(sheet.values[10], ["User", "Ambis Mobile, Ambis Web", "Historical Member", "2026-04", "archive", "v3", "SP", 21, "", 18]);
 assert.deepEqual(sheet.values[11], ["User", "Ambis Mobile, Ambis Web", "Historical Member", "2026-05", "partial", "v3", "SP", "", "", 20]);

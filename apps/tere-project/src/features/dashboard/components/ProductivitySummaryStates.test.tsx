@@ -26,10 +26,10 @@ test('shows lead comparison chart for a multi-month response and preserves null 
     <ProductivitySummaryCanonicalResult data={{
       range: { startMonth: '2025-12', endMonth: '2026-01', monthCount: 2 },
       metricBasis: 'SP',
-      summary: { activeMembers: 3, productivityMetric: null, bugsRaised: 5 },
+      summary: { activeMembers: 3, productivityMetric: null, bugsTotal: 5, bugsRaised: 5 },
       chart: [
-        { month: '2025-12', activeMembers: 3, productivityMetric: 21, bugsRaised: 2 },
-        { month: '2026-01', activeMembers: null, productivityMetric: null, bugsRaised: 3 },
+        { month: '2025-12', activeMembers: 3, productivityMetric: 21, bugsTotal: 4, bugsRaised: 2 },
+        { month: '2026-01', activeMembers: null, productivityMetric: null, bugsTotal: 3, bugsRaised: 3 },
       ],
     }} />,
   );
@@ -40,7 +40,7 @@ test('shows lead comparison chart for a multi-month response and preserves null 
   assert.match(html, /<figure/);
   assert.match(html, /aria-describedby="productivity-summary-comparison-description"/);
   assert.match(html, /Monthly comparison values; N\/A means source data is unavailable/);
-  assert.match(html, /<th scope="row">2026-01<\/th><td>N\/A<\/td><td>N\/A<\/td><td>3<\/td>/);
+  assert.match(html, /<th scope="row">2026-01<\/th><td>N\/A<\/td><td>N\/A<\/td><td>3<\/td><td>3<\/td>/);
 });
 
 test('hides comparison chart when capability data is absent, empty, or range has one month', () => {
@@ -75,7 +75,7 @@ test('hides comparison chart when capability data is absent, empty, or range has
 });
 
 test('keeps chart nulls as gaps and uses responsive accessible themed primitives', () => {
-  assert.equal((source.match(/connectNulls=\{false\}/g) ?? []).length, 3);
+  assert.equal((source.match(/connectNulls=\{false\}/g) ?? []).length, 4);
   assert.match(source, /<ResponsiveContainer/);
   assert.match(source, /accessibilityLayer/);
   assert.match(source, /<figure[\s\S]*aria-labelledby=/);
