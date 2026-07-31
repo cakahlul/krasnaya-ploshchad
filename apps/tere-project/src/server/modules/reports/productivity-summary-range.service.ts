@@ -80,26 +80,29 @@ type LoadedMonth = {
   coverage: { source: MonthSource; productivityAvailable: boolean };
 };
 
+/**
+ * Sum the members that reported a value. A single member missing one used to null the whole month,
+ * so a fully-covered range still drew a broken line and an N/A headline; null now means nobody in
+ * the month reported the value at all.
+ */
+function sumAvailable(values: readonly (number | null | undefined)[]): number | null {
+  const present = values.filter((value): value is number => value !== null && value !== undefined);
+  return present.length === 0 ? null : present.reduce((sum, value) => sum + value, 0);
+}
+
 function chartPoint(month: LoadedMonth, metricBasis: MetricBasis) {
   const availableMembers = month.coverage.productivityAvailable ? month.data?.members ?? [] : null;
   const values = (availableMembers ?? []).map((member) =>
     metricBasis === "SP" ? member.spTotal : member.wpTotal,
   );
-  const spTarget = availableMembers && availableMembers.every(member => memberSpTarget(member) !== null)
-    ? availableMembers.reduce((sum, member) => sum + memberSpTarget(member)!, 0)
-    : null;
-  const spTotal = availableMembers && availableMembers.every(member => member.spTotal !== null)
-    ? availableMembers.reduce((sum, member) => sum + (member.spTotal ?? 0), 0)
-    : null;
+  const spTarget = availableMembers ? sumAvailable(availableMembers.map(memberSpTarget)) : null;
+  const spTotal = availableMembers ? sumAvailable(availableMembers.map(member => member.spTotal)) : null;
   return {
     month: month.month,
     activeMembers: availableMembers
       ? new Set(availableMembers.map((member) => member.id)).size
       : null,
-    productivityMetric:
-      availableMembers && values.every((value) => value !== null)
-        ? (values as number[]).reduce((sum, value) => sum + value, 0)
-        : null,
+    productivityMetric: availableMembers ? sumAvailable(values) : null,
     productivityPercent: spTotal !== null && spTarget !== null && spTarget > 0
       ? (spTotal / spTarget) * 100
       : null,
@@ -321,31 +324,19 @@ export async function generateProductivitySummaryRange(
     },
     summary: {
       activeMembers: fullDetails.length,
-      productivityMetric: chart.every(
-        (point) => point.productivityMetric !== null,
-      )
-        ? chart.reduce((sum, point) => sum + point.productivityMetric!, 0)
-        : null,
+      productivityMetric: sumAvailable(chart.map((point) => point.productivityMetric)),
       // Sum the underlying SP and its target rather than reverse-engineering capacity out of each
       // month's percentage: that divided by a percentage which can be zero, and under a WP basis it
       // divided WP output by an SP-derived percentage, so the headline figure was not a percentage
       // of anything.
-      productivityPercent: chart.every(point => point.spTotal !== null && point.spTarget !== null)
-        ? (() => {
-          const target = chart.reduce((sum, point) => sum + point.spTarget!, 0);
-          const delivered = chart.reduce((sum, point) => sum + point.spTotal!, 0);
-          return target > 0 ? (delivered / target) * 100 : null;
-        })()
-        : null,
-      bugsRaised: chart.every((point) => point.bugsRaised !== null)
-        ? chart.reduce((sum, point) => sum + point.bugsRaised!, 0)
-        : null,
-      bugsTotal: chart.every((point) => point.bugsTotal !== null)
-        ? chart.reduce((sum, point) => sum + point.bugsTotal!, 0)
-        : null,
-      bugsDone: chart.every((point) => point.bugsDone !== null)
-        ? chart.reduce((sum, point) => sum + point.bugsDone!, 0)
-        : null,
+      productivityPercent: (() => {
+        const target = sumAvailable(chart.map((point) => point.spTarget));
+        const delivered = sumAvailable(chart.map((point) => point.spTotal));
+        return target !== null && delivered !== null && target > 0 ? (delivered / target) * 100 : null;
+      })(),
+      bugsRaised: sumAvailable(chart.map((point) => point.bugsRaised)),
+      bugsTotal: sumAvailable(chart.map((point) => point.bugsTotal)),
+      bugsDone: sumAvailable(chart.map((point) => point.bugsDone)),
     },
     details: input.callerName
       ? fullDetails.filter((member) => member.name === input.callerName)
