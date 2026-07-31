@@ -9,6 +9,24 @@ import type { DashboardSummaryResponseDto } from '@shared/types/dashboard.types'
 const CACHE_KEY = 'dashboard_summary';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
+export function toDashboardMemberSummary(issue: {
+  member: string;
+  wpProductivity: string;
+  productivityRate: string;
+  totalWeightPoints: number;
+  targetWeightPoints: number;
+  spTotal?: number;
+}) {
+  return {
+    name: issue.member,
+    wpProductivity: issue.wpProductivity,
+    productivityRate: issue.productivityRate,
+    totalWeightPoints: issue.totalWeightPoints,
+    targetWeightPoints: issue.targetWeightPoints,
+    spTotal: issue.spTotal ?? 0,
+  };
+}
+
 export async function getDashboardSummary(
   requestedStartDate?: string,
   requestedEndDate?: string,
@@ -45,13 +63,7 @@ export async function getDashboardSummary(
           averageProductivity: report?.averageProductivity || null,
           averageWpPerHour: report?.averageWpPerHour || null,
           teamMembers: issues.length,
-          memberSummaries: issues.map(issue => ({
-            name: issue.member,
-            wpProductivity: issue.wpProductivity,
-            totalWeightPoints: issue.totalWeightPoints,
-            targetWeightPoints: issue.targetWeightPoints,
-            spTotal: issue.spTotal ?? 0,
-          })),
+          memberSummaries: issues.map(toDashboardMemberSummary),
           totalEpics: uniqueParents.size,
           isStoryGrouping: board.isStoryGrouping ?? false,
           productPercentage: report?.productPercentage || null,
@@ -69,13 +81,7 @@ export async function getDashboardSummary(
       ]);
 
       const issues = report?.issues ?? [];
-      const memberSummaries = issues.map(issue => ({
-        name: issue.member,
-        wpProductivity: issue.wpProductivity,
-        totalWeightPoints: issue.totalWeightPoints,
-        targetWeightPoints: issue.targetWeightPoints,
-        spTotal: issue.spTotal ?? 0,
-      }));
+      const memberSummaries = issues.map(toDashboardMemberSummary);
 
       let epicCount = 0;
       const sprintId = report?.sprintId;

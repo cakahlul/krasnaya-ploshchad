@@ -299,7 +299,7 @@ function LeadDashboard({ teams, bugBoards, members, boardShortNameMap, boardKanb
 
   const allMemberSummaries = teams.flatMap(t => t.memberSummaries ?? []);
   const totalMembers = allMemberSummaries.length;
-  const meetTarget = allMemberSummaries.filter(m => parseFloat(m.wpProductivity) >= 100).length;
+  const meetTarget = allMemberSummaries.filter(m => parseFloat(m.productivityRate) >= 100).length;
 
   const avgProd = teams.length > 0
     ? (teams.reduce((s, t) => s + parseFloat(t.averageProductivity || '0'), 0) / teams.length).toFixed(1)
@@ -496,7 +496,7 @@ function BoardSummaryCard({ team, members: boardMembers, bc, isKanban, startDate
       <div style={{ padding: '10px 0', flex: 1 }}>
         {team.memberSummaries.length > 0 ? (
           team.memberSummaries.map((ms, mi) => {
-            const prodVal = parseFloat(ms.wpProductivity) || 0;
+            const prodVal = parseFloat(ms.productivityRate) || 0;
             const isAbove = prodVal >= 100;
             return (
               <div key={mi} style={{
@@ -529,7 +529,7 @@ function BoardSummaryCard({ team, members: boardMembers, bc, isKanban, startDate
                     <div style={{ height: '100%', width: `${Math.min(prodVal, 130) / 130 * 100}%`, background: isAbove ? bc.gradient : '#9ca3af', borderRadius: 99 }} />
                   </div>
                   <span style={{ fontSize: 11, fontWeight: 700, color: isAbove ? bc.color : '#9ca3af', fontFamily: mono, width: 42, textAlign: 'right' }}>
-                    {ms.wpProductivity}
+                    {ms.productivityRate}
                   </span>
                 </div>
               </div>
@@ -760,7 +760,7 @@ function MemberDashboard({ teams, memberName, boardKanbanMap, summaryLoading, me
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: teams.length > 1 ? '1fr 1fr' : '1fr', gap: 12 }}>
           {myBoards.map(({ team, me, bc }, bi) => {
-            const myProd = me ? parseFloat(me.wpProductivity) : 0;
+            const myProd = me ? parseFloat(me.productivityRate) : 0;
             const isAbove = myProd >= 100;
             const isKanban = boardKanbanMap.get(team.boardId) ?? false;
             return (
@@ -776,7 +776,7 @@ function MemberDashboard({ teams, memberName, boardKanbanMap, summaryLoading, me
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', fontFamily: mono, lineHeight: 1 }}>{me ? me.wpProductivity : '-'}</div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', fontFamily: mono, lineHeight: 1 }}>{me ? me.productivityRate : '-'}</div>
                     <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', fontFamily: sans }}>my productivity</div>
                   </div>
                 </div>
