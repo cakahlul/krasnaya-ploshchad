@@ -88,6 +88,8 @@ function chartPoint(month: LoadedMonth, metricBasis: MetricBasis) {
     productivityPercent: spTotal !== null && spTarget !== null && spTarget > 0
       ? (spTotal / spTarget) * 100
       : null,
+    spTotal,
+    spTarget,
     bugsRaised: month.bugsRaised,
     bugsTotal: month.bugsTotal,
     bugsDone: month.bugsDone,
@@ -309,11 +311,15 @@ export async function generateProductivitySummaryRange(
       )
         ? chart.reduce((sum, point) => sum + point.productivityMetric!, 0)
         : null,
-      productivityPercent: chart.every(point => point.productivityPercent !== null)
+      // Sum the underlying SP and its target rather than reverse-engineering capacity out of each
+      // month's percentage: that divided by a percentage which can be zero, and under a WP basis it
+      // divided WP output by an SP-derived percentage, so the headline figure was not a percentage
+      // of anything.
+      productivityPercent: chart.every(point => point.spTotal !== null && point.spTarget !== null)
         ? (() => {
-          const capacity = chart.reduce((sum, point) => sum + ((point.productivityMetric ?? 0) / (point.productivityPercent ?? 1)) * 100, 0);
-          const sp = chart.reduce((sum, point) => sum + (point.productivityMetric ?? 0), 0);
-          return capacity > 0 ? (sp / capacity) * 100 : null;
+          const target = chart.reduce((sum, point) => sum + point.spTarget!, 0);
+          const delivered = chart.reduce((sum, point) => sum + point.spTotal!, 0);
+          return target > 0 ? (delivered / target) * 100 : null;
         })()
         : null,
       bugsRaised: chart.every((point) => point.bugsRaised !== null)

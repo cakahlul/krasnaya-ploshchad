@@ -73,6 +73,9 @@ interface Dependencies {
   resolveRule(group: ReportingGroup, month: string): Promise<{ ruleVersion: RuleVersion }>;
 }
 
+/** One working day of capacity, in story points — the constant the SP target is built from. */
+export const SP_PER_WORKING_DAY = 8;
+
 function archiveMembers(rows: readonly ArchiveDeveloperSprint[], groups: readonly ReportingGroup[], roster: readonly MemberResponse[], month: string) {
   const members = new Map<string, SourceMember>();
   const lifecycle = new Map(roster.map(member => [member.email.trim().toLowerCase(), member]));
@@ -112,7 +115,11 @@ function archiveMembers(rows: readonly ArchiveDeveloperSprint[], groups: readonl
     member.spTarget = member.spTarget === null || row.spTarget === null || row.spTarget === undefined
       ? member.spTarget ?? row.spTarget ?? null
       : (member.spTarget ?? 0) + row.spTarget;
-    const workingDays = row.workingDays ?? null;
+    // Green-2025 rows carry no day_of_work column, but they do carry an SP target, and the whole
+    // codebase defines that target as working days x SP_PER_WORKING_DAY. Inverting it recovers the
+    // real figure instead of showing N/A; a row with neither still reports nothing.
+    const workingDays = row.workingDays
+      ?? (row.spTarget === null || row.spTarget === undefined ? null : row.spTarget / SP_PER_WORKING_DAY);
     member.workingDays = member.workingDays === null || workingDays === null
       ? member.workingDays ?? workingDays
       : member.workingDays + workingDays;

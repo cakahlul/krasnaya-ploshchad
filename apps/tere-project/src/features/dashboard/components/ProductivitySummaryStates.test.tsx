@@ -18,7 +18,9 @@ test('renders a canonical response with unavailable values without crashing', ()
   );
   assert.match(html, /2025-12/);
   assert.match(html, /Active members/);
-  assert.equal(html.match(/N\/A/g)?.length, 2);
+  // Productivity, SP delivered, SP per member and Bugs raised all rest on values the payload
+  // reports as null. Each must say so rather than being filled in with a zero.
+  assert.equal(html.match(/N\/A/g)?.length, 4);
 });
 
 test('shows lead comparison chart for a multi-month response and preserves null gaps', () => {
@@ -170,5 +172,80 @@ test('renders zero metric and working days as zero, not unavailable', () => {
 
   assert.match(html, /data-qa="productivity-member-metric">0<\/span>/);
   assert.match(html, /data-qa="productivity-member-working-days">0<\/span>/);
-  assert.doesNotMatch(html, /N\/A/);
+  // Scoped to the member breakdown: the Productivity card legitimately reads N/A here because this
+  // payload carries no percentage, and the card no longer substitutes a raw SP total for one.
+  const breakdown = html.slice(html.indexOf('productivity-summary-member-breakdown'));
+  assert.doesNotMatch(breakdown, /N\/A/);
+});
+
+test('rounds the productivity percentage instead of printing a float tail', () => {
+  const html = renderToStaticMarkup(
+    <ProductivitySummaryCanonicalResult data={{
+      range: { startMonth: '2026-01', endMonth: '2026-02', monthCount: 2 },
+      metricBasis: 'SP',
+      summary: {
+        activeMembers: 3,
+        productivityMetric: 262.5,
+        productivityPercent: 87.43333333333333,
+        bugsRaised: 4,
+        bugsDone: 3,
+      },
+    }} />,
+  );
+
+  assert.match(html, />87\.4%</, 'the percentage is rounded and carries its unit');
+  assert.doesNotMatch(html, /87\.43333/);
+  assert.doesNotMatch(html, /262\.5%/, 'a raw metric must never be printed as a percentage');
+});
+
+test('never labels a raw metric as a percentage when no percentage was supplied', () => {
+  const html = renderToStaticMarkup(
+    <ProductivitySummaryCanonicalResult data={{
+      range: { startMonth: '2026-01', endMonth: '2026-01', monthCount: 1 },
+      metricBasis: 'SP',
+      summary: { activeMembers: 2, productivityMetric: 120, bugsRaised: 0 },
+    }} />,
+  );
+
+  const productivityCard = html.slice(html.indexOf('Productivity<'), html.indexOf('SP delivered'));
+  assert.match(productivityCard, /N\/A/);
+  assert.doesNotMatch(productivityCard, /120/);
+});
+
+test('member breakdown is collapsed behind a summary that counts what is inside', () => {
+  const html = renderToStaticMarkup(
+    <ProductivitySummaryCanonicalResult data={{
+      range: { startMonth: '2026-01', endMonth: '2026-01', monthCount: 1 },
+      selectedGroups: ['User'],
+      metricBasis: 'SP',
+      summary: { activeMembers: 1, productivityMetric: 8, bugsRaised: 0 },
+      details: [{
+        name: 'Budi',
+        group: 'User',
+        monthly: [{ month: '2026-01', source: 'live', spTotal: 8, wpTotal: 5, workingDays: 1 }],
+      }],
+    }} />,
+  );
+
+  assert.match(html, /<details data-qa="productivity-summary-member-breakdown"/);
+  assert.match(html, /1 member in 1 group/);
+  assert.doesNotMatch(html, /<details data-qa="productivity-summary-member-breakdown"[^>]*open/);
+});
+
+test('reports the trend between the first and last measured month', () => {
+  const html = renderToStaticMarkup(
+    <ProductivitySummaryCanonicalResult data={{
+      range: { startMonth: '2026-01', endMonth: '2026-03', monthCount: 3 },
+      metricBasis: 'SP',
+      summary: { activeMembers: 2, productivityMetric: 300, productivityPercent: 80, bugsRaised: 1 },
+      chart: [
+        { month: '2026-01', activeMembers: 2, productivityMetric: 100, productivityPercent: 70, bugsRaised: 1 },
+        { month: '2026-02', activeMembers: 2, productivityMetric: 100, productivityPercent: 75, bugsRaised: 0 },
+        { month: '2026-03', activeMembers: 2, productivityMetric: 100, productivityPercent: 82.5, bugsRaised: 0 },
+      ],
+    }} />,
+  );
+
+  assert.match(html, /\+12\.5 pts/);
+  assert.match(html, /2026-01 to 2026-03/);
 });

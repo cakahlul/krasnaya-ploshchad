@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert, Table, Tag } from 'antd';
-import { Activity, Bug, CheckCircle2, Users } from 'lucide-react';
+import { Activity, Bug, CheckCircle2, Gauge, Target, TrendingDown, TrendingUp, Users } from 'lucide-react';
 import type { ReportingGroup } from '@src/shared/types/reporting-group.types';
 import {
   CartesianGrid,
@@ -19,6 +19,8 @@ interface ProductivitySummaryChartPoint {
   activeMembers: number | null;
   productivityMetric: number | null;
   productivityPercent?: number | null;
+  spTotal?: number | null;
+  spTarget?: number | null;
   workingDays?: number | null;
   bugsTotal?: number | null;
   bugsDone?: number | null;
@@ -62,18 +64,99 @@ export interface CanonicalProductivitySummary {
   }>;
 }
 
-const value = (metric: number | null) => metric === null ? 'N/A' : metric;
+const NOT_AVAILABLE = 'N/A';
+
+/** Raw values can carry a long float tail; nobody reads 87.43333333333. */
+const round = (metric: number | null | undefined, decimals = 1) =>
+  metric === null || metric === undefined || !Number.isFinite(metric)
+    ? null
+    : Number(metric.toFixed(decimals));
+
+const value = (metric: number | null | undefined) => {
+  const rounded = round(metric);
+  return rounded === null ? NOT_AVAILABLE : rounded.toLocaleString('en-US');
+};
+
+const percent = (metric: number | null | undefined) => {
+  const rounded = round(metric);
+  return rounded === null ? NOT_AVAILABLE : `${rounded.toLocaleString('en-US')}%`;
+};
+
+const whole = (metric: number | null | undefined) =>
+  metric === null || metric === undefined || !Number.isFinite(metric)
+    ? NOT_AVAILABLE
+    : Math.round(metric).toLocaleString('en-US');
+
+/**
+ * Headline figures for a reader who will not open the member table. Every card is derived from
+ * values already in the payload — nothing is estimated, and anything the sources could not supply
+ * stays N/A rather than being filled in with a zero.
+ */
+function buildSummaryCards(data: CanonicalProductivitySummary) {
+  const { summary, chart, range, metricBasis } = data;
+  const cards: Array<{ label: string; value: string; hint?: string; icon: typeof Users }> = [
+    {
+      label: 'Active members',
+      value: whole(summary.activeMembers),
+      hint: `across ${range.monthCount} month${range.monthCount === 1 ? '' : 's'}`,
+      icon: Users,
+    },
+    {
+      label: 'Productivity',
+      value: percent(summary.productivityPercent),
+      hint: 'delivered vs target SP',
+      icon: Activity,
+    },
+    {
+      label: `${metricBasis} delivered`,
+      value: value(summary.productivityMetric),
+      hint: `${metricBasis} basis`,
+      icon: Target,
+    },
+  ];
+
+  const perMemberMonth = summary.productivityMetric !== null && summary.activeMembers > 0
+    ? summary.productivityMetric / summary.activeMembers / range.monthCount
+    : null;
+  cards.push({
+    label: `${metricBasis} per member`,
+    value: value(perMemberMonth),
+    hint: 'per month',
+    icon: Gauge,
+  });
+
+  cards.push({
+    label: 'Bugs raised',
+    value: whole(summary.bugsRaised),
+    hint: summary.bugsDone === null || summary.bugsDone === undefined
+      ? undefined
+      : `${whole(summary.bugsDone)} resolved`,
+    icon: Bug,
+  });
+
+  // Only meaningful once there are two comparable months on the chart.
+  const measured = (chart ?? []).filter(point => point.productivityPercent !== null && point.productivityPercent !== undefined);
+  if (measured.length > 1) {
+    const first = measured[0].productivityPercent!;
+    const last = measured[measured.length - 1].productivityPercent!;
+    const delta = round(last - first);
+    cards.push({
+      label: 'Trend',
+      value: delta === null ? NOT_AVAILABLE : `${delta > 0 ? '+' : ''}${delta.toLocaleString('en-US')} pts`,
+      hint: `${measured[0].month} to ${measured[measured.length - 1].month}`,
+      icon: delta !== null && delta < 0 ? TrendingDown : TrendingUp,
+    });
+  }
+
+  return cards;
+}
 
 export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalProductivitySummary }) {
   const groups = data.selectedGroups?.length
     ? data.selectedGroups
     : [...new Set(data.details?.map(member => member.group) ?? [])];
 
-  const summaryCards = [
-    { label: 'Active members', value: data.summary.activeMembers, icon: Users },
-    { label: 'Productivity %', value: value(data.summary.productivityPercent ?? data.summary.productivityMetric), icon: Activity },
-    { label: 'Total bugs', value: value(data.summary.bugsTotal ?? data.summary.bugsRaised), icon: Bug },
-  ];
+  const summaryCards = buildSummaryCards(data);
 
   return (
     <section data-qa="productivity-summary-canonical-result" aria-label="Productivity summary result" style={{ display: 'grid', gap: 16 }}>
@@ -93,6 +176,9 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
               <card.icon aria-hidden size={16} /> {card.label}
             </dt>
             <dd style={{ color: 'var(--tere-title)', fontSize: 28, fontWeight: 700, margin: '8px 0 0' }}>{card.value}</dd>
+            {card.hint ? (
+              <p style={{ color: 'var(--tere-sub)', fontSize: 11, margin: '2px 0 0' }}>{card.hint}</p>
+            ) : null}
           </div>
         ))}
       </dl>
@@ -119,8 +205,15 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
         </section>
       )}
       {groups.length > 0 && (
-        <section aria-labelledby="productivity-groups-heading" style={{ display: 'grid', gap: 12 }}>
-          <h3 id="productivity-groups-heading" style={{ color: 'var(--tere-title)', fontSize: 16, margin: '4px 0 0' }}>Member breakdown</h3>
+        <details data-qa="productivity-summary-member-breakdown" style={{ background: 'var(--tere-card-bg)', border: '1px solid var(--tere-card-brd)', borderRadius: 12, padding: '12px 16px' }}>
+          <summary style={{ alignItems: 'center', color: 'var(--tere-title)', cursor: 'pointer', display: 'flex', fontSize: 13, fontWeight: 600, gap: 8 }}>
+            <Users aria-hidden size={17} />
+            <span id="productivity-groups-heading">Member breakdown</span>
+            <span style={{ color: 'var(--tere-sub)', fontSize: 11, fontWeight: 400, marginLeft: 'auto' }}>
+              {data.summary.activeMembers} member{data.summary.activeMembers === 1 ? '' : 's'} in {groups.length} group{groups.length === 1 ? '' : 's'}
+            </span>
+          </summary>
+          <div aria-labelledby="productivity-groups-heading" style={{ display: 'grid', gap: 12, marginTop: 12 }}>
           {groups.map(group => {
             const members = data.details?.filter(member => member.group === group) ?? [];
             const rows = members.map(member => ({
@@ -156,7 +249,8 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
               </section>
             );
           })}
-        </section>
+          </div>
+        </details>
       )}
     </section>
   );

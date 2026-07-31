@@ -9,6 +9,8 @@ export type SummaryChartPoint = {
   activeMembers: number | null;
   productivityMetric: number | null;
   productivityPercent: number | null;
+  spTotal: number | null;
+  spTarget: number | null;
   bugsRaised: number | null;
   bugsTotal: number | null;
   bugsDone: number | null;
