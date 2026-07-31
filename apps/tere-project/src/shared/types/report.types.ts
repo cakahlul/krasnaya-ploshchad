@@ -353,6 +353,8 @@ export interface ExplorerWpConfig {
 /** GET /api/report/epics/[key]?project=KEY → 200 */
 export interface EpicDetailResponse {
   epic: ExplorerEpicInfo;
+  /** All selected epic headers; `epic` remains the first item for old clients. */
+  epics: ExplorerEpicInfo[];
   descendants: ExplorerDescendant[];
   metrics: ExplorerMetrics;
   authz: ExplorerAuthz;

@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 
 const PROJECT_KEY = /^[A-Za-z][A-Za-z0-9_]*$/;
 const EPIC_KEY = /^[A-Za-z][A-Za-z0-9_]*-\d+$/;
+const LIST = (pattern: RegExp, value: string) => value.split(',').map(item => item.trim()).filter(Boolean).every(item => pattern.test(item));
 
 export const GET = withAuthOrApiKey(async (req, context) => {
   const params = await context?.params;
@@ -15,10 +16,10 @@ export const GET = withAuthOrApiKey(async (req, context) => {
   const { searchParams } = new URL(req.url);
   const project = searchParams.get('project') ?? '';
 
-  if (!project || !PROJECT_KEY.test(project)) {
+  if (!project || !LIST(PROJECT_KEY, project)) {
     return Response.json({ message: 'project is required' }, { status: 400 });
   }
-  if (!EPIC_KEY.test(key)) {
+  if (!key || !LIST(EPIC_KEY, key)) {
     return Response.json({ message: 'Invalid epic key' }, { status: 400 });
   }
   if (!context?.caller) {

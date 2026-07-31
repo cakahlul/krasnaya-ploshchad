@@ -9,6 +9,11 @@ export const dynamic = 'force-dynamic';
 
 const PROJECT_KEY = /^[A-Za-z][A-Za-z0-9_]*$/;
 
+function validProjectList(value: string): boolean {
+  const projects = value.split(',').map(item => item.trim()).filter(Boolean);
+  return projects.length > 0 && projects.every(project => PROJECT_KEY.test(project));
+}
+
 export const GET = withAuthOrApiKey(async (req, context) => {
   const { searchParams } = new URL(req.url);
   const project = searchParams.get('project') ?? '';
@@ -20,7 +25,7 @@ export const GET = withAuthOrApiKey(async (req, context) => {
 
   // Epic Explorer branch (SLS-16799): project-wide list, no sprint/date scope.
   if (!sprint && !startDate && !endDate) {
-    if (!PROJECT_KEY.test(project)) {
+    if (!validProjectList(project)) {
       return Response.json({ message: 'Invalid project' }, { status: 400 });
     }
     if (!context?.caller) {
