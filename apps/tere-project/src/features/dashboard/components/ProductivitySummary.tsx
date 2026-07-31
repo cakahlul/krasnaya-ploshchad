@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Alert, DatePicker, Select, Table, Tooltip } from 'antd';
 import dayjs from 'dayjs';
-import axiosClient from '@src/lib/axiosClient';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { ProductivitySummaryExportButton } from './ProductivitySummaryExportButton';
 import { useThemeColors } from '@src/hooks/useTheme';
@@ -17,8 +16,13 @@ import {
 import {
   type CanonicalProductivitySummary,
   ProductivitySummaryCanonicalResult,
+  ProductivitySummaryComparisonChart,
   ProductivitySummaryRetry,
 } from './ProductivitySummaryStates';
+import {
+  type SummaryChartPoint,
+  streamProductivitySummary,
+} from '../utils/productivity-summary-stream';
 
 const mono = "var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace";
 const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
@@ -60,6 +64,8 @@ export default function ProductivitySummary() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryRequest, setRetryRequest] = useState<ProductivitySummaryParams | null>(null);
+  const [progress, setProgress] = useState<{ completed: number; total: number } | null>(null);
+  const [partialChart, setPartialChart] = useState<SummaryChartPoint[]>([]);
   const T = useThemeColors();
 
   const startMonth = selectedRange[0].format('YYYY-MM');
@@ -76,16 +82,36 @@ export default function ProductivitySummary() {
     setLoading(true);
     setError(null);
     setRetryRequest(request);
+    setProgress(null);
+    setPartialChart([]);
     try {
-      const response = await axiosClient.get('/report/productivity-summary', {
-        params: request,
+      let failed = false;
+      await streamProductivitySummary(request as unknown as Record<string, string>, (event) => {
+        switch (event.type) {
+          case 'month':
+            setProgress({ completed: event.completed, total: event.total });
+            break;
+          case 'point':
+            setProgress({ completed: event.completed, total: event.total });
+            setPartialChart(points => [...points, event.point].sort((a, b) => a.month.localeCompare(b.month)));
+            break;
+          case 'complete':
+            setData(event.data as CanonicalProductivitySummary);
+            break;
+          case 'error':
+            failed = true;
+            setError(event.message);
+            break;
+        }
       });
-      setData(response.data);
+      if (failed) setPartialChart([]);
     } catch (error) {
       console.error('Failed to fetch productivity summary:', error);
       setError('Unable to load productivity data. Please try again.');
+      setPartialChart([]);
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   };
 
@@ -373,8 +399,18 @@ export default function ProductivitySummary() {
             }}
           />
           <p style={{ color: T.subCol, marginTop: 16, fontFamily: sans, fontSize: 13 }}>
-            Calculating {monthCount} month{monthCount === 1 ? '' : 's'}...
+            {progress
+              ? `Calculating month ${progress.completed} of ${progress.total}...`
+              : `Calculating ${monthCount} month${monthCount === 1 ? '' : 's'}...`}
           </p>
+          {partialChart.length > 1 ? (
+            <div style={{ marginTop: 20, width: '100%' }}>
+              <ProductivitySummaryComparisonChart
+                points={partialChart}
+                metricBasis={partialChart[0].metricBasis}
+              />
+            </div>
+          ) : null}
         </div>
       ) : canonicalData ? (
         <ProductivitySummaryCanonicalResult data={canonicalData} />

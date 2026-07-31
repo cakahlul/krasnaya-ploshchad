@@ -162,7 +162,7 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
   );
 }
 
-function ProductivitySummaryComparisonChart({
+export function ProductivitySummaryComparisonChart({
   points,
   metricBasis,
 }: {

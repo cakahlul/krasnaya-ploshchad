@@ -48,6 +48,7 @@
   - `store/sprintFilterStore.ts`, `store/teamReportFilterStore.ts` — Zustand
   - `types/dashboard.ts`
   - `utils/productivity-summary-range.ts` (+ test) — inclusive 1–24 month validation and canonical `startMonth`/`endMonth`/`groups`/`metricBasis` query builder (SLS-17152)
+  - `utils/productivity-summary-stream.ts` (+ test) — `fetch` against the same summary URL with `Accept: application/x-ndjson` (Firebase token attached like `axiosClient` does) plus `createNdjsonParser`, which buffers a line split across chunk boundaries. `ProductivitySummary.tsx` consumes it to show real "month N of M" progress and to draw `ProductivitySummaryComparisonChart` from points already received while the remaining months load.
 
 ### API routes
 - `POST /api/dashboard/summary` → `apps/tere-project/src/app/api/dashboard/summary/route.ts`
