@@ -238,7 +238,9 @@ See [Dashboard / Reports](#dashboard--reports) — Reports lives in the dashboar
 
 ### Feature module
 - `apps/tere-project/src/features/team-members/`
-  - `components/` — `TeamMembersPage.tsx`, `MemberFormModal.tsx`
+  - `components/` — `TeamMembersPage.tsx`, `MemberFormModal.tsx` (+ `TeamMembersPage.test.ts`)
+    - Join date and resign date are editable in the modal and shown as columns. `create` used to hardcode `joinDate: '2025-01-01'` and `update` dropped both fields, so archive aggregation — which excludes months outside a member's lifecycle — was filtering against a date nobody entered.
+    - `memberStatus()` derives Active / Resigned / Historical only from stored fields; there is no historical column. "Historical only" means no `jiraId`, so the report engine (which matches live issues by `jiraId`) can never attribute live work to them.
   - `hooks/useMembers.ts`
 
 ### API routes

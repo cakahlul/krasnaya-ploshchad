@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { Modal, Input, Button, Form, Select, Switch, message } from 'antd';
+import { Modal, Input, Button, DatePicker, Form, Select, Switch, message } from 'antd';
+import dayjs, { type Dayjs } from 'dayjs';
 import { useCreateMember, useUpdateMember } from '../hooks/useMembers';
 import type { MemberResponse } from '@shared/types/member.types';
 import type { BoardResponse } from '@shared/types/board.types';
@@ -50,6 +51,8 @@ export default function MemberFormModal({
         level: member.level,
         isLead: member.isLead,
         teams: member.teams,
+        joinDate: member.joinDate ? dayjs(member.joinDate) : null,
+        resignDate: member.resignDate ? dayjs(member.resignDate) : null,
       });
     } else if (!isOpen) {
       form.resetFields();
@@ -64,11 +67,18 @@ export default function MemberFormModal({
     level: Level;
     isLead: boolean;
     teams: string[];
+    joinDate?: Dayjs | null;
+    resignDate?: Dayjs | null;
   }) => {
     try {
       const payload = {
         ...values,
         isLead: values.isLead ?? false,
+        // The API stores plain calendar dates; sending an ISO timestamp would shift the day for
+        // anyone east of UTC.
+        joinDate: values.joinDate ? values.joinDate.format('YYYY-MM-DD') : undefined,
+        // Explicit null clears a resignation that was entered by mistake.
+        resignDate: values.resignDate ? values.resignDate.format('YYYY-MM-DD') : null,
       };
 
       if (isEditMode) {
@@ -213,6 +223,36 @@ export default function MemberFormModal({
             className="rounded-xl"
           />
         </Form.Item>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Form.Item
+            name="joinDate"
+            label={<span className="font-medium text-gray-700">Join date</span>}
+            rules={[{ required: true, message: 'Please pick a join date' }]}
+            extra="Archived months before this date are excluded from this member's history."
+          >
+            <DatePicker size="large" className="w-full rounded-xl" format="YYYY-MM-DD" />
+          </Form.Item>
+
+          <Form.Item
+            name="resignDate"
+            label={<span className="font-medium text-gray-700">Resign date</span>}
+            dependencies={['joinDate']}
+            rules={[
+              ({ getFieldValue }) => ({
+                validator(_, resignDate: Dayjs | null) {
+                  const joinDate: Dayjs | null = getFieldValue('joinDate');
+                  return resignDate && joinDate && resignDate.isBefore(joinDate, 'day')
+                    ? Promise.reject(new Error('Resign date cannot precede the join date'))
+                    : Promise.resolve();
+                },
+              }),
+            ]}
+            extra="Leave empty while the member is still active."
+          >
+            <DatePicker size="large" className="w-full rounded-xl" format="YYYY-MM-DD" allowClear />
+          </Form.Item>
+        </div>
 
         <Form.Item className="mt-8 mb-0 flex justify-end">
           <Button onClick={onClose} className="mr-3 rounded-lg border-gray-200">

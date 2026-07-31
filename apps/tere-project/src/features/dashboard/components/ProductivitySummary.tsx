@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Alert, DatePicker, Select, Table, Tooltip } from 'antd';
+import { Alert, DatePicker, Progress, Select, Table, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { ProductivitySummaryExportButton } from './ProductivitySummaryExportButton';
@@ -386,30 +386,35 @@ export default function ProductivitySummary() {
 
       {loading ? (
         /* Loading State */
+        /* Progress sits in normal flow above whatever has already arrived. Centring it in a fixed
+           400px box clipped the content once the chart started filling in. */
         <div data-qa="productivity-summary-progress" aria-live="polite" aria-busy="true" style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          minHeight: 400, background: T.cardBg, borderRadius: 14,
-          border: `1px solid ${T.cardBrd}`,
+          background: T.cardBg, borderRadius: 14, border: `1px solid ${T.cardBrd}`,
+          padding: 20, display: 'grid', gap: 14,
+          minHeight: partialChart.length > 1 ? undefined : 220,
         }}>
-          <div
-            className="animate-spin"
-            style={{
-              width: 36, height: 36, borderRadius: '50%',
-              border: `3px solid ${T.cardBrd}`, borderTopColor: T.accent,
-            }}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ color: T.rowCol, fontFamily: sans, fontSize: 13, fontWeight: 600 }}>
+              {progress
+                ? `Calculating month ${progress.completed} of ${progress.total}`
+                : `Preparing ${monthCount} month${monthCount === 1 ? '' : 's'}`}
+            </span>
+            <span style={{ color: T.subCol, fontFamily: sans, fontSize: 12, marginLeft: 'auto' }}>
+              {partialChart.length > 1 ? 'Chart fills in as each month lands' : 'Reading archive and Jira'}
+            </span>
+          </div>
+          <Progress
+            percent={progress ? Math.round((progress.completed / progress.total) * 100) : 0}
+            status="active"
+            showInfo={false}
+            strokeColor={T.accent}
+            trailColor={T.cardBrd}
           />
-          <p style={{ color: T.subCol, marginTop: 16, fontFamily: sans, fontSize: 13 }}>
-            {progress
-              ? `Calculating month ${progress.completed} of ${progress.total}...`
-              : `Calculating ${monthCount} month${monthCount === 1 ? '' : 's'}...`}
-          </p>
           {partialChart.length > 1 ? (
-            <div style={{ marginTop: 20, width: '100%' }}>
-              <ProductivitySummaryComparisonChart
-                points={partialChart}
-                metricBasis={partialChart[0].metricBasis}
-              />
-            </div>
+            <ProductivitySummaryComparisonChart
+              points={partialChart}
+              metricBasis={partialChart[0].metricBasis}
+            />
           ) : null}
         </div>
       ) : canonicalData ? (

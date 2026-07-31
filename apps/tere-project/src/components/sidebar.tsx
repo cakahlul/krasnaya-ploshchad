@@ -93,10 +93,13 @@ function IconProductivity({ color }: { color: string }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M10 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" />
-      <path d="M10 10 L6 13" strokeWidth="2" />
-      <path d="M10 10 L13 6" strokeWidth="1.5" />
-      <circle cx="10" cy="10" r="1.2" fill={color} stroke="none" />
+      {/* Gauge: output against target. Bars/trend are already IconTeamReporting. */}
+      <path d="M2.5 15a7.5 7.5 0 1 1 15 0" />
+      <path d="M10 15l3.6-4.6" strokeWidth="2" />
+      <path d="M4.2 9.2l1 .9" strokeWidth="1.4" />
+      <path d="M10 6.1v1.3" strokeWidth="1.4" />
+      <path d="M15.8 9.2l-1 .9" strokeWidth="1.4" />
+      <circle cx="10" cy="15" r="1.2" fill={color} stroke="none" />
     </svg>
   );
 }
