@@ -769,20 +769,28 @@ export async function generateReportByDateRange(
   project: string,
   epicId?: string,
 ): Promise<GetReportResponseDto> {
-  const allMembers = await membersService.findAll();
+  const step = async <T>(name: string, run: () => Promise<T>): Promise<T> => {
+    const start = Date.now();
+    try {
+      return await run();
+    } finally {
+      console.log(`[telemetry] report-by-date-range step=${name} durationMs=${Date.now() - start} project=${project} startDate=${startDate}`);
+    }
+  };
+  const allMembers = await step('members', () => membersService.findAll());
   const members = filterMembersByProject(allMembers, project).filter(
     m => !m.isLead,
   );
-  const memberGroups = resolveReportMemberGroups(members, await boardsService.findAll());
+  const memberGroups = resolveReportMemberGroups(members, await step('boards', () => boardsService.findAll()));
   const assignees = members.map(m => m.jiraId!).filter(Boolean);
-  const isSubtaskType = await boardsService.hasSubtaskType(project);
-  let rawData = await repo.fetchRawDataByDateRange(
+  const isSubtaskType = await step('hasSubtaskType', () => boardsService.hasSubtaskType(project));
+  let rawData = await step('fetchRawData', () => repo.fetchRawDataByDateRange(
     project,
     assignees,
     startDate,
     endDate,
     isSubtaskType,
-  );
+  ));
   if (epicId) {
     const epicIds = epicId.split(',');
     rawData = rawData.filter(issue => {
@@ -792,19 +800,21 @@ export async function generateReportByDateRange(
       );
     });
   }
-  const leaveData = await fetchLeaveData(startDate, endDate, members);
-  const nationalHolidays = await holidaysService.getNationalHolidays(
-    parseLocalDate(startDate),
-    parseLocalDate(endDate),
-  );
-  const wpWeights = await wpWeightConfigService.getEffectiveWeights(startDate);
-  const dailyTargetWPByLevel =
-    await targetWpConfigService.getEffectiveRates(startDate);
+  const [leaveData, nationalHolidays, wpWeights, dailyTargetWPByLevel, memberRuleVersions] =
+    await Promise.all([
+      step('leave', () => fetchLeaveData(startDate, endDate, members)),
+      step('holidays', () => holidaysService.getNationalHolidays(
+        parseLocalDate(startDate),
+        parseLocalDate(endDate),
+      )),
+      step('wpWeights', () => wpWeightConfigService.getEffectiveWeights(startDate)),
+      step('targetRates', () => targetWpConfigService.getEffectiveRates(startDate)),
+      step('ruleVersions', () => reportMemberRuleVersions(memberGroups, startDate)),
+    ]);
   const dateRangeProjectList = project
     .split(',')
     .map(p => p.trim())
     .filter(Boolean);
-  const memberRuleVersions = await reportMemberRuleVersions(memberGroups, startDate);
   const teamReport = processRawData(
     rawData,
     members,

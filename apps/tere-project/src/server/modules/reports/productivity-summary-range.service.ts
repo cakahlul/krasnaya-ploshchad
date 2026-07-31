@@ -67,15 +67,14 @@ export async function generateProductivitySummaryRange(
       const [productivity, ...bugs] = await Promise.allSettled([
         ports.loadMonth(month, input.selectedGroups),
         ...input.selectedGroups.map((group) =>
-          (async () => ({
-            total: await ports.loadBugCount(month, group),
-            raised: ports.loadBugRaisedCount
-              ? await ports.loadBugRaisedCount(month, group)
-              : null,
-            done: ports.loadBugDoneCount
-              ? await ports.loadBugDoneCount(month, group)
-              : null,
-          }))(),
+          (async () => {
+            const [total, raised, done] = await Promise.all([
+              ports.loadBugCount(month, group),
+              ports.loadBugRaisedCount?.(month, group) ?? null,
+              ports.loadBugDoneCount?.(month, group) ?? null,
+            ]);
+            return { total, raised, done };
+          })(),
         ),
       ]);
       const failures: Failure[] = productivity.status === "fulfilled"

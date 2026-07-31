@@ -132,9 +132,14 @@ export function createProductivitySummaryRangePorts(deps: Dependencies): RangeAg
         Promise.all(groups.map(async group => ({ group, ...(await deps.resolveRule(group, month)) }))),
       ]);
       const selectedBoards = boards.filter(board => !board.isBugMonitoring && groups.includes(board.reportingGroup ?? 'Ungrouped'));
-      const loaded = await Promise.allSettled(selectedBoards.map(board =>
-        deps.loadBoard(Number(month.slice(5, 7)), Number(month.slice(0, 4)), board.shortName),
-      ));
+      const loaded = await Promise.allSettled(selectedBoards.map(async board => {
+        const start = Date.now();
+        try {
+          return await deps.loadBoard(Number(month.slice(5, 7)), Number(month.slice(0, 4)), board.shortName);
+        } finally {
+          console.log(`[telemetry] productivity-summary-range load-board durationMs=${Date.now() - start} month=${month} board=${board.shortName}`);
+        }
+      }));
       const boardGroups = new Map(selectedBoards.map(board => [board.shortName, board.reportingGroup ?? 'Ungrouped'] as const));
       const identities = new Map(roster.map(member => [member.fullName.trim().toLowerCase(), member.email.trim().toLowerCase()]));
       const failures = loaded.flatMap((result, index) => result.status === 'rejected'
@@ -210,12 +215,32 @@ export function createProductivitySummaryRangePorts(deps: Dependencies): RangeAg
 }
 
 const bugRepository = new BugMonitoringRepository();
+
+// A range request asks every month for the same unfiltered board bug history, then filters it
+// per month in memory. Sharing the in-flight promise collapses those identical fetches into one
+// without caching anything: the entry lives only while the request is outstanding, so a later
+// request always re-reads Jira.
+export function createSingleFlight<K, V>(run: (key: K) => Promise<V>) {
+  const inFlight = new Map<K, Promise<V>>();
+  return (key: K): Promise<V> => {
+    const existing = inFlight.get(key);
+    if (existing) return existing;
+    const pending = run(key).finally(() => inFlight.delete(key));
+    inFlight.set(key, pending);
+    return pending;
+  };
+}
+
+const fetchBugsOnce = createSingleFlight((boardId: number) =>
+  bugRepository.fetchBugsByBoard(boardId),
+);
+
 export const productivitySummaryRangePorts = createProductivitySummaryRangePorts({
   findBoards: () => boardsService.findAll(),
   findMembers: () => membersService.findAll(),
   loadBoard: generateProductivitySummaryBoard,
   routeMonth: month => routeProductivityMonth(`${month}-01`, archiveRepository),
-  fetchBugs: boardId => bugRepository.fetchBugsByBoard(boardId),
+  fetchBugs: fetchBugsOnce,
   fetchActiveBugs: (boardId, monthEnd) => bugRepository.fetchActiveBugsByBoardAtMonthEnd(boardId, monthEnd),
   resolveRule: (group, month) => reportingGroupService.resolveRule(group, month),
 });
