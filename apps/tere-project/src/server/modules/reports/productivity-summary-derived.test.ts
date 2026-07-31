@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createProductivitySummaryRangePorts, SP_PER_WORKING_DAY } from './productivity-summary-range.ports';
-import { generateProductivitySummaryRange, type RangeAggregationPorts } from './productivity-summary-range.service';
+import { createProductivitySummaryRangePorts } from './productivity-summary-range.ports';
+import { generateProductivitySummaryRange, SP_PER_WORKING_DAY, type RangeAggregationPorts } from './productivity-summary-range.service';
 
 function archiveRow(overrides: Record<string, unknown>) {
   return {

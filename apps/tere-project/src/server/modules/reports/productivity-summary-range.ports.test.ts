@@ -27,7 +27,9 @@ test('loads live productivity by Group boards and counts active bugs at month en
 
   const month = await ports.loadMonth('2026-01', ['Loan']);
   assert.equal(month.source, 'partial');
-  assert.deepEqual(month.members[0], { id: 'dev@example.com', name: 'Dev', group: 'Loan', board: 'LN', boards: ['LN', 'LN2'], spTotal: 10, wpTotal: 6, workingDays: 1 });
+  // Two boards over the same calendar month: output sums, capacity does not. One working day is
+  // one working day however many boards reported it, so the target stays 8 rather than 16.
+  assert.deepEqual(month.members[0], { id: 'dev@example.com', name: 'Dev', group: 'Loan', board: 'LN', boards: ['LN', 'LN2'], spTotal: 10, wpTotal: 6, spTarget: 8, workingDays: 1 });
   assert.deepEqual(month.failures, [{ scope: 'productivity', group: 'Loan', board: 'BROKEN', reason: 'Jira unavailable' }]);
   assert.equal(await ports.loadBugCount('2026-01', 'Loan'), 3);
   assert.equal(await ports.loadBugRaisedCount?.('2026-01', 'Loan'), 2);
@@ -51,7 +53,9 @@ test('loads archive rows with historical Group and board snapshots', async () =>
 
   const month = await ports.loadMonth('2025-01', ['User']);
   assert.equal(month.source, 'archive');
-  assert.deepEqual(month.members[0], { id: 'dev@example.com', name: 'Dev', group: 'User', board: 'Historical Board', boards: ['Historical Board', 'Second Historical Board'], spTotal: 8, wpTotal: null, workingDays: null });
+  // These archive rows carry no SP target, so both the target and the working days it would imply
+  // stay unknown rather than collapsing to zero.
+  assert.deepEqual(month.members[0], { id: 'dev@example.com', name: 'Dev', group: 'User', board: 'Historical Board', boards: ['Historical Board', 'Second Historical Board'], spTotal: 8, spTarget: null, wpTotal: null, workingDays: null });
   assert.deepEqual(month.appliedRules, []);
   assert.deepEqual(month.failures, []);
 });

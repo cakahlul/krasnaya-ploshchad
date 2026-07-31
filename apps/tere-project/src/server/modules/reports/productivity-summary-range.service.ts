@@ -56,6 +56,21 @@ function addAvailable(left: number | null, right: number | null): number | null 
   return left === null || right === null ? null : left + right;
 }
 
+/** One working day of capacity, in story points — the constant the SP target is built from. */
+export const SP_PER_WORKING_DAY = 8;
+
+/**
+ * A live source reports working days and leaves the target implied; an archived one reports the
+ * target directly. Both the chart and the member rows must read a member the same way, or the same
+ * person shows a target in the table and none on the chart.
+ */
+function memberSpTarget(member: SourceMember): number | null {
+  if (member.spTarget !== null && member.spTarget !== undefined) return member.spTarget;
+  return member.workingDays === null || member.workingDays === undefined
+    ? null
+    : member.workingDays * SP_PER_WORKING_DAY;
+}
+
 type LoadedMonth = {
   month: string;
   data: { members?: readonly SourceMember[] } | null;
@@ -70,8 +85,8 @@ function chartPoint(month: LoadedMonth, metricBasis: MetricBasis) {
   const values = (availableMembers ?? []).map((member) =>
     metricBasis === "SP" ? member.spTotal : member.wpTotal,
   );
-  const spTarget = availableMembers && availableMembers.every(member => member.spTarget !== null && member.spTarget !== undefined)
-    ? availableMembers.reduce((sum, member) => sum + (member.spTarget ?? 0), 0)
+  const spTarget = availableMembers && availableMembers.every(member => memberSpTarget(member) !== null)
+    ? availableMembers.reduce((sum, member) => sum + memberSpTarget(member)!, 0)
     : null;
   const spTotal = availableMembers && availableMembers.every(member => member.spTotal !== null)
     ? availableMembers.reduce((sum, member) => sum + (member.spTotal ?? 0), 0)
@@ -258,7 +273,7 @@ export async function generateProductivitySummaryRange(
       const existing = aggregate.monthly.find(value => value.month === month.month);
       if (existing) {
         existing.spTotal = addAvailable(existing.spTotal, item.spTotal);
-        existing.spTarget = addAvailable(existing.spTarget, item.spTarget ?? (item.workingDays === null ? null : item.workingDays * 8));
+        existing.spTarget = addAvailable(existing.spTarget, memberSpTarget(item));
         existing.wpTotal = addAvailable(existing.wpTotal, item.wpTotal);
         existing.workingDays = existing.workingDays === null || item.workingDays === null
           ? existing.workingDays ?? item.workingDays
@@ -268,7 +283,7 @@ export async function generateProductivitySummaryRange(
           month: month.month,
           source: month.coverage.source,
           spTotal: item.spTotal,
-          spTarget: item.spTarget ?? (item.workingDays === null ? null : item.workingDays * 8),
+          spTarget: memberSpTarget(item),
           wpTotal: item.wpTotal,
           workingDays: item.workingDays,
         });

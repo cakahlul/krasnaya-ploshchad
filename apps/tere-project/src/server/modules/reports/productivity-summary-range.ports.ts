@@ -10,6 +10,7 @@ import type { BoardResponse } from '@shared/types/board.types';
 import type { JiraBugEntity } from '@shared/types/bug-monitoring.types';
 import type { MemberResponse } from '@shared/types/member.types';
 import { generateProductivitySummaryBoard, type ProductivitySummaryMemberDto } from './productivity-summary.service';
+import { SP_PER_WORKING_DAY } from './productivity-summary-range.service';
 import type { MonthSourceResult, RangeAggregationPorts, ReportingGroup, RuleVersion, SourceMember } from './productivity-summary-range.service';
 
 export function createSingleFlight<K, V>(run: (key: K) => Promise<V>) {
@@ -73,9 +74,6 @@ interface Dependencies {
   resolveRule(group: ReportingGroup, month: string): Promise<{ ruleVersion: RuleVersion }>;
 }
 
-/** One working day of capacity, in story points — the constant the SP target is built from. */
-export const SP_PER_WORKING_DAY = 8;
-
 function archiveMembers(rows: readonly ArchiveDeveloperSprint[], groups: readonly ReportingGroup[], roster: readonly MemberResponse[], month: string) {
   const members = new Map<string, SourceMember>();
   const lifecycle = new Map(roster.map(member => [member.email.trim().toLowerCase(), member]));
@@ -106,7 +104,9 @@ function archiveMembers(rows: readonly ArchiveDeveloperSprint[], groups: readonl
       board,
       boards: [],
       spTotal: 0,
-      spTarget: 0,
+      // Seeded null, not zero: a source that supplied no target must report "unknown", the same
+      // way workingDays and wpTotal do. Zero would read as a real target of nothing.
+      spTarget: null,
       wpTotal: null,
       workingDays: null,
     };
@@ -195,8 +195,12 @@ export function createProductivitySummaryRangePorts(deps: Dependencies): RangeAg
           if (!existing.boards!.includes(board)) existing.boards!.push(board);
           existing.spTotal! += item.spTotal;
           existing.wpTotal! += item.wpTotal;
-          existing.spTarget! += item.workingDays * 8;
+          // Boards report the same calendar month, so a member on two of them has one set of
+          // working days, not two — hence max rather than a sum. Deriving the target from that
+          // final figure keeps the two from disagreeing; summing it per board inflated capacity by
+          // the number of boards a member touched and understated their productivity.
           existing.workingDays = Math.max(existing.workingDays ?? 0, item.workingDays);
+          existing.spTarget = existing.workingDays * SP_PER_WORKING_DAY;
           members.set(id, existing);
         }
       });
