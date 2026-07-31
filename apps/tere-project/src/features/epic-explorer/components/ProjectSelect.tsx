@@ -14,8 +14,8 @@ const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
  */
 export default function ProjectSelect() {
   const { boards, isLoading } = useBoards();
-  const project = useExplorerStore(s => s.project);
-  const setProject = useExplorerStore(s => s.setProject);
+  const projects = useExplorerStore(s => s.projects);
+  const setProjects = useExplorerStore(s => s.setProjects);
 
   const options = useMemo(() => {
     const seen = new Set<string>();
@@ -36,18 +36,19 @@ export default function ProjectSelect() {
         <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12">
           <path fillRule="evenodd" d="M4.25 2A2.25 2.25 0 002 4.25v11.5A2.25 2.25 0 004.25 18h11.5A2.25 2.25 0 0018 15.75V4.25A2.25 2.25 0 0015.75 2H4.25zM6 6.75A.75.75 0 016.75 6h6.5a.75.75 0 010 1.5h-6.5A.75.75 0 016 6.75zm.75 3.25a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5zm0 3.5a.75.75 0 000 1.5h3.5a.75.75 0 000-1.5h-3.5z" clipRule="evenodd" />
         </svg>
-        Project
+        Team
       </label>
       <FrSelect
-        aria-label="Select project"
-        placeholder="Select a project"
+        aria-label="Select teams"
+        placeholder="Select teams"
         loading={isLoading}
-        value={project ?? undefined}
-        onChange={val => setProject(val)}
+        value={projects}
+        onChange={val => setProjects(Array.isArray(val) ? val : val ? [val] : [])}
         options={options}
-        minWidth={240}
+        minWidth={260}
         showSearch
         allowClear
+        multiple
         notFoundContent="No projects found"
       />
     </div>

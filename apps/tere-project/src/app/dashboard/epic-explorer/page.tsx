@@ -29,13 +29,13 @@ import {
 const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
 
 function DetailArea() {
-  const project = useExplorerStore(s => s.project);
-  const epicKey = useExplorerStore(s => s.epicKey);
+  const projects = useExplorerStore(s => s.projects);
+  const epicKeys = useExplorerStore(s => s.epicKeys);
   const c = useThemeColors();
 
-  const { data, isLoading, isError, error, isFetching, refetch } = useEpicDetail(project, epicKey);
+  const { data, isLoading, isError, error, isFetching, refetch } = useEpicDetail(projects, epicKeys);
 
-  if (!project || !epicKey) {
+  if (projects.length === 0 || epicKeys.length === 0) {
     return (
       <p role="status" aria-live="polite" style={{ fontSize: 13, color: c.subCol, fontFamily: sans, marginTop: 24 }}>
         Select a project and an epic to explore its hierarchy and metrics.
@@ -71,7 +71,9 @@ function DetailArea() {
     const isEmpty = (data.descendants?.length ?? 0) === 0;
     body = (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <EpicInfoCard epic={data.epic} />
+        <div style={{ display: 'grid', gap: 12 }}>
+          {data.epics.map(epic => <EpicInfoCard key={epic.key} epic={epic} />)}
+        </div>
         {data.authz?.hiddenCount > 0 && <PartialAuthzNote hiddenCount={data.authz.hiddenCount} />}
         <MetricsPanel metrics={data.metrics} wpConfig={data.wpConfig} />
         {isEmpty ? (
@@ -108,8 +110,8 @@ function DetailArea() {
 
 function ExplorerContent() {
   const { titleCol, subCol, statusPurpleBg, statusPurpleBrd } = useThemeColors();
-  const project = useExplorerStore(s => s.project);
-  const epicKey = useExplorerStore(s => s.epicKey);
+  const projects = useExplorerStore(s => s.projects);
+  const epicKeys = useExplorerStore(s => s.epicKeys);
   useExplorerUrlSync();
 
   return (
@@ -153,11 +155,11 @@ function ExplorerContent() {
             <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
             </svg>
-            {!project
-              ? 'Select a project to begin'
-              : !epicKey
-                ? 'Select an epic to view its hierarchy and metrics'
-                : `Exploring ${epicKey}`}
+            {projects.length === 0
+              ? 'Select one or more teams to begin'
+              : epicKeys.length === 0
+                ? 'Select one or more epics to view their hierarchy and metrics'
+                : `Exploring ${epicKeys.length} epic${epicKeys.length === 1 ? '' : 's'}`}
           </div>
         </div>
 

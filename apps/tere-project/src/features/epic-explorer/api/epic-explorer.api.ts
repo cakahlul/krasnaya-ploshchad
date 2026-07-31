@@ -11,20 +11,20 @@ import type {
  * the HTTP status (401/403/404/502) per SLS-16813.
  */
 export const epicExplorerApi = {
-  getEpics: async (project: string): Promise<ExplorerEpicListItem[]> => {
+  getEpics: async (projects: string[]): Promise<ExplorerEpicListItem[]> => {
     const res = await axiosClient.get<ExplorerEpicListItem[]>('/report/epics', {
-      params: { project },
+      params: { project: projects.join(',') },
     });
     return res.data;
   },
 
   getEpicDetail: async (
-    project: string,
-    key: string,
+    projects: string[],
+    keys: string[],
   ): Promise<EpicDetailResponse> => {
     const res = await axiosClient.get<EpicDetailResponse>(
-      `/report/epics/${encodeURIComponent(key)}`,
-      { params: { project } },
+      `/report/epics/${encodeURIComponent(keys.join(','))}`,
+      { params: { project: projects.join(',') } },
     );
     return res.data;
   },

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildBugJql, buildBugSnapshotJql } from './bug-monitoring.repository';
+import { buildBugJql, buildBugSnapshotJql, countActiveBugsAtMonthEnd } from './bug-monitoring.repository';
 
 test('uses a project-specific bug JQL unchanged', () => {
   assert.equal(
@@ -28,4 +28,17 @@ test('keeps custom bug filters while replacing their ordering for snapshots', ()
     buildBugSnapshotJql({ shortName: 'INCL', bugJql: 'project = INCL AND labels = lending-incident ORDER BY updated DESC' }, '2026-02-28'),
     'project = INCL AND labels = lending-incident AND created < "2026-03-01" AND (resolutiondate >= "2026-03-01" OR resolution IS EMPTY) ORDER BY created DESC',
   );
+});
+
+test('counts active bugs from the full history at month end', () => {
+  const bug = (created: string, resolutiondate: string | null = null) => ({
+    fields: { created, resolutiondate },
+  }) as never;
+
+  assert.equal(countActiveBugsAtMonthEnd([
+    bug('2026-01-01T00:00:00.000Z'),
+    bug('2026-02-01T00:00:00.000Z'),
+    bug('2025-12-01T00:00:00.000Z', '2026-02-01T00:00:00.000Z'),
+    bug('2025-12-01T00:00:00.000Z', '2026-01-31T00:00:00.000Z'),
+  ], '2026-01-31'), 2);
 });

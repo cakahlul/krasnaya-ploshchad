@@ -17,11 +17,26 @@ export function buildBugSnapshotJql(
   board: { shortName: string; bugIssueType?: string; bugJql?: string },
   monthEnd: string,
 ): string {
-  const nextMonth = new Date(`${monthEnd}T00:00:00Z`);
-  nextMonth.setUTCDate(nextMonth.getUTCDate() + 1);
-  const nextMonthStart = nextMonth.toISOString().slice(0, 10);
+  const nextMonthStart = nextMonthStartFor(monthEnd);
   const base = buildBugJql(board).replace(/\s+ORDER BY\s+[\s\S]*$/i, '');
   return `${base} AND created < "${nextMonthStart}" AND (resolutiondate >= "${nextMonthStart}" OR resolution IS EMPTY) ORDER BY created DESC`;
+}
+
+function nextMonthStartFor(monthEnd: string): string {
+  const nextMonth = new Date(`${monthEnd}T00:00:00Z`);
+  nextMonth.setUTCDate(nextMonth.getUTCDate() + 1);
+  return nextMonth.toISOString().slice(0, 10);
+}
+
+export function countActiveBugsAtMonthEnd(
+  bugs: readonly JiraBugEntity[],
+  monthEnd: string,
+): number {
+  const nextMonthStart = nextMonthStartFor(monthEnd);
+  return bugs.filter(bug =>
+    bug.fields.created.slice(0, 10) < nextMonthStart
+    && (!bug.fields.resolutiondate || bug.fields.resolutiondate.slice(0, 10) >= nextMonthStart),
+  ).length;
 }
 
 function isRetryable(error: unknown): boolean {

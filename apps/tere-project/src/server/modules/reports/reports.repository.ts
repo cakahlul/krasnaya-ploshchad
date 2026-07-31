@@ -120,6 +120,35 @@ export async function fetchProjectEpics(project: string): Promise<JiraIssueEntit
   return paginate(jql, 'summary,status');
 }
 
+export function buildEpicHeaderJql(epicKeys: string[]): string {
+  return `issuekey in (${epicKeys.join(',')})`;
+}
+
+export function buildEpicDescendantJql(projects: string[], parentKeys: string[]): string {
+  return `${buildProjectFilter(projects.join(','))} AND parent in (${parentKeys.join(',')}) ORDER BY created DESC`;
+}
+
+export async function fetchEpicsWithDescendants(
+  epicKeys: string[],
+  projects: string[],
+): Promise<{ epics: JiraIssueEntity[]; descendants: JiraIssueEntity[] }> {
+  const epics = await paginate(buildEpicHeaderJql(epicKeys), EPIC_FIELDS);
+  const byKey = new Map<string, JiraIssueEntity>();
+  let frontier = epics.map(epic => epic.key);
+  while (frontier.length > 0) {
+    // One query per hierarchy level, shared by every selected team and epic.
+    const children = await paginate(buildEpicDescendantJql(projects, frontier), DESCENDANT_FIELDS);
+    const next: string[] = [];
+    for (const child of children) {
+      if (byKey.has(child.key)) continue;
+      byKey.set(child.key, child);
+      next.push(child.key);
+    }
+    frontier = next;
+  }
+  return { epics, descendants: Array.from(byKey.values()) };
+}
+
 /** Fetch a single issue by key. Returns null on empty result. Propagates Jira errors. */
 export async function fetchIssueByKey(key: string): Promise<JiraIssueEntity | null> {
   const jql = `issuekey = ${key}`;
@@ -166,4 +195,3 @@ export async function fetchPlannedWPData(project: string, assignees: string[], s
   const jql = `${buildProjectFilter(project)} AND ${sprintFilter} AND assignee IN (${assignees.join(',')}) AND ${issueTypeFilter} ORDER BY created DESC`.replace(/\s+/g, ' ').trim();
   return paginate(jql, REPORT_FIELDS);
 }
-

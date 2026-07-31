@@ -11,8 +11,8 @@ export interface FrOption {
 
 interface FrSelectProps {
   options: FrOption[];
-  value?: string;
-  onChange: (value: string | null) => void;
+  value?: string | string[];
+  onChange: (value: string | string[] | null) => void;
   placeholder?: string;
   /** Enable a search box inside the dropdown (filters on label). */
   showSearch?: boolean;
@@ -25,6 +25,7 @@ interface FrSelectProps {
   notFoundContent?: React.ReactNode;
   'aria-label'?: string;
   minWidth?: number;
+  multiple?: boolean;
 }
 
 const CHEVRON = (
@@ -53,6 +54,7 @@ export function FrSelect({
   notFoundContent = 'No results',
   'aria-label': ariaLabel,
   minWidth = 200,
+  multiple = false,
 }: FrSelectProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -74,7 +76,10 @@ export function FrSelect({
     if (open && showSearch && inputRef.current) inputRef.current.focus();
   }, [open, showSearch]);
 
-  const selected = options.find(o => o.value === value);
+  const selected = multiple
+    ? options.filter(o => Array.isArray(value) && value.includes(o.value))
+    : options.find(o => o.value === value);
+  const selectedItems = Array.isArray(selected) ? selected : selected ? [selected] : [];
 
   const filtered = useMemo(() => {
     if (!showSearch) return options;
@@ -82,6 +87,12 @@ export function FrSelect({
     if (!q) return options;
     return options.filter(o => o.label.toLowerCase().includes(q));
   }, [options, showSearch, search]);
+
+  const displayText = selectedItems.length === 0
+    ? placeholder
+    : selectedItems.length === 1
+      ? selectedItems[0].label
+      : `${selectedItems.length} selected`;
 
   return (
     <div ref={containerRef} className="fr-select" style={{ width: minWidth }}>
@@ -91,7 +102,7 @@ export function FrSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         disabled={disabled}
-        className={`fr-select__trigger ${open ? 'fr-select__trigger--open' : ''} ${selected ? 'fr-select__trigger--has-value' : ''}`}
+        className={`fr-select__trigger ${open ? 'fr-select__trigger--open' : ''} ${selectedItems.length ? 'fr-select__trigger--has-value' : ''}`}
         style={disabled ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
         onClick={() => !disabled && setOpen(o => !o)}
       >
@@ -101,14 +112,14 @@ export function FrSelect({
               {icon}
             </span>
           )}
-          {selected ? (
-            <span className="fr-select__trigger-text">{selected.label}</span>
+          {selectedItems.length ? (
+            <span className="fr-select__trigger-text">{displayText}</span>
           ) : (
             <span className="fr-select__trigger-placeholder">{loading ? 'Loading…' : placeholder}</span>
           )}
         </div>
         <div className="fr-select__trigger-actions">
-          {allowClear && selected && !disabled && (
+          {allowClear && selectedItems.length > 0 && !disabled && (
             <span
               className="fr-select__clear"
               role="button"
@@ -116,7 +127,7 @@ export function FrSelect({
               title="Clear"
               onClick={e => {
                 e.stopPropagation();
-                onChange(null);
+                onChange(multiple ? [] : null);
                 setSearch('');
               }}
             >
@@ -165,19 +176,26 @@ export function FrSelect({
                 key={option.value}
                 type="button"
                 role="option"
-                aria-selected={value === option.value}
-                className={`fr-select__option ${value === option.value ? 'fr-select__option--selected' : ''}`}
+                aria-selected={multiple ? Array.isArray(value) && value.includes(option.value) : value === option.value}
+                className={`fr-select__option ${(multiple ? Array.isArray(value) && value.includes(option.value) : value === option.value) ? 'fr-select__option--selected' : ''}`}
                 onClick={() => {
-                  onChange(option.value);
-                  setOpen(false);
-                  setSearch('');
+                  if (multiple) {
+                    const current = Array.isArray(value) ? value : [];
+                    onChange(current.includes(option.value)
+                      ? current.filter(item => item !== option.value)
+                      : [...current, option.value]);
+                  } else {
+                    onChange(option.value);
+                    setOpen(false);
+                    setSearch('');
+                  }
                 }}
               >
                 <div className="fr-select__option-content">
                   <span className="fr-select__option-label">{option.label}</span>
                   {option.description && <span className="fr-select__option-desc">{option.description}</span>}
                 </div>
-                {value === option.value && (
+                {(multiple ? Array.isArray(value) && value.includes(option.value) : value === option.value) && (
                   <svg className="fr-select__option-check" viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
                     {CHECK}
                   </svg>

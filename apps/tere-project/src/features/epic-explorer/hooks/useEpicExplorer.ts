@@ -20,11 +20,11 @@ import type {
  * EpicSearch filters this list client-side (no per-keystroke fetch).
  * `retry: false` so a 4xx surfaces immediately for status branching.
  */
-export function useEpicList(project: string | null) {
+export function useEpicList(projects: string[]) {
   return useQuery<ExplorerEpicListItem[]>({
-    queryKey: ['epic-explorer', 'epics', project],
-    queryFn: () => epicExplorerApi.getEpics(project as string),
-    enabled: !!project,
+    queryKey: ['epic-explorer', 'epics', projects],
+    queryFn: () => epicExplorerApi.getEpics(projects),
+    enabled: projects.length > 0,
     retry: false,
   });
 }
@@ -33,12 +33,12 @@ export function useEpicList(project: string | null) {
  * Epic detail (SLS-16797). The raw axios error propagates so the page can
  * branch on `error.response.status` (401/403/404/502) per SLS-16813.
  */
-export function useEpicDetail(project: string | null, epicKey: string | null) {
+export function useEpicDetail(projects: string[], epicKeys: string[]) {
   return useQuery<EpicDetailResponse>({
-    queryKey: ['epic-explorer', 'detail', project, epicKey],
+    queryKey: ['epic-explorer', 'detail', projects, epicKeys],
     queryFn: () =>
-      epicExplorerApi.getEpicDetail(project as string, epicKey as string),
-    enabled: !!project && !!epicKey,
+      epicExplorerApi.getEpicDetail(projects, epicKeys),
+    enabled: projects.length > 0 && epicKeys.length > 0,
     retry: false,
   });
 }
@@ -62,10 +62,10 @@ export function useExplorerUrlSync() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const project = useExplorerStore(s => s.project);
-  const epicKey = useExplorerStore(s => s.epicKey);
-  const setProject = useExplorerStore(s => s.setProject);
-  const setEpicKey = useExplorerStore(s => s.setEpicKey);
+  const projects = useExplorerStore(s => s.projects);
+  const epicKeys = useExplorerStore(s => s.epicKeys);
+  const setProjects = useExplorerStore(s => s.setProjects);
+  const setEpicKeys = useExplorerStore(s => s.setEpicKeys);
   const hydrated = useRef(false);
   const didInitialSync = useRef(false);
 
@@ -74,11 +74,11 @@ export function useExplorerUrlSync() {
     if (hydrated.current) return;
     hydrated.current = true;
     const sel = readSelection(searchParams);
-    if (sel.project) {
-      setProject(sel.project); // clears epicKey
-      if (sel.epicKey) setEpicKey(sel.epicKey);
+    if (sel.projects.length > 0) {
+      setProjects(sel.projects); // clears epicKeys
+      if (sel.epicKeys.length > 0) setEpicKeys(sel.epicKeys);
     }
-  }, [searchParams, setProject, setEpicKey]);
+  }, [searchParams, setProjects, setEpicKeys]);
 
   // store → URL, after hydration and only on a real change. Skip the FIRST run:
   // on the mount commit this effect still closes over the pre-hydration store
@@ -92,8 +92,8 @@ export function useExplorerUrlSync() {
       didInitialSync.current = true;
       return;
     }
-    if (selectionEquals(readSelection(searchParams), { project, epicKey })) return;
-    const qs = toQueryString({ project, epicKey });
+    if (selectionEquals(readSelection(searchParams), { projects, epicKeys })) return;
+    const qs = toQueryString({ projects, epicKeys });
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }, [project, epicKey, pathname, router, searchParams]);
+  }, [projects, epicKeys, pathname, router, searchParams]);
 }

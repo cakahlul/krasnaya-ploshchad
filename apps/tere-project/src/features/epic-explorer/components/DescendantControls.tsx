@@ -82,7 +82,7 @@ export default function DescendantControls({
           allowClear
           placeholder="All statuses"
           value={filters.statusCategory ?? undefined}
-          onChange={v => set('statusCategory', v)}
+          onChange={v => set('statusCategory', typeof v === 'string' ? v : null)}
           options={opts.statusCategories.map(s => ({ value: s, label: s }))}
           minWidth={150}
         />
@@ -94,7 +94,7 @@ export default function DescendantControls({
           allowClear
           placeholder="All types"
           value={filters.issueType ?? undefined}
-          onChange={v => set('issueType', v)}
+          onChange={v => set('issueType', typeof v === 'string' ? v : null)}
           options={opts.issueTypes.map(s => ({ value: s, label: s }))}
           minWidth={140}
         />
@@ -107,7 +107,7 @@ export default function DescendantControls({
           showSearch
           placeholder="Anyone"
           value={filters.assignee ?? undefined}
-          onChange={v => set('assignee', v)}
+          onChange={v => set('assignee', typeof v === 'string' ? v : null)}
           options={opts.assignees.map(s => ({ value: s, label: s }))}
           minWidth={160}
           notFoundContent="No assignees"
@@ -120,7 +120,7 @@ export default function DescendantControls({
           allowClear
           placeholder="All sprints"
           value={filters.sprint ?? undefined}
-          onChange={v => set('sprint', v)}
+          onChange={v => set('sprint', typeof v === 'string' ? v : null)}
           options={sprintOptions}
           minWidth={150}
         />

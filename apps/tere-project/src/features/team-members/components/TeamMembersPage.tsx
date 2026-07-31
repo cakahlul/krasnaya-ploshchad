@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Table, Button, Tag, Popconfirm, Tooltip, message } from 'antd';
+import { Table, Button, Tag, Popconfirm, Tooltip, message, Input } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { Pencil, Trash2, UserPlus } from 'lucide-react';
 
@@ -46,6 +46,15 @@ const LEVEL_COLOR_MAP: Record<Level, string> = {
   [Level.IC]: 'purple',
 };
 
+export function filterMembers(members: MemberResponse[], query: string): MemberResponse[] {
+  const term = query.trim().toLowerCase();
+  if (!term) return members;
+  return members.filter(member =>
+    [member.fullName, member.name, member.email, ...member.teams]
+      .some(value => value.toLowerCase().includes(term)),
+  );
+}
+
 export default function TeamMembersPage() {
   const { members, isLoading } = useMembers();
   const { boards } = useBoards();
@@ -57,6 +66,8 @@ export default function TeamMembersPage() {
   const [editingMember, setEditingMember] = useState<MemberResponse | null>(
     null,
   );
+  const [search, setSearch] = useState('');
+  const filteredMembers = filterMembers(members, search);
 
   const handleAdd = () => {
     setEditingMember(null);
@@ -250,9 +261,19 @@ export default function TeamMembersPage() {
           overflow: 'hidden',
         }}
       >
+        <div style={{ padding: 16, borderBottom: `1px solid ${cardBrd}` }}>
+          <Input.Search
+            aria-label="Search team members"
+            placeholder="Search name, email, or team..."
+            allowClear
+            value={search}
+            onChange={event => setSearch(event.target.value)}
+            style={{ maxWidth: 360 }}
+          />
+        </div>
         <Table
           columns={columns}
-          dataSource={members}
+          dataSource={filteredMembers}
           rowKey="id"
           loading={isLoading}
           scroll={{ x: 800 }}

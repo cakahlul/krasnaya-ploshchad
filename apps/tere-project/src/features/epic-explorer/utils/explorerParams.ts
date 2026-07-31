@@ -5,8 +5,8 @@
  * source of truth and the URL merely mirrors it.
  */
 export type ExplorerSelection = {
-  project: string | null;
-  epicKey: string | null;
+  projects: string[];
+  epicKeys: string[];
 };
 
 // Minimal shape shared by URLSearchParams and Next's ReadonlyURLSearchParams.
@@ -15,9 +15,13 @@ type ReadableParams = { get(name: string): string | null };
 /** Read a selection from URL params. Empty/absent values normalise to null. */
 export function readSelection(params: ReadableParams): ExplorerSelection {
   return {
-    project: params.get('project') || null,
-    epicKey: params.get('epicKey') || null,
+    projects: csv(params.get('project')),
+    epicKeys: csv(params.get('epicKey')),
   };
+}
+
+function csv(value: string | null): string[] {
+  return [...new Set((value ?? '').split(',').map(item => item.trim()).filter(Boolean))];
 }
 
 /**
@@ -27,14 +31,14 @@ export function readSelection(params: ReadableParams): ExplorerSelection {
  */
 export function toQueryString(sel: ExplorerSelection): string {
   const p = new URLSearchParams();
-  if (sel.project) {
-    p.set('project', sel.project);
-    if (sel.epicKey) p.set('epicKey', sel.epicKey);
+  if (sel.projects.length > 0) {
+    p.set('project', sel.projects.join(','));
+    if (sel.epicKeys.length > 0) p.set('epicKey', sel.epicKeys.join(','));
   }
   return p.toString();
 }
 
 /** Value-equality guard so the sync effect only writes the URL on real change. */
 export function selectionEquals(a: ExplorerSelection, b: ExplorerSelection): boolean {
-  return a.project === b.project && a.epicKey === b.epicKey;
+  return a.projects.join(',') === b.projects.join(',') && a.epicKeys.join(',') === b.epicKeys.join(',');
 }

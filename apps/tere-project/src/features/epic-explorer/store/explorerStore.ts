@@ -7,15 +7,15 @@ import { create } from 'zustand';
  * the epic selection (a stale epic key would 404 against a different project).
  */
 type ExplorerState = {
-  project: string | null;
-  epicKey: string | null;
-  setProject: (project: string | null) => void;
-  setEpicKey: (epicKey: string | null) => void;
+  projects: string[];
+  epicKeys: string[];
+  setProjects: (projects: string[]) => void;
+  setEpicKeys: (epicKeys: string[]) => void;
 };
 
 export const useExplorerStore = create<ExplorerState>(set => ({
-  project: null,
-  epicKey: null,
-  setProject: project => set({ project, epicKey: null }),
-  setEpicKey: epicKey => set({ epicKey }),
+  projects: [],
+  epicKeys: [],
+  setProjects: projects => set({ projects, epicKeys: [] }),
+  setEpicKeys: epicKeys => set({ epicKeys }),
 }));

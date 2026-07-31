@@ -15,11 +15,11 @@ const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
  * network call, no setState-during-render.
  */
 export default function EpicSearch() {
-  const project = useExplorerStore(s => s.project);
-  const epicKey = useExplorerStore(s => s.epicKey);
-  const setEpicKey = useExplorerStore(s => s.setEpicKey);
+  const projects = useExplorerStore(s => s.projects);
+  const epicKeys = useExplorerStore(s => s.epicKeys);
+  const setEpicKeys = useExplorerStore(s => s.setEpicKeys);
 
-  const { data, isLoading, isError, error } = useEpicList(project);
+  const { data, isLoading, isError, error } = useEpicList(projects);
 
   const options = useMemo(
     () =>
@@ -31,7 +31,7 @@ export default function EpicSearch() {
     [data],
   );
 
-  const disabled = !project;
+  const disabled = projects.length === 0;
 
   let listError: string | null = null;
   if (isError) {
@@ -59,12 +59,13 @@ export default function EpicSearch() {
         placeholder={disabled ? 'Select a project first' : 'Search epic by key or name'}
         disabled={disabled}
         loading={isLoading}
-        value={epicKey ?? undefined}
-        onChange={val => setEpicKey(val)}
+        value={epicKeys}
+        onChange={val => setEpicKeys(Array.isArray(val) ? val : val ? [val] : [])}
         options={options}
         minWidth={340}
         showSearch
         allowClear
+        multiple
         notFoundContent="No epics found"
       />
       {listError && (

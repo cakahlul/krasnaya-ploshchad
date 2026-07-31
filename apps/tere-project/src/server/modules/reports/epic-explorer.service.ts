@@ -9,7 +9,6 @@ import type {
   ExplorerEpicListItem,
   EpicDetailResponse,
   ExplorerEpicInfo,
-  ExplorerDescendant,
   JiraIssueEntity,
 } from '@shared/types/report.types';
 import type { CallerIdentity } from '@server/auth/with-auth-or-api-key';
@@ -48,6 +47,10 @@ function projectOf(issueKey: string): string {
   return issueKey.split('-')[0]?.toUpperCase() ?? '';
 }
 
+function csv(value: string): string[] {
+  return [...new Set(value.split(',').map(item => item.trim()).filter(Boolean))];
+}
+
 /**
  * Resolves which projects the caller may see.
  * Lead → all (returns null = unrestricted). Non-lead → their roster teams.
@@ -69,7 +72,8 @@ export async function getProjectEpics(
   caller: CallerIdentity,
 ): Promise<ExplorerEpicListItem[]> {
   const accessible = await accessibleProjects(caller);
-  if (!canAccess(project, accessible)) {
+  const projects = csv(project);
+  if (projects.length === 0 || projects.some(item => !canAccess(item, accessible))) {
     throw new EpicExplorerError(403, 'You do not have access to this project');
   }
 
@@ -112,45 +116,35 @@ export async function getEpicDetail(
   project: string,
   caller: CallerIdentity,
 ): Promise<EpicDetailResponse> {
-  // Authorize against the EPIC'S OWN project (encoded in epicKey), NOT the
-  // client-supplied `project` param — the two can disagree, and trusting the
-  // param leaks the epic header of a project the caller can't access
-  // (OWASP A01 / see review-lessons). The param must match the key's project.
-  const epicProject = projectOf(epicKey);
-  if (epicProject !== project.toUpperCase()) {
-    throw new EpicExplorerError(404, `Epic ${epicKey} not found`);
-  }
-
   const accessible = await accessibleProjects(caller);
-  if (!canAccess(epicProject, accessible)) {
+  const projects = csv(project).map(item => item.toUpperCase());
+  const epicKeys = csv(epicKey).map(item => item.toUpperCase());
+  if (projects.length === 0 || epicKeys.length === 0 || projects.some(item => !canAccess(item, accessible))) {
     throw new EpicExplorerError(403, 'You do not have access to this project');
   }
+  if (epicKeys.some(key => !projects.includes(projectOf(key)))) {
+    throw new EpicExplorerError(404, 'Epic not found in the selected projects');
+  }
 
-  let epicIssue: JiraIssueEntity | null;
-  let rawDescendants: JiraIssueEntity[];
+  let result: Awaited<ReturnType<typeof repo.fetchEpicsWithDescendants>>;
   try {
-    const result = await repo.fetchEpicWithDescendants(epicKey);
-    epicIssue = result.epic;
-    rawDescendants = result.descendants;
+    result = await repo.fetchEpicsWithDescendants(epicKeys, projects);
   } catch (error) {
-    // A 400 from Jira for `issuekey = KEY` means the epic doesn't exist → 404.
     if (isBadRequestError(error)) {
       throw new EpicExplorerError(404, `Epic ${epicKey} not found`);
     }
     throw new EpicExplorerError(502, 'Failed to fetch epic from Jira');
   }
-  if (!epicIssue) {
-    throw new EpicExplorerError(404, `Epic ${epicKey} not found`);
-  }
-  // Reject a non-Epic key (Story/subtask): this endpoint is epic-only.
-  if (epicIssue.fields.issuetype?.name !== 'Epic') {
-    throw new EpicExplorerError(404, `Epic ${epicKey} not found`);
-  }
 
-  const totalFetched = rawDescendants.length;
-  // Hide descendants in projects the caller cannot access (cross-project only).
-  const visible = rawDescendants.filter(d => canAccess(projectOf(d.key), accessible));
-  const hiddenCount = totalFetched - visible.length;
+  const epicIssue = result.epics[0] ?? null;
+  if (
+    !epicIssue
+    || result.epics.length !== epicKeys.length
+    || result.epics.some(epic => epic.fields.issuetype?.name !== 'Epic')
+  ) {
+    throw new EpicExplorerError(404, 'Epic not found');
+  }
+  const rawDescendants = result.descendants;
 
   const effectiveDate = todayInWib();
   const weights = await wpWeightConfigService.getEffectiveWeights(effectiveDate);
@@ -163,15 +157,14 @@ export async function getEpicDetail(
       .filter((id): id is string => !!id)
       .map(id => id.toLowerCase()),
   );
-  // SP fallback (customfield_10005 empty) needs the assignee's level-based daily
-  // rate — same source Team Reporting uses (targetWpConfigService), keyed by accountId.
   const dailyRateByAccountId = new Map(
     allMembers
       .filter((m): m is typeof m & { jiraId: string } => !!m.jiraId)
       .map(m => [m.jiraId.toLowerCase(), dailyTargetWPByLevel[m.level] ?? 8]),
   );
-
-  const descendants: ExplorerDescendant[] = visible.map(issue =>
+  const visible = rawDescendants.filter(d => canAccess(projectOf(d.key), accessible));
+  const hiddenCount = rawDescendants.length - visible.length;
+  const descendants = visible.map(issue =>
     buildDescendant(
       issue,
       weights,
@@ -182,9 +175,10 @@ export async function getEpicDetail(
 
   return {
     epic: toEpicInfo(epicIssue),
+    epics: result.epics.map(toEpicInfo),
     descendants,
     metrics: rollupMetrics(descendants),
-    authz: { hiddenCount, totalFetched },
+    authz: { hiddenCount, totalFetched: rawDescendants.length },
     wpConfig: { effectiveDate, weights },
   };
 }
