@@ -1,6 +1,8 @@
 export interface MemberSummaryDto {
   name: string;
   wpProductivity: string;
+  /** SP-based productivity, matching Team Report's Productivity Rate column. */
+  productivityRate: string;
   totalWeightPoints: number;
   targetWeightPoints: number;
   spTotal: number;

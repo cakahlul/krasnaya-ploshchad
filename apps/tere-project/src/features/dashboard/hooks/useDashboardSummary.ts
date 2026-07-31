@@ -6,6 +6,7 @@ import axiosClient from '@src/lib/axiosClient';
 export interface MemberSummary {
   name: string;
   wpProductivity: string;
+  productivityRate: string;
   totalWeightPoints: number;
   targetWeightPoints: number;
   spTotal: number;
