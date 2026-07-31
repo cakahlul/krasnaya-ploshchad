@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Table, Button, Tag, Popconfirm, message } from 'antd';
+import { Table, Button, Tag, Popconfirm, Tooltip, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { Pencil, Trash2, UserPlus } from 'lucide-react';
 
@@ -11,6 +11,33 @@ import { useThemeColors } from '@src/hooks/useTheme';
 import MemberFormModal from './MemberFormModal';
 import type { MemberResponse } from '@shared/types/member.types';
 import { Level } from '@shared/types/common.types';
+
+type MemberStatus = { key: 'active' | 'resigned' | 'historical'; label: string; color: string; explanation: string };
+
+/**
+ * Derived from stored fields only — there is no "historical" column. A member with no Jira account
+ * cannot be attributed any live work (the report engine matches issues by `jiraId`), so their rows
+ * can only ever come from the archive. Reported as exactly that rather than as a guess.
+ */
+export function memberStatus(member: Pick<MemberResponse, 'jiraId' | 'resignDate'>): MemberStatus {
+  if (member.resignDate) {
+    return {
+      key: 'resigned',
+      label: `Resigned`,
+      color: 'red',
+      explanation: `Resigned on ${member.resignDate}. Months after this date exclude them.`,
+    };
+  }
+  if (!member.jiraId) {
+    return {
+      key: 'historical',
+      label: 'Historical only',
+      color: 'orange',
+      explanation: 'No Jira account, so this member only appears in archived months. Add a resign date if they have left.',
+    };
+  }
+  return { key: 'active', label: 'Active', color: 'green', explanation: 'Counted in both live and archived months.' };
+}
 
 const LEVEL_COLOR_MAP: Record<Level, string> = {
   [Level.Junior]: 'blue',
@@ -106,6 +133,38 @@ export default function TeamMembersPage() {
           ))}
         </div>
       ),
+    },
+    {
+      title: 'Status',
+      key: 'status',
+      render: (_, record) => {
+        const status = memberStatus(record);
+        return (
+          <Tooltip title={status.explanation}>
+            <Tag color={status.color} data-qa={`member-status-${status.key}`}>{status.label}</Tag>
+          </Tooltip>
+        );
+      },
+      filters: [
+        { text: 'Active', value: 'active' },
+        { text: 'Resigned', value: 'resigned' },
+        { text: 'Historical only', value: 'historical' },
+      ],
+      onFilter: (value, record) => memberStatus(record).key === value,
+    },
+    {
+      title: 'Join date',
+      dataIndex: 'joinDate',
+      key: 'joinDate',
+      render: (joinDate: string | null) => joinDate ?? '—',
+      sorter: (a, b) => (a.joinDate ?? '').localeCompare(b.joinDate ?? ''),
+    },
+    {
+      title: 'Resign date',
+      dataIndex: 'resignDate',
+      key: 'resignDate',
+      render: (resignDate: string | null) => resignDate ?? '—',
+      sorter: (a, b) => (a.resignDate ?? '').localeCompare(b.resignDate ?? ''),
     },
     {
       title: 'Actions',

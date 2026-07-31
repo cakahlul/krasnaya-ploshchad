@@ -1,21 +1,34 @@
 'use client';
 
 import { useState } from 'react';
-import { DatePicker, Table, Tooltip } from 'antd';
+import { Alert, DatePicker, Progress, Select, Table, Tooltip } from 'antd';
 import dayjs from 'dayjs';
-import axiosClient from '@src/lib/axiosClient';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { ProductivitySummaryExportButton } from './ProductivitySummaryExportButton';
-import { MultiSelectTeam } from './MultiSelectTeam';
-import { useBoards } from '../hooks/useBoards';
 import { useThemeColors } from '@src/hooks/useTheme';
+import { REPORTING_GROUPS, type ReportingGroup } from '@src/shared/types/reporting-group.types';
+import {
+  buildProductivitySummaryParams,
+  inclusiveMonthCount,
+  type ProductivitySummaryParams,
+  validateProductivitySummaryRange,
+} from '../utils/productivity-summary-range';
+import {
+  type CanonicalProductivitySummary,
+  ProductivitySummaryCanonicalResult,
+  ProductivitySummaryComparisonChart,
+  ProductivitySummaryRetry,
+} from './ProductivitySummaryStates';
+import {
+  type SummaryChartPoint,
+  streamProductivitySummary,
+} from '../utils/productivity-summary-stream';
 
 const mono = "var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace";
 const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
 
 interface ProductivitySummaryMemberDto {
   name: string;
-  team: string; // 'DS' or 'SLS'
   wpProduct: number;
   wpTech: number;
   wpTotal: number;
@@ -45,43 +58,67 @@ interface ProductivitySummaryData {
 }
 
 export default function ProductivitySummary() {
-  const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs>(dayjs());
-  const [data, setData] = useState<ProductivitySummaryData | null>(null);
+  const [selectedRange, setSelectedRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([dayjs(), dayjs()]);
+  const [selectedGroups, setSelectedGroups] = useState<ReportingGroup[]>([]);
+  const [data, setData] = useState<ProductivitySummaryData | CanonicalProductivitySummary | null>(null);
   const [loading, setLoading] = useState(false);
-  const { boards, isLoading: boardsLoading } = useBoards();
-  const [selectedTeams, setSelectedTeams] = useState<number[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [retryRequest, setRetryRequest] = useState<ProductivitySummaryParams | null>(null);
+  const [progress, setProgress] = useState<{ completed: number; total: number } | null>(null);
+  const [partialChart, setPartialChart] = useState<SummaryChartPoint[]>([]);
   const T = useThemeColors();
 
-  const reportBoards = boards.filter(b => !b.isBugMonitoring);
-  const teamOptions = reportBoards.map(b => ({ value: b.boardId, label: b.name }));
-  const boardShortNameMap = new Map(reportBoards.map(b => [b.boardId, b.shortName]));
+  const startMonth = selectedRange[0].format('YYYY-MM');
+  const endMonth = selectedRange[1].format('YYYY-MM');
+  const monthCount = inclusiveMonthCount(startMonth, endMonth);
+  const request = buildProductivitySummaryParams(startMonth, endMonth, selectedGroups, 'SP');
 
-  const fetchData = async (month: number, year: number, teamIds: number[]) => {
+  const fetchData = async (request: ProductivitySummaryParams) => {
+    const validationError = validateProductivitySummaryRange(request.startMonth, request.endMonth);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setLoading(true);
+    setError(null);
+    setRetryRequest(request);
+    setProgress(null);
+    setPartialChart([]);
     try {
-      const teamsParam = teamIds.length > 0
-        ? teamIds.map(id => boardShortNameMap.get(id)).filter(Boolean).join(',')
-        : '';
-      const response = await axiosClient.get('/report/productivity-summary', {
-        params: { month, year, ...(teamsParam ? { teams: teamsParam } : {}) },
+      let failed = false;
+      await streamProductivitySummary(request as unknown as Record<string, string>, (event) => {
+        switch (event.type) {
+          case 'month':
+            setProgress({ completed: event.completed, total: event.total });
+            break;
+          case 'point':
+            setProgress({ completed: event.completed, total: event.total });
+            setPartialChart(points => [...points, event.point].sort((a, b) => a.month.localeCompare(b.month)));
+            break;
+          case 'complete':
+            setData(event.data as CanonicalProductivitySummary);
+            break;
+          case 'error':
+            failed = true;
+            setError(event.message);
+            break;
+        }
       });
-      setData(response.data);
+      if (failed) setPartialChart([]);
     } catch (error) {
       console.error('Failed to fetch productivity summary:', error);
+      setError('Unable to load productivity data. Please try again.');
+      setPartialChart([]);
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   };
 
-  const handleCalculate = () => {
-    fetchData(selectedDate.month() + 1, selectedDate.year(), selectedTeams);
-  };
+  const handleCalculate = () => void fetchData(request);
 
-  const handleDateChange = (date: dayjs.Dayjs | null) => {
-    if (date) {
-      setSelectedDate(date);
-    }
-  };
+  const canonicalData = data && 'range' in data ? data : null;
+  const legacyData = data && !('range' in data) ? data : null;
 
   const columns = [
     {
@@ -92,34 +129,6 @@ export default function ProductivitySummary() {
         <span style={{ fontWeight: 600, color: T.rowCol, fontFamily: sans, fontSize: 13 }}>{text}</span>
       ),
       sorter: (a: any, b: any) => a.name.localeCompare(b.name),
-    },
-    {
-      title: 'Team',
-      dataIndex: 'team',
-      key: 'team',
-      render: (team: string) => {
-        const uniqueTeams = Array.from(new Set((data?.details ?? []).map(d => d.team)));
-        const teamIdx = uniqueTeams.indexOf(team) % 4;
-        const teamColors = [
-          { bg: `${T.accent}15`, color: T.accent, border: `${T.accent}30` },
-          { bg: `${T.statusPurple}15`, color: T.statusPurple, border: `${T.statusPurple}30` },
-          { bg: `${T.statusSuccess}15`, color: T.statusSuccess, border: `${T.statusSuccess}30` },
-          { bg: `${T.statusOrange}15`, color: T.statusOrange, border: `${T.statusOrange}30` },
-        ];
-        const tc = teamColors[teamIdx];
-        return (
-          <span style={{
-            background: tc.bg, color: tc.color, border: `1px solid ${tc.border}`,
-            padding: '2px 10px', borderRadius: 6, fontSize: 10.5, fontWeight: 700,
-            fontFamily: sans, letterSpacing: 0.3,
-          }}>
-            {team}
-          </span>
-        );
-      },
-      filters: Array.from(new Set((data?.details ?? []).map(d => d.team)))
-        .map(team => ({ text: team, value: team })),
-      onFilter: (value: any, record: any) => record.team === value,
     },
     {
       title: 'SP Product',
@@ -211,7 +220,7 @@ export default function ProductivitySummary() {
       render: (val: number) => (
         <span style={{
           fontWeight: 700, color: T.titleCol, fontFamily: mono, fontSize: 13,
-          background: T.isDark ? 'rgba(255,255,255,0.06)' : '#f5f6fb',
+          background: T.iconBg,
           padding: '3px 8px', borderRadius: 6,
         }}>
           {val.toFixed(2)}
@@ -256,7 +265,7 @@ export default function ProductivitySummary() {
   ];
 
   // Derived values for productivity cards
-  const vsExpected = data ? data.summary.productivityProduceVsExpected * 100 : 0;
+  const vsExpected = legacyData ? legacyData.summary.productivityProduceVsExpected * 100 : 0;
   const isPositiveDiff = vsExpected >= 0;
 
   // Color map for KPI card tinting
@@ -267,12 +276,12 @@ export default function ProductivitySummary() {
   };
 
   // KPI cards configuration
-  const kpiCards = data ? [
-    { label: 'Working Days', value: data.summary.totalDaysOfWorks, unit: 'days', theme: 'default' as const },
-    { label: 'Avg WP Expected', value: data.summary.averageWpExpected.toFixed(2), unit: '/ day', theme: 'default' as const },
-    { label: 'Avg WP Produced', value: data.summary.averageWpProduced.toFixed(2), unit: '/ day', theme: 'default' as const },
-    { label: 'Total WP Expected', value: data.summary.totalWpExpected.toFixed(1), unit: 'WP', theme: 'default' as const },
-    { label: 'Total WP Produced', value: data.summary.totalWpProduced.toFixed(1), unit: 'WP', theme: isPositiveDiff ? 'success' as const : 'danger' as const },
+  const kpiCards = legacyData ? [
+    { label: 'Working Days', value: legacyData.summary.totalDaysOfWorks, unit: 'days', theme: 'default' as const },
+    { label: 'Avg WP Expected', value: legacyData.summary.averageWpExpected.toFixed(2), unit: '/ day', theme: 'default' as const },
+    { label: 'Avg WP Produced', value: legacyData.summary.averageWpProduced.toFixed(2), unit: '/ day', theme: 'default' as const },
+    { label: 'Total WP Expected', value: legacyData.summary.totalWpExpected.toFixed(1), unit: 'WP', theme: 'default' as const },
+    { label: 'Total WP Produced', value: legacyData.summary.totalWpProduced.toFixed(1), unit: 'WP', theme: isPositiveDiff ? 'success' as const : 'danger' as const },
     { label: 'vs Expected', value: `${vsExpected >= 0 ? '+' : ''}${vsExpected.toFixed(2)}%`, unit: 'diff', theme: isPositiveDiff ? 'success' as const : 'danger' as const },
   ] : [];
 
@@ -285,13 +294,13 @@ export default function ProductivitySummary() {
             Productivity Summary
           </h2>
           <p style={{ color: T.subCol, margin: '4px 0 0', fontSize: 12.5, fontFamily: sans }}>
-            Comprehensive team performance overview · All teams
+            Productivity overview by reporting Group
           </p>
         </div>
         <ProductivitySummaryExportButton
-          month={selectedDate.month() + 1}
-          year={selectedDate.year()}
-          teams={selectedTeams.map(id => boardShortNameMap.get(id)).filter((s): s is string => !!s)}
+          month={selectedRange[0].month() + 1}
+          year={selectedRange[0].year()}
+          request={request}
         />
       </div>
 
@@ -306,15 +315,21 @@ export default function ProductivitySummary() {
             fontSize: 9.5, fontWeight: 600, color: T.subCol,
             textTransform: 'uppercase', letterSpacing: 1, fontFamily: sans,
           }}>
-            Month
+            Month range
           </label>
-          <DatePicker
+          <DatePicker.RangePicker
+            data-qa="productivity-summary-range"
             picker="month"
-            value={selectedDate}
-            onChange={handleDateChange}
+            minDate={dayjs('2025-01-01')}
+            maxDate={dayjs()}
+            value={selectedRange}
+            onChange={(dates) => {
+              if (dates?.[0] && dates[1]) setSelectedRange([dates[0], dates[1]]);
+            }}
             format="MMMM YYYY"
             allowClear={false}
-            className="text-sm font-medium min-w-[180px]"
+            className="text-sm font-medium min-w-[280px]"
+            aria-label="Productivity summary month range"
           />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -322,18 +337,25 @@ export default function ProductivitySummary() {
             fontSize: 9.5, fontWeight: 600, color: T.subCol,
             textTransform: 'uppercase', letterSpacing: 1, fontFamily: sans,
           }}>
-            Teams
+            Groups
           </label>
-          <MultiSelectTeam
-            options={teamOptions}
-            values={selectedTeams}
-            onChange={setSelectedTeams}
-            placeholder="All teams"
-            loading={boardsLoading}
+          <Select<ReportingGroup[]>
+            data-qa="productivity-summary-group-filter"
+            mode="multiple"
+            value={selectedGroups}
+            onChange={setSelectedGroups}
+            options={REPORTING_GROUPS.map(group => ({
+              value: group,
+              label: group,
+            }))}
+            placeholder="All groups"
+            aria-label="Reporting groups"
+            style={{ minWidth: 220 }}
           />
         </div>
         <button
           type="button"
+          data-qa="productivity-summary-calculate"
           onClick={handleCalculate}
           disabled={loading}
           style={{
@@ -350,25 +372,54 @@ export default function ProductivitySummary() {
         </button>
       </div>
 
+      {error && (
+        <Alert
+          type="error"
+          showIcon
+          message={error}
+          style={{ marginBottom: 20 }}
+          action={(
+            retryRequest && <ProductivitySummaryRetry request={retryRequest} onRetry={fetchData} />
+          )}
+        />
+      )}
+
       {loading ? (
         /* Loading State */
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          minHeight: 400, background: T.cardBg, borderRadius: 14,
-          border: `1px solid ${T.cardBrd}`,
+        /* Progress sits in normal flow above whatever has already arrived. Centring it in a fixed
+           400px box clipped the content once the chart started filling in. */
+        <div data-qa="productivity-summary-progress" aria-live="polite" aria-busy="true" style={{
+          background: T.cardBg, borderRadius: 14, border: `1px solid ${T.cardBrd}`,
+          padding: 20, display: 'grid', gap: 14,
+          minHeight: partialChart.length > 1 ? undefined : 220,
         }}>
-          <div
-            className="animate-spin"
-            style={{
-              width: 36, height: 36, borderRadius: '50%',
-              border: `3px solid ${T.cardBrd}`, borderTopColor: T.accent,
-            }}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ color: T.rowCol, fontFamily: sans, fontSize: 13, fontWeight: 600 }}>
+              {progress
+                ? `Calculating month ${progress.completed} of ${progress.total}`
+                : `Preparing ${monthCount} month${monthCount === 1 ? '' : 's'}`}
+            </span>
+            <span style={{ color: T.subCol, fontFamily: sans, fontSize: 12, marginLeft: 'auto' }}>
+              {partialChart.length > 1 ? 'Chart fills in as each month lands' : 'Reading archive and Jira'}
+            </span>
+          </div>
+          <Progress
+            percent={progress ? Math.round((progress.completed / progress.total) * 100) : 0}
+            status="active"
+            showInfo={false}
+            strokeColor={T.accent}
+            trailColor={T.cardBrd}
           />
-          <p style={{ color: T.subCol, marginTop: 16, fontFamily: sans, fontSize: 13 }}>
-            Calculating metrics...
-          </p>
+          {partialChart.length > 1 ? (
+            <ProductivitySummaryComparisonChart
+              points={partialChart}
+              metricBasis={partialChart[0].metricBasis}
+            />
+          ) : null}
         </div>
-      ) : data ? (
+      ) : canonicalData ? (
+        <ProductivitySummaryCanonicalResult data={canonicalData} />
+      ) : legacyData ? (
         <div>
           {/* KPI Stat Cards - 6 columns */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10, marginBottom: 16 }}>
@@ -400,7 +451,7 @@ export default function ProductivitySummary() {
                 Productivity Expected
               </div>
               <div style={{ fontSize: 36, fontWeight: 700, fontFamily: mono, color: T.accent, letterSpacing: -1, lineHeight: 1 }}>
-                {data.summary.productivityExpected.toFixed(3)}
+                {legacyData.summary.productivityExpected.toFixed(3)}
               </div>
               <div style={{ fontSize: 11, color: T.subCol, fontFamily: sans, marginTop: 6 }}>
                 WP per hour
@@ -418,7 +469,7 @@ export default function ProductivitySummary() {
                 fontSize: 36, fontWeight: 700, fontFamily: mono, letterSpacing: -1, lineHeight: 1,
                 color: isPositiveDiff ? T.statusSuccess : T.statusDanger,
               }}>
-                {data.summary.productivityProduced.toFixed(3)}
+                {legacyData.summary.productivityProduced.toFixed(3)}
               </div>
               <div style={{ fontSize: 11, color: T.subCol, fontFamily: sans, marginTop: 6 }}>
                 WP per hour
@@ -437,7 +488,7 @@ export default function ProductivitySummary() {
               </h3>
             </div>
             <Table
-              dataSource={data.details}
+              dataSource={legacyData.details}
               columns={columns}
               rowKey="name"
               pagination={{ pageSize: 20 }}
@@ -463,7 +514,7 @@ export default function ProductivitySummary() {
             </svg>
           </div>
           <p style={{ color: T.subCol, fontSize: 13, fontWeight: 500, fontFamily: sans, margin: 0 }}>
-            Select teams and click Calculate to view productivity data
+            Select a month range and optional groups, then click Calculate
           </p>
         </div>
       )}

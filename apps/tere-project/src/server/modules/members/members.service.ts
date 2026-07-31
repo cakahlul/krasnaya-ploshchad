@@ -30,6 +30,11 @@ class MembersService {
       level: dto.level,
       teams: dto.teams,
       isLead: dto.isLead ?? false,
+      // Archive aggregation filters months against these, so a wrong join date silently drops a
+      // member's history. Falling back to today is honest for a new hire; the old hardcoded
+      // 2025-01-01 claimed a start nobody entered.
+      joinDate: dto.joinDate ?? now.toISOString().slice(0, 10),
+      resignDate: dto.resignDate ?? null,
       createdAt: now,
       updatedAt: now,
     };
@@ -69,6 +74,8 @@ class MembersService {
     if (dto.level !== undefined) updateData.level = dto.level;
     if (dto.isLead !== undefined) updateData.isLead = dto.isLead;
     if (dto.teams !== undefined) updateData.teams = dto.teams;
+    if (dto.joinDate !== undefined) updateData.joinDate = dto.joinDate;
+    if (dto.resignDate !== undefined) updateData.resignDate = dto.resignDate;
     const updated = await this.repository.update(id, updateData);
     if (!updated) throw new Error(`Member with ID '${id}' not found`);
     return this.entityToDto(updated);
@@ -109,6 +116,8 @@ class MembersService {
       level: entity.level,
       teams: entity.teams,
       isLead: entity.isLead ?? false,
+      joinDate: entity.joinDate,
+      resignDate: entity.resignDate ?? null,
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),
     };

@@ -1,14 +1,15 @@
 # Technology Stack - Krasnaya Ploshchad
 
 ## Architecture Overview
-Monorepo using **npm workspaces** (no Turborepo). Two workspaces under `apps/*`:
+Monorepo using **npm workspaces** (no Turborepo). Three workspaces under `apps/*`:
 - **`apps/tere-project`** — Full-stack Next.js 16 app (frontend + API routes; backend logic lives in `src/server/`).
+- **`apps/beras-ui`** — Private `@krasnaya/beras-ui@0.1.0` presentational package and internal Next.js catalog.
 - **`apps/mcp-server`** — Standalone TypeScript MCP server, published to npm as `@esjn/mcp-tere-report`.
 
 There is **no separate backend service**. All server-side logic for Tere runs inside the Next.js app.
 
 ## Root Tooling
-- **Node.js**: `>=18`
+- **Node.js**: `>=20.9.0` (workspace minimum required by Next.js 16)
 - **Package manager**: `npm@10.9.2`
 - **TypeScript**: `5.8.2` (root devDep)
 - **Prettier**: `^3.5.3` (root devDep)
@@ -20,6 +21,22 @@ There is **no separate backend service**. All server-side logic for Tere runs in
 - `npm run lint` → tere-project lint
 - `npm run format` → prettier on `**/*.{ts,tsx,md}`
 - `npm run mcp:build` / `mcp:start` / `mcp:release[:minor|:major]` → mcp-server
+- `npm run beras:dev` / `beras:build` / `beras:verify` → Beras UI workspace
+
+## Beras UI Stack (`apps/beras-ui`, v0.1.0)
+
+### Exact direct dependency basis
+- Runtime: `next@16.0.8`, `react@19.2.1`, `react-dom@19.2.1`
+- Dev/build: `@types/node@^20`, `@types/react@19.2.7`, `@types/react-dom@19.2.3`, `autoprefixer@^10.4.18`, `eslint@^9`, `eslint-config-next@16.0.8`, `postcss@^8.4.35`, `tailwindcss@3.4.1`, `typescript@5.8.2`
+- No third-party UI, icon, chart, animation, date, table, dialog, or 3D runtime library
+
+### Build and verification
+- Next 16 uses `next dev` / `next build`; `transpilePackages: ['@krasnaya/beras-ui']` enables workspace self-consumption.
+- ESLint is the direct CLI (`eslint .`); `next lint` is not used.
+- Tailwind scans only `./src/**/*.{ts,tsx,mdx}` relative to the Beras config.
+- Logic checks use native `node:test`; browser evidence uses a real browser without adding a test runtime dependency.
+- Workspace scripts: `lint`, `typecheck`, `test`, five `verify:*` validators, aggregate `verify`, and `build`.
+- Phase 1 remains light-only and isolated; this section does not claim completed browser evidence or Phase 2 Tere adoption.
 
 ## Tere Project Stack (`apps/tere-project`, v2.0.0)
 

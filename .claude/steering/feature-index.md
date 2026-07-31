@@ -26,6 +26,7 @@
 | Sprint listing / sprint data | [Sprint](#sprint) |
 | Global search (tickets) | [Search](#search) |
 | Sign-in / sign-up / session | [Auth](#auth) |
+| Beras UI package, catalog, and public component contracts | [Beras UI](#beras-ui) |
 | MCP server tools | [MCP Server](#mcp-server) |
 
 ---
@@ -41,11 +42,13 @@
 
 ### Feature module (frontend)
 - `apps/tere-project/src/features/dashboard/`
-  - `components/` — `ProductivitySummary.tsx`, `GlobalSearch.tsx`, `ProductivitySummaryExportButton.tsx`, `filterReport.tsx`, `epicSelect.tsx`, `DateRangeSelect.tsx`, `SprintSelect.tsx`, `TeamSelect.tsx`, `MultiSelectSprint.tsx`, `MultiSelectTeam.tsx`, `SprintTrendChart.tsx`
+  - `components/` — `ProductivitySummary.tsx` (+ `ProductivitySummary.contract.test.ts`), `ProductivitySummaryStates.tsx` (+ test), `GlobalSearch.tsx`, `ProductivitySummaryExportButton.tsx`, `filterReport.tsx`, `epicSelect.tsx`, `DateRangeSelect.tsx`, `SprintSelect.tsx`, `TeamSelect.tsx`, `MultiSelectSprint.tsx`, `MultiSelectTeam.tsx`, `SprintTrendChart.tsx`
   - `hooks/` — 18 hooks including `useSprintFetch.ts`, `useMultiTeamSprintFetch.ts`, `useSprintDataTransform.ts`, `useMultiSprintDataTransform.ts`, `useBoards.ts`, `useGlobalSearch.ts`, `useMemberIssues.ts`, `useMemberProfile.ts`, `useTargetWpConfig.ts`, `useWpWeightConfig.ts`, `useTeamReportAutoDefaults.ts`, `useSprintTrend.ts`
   - `repositories/jiraRepository.ts` — client-side Jira data fetcher
   - `store/sprintFilterStore.ts`, `store/teamReportFilterStore.ts` — Zustand
   - `types/dashboard.ts`
+  - `utils/productivity-summary-range.ts` (+ test) — inclusive 1–24 month validation and canonical `startMonth`/`endMonth`/`groups`/`metricBasis` query builder (SLS-17152)
+  - `utils/productivity-summary-stream.ts` (+ test) — `fetch` against the same summary URL with `Accept: application/x-ndjson` (Firebase token attached like `axiosClient` does) plus `createNdjsonParser`, which buffers a line split across chunk boundaries. `ProductivitySummary.tsx` consumes it to show real "month N of M" progress and to draw `ProductivitySummaryComparisonChart` from points already received while the remaining months load.
 
 ### API routes
 - `POST /api/dashboard/summary` → `apps/tere-project/src/app/api/dashboard/summary/route.ts`
@@ -53,7 +56,7 @@
 - `GET /api/report/all` → `apps/tere-project/src/app/api/report/all/route.ts`
 - `GET /api/report/epics` → `apps/tere-project/src/app/api/report/epics/route.ts`
 - `GET /api/report/stories` → `apps/tere-project/src/app/api/report/stories/route.ts`
-- `GET /api/report/productivity-summary` → `apps/tere-project/src/app/api/report/productivity-summary/route.ts`
+- `GET /api/report/productivity-summary` → `apps/tere-project/src/app/api/report/productivity-summary/route.ts` — returns JSON by default; a caller sending `Accept: application/x-ndjson` gets the same data as a stream of `point`/`month` progress events followed by one `complete` (or `error`) event. Same URL and params, so legacy and MCP callers are unaffected.
 - `POST /api/report/productivity-summary/export` → `apps/tere-project/src/app/api/report/productivity-summary/export/route.ts`
 - `GET /api/report/sprint-trend` → `apps/tere-project/src/app/api/report/sprint-trend/route.ts`
 - `GET /api/report/productivity-summary/auth/google` → OAuth callback for export to Google Sheets
@@ -62,13 +65,23 @@
 - `apps/tere-project/src/server/modules/dashboard/dashboard.service.ts`
 - `apps/tere-project/src/server/modules/reports/`
   - `reports.service.ts`, `reports.repository.ts`, `report-filter.ts`, `productivity-summary.service.ts`
+  - `productivity-summary-range.ts` (+ `productivity-summary-range.test.ts`) — pure raw request adapter for legacy `month`/`year` and canonical inclusive `startMonth`/`endMonth` ranges (strict forms, no mixing, 24-month cap)
+  - `productivity-summary-range.service.ts` (+ `productivity-summary-range.service.test.ts`) — source-aware calendar-month/Group aggregation with injected productivity and live-bug boundaries, explicit coverage/failures, basis routing, and post-aggregation member filtering. Per-month + range-total duration and `sourceDistribution` (archive/live/partial/unavailable tally) telemetry logged via `console.log` (no response field change); `productivity-summary-range.ports.ts` also times each live bug-board call (SLS-17306). Covered by `productivity-summary-range-telemetry.test.ts` (isolated from `.service.test.ts` because that file's baseline pre-existing assertion failure throws before reaching appended scenarios) — mixed archive+live month set and fully-archived month set.
+  - `productivity-summary-range-progress.test.ts` / `productivity-summary-stream.test.ts` — the NDJSON streaming path: `generateProductivitySummaryRange` takes an optional progress callback and publishes a chart point per month as it resolves, holding points back until the metric basis is settled (one archived month forces the whole range to SP, so an early WP point would mix units). Stream tests pin the caller rules: non-Lead gets value-free progress and no chart, a WP request over archived months errors instead of emitting SP points, and a request without the header still gets plain JSON.
+  - `productivity-summary-derived.test.ts` — two derived-value rules. Archive rows with no day-of-work column recover working days as `spTarget / SP_PER_WORKING_DAY` (exported from `productivity-summary-range.ports.ts`), so Green-2025 months stop reading N/A; a recorded value always wins and a row with neither stays null. `summary.productivityPercent` is delivered SP over target SP summed across the range — it previously reconstructed capacity by dividing each month's metric by its own percentage, which divided by zero on a zero month and compared WP output against an SP percentage.
+  - `productivity-summary-range-dedup.test.ts` — covers the read-path waste fixes: `createSingleFlight` (exported from `productivity-summary-range.ports.ts`) collapsing the identical unfiltered board bug-history fetches every month issues, and the per-month `total`/`raised`/`done` bug calls running concurrently rather than chained. `reports.service.ts::generateReportByDateRange` logs `[telemetry] report-by-date-range step=…` per stage and runs leave/holidays/wpWeights/targetRates/ruleVersions in parallel.
+  - `productivity-summary-export-http.ts` (+ export contract self-checks) — legacy/canonical POST adapter; canonical export consumes the same range aggregate and emits Group/board/member hierarchy, source/rule/basis, available values, and coverage failures
+  - `productivity-archive/productivity-archive.ts` (+ `productivity-archive.test.ts`) — immutable archive repository contract, in-memory fake, archive-wins/month-watermark routing, and SP-only historical aggregation (SLS-17157; no DB access)
   - `strategies/` — issue categorizers + complexity-weight strategies (legacy/new/v3)
+- `apps/tere-project/src/server/modules/reporting-groups/` — Group/month rule resolver backed by persisted `group_rule_config`; maps nullable board configuration to `Ungrouped`, prevents multi-Group member attribution, and selects existing legacy/new/v3 formulas without changing them (SLS-17147).
 
 ### Shared types
 - `apps/tere-project/src/shared/types/dashboard.types.ts`
 - `apps/tere-project/src/shared/types/report.types.ts`
+- `apps/tere-project/src/shared/types/reporting-group.types.ts` — reporting Group, board configuration, and date-effective rule contract (SLS-17147).
 
 ### Notes
+- **SLS-17150 DB delivery (user-run only; DB integration UNVERIFIED)**: `apps/tere-project/drizzle/0009_reporting_group_and_archive.sql` creates reporting Group/rule and archive persistence objects; matching Drizzle declarations live in `apps/tere-project/src/server/db/schema.ts`. Operator material: `apps/tere-project/docs/database/SLS-17150-rollback.sql`, `SLS-17150-seed-plan.md`, and `SLS-17150-db-impact-report.md`. No application route or server module is included in this scripts/docs-only task.
 - **Feature flag** `isShowPlannedWP` — Team Reporting only (NOT dashboard, NOT productivity summary).
 - **Sprint Trend** (`SprintTrendChart`): rendered below `TeamTable` on reports page. Activates when 2+ sprints selected. Calls `/api/report/sprint-trend` which loops `generateReport` per sprint and aggregates per-team via `aggregateReportByTeam`. Metrics: velocity (WP), wpAttainment (%), spVelocity (raw SP). Slowdown alerts flag teams with 2+ consecutive declines totaling ≥ 20%.
 - **Team Reporting auto-defaults**: on first mount, `useTeamReportAutoDefaults` (called from `app/dashboard/reports/page.tsx`) auto-selects (a) the user's teams (from `member.teams` via `useMemberProfile`; non-Leads also have non-member teams hidden in `filterReport.tsx`), then (b) the active sprint(s) for non-kanban teams OR the 2-week kanban cycle range for kanban-only teams. The hook returns `isInitializing` which the page ORs with `useTeamReportTransform().isLoading` to keep `LoadingBar` visible across the auto-init handoff (prevents the brief empty-state glitch).
@@ -225,7 +238,9 @@ See [Dashboard / Reports](#dashboard--reports) — Reports lives in the dashboar
 
 ### Feature module
 - `apps/tere-project/src/features/team-members/`
-  - `components/` — `TeamMembersPage.tsx`, `MemberFormModal.tsx`
+  - `components/` — `TeamMembersPage.tsx`, `MemberFormModal.tsx` (+ `TeamMembersPage.test.ts`)
+    - Join date and resign date are editable in the modal and shown as columns. `create` used to hardcode `joinDate: '2025-01-01'` and `update` dropped both fields, so archive aggregation — which excludes months outside a member's lifecycle — was filtering against a date nobody entered.
+    - `memberStatus()` derives Active / Resigned / Historical only from stored fields; there is no historical column. "Historical only" means no `jiraId`, so the report engine (which matches live issues by `jiraId`) can never attribute live work to them.
   - `hooks/useMembers.ts`
 
 ### API routes
@@ -459,6 +474,35 @@ Tab-switcher around `/dashboard/configuration?tab={id}`. Holiday reuses Holiday 
 - `apps/tere-project/src/lib/firebaseAdmin.ts`
 - `apps/tere-project/src/server/lib/firebase-admin.ts`
 - `apps/tere-project/src/server/auth/with-auth.ts`
+
+---
+
+## Beras UI
+
+**Private presentational package and internal catalog. Phase 1 is isolated from Tere: no file under `apps/tere-project/**` is an implementation target, and no Phase 2 consumer adoption is implied.**
+
+### Workspace and package boundary
+- `apps/beras-ui/package.json` — `@krasnaya/beras-ui@0.1.0`, private workspace, exact dependency allowlist and verification scripts
+- `apps/beras-ui/next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `postcss.config.mjs`, `tailwind.config.ts` — Next 16 catalog/tooling configuration
+- `apps/beras-ui/src/public/index.ts` — explicit convenience entrypoint
+- `apps/beras-ui/src/public/components.ts` — explicit component exports grouped by implementation family
+- `apps/beras-ui/src/public/layouts.ts` — explicit shell/auth/composition exports
+- `apps/beras-ui/src/public/foundations.ts` — token metadata, breakpoints, semantic variant types
+- `apps/beras-ui/src/public/types.ts` — public props, view models, shared callbacks, data/chart/calendar/tree/ADF contracts
+- `apps/beras-ui/src/styles/index.css` — only shipped stylesheet entrypoint (`@krasnaya/beras-ui/styles.css`)
+
+### Phase 1 feature paths
+- `apps/beras-ui/src/components/` — presentational family implementations; no Tere runtime/business objects
+- `apps/beras-ui/src/layouts/` — responsive shell, auth, and fixture-driven page compositions
+- `apps/beras-ui/src/foundations/` and `src/styles/` — light-only semantic tokens and scoped `.beras-*` CSS
+- `apps/beras-ui/src/catalog/` and `src/app/` — internal catalog registry and routes, consuming public package entrypoints only
+- `apps/beras-ui/src/fixtures/` — deterministic local display data
+- `apps/beras-ui/src/inventory/` — frozen baseline manifest/ledger and stable schemas
+- `apps/beras-ui/scripts/`, `tests/`, `evidence/phase-1/` — validators, native Node checks, and assembled browser evidence
+
+### Commands
+- Root convenience: `npm run beras:dev`, `npm run beras:build`, `npm run beras:verify`
+- Workspace checks: `lint`, `typecheck`, `test`, `verify:inventory`, `verify:catalog`, `verify:boundaries`, `verify:isolation`, `verify:evidence`
 
 ---
 

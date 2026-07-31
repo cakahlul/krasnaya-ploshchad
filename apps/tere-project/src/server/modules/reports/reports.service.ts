@@ -23,6 +23,10 @@ import { holidaysService } from '@server/modules/holidays/holidays.service';
 import { wpWeightConfigService } from '@server/modules/wp-weight-config/wp-weight-config.service';
 import { todayInWib } from '@server/modules/wp-weight-config/wp-weight-config-date';
 import { targetWpConfigService } from '@server/modules/target-wp-config/target-wp-config.service';
+import { reportingGroupService } from '@server/modules/reporting-groups/reporting-group.service';
+import type { RuleVersion } from '@shared/types/reporting-group.types';
+import type { ReportingGroup } from '@shared/types/reporting-group.types';
+import type { BoardResponse } from '@shared/types/board.types';
 import { calculateWorkingDays } from '@shared/utils/working-days.util';
 import * as repo from './reports.repository';
 
@@ -168,7 +172,35 @@ function extractMeetingSPFromIssue(issue: JiraIssueEntity): number {
   }, 0);
 }
 
-function processRawData(
+export function resolveReportMemberGroups(
+  members: MemberResponse[],
+  boards: BoardResponse[],
+): Map<string, ReportingGroup> {
+  return new Map(members.map(member => {
+    const groups = member.teams.map(team => {
+      const board = boards.find(candidate => candidate.shortName.toLowerCase() === team.toLowerCase());
+      return reportingGroupService.resolveBoardGroup(board);
+    });
+    return [member.fullName, reportingGroupService.resolveMemberGroup(groups)] as const;
+  }));
+}
+
+async function reportMemberRuleVersions(
+  memberGroups: ReadonlyMap<string, ReportingGroup>,
+  date: string,
+): Promise<Map<string, RuleVersion | undefined>> {
+  const ruleVersionsByGroup = new Map(await Promise.all(
+    [...new Set(memberGroups.values())].map(async group => {
+      const rule = await reportingGroupService.resolveRule(group, date.slice(0, 7));
+      return [group, rule.ruleVersion === 'issue-field-presence' ? undefined : rule.ruleVersion] as const;
+    }),
+  ));
+  return new Map(
+    [...memberGroups].map(([memberName, group]) => [memberName, ruleVersionsByGroup.get(group)]),
+  );
+}
+
+export function processRawData(
   rawData: JiraIssueEntity[],
   members: MemberResponse[],
   sprintDetails?: { startDate: string; endDate: string } | null,
@@ -180,6 +212,7 @@ function processRawData(
   >[1],
   dailyTargetWPByLevel: Record<string, number> = DEFAULT_DAILY_TARGET_WP,
   projectList?: string[],
+  memberRuleVersions?: ReadonlyMap<string, RuleVersion | undefined>,
 ): JiraIssueReportResponseDto[] {
   const isMultiProject = projectList && projectList.length > 1;
 
@@ -253,6 +286,7 @@ function processRawData(
       const strategies = issueProcessingStrategyFactory.createStrategies(
         issue,
         wpWeights,
+        memberRuleVersions?.get(memberName),
       );
       const weightPoints =
         strategies.issueCategorizer.getWeightPointsCategory(issue);
@@ -555,6 +589,7 @@ async function buildPlannedWPMap(
   plannedWPProjects: string[],
   isSubtaskType: boolean,
   isMultiProject: boolean,
+  memberRuleVersions: ReadonlyMap<string, RuleVersion | undefined>,
   wpWeights?: Parameters<
     typeof issueProcessingStrategyFactory.createStrategies
   >[1],
@@ -588,6 +623,7 @@ async function buildPlannedWPMap(
         const strategies = issueProcessingStrategyFactory.createStrategies(
           issue,
           wpWeights,
+          memberRuleVersions.get(memberName),
         );
         const weight =
           strategies.complexityWeightStrategy.calculateWeight(issue);
@@ -629,6 +665,7 @@ export async function generateReport(
     .split(',')
     .map(p => p.trim())
     .filter(Boolean);
+  const memberGroups = resolveReportMemberGroups(members, allBoards);
   const isShowPlannedWP = allBoards.some(
     b =>
       b.isShowPlannedWP &&
@@ -682,6 +719,7 @@ export async function generateReport(
     await wpWeightConfigService.getEffectiveWeights(effectiveDateStr);
   const dailyTargetWPByLevel =
     await targetWpConfigService.getEffectiveRates(effectiveDateStr);
+  const memberRuleVersions = await reportMemberRuleVersions(memberGroups, effectiveDateStr);
   const teamReport = processRawData(
     rawData,
     members,
@@ -692,6 +730,7 @@ export async function generateReport(
     wpWeights,
     dailyTargetWPByLevel,
     projectList,
+    memberRuleVersions,
   );
 
   const plannedWPShortNames = allBoards
@@ -708,6 +747,7 @@ export async function generateReport(
       plannedWPProjects,
       isSubtaskType,
       isMultiProject,
+      memberRuleVersions,
       wpWeights,
     );
     teamReport.forEach(report => {
@@ -729,19 +769,28 @@ export async function generateReportByDateRange(
   project: string,
   epicId?: string,
 ): Promise<GetReportResponseDto> {
-  const allMembers = await membersService.findAll();
+  const step = async <T>(name: string, run: () => Promise<T>): Promise<T> => {
+    const start = Date.now();
+    try {
+      return await run();
+    } finally {
+      console.log(`[telemetry] report-by-date-range step=${name} durationMs=${Date.now() - start} project=${project} startDate=${startDate}`);
+    }
+  };
+  const allMembers = await step('members', () => membersService.findAll());
   const members = filterMembersByProject(allMembers, project).filter(
     m => !m.isLead,
   );
+  const memberGroups = resolveReportMemberGroups(members, await step('boards', () => boardsService.findAll()));
   const assignees = members.map(m => m.jiraId!).filter(Boolean);
-  const isSubtaskType = await boardsService.hasSubtaskType(project);
-  let rawData = await repo.fetchRawDataByDateRange(
+  const isSubtaskType = await step('hasSubtaskType', () => boardsService.hasSubtaskType(project));
+  let rawData = await step('fetchRawData', () => repo.fetchRawDataByDateRange(
     project,
     assignees,
     startDate,
     endDate,
     isSubtaskType,
-  );
+  ));
   if (epicId) {
     const epicIds = epicId.split(',');
     rawData = rawData.filter(issue => {
@@ -751,14 +800,17 @@ export async function generateReportByDateRange(
       );
     });
   }
-  const leaveData = await fetchLeaveData(startDate, endDate, members);
-  const nationalHolidays = await holidaysService.getNationalHolidays(
-    parseLocalDate(startDate),
-    parseLocalDate(endDate),
-  );
-  const wpWeights = await wpWeightConfigService.getEffectiveWeights(startDate);
-  const dailyTargetWPByLevel =
-    await targetWpConfigService.getEffectiveRates(startDate);
+  const [leaveData, nationalHolidays, wpWeights, dailyTargetWPByLevel, memberRuleVersions] =
+    await Promise.all([
+      step('leave', () => fetchLeaveData(startDate, endDate, members)),
+      step('holidays', () => holidaysService.getNationalHolidays(
+        parseLocalDate(startDate),
+        parseLocalDate(endDate),
+      )),
+      step('wpWeights', () => wpWeightConfigService.getEffectiveWeights(startDate)),
+      step('targetRates', () => targetWpConfigService.getEffectiveRates(startDate)),
+      step('ruleVersions', () => reportMemberRuleVersions(memberGroups, startDate)),
+    ]);
   const dateRangeProjectList = project
     .split(',')
     .map(p => p.trim())
@@ -773,6 +825,7 @@ export async function generateReportByDateRange(
     wpWeights,
     dailyTargetWPByLevel,
     dateRangeProjectList,
+    memberRuleVersions,
   );
   return summarizeTeamReport(
     teamReport,
@@ -973,6 +1026,7 @@ export async function generateOpenSprintReport(
     m =>
       m.teams.some(t => t.toLowerCase() === project.toLowerCase()) && !m.isLead,
   );
+  const memberGroups = resolveReportMemberGroups(members, await boardsService.findAll());
   const assignees = members.map(m => m.jiraId!).filter(Boolean);
   const isSubtaskType = await boardsService.hasSubtaskType(project);
   const rawData = await repo.fetchOpenSprintData(
@@ -994,6 +1048,7 @@ export async function generateOpenSprintReport(
   );
   const dailyTargetWPByLevel =
     await targetWpConfigService.getEffectiveRates(start);
+  const memberRuleVersions = await reportMemberRuleVersions(memberGroups, start);
   const teamReport = processRawData(
     rawData,
     members,
@@ -1003,6 +1058,8 @@ export async function generateOpenSprintReport(
     false,
     undefined,
     dailyTargetWPByLevel,
+    undefined,
+    memberRuleVersions,
   );
   const report = summarizeTeamReport(
     teamReport,

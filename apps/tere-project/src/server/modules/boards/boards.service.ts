@@ -4,10 +4,10 @@ import { MemoryCache } from '@server/lib/cache';
 
 const CACHE_KEY = 'all_boards';
 
-class BoardsService {
+export class BoardsService {
   private cache = new MemoryCache(60 * 60 * 1000); // 60 minutes
 
-  constructor(private readonly repository: BoardsRepository) {}
+  constructor(private readonly repository: Pick<BoardsRepository, 'findAll'>) {}
 
   async findAll(): Promise<BoardResponse[]> {
     const cached = this.cache.get<BoardResponse[]>(CACHE_KEY);
@@ -24,8 +24,11 @@ class BoardsService {
       isShowPlannedWP: e.isShowPlannedWP,
       isBugMonitoring: e.isBugMonitoring,
       bugIssueType: e.bugIssueType,
+      bugJql: e.bugJql,
       isStoryGrouping: e.isStoryGrouping,
       kanbanCycleStartDate: e.kanbanCycleStartDate,
+      reportingGroup: e.reportingGroup,
+      reportingBoardLeadEmail: e.reportingBoardLeadEmail,
     }));
     this.cache.set(CACHE_KEY, result);
     return result;

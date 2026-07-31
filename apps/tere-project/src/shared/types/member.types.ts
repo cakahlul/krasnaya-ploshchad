@@ -9,6 +9,8 @@ export interface MemberEntity {
   level: Level;
   teams: string[];
   isLead?: boolean;
+  joinDate: string;
+  resignDate?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,6 +24,8 @@ export interface MemberResponse {
   level: Level;
   teams: string[];
   isLead?: boolean;
+  joinDate: string;
+  resignDate: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -34,6 +38,10 @@ export interface CreateMemberRequest {
   level: Level;
   teams: string[];
   isLead?: boolean;
+  /** ISO `YYYY-MM-DD`. Archive aggregation excludes months before this date. */
+  joinDate?: string;
+  /** ISO `YYYY-MM-DD`, or null while the member is still active. */
+  resignDate?: string | null;
 }
 
 export interface UpdateMemberRequest {
@@ -44,4 +52,6 @@ export interface UpdateMemberRequest {
   level?: Level;
   teams?: string[];
   isLead?: boolean;
+  joinDate?: string;
+  resignDate?: string | null;
 }

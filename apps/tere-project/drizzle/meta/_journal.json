@@ -64,6 +64,41 @@
       "when": 1783936730514,
       "tag": "0008_config_audit_log_allow_update",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785227599000,
+      "tag": "0009_reporting_group_and_archive",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785398400000,
+      "tag": "0010_bug_project_jql",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1785402000000,
+      "tag": "0011_member_lifecycle",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1785403000000,
+      "tag": "0012_productivity_archive_working_days",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1785404000000,
+      "tag": "0013_productivity_archive_sp_target",
+      "breakpoints": true
     }
   ]
 }

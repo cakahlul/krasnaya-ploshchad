@@ -142,6 +142,21 @@ compile-time type masih bohong. Reviewer WAJIB grep literal union lama (`'create
 lintas repo (BE dan FE) begitu liat migration nambah enum value, bukan cuma cek file yang executor
 sebut di scope-nya.
 
+## Drizzle migration must match schema source
+
+**Kategori**: migration/schema drift.
+
+**Deskripsi**: Tambah SQL migration + `_journal.json` tanpa update
+`src/server/db/schema.ts` membuat Drizzle source-of-truth tertinggal dari production schema.
+Migration berikutnya yang dijalankan lewat `drizzle-kit generate` bisa mencoba membuat ulang
+kolom/tabel/constraint yang sudah ada, dan application/repository work tidak punya typed mapping
+yang sesuai.
+
+**Cara benar**: setiap Drizzle migration yang menambah/mengubah object harus update schema.ts
+yang merepresentasikan object tersebut dalam change yang sama, atau jangan journal sebagai Drizzle
+migration sampai mapping itu siap. Reviewer wajib bandingkan tiap DDL object dengan schema.ts dan
+perintah release (`drizzle-kit generate`/`migrate`), bukan cuma validasi SQL syntax.
+
 ## Render performance / correctness — recursive tree render needs multi-node cycle guard
 - Category: render safety (client tree building)
 - Seen: epic-explorer buildTree.ts (SLS-16806). Single-node self-cycle guarded via `attached` Set, but a 2-node parentKey cycle (A→B, B→A) would attach A under B AND B under A, producing a cyclic object graph. A recursive renderer (MobileCards) over that graph infinite-loops / stack-overflows.
@@ -151,3 +166,32 @@ sebut di scope-nya.
 - Category: Security / Broken Access Control (OWASP A01)
 - Seen in: epic-explorer.service.getEpicDetail — access check ran on `project` query param, but the fetched resource was identified by `epicKey` (which encodes its OWN project). A caller could pass a project they DO have access to while requesting an `epicKey` from a project they do NOT, leaking the epic header (summary/description/assignee/dates).
 - Correct way: when a resource id already encodes its scope (e.g. Jira issue key `PROJ-123`), derive the scope FROM the id (`projectOf(epicKey)`) and authorize on that. Never trust a separate client-supplied scope param that can disagree with the resource id. If both are accepted, validate they match before the access check.
+
+## Partial fanout must preserve successful aggregate values
+
+- Category: partial failure aggregation / coverage semantics.
+- Seen in: productivity-summary Group bug-board fanout (SLS-17149). One rejected Group changed the whole month's `bugsRaised` to `null`, discarding successful Group counts even though coverage named the failed Group.
+- Correct way: aggregate every fulfilled result, retain that partial number, and separately record failures/coverage. Use `null` only when no value is available at all; never turn a partial success into either zero or wholly unavailable.
+
+## Test coverage: hardcoded-color-literal checks must scan the whole source, not just the attribute
+- Category: test-quality / theming consistency
+- Symptom: a "no hardcoded hex color" test asserted `doesNotMatch(source, /stroke="#ef4444"/)`. This
+  passes trivially if the hex is hoisted into a local constant (`const BUG_LINE_COLOR = '#ef4444'`)
+  and referenced via `stroke={BUG_LINE_COLOR}` — the literal never appears inside a `stroke="..."`
+  string, so the regex misses it while the color is still unthemed.
+- Correct way: assert against the whole file for any hex literal (`/#[0-9a-fA-F]{3,8}/`), with a
+  narrow, exact-string carve-out for accepted codebase-wide conventions (e.g. `color: '#fff'` on
+  solid-accent buttons) rather than a pattern scoped to one JSX attribute. Verify the carve-out is an
+  exact match, not a broad regex, and confirm the exempted pattern really is used elsewhere in the
+  codebase before accepting it.
+
+## New test files under src/server/ still require feature-index.md update
+- Category: steering-doc discipline / repo convention compliance.
+- Seen in: SLS-17306 (productivity-summary telemetry). A brand-new file
+  `productivity-summary-range-telemetry.test.ts` was added under `src/server/modules/reports/`, but
+  `.claude/steering/feature-index.md` was not updated to list it. Executors tend to treat "just a test
+  file" as exempt from the steering-update rule, but CLAUDE.md's table has no test-file carve-out —
+  ANY new/moved/renamed/deleted file under `src/server/` (etc.) requires the index update.
+- Correct way: reviewers must diff `git status --porcelain` / `git diff --stat` against
+  `feature-index.md` for every task and flag as Important if a new/moved/deleted server file isn't
+  reflected, even when the file itself is "just" a test.
