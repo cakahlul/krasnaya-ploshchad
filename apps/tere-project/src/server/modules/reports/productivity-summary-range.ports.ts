@@ -12,15 +12,31 @@ import type { MemberResponse } from '@shared/types/member.types';
 import { generateProductivitySummaryBoard, type ProductivitySummaryMemberDto } from './productivity-summary.service';
 import type { MonthSourceResult, RangeAggregationPorts, ReportingGroup, RuleVersion, SourceMember } from './productivity-summary-range.service';
 
+export function createSingleFlight<K, V>(run: (key: K) => Promise<V>) {
+  const inFlight = new Map<K, Promise<V>>();
+  return (key: K): Promise<V> => {
+    const existing = inFlight.get(key);
+    if (existing) return existing;
+    const pending = run(key).finally(() => inFlight.delete(key));
+    inFlight.set(key, pending);
+    return pending;
+  };
+}
+
+// Every month in a range asks for its own coverage row and the watermark, so a 19-month request
+// issued 19+ single-row reads of a table that holds one row per archived month. Read it whole once
+// and answer both from that snapshot. Shared only while in flight, so an import is never masked.
+const loadCoverageSnapshot = createSingleFlight(async (_: 'all') =>
+  db.select().from(productivityArchiveCoverage).orderBy(desc(productivityArchiveCoverage.archivedMonth)),
+);
+
 const archiveRepository: ProductivityArchiveRepository = {
   async getWatermark() {
-    const [row] = await db.select({ month: productivityArchiveCoverage.archivedMonth })
-      .from(productivityArchiveCoverage).orderBy(desc(productivityArchiveCoverage.archivedMonth)).limit(1);
-    return row?.month ?? null;
+    const [row] = await loadCoverageSnapshot('all');
+    return row?.archivedMonth ?? null;
   },
   async findCoverage(month) {
-    const [row] = await db.select().from(productivityArchiveCoverage)
-      .where(eq(productivityArchiveCoverage.archivedMonth, month)).limit(1);
+    const row = (await loadCoverageSnapshot('all')).find(item => item.archivedMonth === month);
     return row ? { archivedMonth: row.archivedMonth, importBatchId: row.importBatchId, rowCount: row.rowCount } : null;
   },
   async findRows(month, importBatchId) {
@@ -220,17 +236,6 @@ const bugRepository = new BugMonitoringRepository();
 // per month in memory. Sharing the in-flight promise collapses those identical fetches into one
 // without caching anything: the entry lives only while the request is outstanding, so a later
 // request always re-reads Jira.
-export function createSingleFlight<K, V>(run: (key: K) => Promise<V>) {
-  const inFlight = new Map<K, Promise<V>>();
-  return (key: K): Promise<V> => {
-    const existing = inFlight.get(key);
-    if (existing) return existing;
-    const pending = run(key).finally(() => inFlight.delete(key));
-    inFlight.set(key, pending);
-    return pending;
-  };
-}
-
 const fetchBugsOnce = createSingleFlight((boardId: number) =>
   bugRepository.fetchBugsByBoard(boardId),
 );
