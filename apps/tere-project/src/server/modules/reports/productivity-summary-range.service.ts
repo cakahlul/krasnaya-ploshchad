@@ -56,11 +56,99 @@ function addAvailable(left: number | null, right: number | null): number | null 
   return left === null || right === null ? null : left + right;
 }
 
+type LoadedMonth = {
+  month: string;
+  data: { members?: readonly SourceMember[] } | null;
+  bugsRaised: number | null;
+  bugsTotal: number | null;
+  bugsDone: number | null;
+  coverage: { source: MonthSource; productivityAvailable: boolean };
+};
+
+function chartPoint(month: LoadedMonth, metricBasis: MetricBasis) {
+  const availableMembers = month.coverage.productivityAvailable ? month.data?.members ?? [] : null;
+  const values = (availableMembers ?? []).map((member) =>
+    metricBasis === "SP" ? member.spTotal : member.wpTotal,
+  );
+  const spTarget = availableMembers && availableMembers.every(member => member.spTarget !== null && member.spTarget !== undefined)
+    ? availableMembers.reduce((sum, member) => sum + (member.spTarget ?? 0), 0)
+    : null;
+  const spTotal = availableMembers && availableMembers.every(member => member.spTotal !== null)
+    ? availableMembers.reduce((sum, member) => sum + (member.spTotal ?? 0), 0)
+    : null;
+  return {
+    month: month.month,
+    activeMembers: availableMembers
+      ? new Set(availableMembers.map((member) => member.id)).size
+      : null,
+    productivityMetric:
+      availableMembers && values.every((value) => value !== null)
+        ? (values as number[]).reduce((sum, value) => sum + value, 0)
+        : null,
+    productivityPercent: spTotal !== null && spTarget !== null && spTarget > 0
+      ? (spTotal / spTarget) * 100
+      : null,
+    bugsRaised: month.bugsRaised,
+    bugsTotal: month.bugsTotal,
+    bugsDone: month.bugsDone,
+    source: month.coverage.source,
+    metricBasis,
+  };
+}
+
+export type RangeProgressEvent =
+  | { type: "point"; completed: number; total: number; point: ReturnType<typeof chartPoint> }
+  | { type: "month"; completed: number; total: number; month: string; source: MonthSource };
+
+/**
+ * Emits a chart point per month as it resolves, but only once the metric basis is settled — a
+ * single archived month forces the whole range to SP, so publishing a WP point before that is
+ * known would mix two units under one label. Months that resolve before the basis is decided are
+ * announced without values and their points flushed as soon as it is.
+ */
+function createProgressPublisher(
+  requestedBasis: MetricBasis,
+  total: number,
+  emit: (event: RangeProgressEvent) => void,
+) {
+  const pending: LoadedMonth[] = [];
+  let basis: MetricBasis | null = null;
+  let completed = 0;
+
+  const flush = () => {
+    if (basis === null) return;
+    for (const month of pending.splice(0)) {
+      emit({ type: "point", completed, total, point: chartPoint(month, basis) });
+    }
+  };
+
+  return {
+    publish(month: LoadedMonth) {
+      completed += 1;
+      if (basis === null && month.coverage.source === "archive") basis = "SP";
+      pending.push(month);
+      if (basis === null) {
+        emit({ type: "month", completed, total, month: month.month, source: month.coverage.source });
+        return;
+      }
+      flush();
+    },
+    settle(finalBasis: MetricBasis) {
+      basis = finalBasis;
+      flush();
+    },
+  };
+}
+
 export async function generateProductivitySummaryRange(
   input: RangeAggregationInput,
   ports: RangeAggregationPorts,
+  onProgress?: (event: RangeProgressEvent) => void,
 ) {
   const rangeStart = Date.now();
+  const publisher = onProgress
+    ? createProgressPublisher(input.metricBasis, input.months.length, onProgress)
+    : null;
   const loaded = await Promise.all(
     input.months.map(async (month) => {
       const monthStart = Date.now();
@@ -109,7 +197,7 @@ export async function generateProductivitySummaryRange(
       console.log(
         `[telemetry] productivity-summary-range month durationMs=${Date.now() - monthStart} month=${month} source=${source}`,
       );
-      return {
+      const resolved = {
         month,
         data: monthData,
         bugsTotal: fulfilledBugs.length
@@ -130,6 +218,8 @@ export async function generateProductivitySummaryRange(
           failures,
         },
       };
+      publisher?.publish(resolved);
+      return resolved;
     }),
   );
 
@@ -137,6 +227,7 @@ export async function generateProductivitySummaryRange(
     month.data?.source === "archive" || month.data?.archiveBacked === true,
   );
   const metricBasis: MetricBasis = hasArchive ? "SP" : input.metricBasis;
+  publisher?.settle(metricBasis);
   const members = new Map<
     string,
     {
@@ -185,36 +276,7 @@ export async function generateProductivitySummaryRange(
   const fullDetails = [...members.values()]
     .map((member) => ({ ...member, boards: [...member.boards].sort() }))
     .sort((a, b) => a.name.localeCompare(b.name));
-  const chart = loaded.map((month) => {
-    const availableMembers = month.coverage.productivityAvailable ? month.data?.members ?? [] : null;
-    const values = (availableMembers ?? []).map((member) =>
-      metricBasis === "SP" ? member.spTotal : member.wpTotal,
-    );
-    const spTarget = availableMembers && availableMembers.every(member => member.spTarget !== null && member.spTarget !== undefined)
-      ? availableMembers.reduce((sum, member) => sum + (member.spTarget ?? 0), 0)
-      : null;
-    const spTotal = availableMembers && availableMembers.every(member => member.spTotal !== null)
-      ? availableMembers.reduce((sum, member) => sum + (member.spTotal ?? 0), 0)
-      : null;
-    return {
-      month: month.month,
-      activeMembers: availableMembers
-        ? new Set(availableMembers.map((member) => member.id)).size
-        : null,
-      productivityMetric:
-        availableMembers && values.every((value) => value !== null)
-          ? (values as number[]).reduce((sum, value) => sum + value, 0)
-          : null,
-      productivityPercent: spTotal !== null && spTarget !== null && spTarget > 0
-        ? (spTotal / spTarget) * 100
-        : null,
-      bugsRaised: month.bugsRaised,
-      bugsTotal: month.bugsTotal,
-      bugsDone: month.bugsDone,
-      source: month.coverage.source,
-      metricBasis,
-    };
-  });
+  const chart = loaded.map((month) => chartPoint(month, metricBasis));
   const sourceDistribution = loaded.reduce<Record<MonthSource, number>>((acc, month) => {
     acc[month.coverage.source] = (acc[month.coverage.source] ?? 0) + 1;
     return acc;

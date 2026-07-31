@@ -21,6 +21,8 @@ export interface ProductivitySummaryHttpDependencies {
 
 type SummaryCaller = Pick<CallerIdentity, 'isLead' | 'fullName'>;
 const GROUPS: readonly ReportingGroup[] = ['Loan', 'Transaction', 'User', 'Ungrouped'];
+export const NDJSON_MEDIA_TYPE = 'application/x-ndjson';
+const BASIS_CONFLICT = 'metricBasis WP is unavailable for archive or mixed ranges';
 
 function legacyForCaller(data: ProductivitySummaryResponseDto, caller?: SummaryCaller) {
   if (!caller || caller.isLead || !caller.fullName) return data;
@@ -81,20 +83,88 @@ async function handleProductivitySummaryGetInner(
   const options = parseCanonicalProductivitySummaryOptions(params);
   if (!options.ok) return Response.json({ message: options.message }, { status: 400 });
 
-  const data = await generateProductivitySummaryRange({
+  const input = {
     months: parsed.value.months,
     selectedGroups: options.groups,
     metricBasis: options.metricBasis,
-  }, dependencies.rangePorts);
-  if (options.metricBasis === 'WP' && data.metricBasis === 'SP') {
-    return Response.json({ message: 'metricBasis WP is unavailable for archive or mixed ranges' }, { status: 400 });
+  };
+
+  if (req.headers.get('accept')?.includes(NDJSON_MEDIA_TYPE)) {
+    return streamCanonical(input, options.metricBasis, caller, dependencies);
   }
-  if (caller?.isLead) return Response.json(data);
+
+  const data = await generateProductivitySummaryRange(input, dependencies.rangePorts);
+  if (options.metricBasis === 'WP' && data.metricBasis === 'SP') {
+    return Response.json({ message: BASIS_CONFLICT }, { status: 400 });
+  }
+  return Response.json(canonicalForCaller(data, caller));
+}
+
+type CanonicalRange = Awaited<ReturnType<typeof generateProductivitySummaryRange>>;
+
+function canonicalForCaller(data: CanonicalRange, caller?: SummaryCaller) {
+  if (caller?.isLead) return data;
   const { chart: _chart, ...memberData } = data;
-  return Response.json({
+  return {
     ...memberData,
     details: caller?.fullName
       ? data.details.filter(item => item.name === caller.fullName)
       : [],
+  };
+}
+
+/**
+ * Same URL and same params as the JSON response — only clients that ask for NDJSON get the stream,
+ * so legacy callers and the MCP tool are untouched. Months are published as they resolve so an
+ * archive-heavy range paints long before a live month finishes.
+ */
+function streamCanonical(
+  input: Parameters<typeof generateProductivitySummaryRange>[0],
+  requestedBasis: MetricBasis,
+  caller: SummaryCaller | undefined,
+  dependencies: ProductivitySummaryHttpDependencies,
+): Response {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (event: unknown) =>
+        controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+      try {
+        const data = await generateProductivitySummaryRange(input, dependencies.rangePorts, (event) => {
+          // A non-Lead caller never receives the chart, so they get progress without values.
+          if (!caller?.isLead) {
+            send(event.type === 'month'
+              ? event
+              : {
+                type: 'month',
+                completed: event.completed,
+                total: event.total,
+                month: event.point.month,
+                source: event.point.source,
+              });
+            return;
+          }
+          // The request is about to fail the basis check; publishing SP points under a WP request
+          // would put two units on one axis before the error lands.
+          if (requestedBasis === 'WP' && event.type === 'point' && event.point.metricBasis === 'SP') return;
+          send(event);
+        });
+        send(requestedBasis === 'WP' && data.metricBasis === 'SP'
+          ? { type: 'error', status: 400, message: BASIS_CONFLICT }
+          : { type: 'complete', data: canonicalForCaller(data, caller) });
+      } catch (error) {
+        console.error('productivity summary stream failed:', error);
+        send({ type: 'error', status: 500, message: 'Unable to build the productivity summary.' });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+  return new Response(stream, {
+    headers: {
+      'content-type': `${NDJSON_MEDIA_TYPE}; charset=utf-8`,
+      'cache-control': 'no-store',
+      'x-accel-buffering': 'no',
+    },
   });
 }
