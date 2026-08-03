@@ -74,7 +74,6 @@ function summaryPorts(months: Record<string, { spTotal: number; spTarget: number
         workingDays: months[month].spTarget / SP_PER_WORKING_DAY,
       }],
     }),
-    loadBugCount: async () => 0,
   };
 }
 
@@ -115,8 +114,7 @@ test('a WP basis leaves the headline percentage SP-based rather than mixing unit
         failures: [],
         members: [{ id: 'a', name: 'A', group: 'User', board: 'SLS', boards: ['SLS'], spTotal: 80, wpTotal: 10, spTarget: 160, workingDays: 20 }],
       }),
-      loadBugCount: async () => 0,
-    },
+      },
   );
 
   assert.equal(result.metricBasis, 'WP');

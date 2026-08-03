@@ -15,7 +15,6 @@ const rangeData: ProductivitySummaryRangeResponse = {
 };
 const unusedPorts: RangeAggregationPorts = {
   loadMonth: async () => { throw new Error('unused'); },
-  loadBugCount: async () => { throw new Error('unused'); },
 };
 
 async function verify() {

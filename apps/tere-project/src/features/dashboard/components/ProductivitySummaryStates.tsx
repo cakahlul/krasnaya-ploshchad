@@ -22,7 +22,6 @@ interface ProductivitySummaryChartPoint {
   spTotal?: number | null;
   spTarget?: number | null;
   workingDays?: number | null;
-  bugsTotal?: number | null;
   bugsDone?: number | null;
   bugsRaised: number | null;
 }
@@ -46,7 +45,6 @@ export interface CanonicalProductivitySummary {
     activeMembers: number;
     productivityMetric: number | null;
     productivityPercent?: number | null;
-    bugsTotal?: number | null;
     bugsDone?: number | null;
     bugsRaised: number | null;
   };
@@ -282,7 +280,7 @@ export function ProductivitySummaryComparisonChart({
           Monthly comparison
         </h3>
         <p id="productivity-summary-comparison-description" style={{ color: 'var(--tere-sub)', fontSize: 12, margin: '4px 0 12px' }}>
-          Active members, productivity percentage, total active bugs, bugs raised, and bugs done in month. Missing source values remain gaps.
+          Active members, productivity percentage, bugs raised, and bugs done in month. Missing source values remain gaps.
         </p>
       </figcaption>
       <div style={{ minWidth: 0, overflowX: 'auto' }}>
@@ -303,8 +301,7 @@ export function ProductivitySummaryComparisonChart({
               <Legend wrapperStyle={{ color: 'var(--tere-sub)', fontSize: 12 }} />
               <Line yAxisId="count" dataKey="activeMembers" name="Active members" stroke="var(--color-accent)" strokeWidth={2} connectNulls={false} />
               <Line yAxisId="productivity" dataKey="productivityPercent" name="Productivity %" stroke="var(--color-accent-light)" strokeWidth={2} connectNulls={false} />
-              <Line yAxisId="count" dataKey="bugsTotal" name="Total bugs" stroke="var(--tere-status-danger)" strokeWidth={2} connectNulls={false} />
-              <Line yAxisId="count" dataKey="bugsRaised" name="Bugs raised" stroke="var(--tere-status-warning)" strokeDasharray="2 3" strokeWidth={2} connectNulls={false} />
+              <Line yAxisId="count" dataKey="bugsRaised" name="Bugs raised" stroke="var(--tere-status-danger)" strokeDasharray="2 3" strokeWidth={2} connectNulls={false} />
               <Line yAxisId="count" dataKey="bugsDone" name="Bugs done" stroke="var(--tere-status-success)" strokeWidth={2} connectNulls={false} />
             </LineChart>
           </ResponsiveContainer>
@@ -313,7 +310,7 @@ export function ProductivitySummaryComparisonChart({
       <table className="sr-only">
         <caption>Monthly comparison values; N/A means source data is unavailable.</caption>
         <thead>
-          <tr><th>Month</th><th>Active members</th><th>Productivity %</th><th>Total bugs</th><th>Bugs raised</th><th>Bugs done</th></tr>
+          <tr><th>Month</th><th>Active members</th><th>Productivity %</th><th>Bugs raised</th><th>Bugs done</th></tr>
         </thead>
         <tbody>
           {points.map(point => (
@@ -321,7 +318,6 @@ export function ProductivitySummaryComparisonChart({
               <th scope="row">{point.month}</th>
               <td>{value(point.activeMembers)}</td>
               <td>{value(point.productivityPercent ?? null)}</td>
-              <td>{value(point.bugsTotal ?? null)}</td>
               <td>{value(point.bugsRaised)}</td>
               <td>{value(point.bugsDone ?? null)}</td>
             </tr>

@@ -2,7 +2,7 @@ import { and, desc, eq } from 'drizzle-orm';
 import { productivityArchiveCoverage, productivityArchiveDeveloperSprint } from '@server/db/schema';
 import { db } from '@server/lib/db';
 import { boardsService } from '@server/modules/boards/boards.service';
-import { BugMonitoringRepository, countActiveBugsAtMonthEnd } from '@server/modules/bug-monitoring/bug-monitoring.repository';
+import { BugMonitoringRepository } from '@server/modules/bug-monitoring/bug-monitoring.repository';
 import { routeProductivityMonth, type ArchiveDeveloperSprint, type ProductivityArchiveRepository } from '@server/modules/productivity-archive/productivity-archive';
 import { reportingGroupService } from '@server/modules/reporting-groups/reporting-group.service';
 import { membersService } from '@server/modules/members/members.service';
@@ -211,15 +211,6 @@ export function createProductivitySummaryRangePorts(deps: Dependencies): RangeAg
         members: [...members.values()],
         failures,
       };
-    },
-    async loadBugCount(month, group) {
-      const start = Date.now();
-      const boards = (await deps.findBoards()).filter(board => board.isBugMonitoring && (board.reportingGroup ?? 'Ungrouped') === group);
-      const monthEnd = new Date(`${month}-01T00:00:00Z`);
-      monthEnd.setUTCMonth(monthEnd.getUTCMonth() + 1, 0);
-      const bugs = await Promise.all(boards.map(board => deps.fetchBugs(board.boardId)));
-      console.log(`[telemetry] productivity-summary-range bug-board-call fn=loadBugCount durationMs=${Date.now() - start} month=${month} group=${group} boardCount=${boards.length}`);
-      return bugs.reduce((total, boardBugs) => total + countActiveBugsAtMonthEnd(boardBugs, monthEnd.toISOString().slice(0, 10)), 0);
     },
     async loadBugRaisedCount(month, group) {
       const start = Date.now();
