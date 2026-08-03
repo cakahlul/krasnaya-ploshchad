@@ -1,6 +1,7 @@
 import { and, desc, eq } from 'drizzle-orm';
 import { productivityArchiveCoverage, productivityArchiveDeveloperSprint } from '@server/db/schema';
 import { db } from '@server/lib/db';
+import { MemoryCache } from '@server/lib/cache';
 import { boardsService } from '@server/modules/boards/boards.service';
 import { BugMonitoringRepository } from '@server/modules/bug-monitoring/bug-monitoring.repository';
 import { routeProductivityMonth, type ArchiveDeveloperSprint, type ProductivityArchiveRepository } from '@server/modules/productivity-archive/productivity-archive';
@@ -231,18 +232,55 @@ export function createProductivitySummaryRangePorts(deps: Dependencies): RangeAg
 
 const bugRepository = new BugMonitoringRepository();
 
+/**
+ * Stale-while-revalidate: a cache hit returns immediately, and past `staleAfterMs` also kicks off
+ * a background refetch (single-flighted, errors swallowed) that patches the cache for whoever asks
+ * next. Nobody waits on Jira unless the key has never been fetched before or has gone a full
+ * `ttlMs` without anyone asking for it at all.
+ */
+function createStaleWhileRevalidate<T>(ttlMs: number, staleAfterMs: number, fetcher: (key: string) => Promise<T>) {
+  const cache = new MemoryCache(ttlMs);
+  const refresh = createSingleFlight(async (key: string) => {
+    const data = await fetcher(key);
+    cache.set(key, { data, fetchedAt: Date.now() });
+    return data;
+  });
+  return async (key: string): Promise<T> => {
+    const cached = cache.get<{ data: T; fetchedAt: number }>(key);
+    if (!cached) return refresh(key);
+    if (Date.now() - cached.fetchedAt > staleAfterMs) {
+      refresh(key).catch(error => console.log(`[telemetry] productivity-summary-range background-refresh-failed key=${key} reason=${error instanceof Error ? error.message : 'unknown'}`));
+    }
+    return cached.data;
+  };
+}
+
 // A range request asks every month for the same unfiltered board bug history, then filters it
-// per month in memory. Sharing the in-flight promise collapses those identical fetches into one
-// without caching anything: the entry lives only while the request is outstanding, so a later
-// request always re-reads Jira.
-const fetchBugsOnce = createSingleFlight((boardId: number) =>
-  bugRepository.fetchBugsByBoard(boardId),
+// per month in memory. Cached for an hour, revalidated in the background every 30 minutes so a
+// user always gets an instant answer while the count still catches up to Jira soon after.
+const fetchBugsSWR = createStaleWhileRevalidate<JiraBugEntity[]>(
+  60 * 60 * 1000,
+  30 * 60 * 1000,
+  boardId => bugRepository.fetchBugsByBoard(Number(boardId)),
+);
+const fetchBugsOnce = (boardId: number) => fetchBugsSWR(String(boardId));
+
+// Same story for live-month board data: the sprint report behind a given (board, month) doesn't
+// change once the month is over, and even the current month is fine served slightly stale while
+// a background refresh catches it up.
+const loadBoardSWR = createStaleWhileRevalidate<ProductivitySummaryMemberDto[]>(
+  60 * 60 * 1000,
+  30 * 60 * 1000,
+  key => {
+    const [year, month, shortName] = key.split(':');
+    return generateProductivitySummaryBoard(Number(month), Number(year), shortName);
+  },
 );
 
 export const productivitySummaryRangePorts = createProductivitySummaryRangePorts({
   findBoards: () => boardsService.findAll(),
   findMembers: () => membersService.findAll(),
-  loadBoard: generateProductivitySummaryBoard,
+  loadBoard: (month, year, shortName) => loadBoardSWR(`${year}:${month}:${shortName}`),
   routeMonth: month => routeProductivityMonth(`${month}-01`, archiveRepository),
   fetchBugs: fetchBugsOnce,
   resolveRule: (group, month) => reportingGroupService.resolveRule(group, month),
