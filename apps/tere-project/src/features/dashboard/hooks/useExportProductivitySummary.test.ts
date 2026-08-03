@@ -14,7 +14,6 @@ import type { RangeAggregationPorts } from '@server/modules/reports/productivity
 // productivity-summary-export-http.test.ts / productivity-summary-export.test.ts.
 const unusedPorts: RangeAggregationPorts = {
   loadMonth: async () => { throw new Error('unused'); },
-  loadBugCount: async () => { throw new Error('unused'); },
 };
 
 test('fully live range: export payload and Sheet values match canonical API response', async () => {
@@ -39,12 +38,12 @@ test('fully live range: export payload and Sheet values match canonical API resp
         failures: [],
       }],
     },
-    summary: { activeMembers: 2, productivityMetric: 40, bugsTotal: 5, bugsRaised: 3 },
+    summary: { activeMembers: 2, productivityMetric: 40, bugsRaised: 3 },
     details: [
       { name: 'Alpha', group: 'Loan', boards: ['Loan Web'], monthly: [{ month: '2026-06', source: 'live', spTotal: 10, wpTotal: 20, workingDays: 20 }] },
       { name: 'Beta', group: 'User', boards: ['User Web', 'User Mobile'], monthly: [{ month: '2026-06', source: 'live', spTotal: 15, wpTotal: 20, workingDays: 20 }] },
     ],
-    chart: [{ month: '2026-06', activeMembers: 2, productivityMetric: 40, productivityPercent: 62.5, bugsTotal: 5, bugsRaised: 3, source: 'live', metricBasis: 'WP' }],
+    chart: [{ month: '2026-06', activeMembers: 2, productivityMetric: 40, productivityPercent: 62.5, bugsRaised: 3, source: 'live', metricBasis: 'WP' }],
   };
 
   let canonicalInput: unknown;
@@ -68,8 +67,8 @@ test('fully live range: export payload and Sheet values match canonical API resp
     ['Selected Groups', 'Loan, User'],
     ['Coverage Complete', 'Yes'],
     [],
-    ['Month', 'Source', 'Metric Basis', 'Active Members', 'Productivity %', 'SP Total', 'Total Bugs', 'Bugs Raised', 'Bugs Done'],
-    ['2026-06', 'live', 'WP', 2, 62.5, 40, 5, 3, ''],
+    ['Month', 'Source', 'Metric Basis', 'Active Members', 'Productivity %', 'SP Total', 'Bugs Raised', 'Bugs Done'],
+    ['2026-06', 'live', 'WP', 2, 62.5, 40, 3, ''],
     [],
     ['Details'],
     ['Group', 'Boards', 'Name', 'Month', 'Source', 'Rule', 'Metric Basis', 'SP Total', 'WP Total', 'Working Days'],
@@ -102,7 +101,7 @@ test('archived/mixed range: SP-only metric basis, partial month never complete o
         { month: '2026-01', source: 'partial', productivityAvailable: true, bugsAvailable: false, appliedRules: [{ group: 'User', ruleVersion: 'v3' }], failures: [{ scope: 'bugs', group: 'User', board: 'USR Bugs', reason: 'Jira timeout' }] },
       ],
     },
-    summary: { activeMembers: 1, productivityMetric: 18, bugsTotal: null, bugsRaised: null },
+    summary: { activeMembers: 1, productivityMetric: 18, bugsRaised: null },
     details: [{
       name: 'Legacy Member', group: 'User', boards: ['Ambis Web', 'Ambis Mobile'],
       monthly: [
@@ -111,8 +110,8 @@ test('archived/mixed range: SP-only metric basis, partial month never complete o
       ],
     }],
     chart: [
-      { month: '2025-12', activeMembers: 1, productivityMetric: 18, productivityPercent: 11.842105, bugsTotal: 3, bugsRaised: 1, source: 'archive', metricBasis: 'SP' },
-      { month: '2026-01', activeMembers: 1, productivityMetric: null, bugsTotal: null, bugsRaised: null, source: 'partial', metricBasis: 'SP' },
+      { month: '2025-12', activeMembers: 1, productivityMetric: 18, productivityPercent: 11.842105, bugsRaised: 1, source: 'archive', metricBasis: 'SP' },
+      { month: '2026-01', activeMembers: 1, productivityMetric: null, bugsRaised: null, source: 'partial', metricBasis: 'SP' },
     ],
   };
 
@@ -145,9 +144,9 @@ test('archived/mixed range: SP-only metric basis, partial month never complete o
     ['Selected Groups', 'User'],
     ['Coverage Complete', 'No'],
     [],
-    ['Month', 'Source', 'Metric Basis', 'Active Members', 'Productivity %', 'SP Total', 'Total Bugs', 'Bugs Raised', 'Bugs Done'],
-    ['2025-12', 'archive', 'SP', 1, 11.842105, 18, 3, 1, ''],
-    ['2026-01', 'partial', 'SP', 1, '', '', '', '', ''],
+    ['Month', 'Source', 'Metric Basis', 'Active Members', 'Productivity %', 'SP Total', 'Bugs Raised', 'Bugs Done'],
+    ['2025-12', 'archive', 'SP', 1, 11.842105, 18, 1, ''],
+    ['2026-01', 'partial', 'SP', 1, '', '', '', ''],
     [],
     ['Details'],
     ['Group', 'Boards', 'Name', 'Month', 'Source', 'Rule', 'Metric Basis', 'SP Total', 'WP Total', 'Working Days'],

@@ -33,7 +33,6 @@ async function main() {
             appliedRules: [],
             members: [{ id: "a", name: "A", group: "Loan", board: "L2", spTotal: 4, wpTotal: 6, workingDays: 1 }],
           },
-    loadBugCount: async () => 0,
   };
 
   const capture = captureLogs();
@@ -72,7 +71,6 @@ async function main() {
           appliedRules: [],
           members: [{ id: "a", name: "A", group: "Loan", board: "L1", spTotal: 5, wpTotal: null, workingDays: 1 }],
         }),
-        loadBugCount: async () => 0,
       },
     );
   } finally {

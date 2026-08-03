@@ -29,7 +29,6 @@ export interface RangeAggregationPorts {
     month: string,
     groups: ReportingGroup[],
   ): Promise<MonthSourceResult>;
-  loadBugCount(month: string, group: ReportingGroup): Promise<number>;
   loadBugRaisedCount?(month: string, group: ReportingGroup): Promise<number>;
   loadBugDoneCount?(month: string, group: ReportingGroup): Promise<number>;
 }
@@ -75,7 +74,6 @@ type LoadedMonth = {
   month: string;
   data: { members?: readonly SourceMember[] } | null;
   bugsRaised: number | null;
-  bugsTotal: number | null;
   bugsDone: number | null;
   coverage: { source: MonthSource; productivityAvailable: boolean };
 };
@@ -109,7 +107,6 @@ function chartPoint(month: LoadedMonth, metricBasis: MetricBasis) {
     spTotal,
     spTarget,
     bugsRaised: month.bugsRaised,
-    bugsTotal: month.bugsTotal,
     bugsDone: month.bugsDone,
     source: month.coverage.source,
     metricBasis,
@@ -176,12 +173,11 @@ export async function generateProductivitySummaryRange(
         ports.loadMonth(month, input.selectedGroups),
         ...input.selectedGroups.map((group) =>
           (async () => {
-            const [total, raised, done] = await Promise.all([
-              ports.loadBugCount(month, group),
+            const [raised, done] = await Promise.all([
               ports.loadBugRaisedCount?.(month, group) ?? null,
               ports.loadBugDoneCount?.(month, group) ?? null,
             ]);
-            return { total, raised, done };
+            return { raised, done };
           })(),
         ),
       ]);
@@ -207,7 +203,7 @@ export async function generateProductivitySummaryRange(
         && (monthData.availability?.productivity ?? true);
       const bugsAvailable = bugs.every((bug) => bug.status === "fulfilled");
       const fulfilledBugs = bugs.filter(
-        (bug): bug is PromiseFulfilledResult<{ total: number; raised: number | null; done: number | null }> => bug.status === "fulfilled",
+        (bug): bug is PromiseFulfilledResult<{ raised: number | null; done: number | null }> => bug.status === "fulfilled",
       );
       const source: MonthSource = productivityAvailable
         ? failures.length || monthData?.source === "partial"
@@ -220,11 +216,8 @@ export async function generateProductivitySummaryRange(
       const resolved = {
         month,
         data: monthData,
-        bugsTotal: fulfilledBugs.length
-          ? fulfilledBugs.reduce((sum, bug) => sum + bug.value.total, 0)
-          : null,
         bugsRaised: fulfilledBugs.length
-          ? fulfilledBugs.reduce((sum, bug) => sum + (bug.value.raised ?? bug.value.total), 0)
+          ? fulfilledBugs.reduce((sum, bug) => sum + (bug.value.raised ?? 0), 0)
           : null,
         bugsDone: fulfilledBugs.length
           ? fulfilledBugs.reduce((sum, bug) => sum + (bug.value.done ?? 0), 0)
@@ -335,7 +328,6 @@ export async function generateProductivitySummaryRange(
         return target !== null && delivered !== null && target > 0 ? (delivered / target) * 100 : null;
       })(),
       bugsRaised: sumAvailable(chart.map((point) => point.bugsRaised)),
-      bugsTotal: sumAvailable(chart.map((point) => point.bugsTotal)),
       bugsDone: sumAvailable(chart.map((point) => point.bugsDone)),
     },
     details: input.callerName

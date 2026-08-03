@@ -12,7 +12,6 @@ export type SummaryChartPoint = {
   spTotal: number | null;
   spTarget: number | null;
   bugsRaised: number | null;
-  bugsTotal: number | null;
   bugsDone: number | null;
 };
 

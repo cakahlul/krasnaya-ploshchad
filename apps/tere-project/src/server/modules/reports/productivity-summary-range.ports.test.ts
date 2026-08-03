@@ -31,7 +31,6 @@ test('loads live productivity by Group boards and counts active bugs at month en
   // one working day however many boards reported it, so the target stays 8 rather than 16.
   assert.deepEqual(month.members[0], { id: 'dev@example.com', name: 'Dev', group: 'Loan', board: 'LN', boards: ['LN', 'LN2'], spTotal: 10, wpTotal: 6, spTarget: 8, workingDays: 1 });
   assert.deepEqual(month.failures, [{ scope: 'productivity', group: 'Loan', board: 'BROKEN', reason: 'Jira unavailable' }]);
-  assert.equal(await ports.loadBugCount('2026-01', 'Loan'), 2);
   assert.equal(await ports.loadBugRaisedCount?.('2026-01', 'Loan'), 2);
 });
 

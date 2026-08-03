@@ -11,7 +11,6 @@ const ports: RangeAggregationPorts = {
       { id: 'b', name: 'B', group: 'Loan', board: 'L1', spTotal: 4, wpTotal: 3, workingDays: 1 },
     ],
   }),
-  loadBugCount: async () => 2,
 };
 
 const request = (query: string) => new Request(`http://localhost/api/report/productivity-summary?${query}`);
@@ -55,7 +54,6 @@ test('defaults omitted groups to all configured groups and metricBasis to WP', a
       calls.push({ groups });
       return { source: 'live', appliedRules: [], members: [] };
     },
-    loadBugCount: async () => 0,
   };
   const response = await handleProductivitySummaryGet(request('startMonth=2026-01&endMonth=2026-01'), { isLead: true, fullName: 'Lead' }, { generateLegacy: async () => ({}) as never, rangePorts: defaultPorts });
   assert.equal(response.status, 200);
@@ -68,7 +66,6 @@ test('defaults omitted groups to all configured groups and metricBasis to WP', a
 test('rejects requested WP when archive data forces SP', async () => {
   const archivePorts: RangeAggregationPorts = {
     loadMonth: async month => ({ source: month === '2025-12' ? 'archive' : 'live', appliedRules: [], members: [] }),
-    loadBugCount: async () => 0,
   };
   const response = await handleProductivitySummaryGet(request('startMonth=2025-12&endMonth=2026-01&groups=Loan&metricBasis=WP'), { isLead: true, fullName: 'Lead' }, { generateLegacy: async () => ({}) as never, rangePorts: archivePorts });
   assert.equal(response.status, 400);

@@ -68,11 +68,10 @@ test('per-month bug calls run concurrently instead of chained', async () => {
         appliedRules: [],
         failures: [],
       }),
-      loadBugCount: bugCall,
       loadBugRaisedCount: bugCall,
       loadBugDoneCount: bugCall,
     },
   );
 
-  assert.equal(peak, 3, 'total/raised/done must be in flight together');
+  assert.equal(peak, 2, 'raised/done must be in flight together');
 });

@@ -31,7 +31,6 @@ function portsFor(sources: Record<string, MonthSource>): RangeAggregationPorts {
       appliedRules: [],
       failures: [],
     }),
-    loadBugCount: async () => 4,
     loadBugRaisedCount: async () => 3,
     loadBugDoneCount: async () => 1,
   };

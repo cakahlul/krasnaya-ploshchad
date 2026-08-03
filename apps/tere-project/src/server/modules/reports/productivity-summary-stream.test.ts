@@ -15,7 +15,6 @@ function portsFor(sources: Record<string, MonthSource>): RangeAggregationPorts {
         { id: 'a', name: 'A', group: 'User', board: 'SLS', spTotal: 8, wpTotal: 5, spTarget: 16, workingDays: 2 },
       ],
     }),
-    loadBugCount: async () => 2,
   };
 }
 
@@ -120,7 +119,6 @@ test('a source failure stays a coverage failure rather than killing the stream',
       generateLegacy: async () => ({}) as never,
       rangePorts: {
         loadMonth: async () => { throw new Error('jira exploded'); },
-        loadBugCount: async () => { throw new Error('jira exploded'); },
       },
     },
   );

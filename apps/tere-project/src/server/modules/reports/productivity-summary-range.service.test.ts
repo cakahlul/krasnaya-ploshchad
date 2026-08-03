@@ -47,12 +47,13 @@ const ports: RangeAggregationPorts = {
             },
           ],
         },
-  loadBugCount: async (month, group) => {
+  loadBugRaisedCount: async (month, group) => {
     bugCalls.push(`${month}:${group}`);
     if (month === "2026-01" && group === "User")
       throw new Error("Jira unavailable");
     return 2;
   },
+  loadBugDoneCount: async () => 1,
 };
 
 async function main() {
@@ -103,7 +104,6 @@ async function main() {
           { id: "dev@example.com", name: "Dev", group: "Loan", board: "L2", spTotal: 5, wpTotal: 4, workingDays: 10 },
         ],
       }),
-      loadBugCount: async () => 0,
     },
   );
   assert.deepEqual(multiBoard.details[0].boards, ["L1", "L2"]);
@@ -116,7 +116,6 @@ async function main() {
       loadMonth: async () => {
         throw new Error("board failed");
       },
-      loadBugCount: async () => 0,
     },
   );
   assert.equal(failed.coverage.months[0].source, "unavailable");
@@ -132,7 +131,6 @@ async function main() {
       loadMonth: async () => ({
         source: "live", members: [{ id: "a", name: "A", group: "Loan", board: "L1", spTotal: 2, wpTotal: 5, workingDays: 1 }], appliedRules: [],
       }),
-      loadBugCount: async () => 1,
     },
   );
   assert.equal(liveWp.metricBasis, "WP");
@@ -144,7 +142,6 @@ async function main() {
       loadMonth: async () => ({
         source: "live", members: [{ id: "a", name: "A", group: "Loan", board: "L1", spTotal: 2, wpTotal: 5, workingDays: 1 }], appliedRules: [],
       }),
-      loadBugCount: async () => 1,
     },
   );
   assert.equal(liveSp.metricBasis, "SP");
@@ -160,7 +157,6 @@ async function main() {
         members: [{ id: "u", name: "U", group: "User", board: "U1", spTotal: 3, wpTotal: null, workingDays: 1 }],
         appliedRules: [],
       }),
-      loadBugCount: async () => 0,
     },
   );
   assert.equal(partial.coverage.months[0].source, "partial");
@@ -176,7 +172,6 @@ async function main() {
         members: [{ id: "a", name: "A", group: "Loan", board: "L1", spTotal: 7, wpTotal: null, workingDays: 1 }],
         appliedRules: [],
       }),
-      loadBugCount: async () => 0,
     },
   );
   assert.equal(archivePartial.metricBasis, "SP");
@@ -191,7 +186,6 @@ async function main() {
         members: [{ id: "must-not-leak", name: "Hidden", group: "User", board: "U1", spTotal: 9, wpTotal: 9, workingDays: 1 }],
         appliedRules: [],
       }),
-      loadBugCount: async () => 0,
     },
   );
   assert.equal(unavailable.coverage.complete, false);
