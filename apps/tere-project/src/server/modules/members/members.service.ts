@@ -43,13 +43,10 @@ class MembersService {
   }
 
   async findAll(): Promise<MemberResponse[]> {
-    const cached = this.cache.get<MemberResponse[]>(CACHE_KEY);
-    if (cached) return cached;
-
-    const entities = await this.repository.findAll();
-    const result = entities.map((e) => this.entityToDto(e));
-    this.cache.set(CACHE_KEY, result);
-    return result;
+    return this.cache.getOrLoad(CACHE_KEY, async () => {
+      const entities = await this.repository.findAll();
+      return entities.map((e) => this.entityToDto(e));
+    });
   }
 
   async findOne(id: string): Promise<MemberResponse> {

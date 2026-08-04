@@ -10,28 +10,25 @@ export class BoardsService {
   constructor(private readonly repository: Pick<BoardsRepository, 'findAll'>) {}
 
   async findAll(): Promise<BoardResponse[]> {
-    const cached = this.cache.get<BoardResponse[]>(CACHE_KEY);
-    if (cached) return cached;
-
-    const entities = await this.repository.findAll();
-    const result = entities.map(e => ({
-      id: e.id,
-      boardId: e.boardId,
-      name: e.name,
-      shortName: e.shortName,
-      isSubtaskType: e.isSubtaskType,
-      isKanban: e.isKanban,
-      isShowPlannedWP: e.isShowPlannedWP,
-      isBugMonitoring: e.isBugMonitoring,
-      bugIssueType: e.bugIssueType,
-      bugJql: e.bugJql,
-      isStoryGrouping: e.isStoryGrouping,
-      kanbanCycleStartDate: e.kanbanCycleStartDate,
-      reportingGroup: e.reportingGroup,
-      reportingBoardLeadEmail: e.reportingBoardLeadEmail,
-    }));
-    this.cache.set(CACHE_KEY, result);
-    return result;
+    return this.cache.getOrLoad(CACHE_KEY, async () => {
+      const entities = await this.repository.findAll();
+      return entities.map(e => ({
+        id: e.id,
+        boardId: e.boardId,
+        name: e.name,
+        shortName: e.shortName,
+        isSubtaskType: e.isSubtaskType,
+        isKanban: e.isKanban,
+        isShowPlannedWP: e.isShowPlannedWP,
+        isBugMonitoring: e.isBugMonitoring,
+        bugIssueType: e.bugIssueType,
+        bugJql: e.bugJql,
+        isStoryGrouping: e.isStoryGrouping,
+        kanbanCycleStartDate: e.kanbanCycleStartDate,
+        reportingGroup: e.reportingGroup,
+        reportingBoardLeadEmail: e.reportingBoardLeadEmail,
+      }));
+    });
   }
 
   async getBoardIds(): Promise<number[]> {
@@ -46,8 +43,15 @@ export class BoardsService {
 
   async hasSubtaskType(project: string): Promise<boolean> {
     const boards = await this.findAll();
-    const projectList = project.split(',').map(p => p.trim().toLowerCase()).filter(Boolean);
-    return boards.some(b => projectList.includes(b.shortName.toLowerCase()) && b.isSubtaskType === true);
+    const projectList = project
+      .split(',')
+      .map(p => p.trim().toLowerCase())
+      .filter(Boolean);
+    return boards.some(
+      b =>
+        projectList.includes(b.shortName.toLowerCase()) &&
+        b.isSubtaskType === true,
+    );
   }
 
   invalidateCache(): void {

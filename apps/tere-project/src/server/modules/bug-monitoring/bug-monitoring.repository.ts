@@ -5,6 +5,8 @@ import { bugCloseOverride } from '@server/db/schema';
 import { MemoryCache } from '@server/lib/cache';
 import { db } from '@server/lib/db';
 
+const OVERRIDE_KEY = 'all_bug_close_overrides';
+
 const MAX_RESULTS = parseInt(process.env.JIRA_MAX_RESULTS ?? '100', 10);
 const TIMEOUT = parseInt(process.env.JIRA_REQUEST_TIMEOUT ?? '30000', 10);
 const MAX_RETRY = parseInt(process.env.JIRA_RETRY_ATTEMPTS ?? '3', 10);
@@ -65,19 +67,18 @@ export function applyCloseOverrides(
 
 // Handful of manually-inserted rows read on every bug fetch. 5 minutes so a new override shows up
 // without a restart; `invalidateCloseOverrides()` is there for whenever a write path lands.
+// `getOrLoad` also collapses the concurrent misses a range request produces into one SELECT.
 const overrideCache = new MemoryCache(5 * 60 * 1000);
 
 export function invalidateCloseOverrides(): void {
-  overrideCache.invalidate('all');
+  overrideCache.invalidate(OVERRIDE_KEY);
 }
 
-async function loadCloseOverrides(): Promise<Map<string, string>> {
-  const cached = overrideCache.get<Map<string, string>>('all');
-  if (cached) return cached;
-  const rows = await db.select().from(bugCloseOverride);
-  const overrides = new Map(rows.map(row => [row.key, row.closedDate]));
-  overrideCache.set('all', overrides);
-  return overrides;
+function loadCloseOverrides(): Promise<Map<string, string>> {
+  return overrideCache.getOrLoad(OVERRIDE_KEY, async () => {
+    const rows = await db.select().from(bugCloseOverride);
+    return new Map(rows.map(row => [row.key, row.closedDate]));
+  });
 }
 
 function isRetryable(error: unknown): boolean {
@@ -129,25 +130,30 @@ export class BugMonitoringRepository {
   ): Promise<JiraBugEntity[]> {
     const searchUrl = '/rest/api/3/search/jql';
     const allBugs: JiraBugEntity[] = [];
-    let startAt = 0;
-    let total = 0;
+    // `/search/jql` paginates by opaque token and returns NO `total`, so the old
+    // `startAt`/`while (startAt < total)` loop compared against 0 and stopped after one page —
+    // every board with more than JIRA_MAX_RESULTS bugs was silently truncated to 100. Same
+    // token walk `reports.repository.ts` already uses against this endpoint.
+    let nextPageToken: string | undefined;
+    let isLast = false;
 
     do {
+      const params: Record<string, unknown> = {
+        jql,
+        maxResults: MAX_RESULTS,
+        fields: ['summary', 'status', 'priority', 'assignee', 'created', 'updated', 'resolution', 'resolutiondate'].join(','),
+      };
+      if (nextPageToken) params.nextPageToken = nextPageToken;
       const response = await withRetry(() =>
-        jiraClient.get<JiraBugSearchResponseDto>(searchUrl, {
-          params: {
-            jql,
-            maxResults: MAX_RESULTS,
-            startAt,
-            fields: ['summary', 'status', 'priority', 'assignee', 'created', 'updated', 'resolution', 'resolutiondate'].join(','),
-          },
-          timeout: TIMEOUT,
-        }),
+        jiraClient.get<JiraBugSearchResponseDto>(searchUrl, { params, timeout: TIMEOUT }),
       );
-      total = response.data.total;
       allBugs.push(...response.data.issues);
-      startAt += MAX_RESULTS;
-    } while (startAt < total);
+      isLast = Boolean(response.data.isLast);
+      nextPageToken = response.data.nextPageToken;
+      // A page that is not flagged last but hands back no token has nowhere to go — treat it as
+      // the end rather than refetching page one forever.
+      if (!isLast && !nextPageToken) isLast = true;
+    } while (!isLast);
 
     return applyCloseOverrides(allBugs, await loadCloseOverrides());
   }
