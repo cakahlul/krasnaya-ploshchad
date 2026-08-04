@@ -67,6 +67,13 @@ export const holidays = pgTable('holidays', {
   isNationalHoliday: boolean('is_national_holiday').notNull().default(true),
 });
 
+// Manual actual-close dates for bug tickets whose author closed them late (or not at all) in Jira.
+// Key present here wins over Jira's resolutiondate; absent falls back to Jira.
+export const bugCloseOverride = pgTable('bug_close_override', {
+  key: text('key').primaryKey(),
+  closedDate: date('closed_date').notNull(),
+});
+
 // boards
 export const reportingGroupConfig = pgTable('reporting_group_config', {
   code: text('code').primaryKey(),
