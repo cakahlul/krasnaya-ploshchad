@@ -160,6 +160,9 @@ See [Dashboard / Reports](#dashboard--reports) — Reports lives in the dashboar
   - `bug-monitoring.service.ts` (+ `bug-monitoring.service.test.ts`), `bug-monitoring.repository.ts` (+ `bug-monitoring.repository.test.ts`)
   - `transformBugs(jiraBugs, now?)` is exported and pure: derives `Bug.closedDate` from the (already override-corrected) `resolutiondate` and caps `daysOpen` at the close date instead of `Date.now()`.
 
+### Jira pagination
+- `/rest/api/3/search/jql` returns `nextPageToken` + `isLast` and NO `total` (verified live) — `fetchBugs` walks the token like `reports.repository.ts` does. It previously looped on `startAt < total` with `total` undefined, so every board was truncated to `JIRA_MAX_RESULTS` (100): INCF read 100 of 709 bugs, INCL 100 of 416, which under-reported every bug count including the productivity summary's. `JiraBugSearchResponseDto.total`/`startAt`/`maxResults` are optional now.
+
 ### Board coverage
 - The page tabs render every `boards` row with `is_bug_monitoring` — the same three the productivity summary counts against (INCL/Loan, INCF/Transaction, BUZZ/User), configured by `docs/database/SLS-17150-production-config.sql`. JQL per board comes from `boards.bug_jql` via `buildBugJql()`; nothing is hardcoded except the per-board icon/gradient in `BOARD_STYLES` (page.tsx).
 - `BugTrendChart` splits active/closed on `Bug.closedDate`, NOT on `status === 'Done'` + `updated` (that read a later unrelated edit as the close moment). `BugTable` has a Closed column, `BugListView` a closed-date cell.
@@ -563,7 +566,7 @@ Tab-switcher around `/dashboard/configuration?tab={id}`. Holiday reuses Holiday 
 | `db.ts` | Drizzle/Postgres client (Supabase) — singleton |
 | `jira.client.ts` | Jira REST client |
 | `google-oauth.client.ts` | Google OAuth (for Sheets export) |
-| `cache.ts` | Cache wrapper |
+| `cache.ts` | `MemoryCache` TTL cache (+ `cache.test.ts`). Use `getOrLoad(key, load)`, NOT `get`/`set` by hand: it also single-flights concurrent misses. A cold cache with plain get/set let a productivity-summary range fire one identical `boards`/`members` SELECT per month x group, and ~20 simultaneous queries against the Supabase transaction pooler (`prepare: false`, port 6543) hang or return mangled rows instead of erroring. Callers: `boardsService.findAll`, `membersService.findAll`, bug close overrides. |
 
 ### Database
 - Schema: `apps/tere-project/src/server/db/schema.ts`

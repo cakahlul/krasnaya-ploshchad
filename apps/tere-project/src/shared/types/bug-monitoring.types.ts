@@ -59,9 +59,15 @@ export interface JiraBugEntity {
   fields: JiraBugFieldsEntity;
 }
 
+/**
+ * `/rest/api/3/search/jql` paginates by `nextPageToken` + `isLast` and does NOT return `total` or
+ * honour `startAt` — both are optional here only because older callers/fixtures still send them.
+ */
 export interface JiraBugSearchResponseDto {
   issues: JiraBugEntity[];
-  maxResults: number;
-  startAt: number;
-  total: number;
+  maxResults?: number;
+  startAt?: number;
+  total?: number;
+  nextPageToken?: string;
+  isLast?: boolean;
 }
