@@ -12,12 +12,39 @@ import { BugSummaryDto } from '@shared/types/dashboard.types';
 const ACTIVE_STATUSES = ['To Do', 'In Progress', 'Ready to Test', 'Detected', 'In Review'];
 const PRIORITY_ORDER = ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'None'];
 
+const DAY_MS = 86_400_000;
+
+/**
+ * `resolutiondate` here is already the corrected date: the repository swapped in
+ * `bug_close_override` before the service ever sees it. A closed bug stops accruing days at its
+ * close date — measuring it against `Date.now()` made every historical bug look like it was still
+ * rotting, which skewed averageDaysOpen and the "Days Open" column alike.
+ */
+export function transformBugs(jiraBugs: readonly JiraBugEntity[], now = Date.now()): Bug[] {
+  return jiraBugs.map((bug) => {
+    const closedDate = bug.fields.resolutiondate?.slice(0, 10) ?? null;
+    const createdMs = new Date(bug.fields.created).getTime();
+    const endMs = closedDate ? new Date(`${closedDate}T23:59:59.999Z`).getTime() : now;
+    return {
+      key: bug.key,
+      summary: bug.fields.summary,
+      status: bug.fields.status.name,
+      priority: bug.fields.priority?.name ?? 'None',
+      assignee: bug.fields.assignee?.displayName ?? null,
+      created: bug.fields.created,
+      updated: bug.fields.updated,
+      closedDate,
+      daysOpen: Math.max(0, Math.floor((endMs - createdMs) / DAY_MS)),
+    };
+  });
+}
+
 class BugMonitoringService {
   constructor(private readonly repo: BugMonitoringRepository) {}
 
   async getBugsForBoard(boardId: number): Promise<BugMonitoringData> {
     const allJira = await this.repo.fetchBugsByBoard(boardId);
-    const allBugs = this.transformBugs(allJira);
+    const allBugs = transformBugs(allJira);
     const activeBugs = allBugs.filter((b) => ACTIVE_STATUSES.includes(b.status));
 
     return {
@@ -29,7 +56,7 @@ class BugMonitoringService {
 
   async getBugSummary(boardId: number): Promise<BugSummaryDto> {
     const allJira = await this.repo.fetchBugsByBoard(boardId);
-    const allBugs = this.transformBugs(allJira);
+    const allBugs = transformBugs(allJira);
     const active = allBugs.filter((b) => ACTIVE_STATUSES.includes(b.status));
 
     const byPriority = (p: string) => active.filter((b) => b.priority === p).length;
@@ -45,18 +72,6 @@ class BugMonitoringService {
     };
   }
 
-  private transformBugs(jiraBugs: JiraBugEntity[]): Bug[] {
-    return jiraBugs.map((bug) => ({
-      key: bug.key,
-      summary: bug.fields.summary,
-      status: bug.fields.status.name,
-      priority: bug.fields.priority?.name ?? 'None',
-      assignee: bug.fields.assignee?.displayName ?? null,
-      created: bug.fields.created,
-      updated: bug.fields.updated,
-      daysOpen: Math.floor((Date.now() - new Date(bug.fields.created).getTime()) / 86_400_000),
-    }));
-  }
 
   private groupBugsByStatus(bugs: Bug[]): BugsByStatus[] {
     const map = new Map<string, Bug[]>();

@@ -6,6 +6,8 @@ export interface Bug {
   assignee: string | null;
   created: string;
   updated: string;
+  /** `YYYY-MM-DD` actual close date (override table wins over Jira), null while still open. */
+  closedDate: string | null;
   daysOpen: number;
 }
 

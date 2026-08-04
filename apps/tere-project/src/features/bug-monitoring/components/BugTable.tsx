@@ -108,6 +108,15 @@ export default function BugTable({ bugsByStatus }: BugTableProps) {
       render: (date: string) => new Date(date).toLocaleDateString(),
       width: 120,
     },
+    {
+      title: 'Closed',
+      dataIndex: 'closedDate',
+      key: 'closedDate',
+      render: (date: string | null) =>
+        date ? date : <span className="text-gray-400 italic">Open</span>,
+      width: 120,
+      sorter: (a, b) => (a.closedDate ?? '').localeCompare(b.closedDate ?? ''),
+    },
   ];
 
   const tabItems = bugsByStatus.map((statusGroup) => ({

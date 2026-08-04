@@ -1,6 +1,9 @@
 import { jiraClient } from '@server/lib/jira.client';
 import { JiraBugEntity, JiraBugSearchResponseDto } from '@shared/types/bug-monitoring.types';
 import { boardsService } from '@server/modules/boards/boards.service';
+import { bugCloseOverride } from '@server/db/schema';
+import { MemoryCache } from '@server/lib/cache';
+import { db } from '@server/lib/db';
 
 const MAX_RESULTS = parseInt(process.env.JIRA_MAX_RESULTS ?? '100', 10);
 const TIMEOUT = parseInt(process.env.JIRA_REQUEST_TIMEOUT ?? '30000', 10);
@@ -37,6 +40,44 @@ export function countActiveBugsAtMonthEnd(
     bug.fields.created.slice(0, 10) < nextMonthStart
     && (!bug.fields.resolutiondate || bug.fields.resolutiondate.slice(0, 10) >= nextMonthStart),
   ).length;
+}
+
+/**
+ * A bug closed late (or never) by its author reports a resolutiondate that isn't when the work
+ * actually finished, which drags the productivity-summary bug-close chart. `bug_close_override`
+ * holds the real date per key; it wins over Jira. No row = keep whatever Jira says (a bug with no
+ * resolutiondate is still open and stays uncounted).
+ *
+ * The override lands as the bare `YYYY-MM-DD` the column stores — every consumer compares this
+ * field by `slice(0, 7)` / `slice(0, 10)` against date strings, so no synthetic time-of-day is
+ * needed and none is invented.
+ */
+export function applyCloseOverrides(
+  bugs: readonly JiraBugEntity[],
+  overrides: ReadonlyMap<string, string>,
+): JiraBugEntity[] {
+  return bugs.map(bug => {
+    const closedDate = overrides.get(bug.key);
+    if (!closedDate) return bug as JiraBugEntity;
+    return { ...bug, fields: { ...bug.fields, resolutiondate: closedDate } };
+  });
+}
+
+// Handful of manually-inserted rows read on every bug fetch. 5 minutes so a new override shows up
+// without a restart; `invalidateCloseOverrides()` is there for whenever a write path lands.
+const overrideCache = new MemoryCache(5 * 60 * 1000);
+
+export function invalidateCloseOverrides(): void {
+  overrideCache.invalidate('all');
+}
+
+async function loadCloseOverrides(): Promise<Map<string, string>> {
+  const cached = overrideCache.get<Map<string, string>>('all');
+  if (cached) return cached;
+  const rows = await db.select().from(bugCloseOverride);
+  const overrides = new Map(rows.map(row => [row.key, row.closedDate]));
+  overrideCache.set('all', overrides);
+  return overrides;
 }
 
 function isRetryable(error: unknown): boolean {
@@ -108,6 +149,6 @@ export class BugMonitoringRepository {
       startAt += MAX_RESULTS;
     } while (startAt < total);
 
-    return allBugs;
+    return applyCloseOverrides(allBugs, await loadCloseOverrides());
   }
 }

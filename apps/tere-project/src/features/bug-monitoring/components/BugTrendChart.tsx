@@ -81,11 +81,12 @@ export default function BugTrendChart({ bugs, showActiveOnly }: BugTrendChartPro
 
         const dateStr = dateFormat(currentDate);
         
-        // Calculate Cumulative Counts up to this date
-        // Active = Created <= Date AND (Not Done OR Updated > Date)
-        // Closed = Done AND Updated <= Date
-        
-        // Use end of the day for comparison to include bugs from that day
+        // Cumulative counts up to this date, keyed off the actual close date (which already carries
+        // any bug_close_override). This used to infer closure from `status === 'Done'` plus the
+        // `updated` timestamp — that read a much later unrelated edit as the close moment, and
+        // missed closed bugs whose status string differs.
+        // Active = created <= date AND (still open OR closed after date)
+        // Closed = closedDate <= date
         const comparisonDate = new Date(currentDate);
         comparisonDate.setHours(23, 59, 59, 999);
 
@@ -94,20 +95,12 @@ export default function BugTrendChart({ bugs, showActiveOnly }: BugTrendChartPro
 
         bugs.forEach(bug => {
             const createdDate = new Date(bug.created);
-            const updatedDate = new Date(bug.updated);
-            
-            if (bug.status === 'Done') {
-                if (updatedDate <= comparisonDate) {
-                    closedCount++;
-                } else if (createdDate <= comparisonDate) {
-                    // It was created before this date, but closed AFTER this date, so it was active
-                    activeCount++;
-                }
-            } else {
-                // Not done, just check creation
-                if (createdDate <= comparisonDate) {
-                    activeCount++;
-                }
+            const closedDate = bug.closedDate ? new Date(`${bug.closedDate}T23:59:59.999`) : null;
+
+            if (closedDate && closedDate <= comparisonDate) {
+                closedCount++;
+            } else if (createdDate <= comparisonDate) {
+                activeCount++;
             }
         });
 

@@ -154,6 +154,9 @@ export default function BugListView({ boardId }: BugListViewProps) {
               <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: rowCol, fontFamily: sans, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bug.summary}</div>
               <div style={{ fontSize: 11.5, color: subCol, fontFamily: sans, width: 110, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bug.assignee || 'Unassigned'}</div>
               <div style={{ fontFamily: mono, fontSize: 11, color: subCol, width: 40, textAlign: 'right', flexShrink: 0 }}>{bug.daysOpen}d</div>
+              <div style={{ fontFamily: mono, fontSize: 11, color: bug.closedDate ? statusSuccess : subCol, width: 82, textAlign: 'right', flexShrink: 0 }}>
+                {bug.closedDate ?? '—'}
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: 100, flexShrink: 0 }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: dotColor, boxShadow: '0 0 6px ' + dotColor + '80', flexShrink: 0 }} />
                 <span style={{ fontSize: 11.5, fontWeight: 600, color: dotColor, fontFamily: sans, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{bug.status}</span>

@@ -17,9 +17,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useMemo } from 'react';
 import { useThemeColors } from '@src/hooks/useTheme';
 
+// One entry per bug board configured in `boards` (is_bug_monitoring), the same three the
+// productivity summary counts against: INCL (Loan), INCF (Transaction), BUZZ (User).
 const BOARD_STYLES: Record<string, { icon: string; gradient: string; accent: string }> = {
   BUZZ: { icon: '\u26A1', gradient: 'from-violet-500 to-purple-600', accent: 'violet' },
   INCF: { icon: '\uD83C\uDFE6', gradient: 'from-cyan-500 to-blue-600', accent: 'cyan' },
+  INCL: { icon: '\uD83D\uDCB0', gradient: 'from-emerald-500 to-teal-600', accent: 'emerald' },
 };
 const DEFAULT_STYLE = { icon: '\uD83D\uDC1B', gradient: 'from-gray-500 to-slate-600', accent: 'gray' };
 
@@ -360,7 +363,7 @@ export default function BugMonitoringPage() {
           {/* Board Tabs */}
           {boardsLoading ? (
             <div className="flex gap-3 mb-6">
-              {[1, 2].map(i => (
+              {[1, 2, 3].map(i => (
                 <div
                   key={i}
                   className="animate-pulse rounded-xl"

@@ -6,6 +6,12 @@ export interface Bug {
   assignee: string | null;
   created: string;
   updated: string;
+  /**
+   * `YYYY-MM-DD` the bug actually closed, or null while it is still open. Sourced from Jira's
+   * `resolutiondate` unless `bug_close_override` holds a row for this key, in which case the
+   * override already replaced it inside the repository — see `applyCloseOverrides`.
+   */
+  closedDate: string | null;
   daysOpen: number;
 }
 
