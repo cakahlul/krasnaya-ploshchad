@@ -1,12 +1,29 @@
 import { withAuth } from '@server/auth/with-auth';
-import { getDashboardSummary } from '@server/modules/dashboard/dashboard.service';
+import {
+  getDashboardBoardIdsForMember,
+  getDashboardSummary,
+} from '@server/modules/dashboard/dashboard.service';
+import { boardsService } from '@server/modules/boards/boards.service';
+import { membersService } from '@server/modules/members/members.service';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withAuth(async (req) => {
+export const GET = withAuth(async (req, { user }) => {
+  if (!user.email) {
+    return Response.json({ message: 'No email in token' }, { status: 401 });
+  }
+
+  const member = await membersService.findByEmail(user.email);
+  if (!member) {
+    return Response.json({ message: 'Forbidden' }, { status: 403 });
+  }
+
   const { searchParams } = new URL(req.url);
   const startDate = searchParams.get('startDate') ?? undefined;
   const endDate = searchParams.get('endDate') ?? undefined;
-  const summary = await getDashboardSummary(startDate, endDate);
+  const allowedBoardIds = member.isLead
+    ? undefined
+    : getDashboardBoardIdsForMember(member, await boardsService.findAll());
+  const summary = await getDashboardSummary(startDate, endDate, allowedBoardIds);
   return Response.json(summary);
 });

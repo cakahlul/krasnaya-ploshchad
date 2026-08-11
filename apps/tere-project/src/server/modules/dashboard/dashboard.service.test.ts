@@ -1,6 +1,33 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { toDashboardMemberSummary } from './dashboard.service';
+import {
+  getDashboardBoardIdsForMember,
+  toDashboardMemberSummary,
+} from './dashboard.service';
+
+const boards = [
+  { boardId: 1, shortName: 'LOAN', isBugMonitoring: false },
+  { boardId: 2, shortName: 'USER', isBugMonitoring: false },
+  { boardId: 3, shortName: 'BUGS', isBugMonitoring: true },
+];
+
+test('dashboard access limits members to their assigned boards', () => {
+  assert.deepEqual(
+    getDashboardBoardIdsForMember({ isLead: false, teams: ['loan'] }, boards),
+    [1],
+  );
+  assert.deepEqual(
+    getDashboardBoardIdsForMember({ isLead: false, teams: [] }, boards),
+    [],
+  );
+});
+
+test('dashboard access leaves leads unrestricted', () => {
+  assert.equal(
+    getDashboardBoardIdsForMember({ isLead: true, teams: [] }, boards),
+    undefined,
+  );
+});
 
 test('dashboard member summary exposes the SP productivity rate used by Team Report', () => {
   const summary = toDashboardMemberSummary({

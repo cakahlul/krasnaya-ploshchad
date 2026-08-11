@@ -9,6 +9,18 @@ import type { DashboardSummaryResponseDto } from '@shared/types/dashboard.types'
 const CACHE_KEY = 'dashboard_summary';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
+export function getDashboardBoardIdsForMember(
+  member: { isLead?: boolean; teams: readonly string[] },
+  boards: readonly { boardId: number; shortName: string; isBugMonitoring?: boolean }[],
+): number[] | undefined {
+  if (member.isLead) return undefined;
+
+  const teams = new Set(member.teams.map(team => team.trim().toLowerCase()));
+  return boards
+    .filter(board => !board.isBugMonitoring && teams.has(board.shortName.toLowerCase()))
+    .map(board => board.boardId);
+}
+
 export function toDashboardMemberSummary(issue: {
   member: string;
   wpProductivity: string;
@@ -30,16 +42,23 @@ export function toDashboardMemberSummary(issue: {
 export async function getDashboardSummary(
   requestedStartDate?: string,
   requestedEndDate?: string,
+  allowedBoardIds?: readonly number[],
 ): Promise<DashboardSummaryResponseDto> {
   const defaultRange = getKanbanDateRange();
   const startDate = requestedStartDate ?? defaultRange.startDate;
   const endDate = requestedEndDate ?? defaultRange.endDate;
-  const cacheKey = `${CACHE_KEY}_${startDate}_${endDate}`;
+  const scopeKey = allowedBoardIds === undefined
+    ? 'all'
+    : [...allowedBoardIds].sort((a, b) => a - b).join(',');
+  const cacheKey = `${CACHE_KEY}_${startDate}_${endDate}_${scopeKey}`;
   const cached = serverCache.get<DashboardSummaryResponseDto>(cacheKey);
   if (cached) return cached;
 
   const allBoards = await boardsService.findAll();
-  const boards = allBoards.filter(b => !b.isBugMonitoring);
+  const allowed = allowedBoardIds === undefined ? undefined : new Set(allowedBoardIds);
+  const boards = allBoards.filter(
+    b => !b.isBugMonitoring && (allowed === undefined || allowed.has(b.boardId)),
+  );
 
   const teams = await Promise.all(
     boards.map(async (board) => {
