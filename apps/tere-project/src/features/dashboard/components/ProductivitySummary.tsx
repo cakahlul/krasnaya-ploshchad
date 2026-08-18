@@ -404,7 +404,7 @@ export default function ProductivitySummary() {
             </span>
           </div>
           <Progress
-            percent={progress ? Math.round((progress.completed / progress.total) * 100) : 0}
+            percent={progress ? Math.round((progress.completed / progress.total) * 100) : 5}
             status="active"
             showInfo={false}
             strokeColor={T.accent}

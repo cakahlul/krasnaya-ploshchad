@@ -289,8 +289,7 @@ export function ProductivitySummaryComparisonChart({
             <LineChart data={points} margin={{ top: 8, right: 16, left: 0, bottom: 8 }} accessibilityLayer>
               <CartesianGrid stroke="var(--tere-row-brd)" strokeDasharray="3 3" />
               <XAxis dataKey="month" tick={{ fill: 'var(--tere-sub)', fontSize: 11 }} />
-              <YAxis yAxisId="count" allowDecimals={false} tick={{ fill: 'var(--tere-sub)', fontSize: 11 }} />
-              <YAxis yAxisId="productivity" orientation="right" tick={{ fill: 'var(--tere-sub)', fontSize: 11 }} />
+              <YAxis allowDecimals={false} tick={{ fill: 'var(--tere-sub)', fontSize: 11 }} />
               <Tooltip
                 contentStyle={{
                   background: 'var(--tere-card-bg)',
@@ -299,10 +298,10 @@ export function ProductivitySummaryComparisonChart({
                 }}
               />
               <Legend wrapperStyle={{ color: 'var(--tere-sub)', fontSize: 12 }} />
-              <Line yAxisId="count" dataKey="activeMembers" name="Active members" stroke="var(--color-accent)" strokeWidth={2} connectNulls={false} />
-              <Line yAxisId="productivity" dataKey="productivityPercent" name="Productivity %" stroke="var(--color-accent-light)" strokeWidth={2} connectNulls={false} />
-              <Line yAxisId="count" dataKey="bugsRaised" name="Bugs raised" stroke="var(--tere-status-danger)" strokeDasharray="2 3" strokeWidth={2} connectNulls={false} />
-              <Line yAxisId="count" dataKey="bugsDone" name="Bugs done" stroke="var(--tere-status-success)" strokeWidth={2} connectNulls={false} />
+              <Line dataKey="activeMembers" name="Active members" stroke="var(--color-accent)" strokeWidth={2} connectNulls={false} />
+              <Line dataKey="productivityPercent" name="Productivity %" stroke="var(--color-accent-light)" strokeWidth={2} connectNulls={false} />
+              <Line dataKey="bugsRaised" name="Bugs raised" stroke="var(--tere-status-danger)" strokeDasharray="2 3" strokeWidth={2} connectNulls={false} />
+              <Line dataKey="bugsDone" name="Bugs done" stroke="var(--tere-status-success)" strokeWidth={2} connectNulls={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>

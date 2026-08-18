@@ -78,6 +78,8 @@ test('hides comparison chart when capability data is absent, empty, or range has
 
 test('keeps chart nulls as gaps and uses responsive accessible themed primitives', () => {
   assert.equal((source.match(/connectNulls=\{false\}/g) ?? []).length, 4);
+  assert.equal((source.match(/<YAxis/g) ?? []).length, 1);
+  assert.doesNotMatch(source, /orientation="right"|yAxisId=/);
   assert.match(source, /<ResponsiveContainer/);
   assert.match(source, /accessibilityLayer/);
   assert.match(source, /<figure[\s\S]*aria-labelledby=/);
