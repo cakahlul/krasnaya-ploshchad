@@ -13,47 +13,13 @@ import { useBoards } from '@src/features/dashboard/hooks/useBoards';
 import { useMembers } from '@src/features/dashboard/hooks/useMembers';
 import { useThemeColors } from '@src/hooks/useTheme';
 import type { MemberResponse } from '@shared/types/member.types';
-import dynamic from 'next/dynamic';
-
-const GlobalSearch = dynamic(
-  () => import('@src/features/dashboard/components/GlobalSearch'),
-  { ssr: false }
-);
 
 const mono = "var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace";
 const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
 
-// Socialist vibe overrides for crimson theme
-const SOVIET_VIBES: Record<string, string> = {
-  'Crushing it!': 'Exceeding the plan!',
-  'Keep pushing': 'Maintain discipline',
-  'all boards combined': 'all boards in production',
-  'Keep going!': 'Maintain discipline',
-  'Above target!': 'Exceeding the plan!',
-  'story points': 'planned output',
-  'meet target': 'meet the plan',
-};
-
-function vibeForTheme(vibe: string, isCrimson: boolean): string {
-  return isCrimson ? (SOVIET_VIBES[vibe] || vibe) : vibe;
-}
-
 export default function Dashboard() {
   const T = useThemeColors();
-  const [message, setMessage] = useState(
-    T.isCrimson
-      ? 'Comrades, align with the plan and advance delivery.'
-      : "Ready to rock this day? Let's code and conquer",
-  );
-
-  // Sync greeting when theme changes
-  useEffect(() => {
-    setMessage(
-      T.isCrimson
-        ? 'Comrades, align with the plan and advance delivery.'
-        : "Ready to rock this day? Let's code and conquer",
-    );
-  }, [T.isCrimson]);
+  const [message, setMessage] = useState("Ready to rock this day? Let's code and conquer");
 
   const { member, teams: memberTeams, isLoading: profileLoading } = useMemberProfile();
   const { boards, isLoading: boardsLoading } = useBoards();
@@ -89,6 +55,8 @@ export default function Dashboard() {
     const kanbanBoard = boards.find(b => b.isKanban && b.kanbanCycleStartDate);
     if (kanbanBoard?.kanbanCycleStartDate) {
       const derived = getKanbanDateRange(dayjs(), kanbanBoard.kanbanCycleStartDate);
+      // Derived from external board configuration after the query resolves.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setKanbanRange(derived);
     }
   }, [boards, hasKanbanBoards, isManualKanbanRange]);
@@ -129,36 +97,17 @@ export default function Dashboard() {
     : <MemberDashboard teams={teams} memberName={member?.fullName ?? null} boardKanbanMap={boardKanbanMap} summaryLoading={summaryLoading} message={message} startDate={startDate} endDate={endDate} onKanbanRangeChange={handleKanbanRangeChange} />;
 }
 
-/* ── Gradient KPI Card ── */
-function GradCard({ label, value, emoji, vibe, gradient, shadow }: {
-  label: string; value: string | number; emoji: string; vibe: string;
-  gradient: string; shadow: string;
+function MetricCard({ label, value, detail }: {
+  label: string;
+  value: string | number;
+  detail: string;
 }) {
   const T = useThemeColors();
-  const [hov, setHov] = useState(false);
   return (
-    <div
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        background: gradient,
-        borderRadius: 16,
-        padding: '18px',
-        boxShadow: hov ? `0 16px 40px ${shadow}` : `0 4px 20px ${shadow}88`,
-        transform: hov ? 'translateY(-4px) scale(1.02)' : 'none',
-        transition: 'all 0.25s cubic-bezier(0.34,1.4,0.64,1)',
-        position: 'relative',
-        overflow: 'hidden',
-        cursor: 'default',
-      }}
-    >
-      <div style={{ position: 'absolute', top: -18, right: -18, width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', filter: 'blur(18px)' }} />
-      <div style={{ position: 'relative' }}>
-        <div style={{ fontSize: 20, marginBottom: 6 }}>{emoji}</div>
-        <div style={{ fontSize: 30, fontWeight: 800, color: '#fff', fontFamily: mono, lineHeight: 1, letterSpacing: -1, marginBottom: 3 }}>{value}</div>
-        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.6)', fontFamily: sans, fontWeight: 500, marginBottom: 2 }}>{label}</div>
-        <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.92)', fontFamily: sans, fontWeight: 700 }}>{vibeForTheme(vibe, T.isCrimson)}</div>
-      </div>
+    <div className="dashboard-metric">
+      <div style={{ fontSize: 30, fontWeight: 650, color: T.titleCol, fontFamily: sans, lineHeight: 1, letterSpacing: -1.2 }}>{value}</div>
+      <div style={{ fontSize: 12, color: T.titleCol, fontFamily: sans, fontWeight: 600, marginTop: 12 }}>{label}</div>
+      <div style={{ fontSize: 11, color: T.subCol, fontFamily: sans, marginTop: 3 }}>{detail}</div>
     </div>
   );
 }
@@ -322,10 +271,10 @@ function LeadDashboard({ teams, bugBoards, members, boardShortNameMap, boardKanb
     }));
 
   const boardColors = [
-    { gradient: 'linear-gradient(135deg,#0f766e,#0891b2)', shadow: 'rgba(8,145,178,0.3)', color: T.accent },
-    { gradient: 'linear-gradient(135deg,#4f46e5,#7c3aed)', shadow: 'rgba(124,58,237,0.3)', color: '#7c3aed' },
-    { gradient: 'linear-gradient(135deg,#059669,#0d9488)', shadow: 'rgba(5,150,105,0.3)', color: '#059669' },
-    { gradient: 'linear-gradient(135deg,#d97706,#ea580c)', shadow: 'rgba(217,119,6,0.3)', color: '#d97706' },
+    { color: T.accent },
+    { color: '#30a46c' },
+    { color: '#a06cd5' },
+    { color: '#e68a00' },
   ];
 
   return (
@@ -340,44 +289,27 @@ function LeadDashboard({ teams, bugBoards, members, boardShortNameMap, boardKanb
         </div>
       </div>
 
-      {/* Global Search */}
-      <div className="flex justify-center mb-6">
-        <GlobalSearch />
-      </div>
-
       {/* Top KPI row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 14 }}>
-        <GradCard
+      <div className="mb-[14px] grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
           label="All-team Avg Productivity"
           value={avgProd !== '-' ? `${avgProd}%` : '-'}
-          emoji={parseFloat(avgProd) >= 100 ? '🔥' : '📈'}
-          vibe={parseFloat(avgProd) >= 100 ? 'Crushing it!' : 'Keep pushing'}
-          gradient="linear-gradient(135deg,#0f766e,#0891b2)"
-          shadow="rgba(8,145,178,0.35)"
+          detail={parseFloat(avgProd) >= 100 ? 'Above target' : 'Across all teams'}
         />
-        <GradCard
+        <MetricCard
           label="Total Work Items"
           value={totalWorkItems}
-          emoji="⚡"
-          vibe="all boards combined"
-          gradient="linear-gradient(135deg,#4f46e5,#7c3aed)"
-          shadow="rgba(124,58,237,0.35)"
+          detail="Across all boards"
         />
-        <GradCard
+        <MetricCard
           label={`Total ${epicOrStoryLabel}`}
           value={totalEpics}
-          emoji="📋"
-          vibe={`across ${teams.length} board${teams.length !== 1 ? 's' : ''}`}
-          gradient="linear-gradient(135deg,#059669,#0d9488)"
-          shadow="rgba(5,150,105,0.35)"
+          detail={`Across ${teams.length} board${teams.length !== 1 ? 's' : ''}`}
         />
-        <GradCard
+        <MetricCard
           label="Active Members"
           value={totalMembers}
-          emoji="👥"
-          vibe={`${meetTarget} meet target`}
-          gradient="linear-gradient(135deg,#d97706,#ea580c)"
-          shadow="rgba(217,119,6,0.35)"
+          detail={`${meetTarget} meet target`}
         />
       </div>
 
@@ -452,7 +384,7 @@ function LeadDashboard({ teams, bugBoards, members, boardShortNameMap, boardKanb
 function BoardSummaryCard({ team, members: boardMembers, bc, isKanban, startDate, endDate, onKanbanRangeChange }: {
   team: TeamSummary & { isLoading: boolean; error: Error | null };
   members: MemberResponse[];
-  bc: { gradient: string; shadow: string; color: string };
+  bc: { color: string };
   isKanban: boolean;
   startDate: string;
   endDate: string;
@@ -462,22 +394,21 @@ function BoardSummaryCard({ team, members: boardMembers, bc, isKanban, startDate
 
   return (
     <div style={{ background: T.cardBg, borderRadius: 16, border: `1px solid ${T.cardBrd}`, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      {/* Board header with gradient */}
-      <div style={{ background: bc.gradient, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ background: T.headBg, borderBottom: `1px solid ${T.rowBrd}`, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: sans, whiteSpace: 'nowrap' }}>{team.teamName}</div>
-          <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.65)', fontFamily: mono, marginTop: 2, whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.titleCol, fontFamily: sans, whiteSpace: 'nowrap' }}>{team.teamName}</div>
+          <div style={{ fontSize: 10.5, color: T.subCol, fontFamily: mono, marginTop: 2, whiteSpace: 'nowrap' }}>
             {isKanban
               ? `${team.sprintStartDate ?? startDate} → ${team.sprintEndDate ?? endDate}`
               : team.sprintName || 'No active sprint'}
           </div>
-          <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.65)', fontFamily: mono, marginTop: 2, whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: 10.5, color: T.subCol, fontFamily: mono, marginTop: 2, whiteSpace: 'nowrap' }}>
             {team.teamMembers} members
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', fontFamily: mono, lineHeight: 1 }}>{team.averageProductivity || '-'}</div>
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', fontFamily: sans }}>avg productivity</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: T.titleCol, fontFamily: mono, lineHeight: 1 }}>{team.averageProductivity || '-'}</div>
+          <div style={{ fontSize: 10, color: T.subCol, fontFamily: sans }}>avg productivity</div>
         </div>
       </div>
 
@@ -526,7 +457,7 @@ function BoardSummaryCard({ team, members: boardMembers, bc, isKanban, startDate
                 {/* Productivity bar + percentage */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <div style={{ width: 52, height: 5, background: T.isDark ? 'rgba(255,255,255,0.06)' : '#f0f2f8', borderRadius: 99, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${Math.min(prodVal, 130) / 130 * 100}%`, background: isAbove ? bc.gradient : '#9ca3af', borderRadius: 99 }} />
+                    <div style={{ height: '100%', width: `${Math.min(prodVal, 130) / 130 * 100}%`, background: isAbove ? bc.color : '#9ca3af', borderRadius: 99 }} />
                   </div>
                   <span style={{ fontSize: 11, fontWeight: 700, color: isAbove ? bc.color : '#9ca3af', fontFamily: mono, width: 42, textAlign: 'right' }}>
                     {ms.productivityRate}
@@ -651,17 +582,10 @@ function MemberDashboard({ teams, memberName, boardKanbanMap, summaryLoading, me
 }) {
   const T = useThemeColors();
 
-  const boardColors = [
-    { gradient: 'linear-gradient(135deg,#0f766e,#0891b2)', color: T.accent },
-    { gradient: 'linear-gradient(135deg,#4f46e5,#7c3aed)', color: '#7c3aed' },
-    { gradient: 'linear-gradient(135deg,#059669,#0d9488)', color: '#059669' },
-    { gradient: 'linear-gradient(135deg,#d97706,#ea580c)', color: '#d97706' },
-  ];
-
   // Find my data per board
-  const myBoards = teams.map((team, bi) => {
+  const myBoards = teams.map((team) => {
     const me = memberName ? team.memberSummaries?.find(m => m.name === memberName) : null;
-    return { team, me, bc: boardColors[bi % boardColors.length] };
+    return { team, me };
   });
 
   // KPIs from personal data across all boards
@@ -695,44 +619,27 @@ function MemberDashboard({ teams, memberName, boardKanbanMap, summaryLoading, me
         </div>
       </div>
 
-      {/* Global Search */}
-      <div className="flex justify-center mb-6">
-        <GlobalSearch />
-      </div>
-
       {/* Personal KPI row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 14 }}>
-        <GradCard
+      <div className="mb-[14px] grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
           label="My Productivity"
           value={avgProd !== '-' ? `${avgProd}%` : '-'}
-          emoji={parseFloat(avgProd) >= 100 ? '🔥' : '📈'}
-          vibe={parseFloat(avgProd) >= 100 ? 'Above target!' : 'Keep going!'}
-          gradient="linear-gradient(135deg,#0f766e,#0891b2)"
-          shadow="rgba(8,145,178,0.35)"
+          detail={parseFloat(avgProd) >= 100 ? 'Above target' : 'Across active boards'}
         />
-        <GradCard
+        <MetricCard
           label="My WP Total"
           value={totalWP}
-          emoji="⚡"
-          vibe={`of ${totalTargetWP.toFixed(0)} target`}
-          gradient="linear-gradient(135deg,#4f46e5,#7c3aed)"
-          shadow="rgba(124,58,237,0.35)"
+          detail={`Of ${totalTargetWP.toFixed(0)} target`}
         />
-        <GradCard
+        <MetricCard
           label="My SP Total"
           value={totalSP.toFixed(2)}
-          emoji="📊"
-          vibe="story points"
-          gradient="linear-gradient(135deg,#d97706,#ea580c)"
-          shadow="rgba(217,119,6,0.35)"
+          detail="Story points"
         />
-        <GradCard
+        <MetricCard
           label="Active Boards"
           value={myBoards.filter(b => b.me).length}
-          emoji="📋"
-          vibe={`of ${teams.length} total`}
-          gradient="linear-gradient(135deg,#059669,#0d9488)"
-          shadow="rgba(5,150,105,0.35)"
+          detail={`Of ${teams.length} total`}
         />
       </div>
 
@@ -759,25 +666,22 @@ function MemberDashboard({ teams, memberName, boardKanbanMap, summaryLoading, me
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: teams.length > 1 ? '1fr 1fr' : '1fr', gap: 12 }}>
-          {myBoards.map(({ team, me, bc }, bi) => {
-            const myProd = me ? parseFloat(me.productivityRate) : 0;
-            const isAbove = myProd >= 100;
+          {myBoards.map(({ team, me }) => {
             const isKanban = boardKanbanMap.get(team.boardId) ?? false;
             return (
               <div key={team.boardId} style={{ background: T.cardBg, borderRadius: 16, border: `1px solid ${T.cardBrd}`, overflow: 'hidden' }}>
-                {/* Board header — shows MY productivity, not team average */}
-                <div style={{ background: bc.gradient, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ background: T.headBg, borderBottom: `1px solid ${T.rowBrd}`, padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: sans }}>{team.teamName}</div>
-                    <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.65)', fontFamily: mono, marginTop: 2 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: T.titleCol, fontFamily: sans }}>{team.teamName}</div>
+                    <div style={{ fontSize: 10.5, color: T.subCol, fontFamily: mono, marginTop: 2 }}>
                       {boardKanbanMap.get(team.boardId)
                         ? `${team.sprintStartDate ?? startDate} → ${team.sprintEndDate ?? endDate}`
                         : team.sprintName || 'No active sprint'}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: '#fff', fontFamily: mono, lineHeight: 1 }}>{me ? me.productivityRate : '-'}</div>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', fontFamily: sans }}>my productivity</div>
+                    <div style={{ fontSize: 28, fontWeight: 700, color: T.titleCol, fontFamily: mono, lineHeight: 1 }}>{me ? me.productivityRate : '-'}</div>
+                    <div style={{ fontSize: 10, color: T.subCol, fontFamily: sans }}>my productivity</div>
                   </div>
                 </div>
 

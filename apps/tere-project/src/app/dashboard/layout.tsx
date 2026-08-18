@@ -8,7 +8,7 @@ import Topbar from '@src/components/topbar';
 import PageSkeleton from '@src/components/PageSkeleton';
 import LoadingScreen from '@src/components/LoadingScreen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { App } from 'antd';
+import { App, ConfigProvider, theme as antdTheme } from 'antd';
 import AxiosErrorInterceptor from '@src/components/AxiosErrorInterceptor';
 import { useThemeColors } from '@src/hooks/useTheme';
 import type { Theme } from '@src/hooks/useTheme';
@@ -16,7 +16,6 @@ import { useMemberProfile } from '@src/features/dashboard/hooks/useMemberProfile
 import { logout } from '@src/lib/auth';
 
 function NotRegisteredScreen({ email }: { email: string | null }) {
-  const { isDark } = useThemeColors();
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -25,36 +24,15 @@ function NotRegisteredScreen({ email }: { email: string | null }) {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center"
-      style={{ background: isDark ? 'linear-gradient(180deg, #0d1829 0%, #0f1f36 100%)' : '#f9fafb' }}
-    >
-      <div
-        className="max-w-md w-full mx-4 rounded-2xl p-8 text-center"
-        style={{
-          background: isDark ? 'rgba(255,255,255,0.04)' : '#ffffff',
-          border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-        }}
-      >
-        <div className="text-4xl mb-4">🚧</div>
-        <h2
-          className="text-xl font-bold mb-2"
-          style={{ color: isDark ? '#ffffff' : '#111827' }}
-        >
-          Account Not Registered
-        </h2>
-        <p className="text-sm mb-4" style={{ color: isDark ? 'rgba(255,255,255,0.5)' : '#6b7280' }}>
+    <div className="grid min-h-screen place-items-center p-4">
+      <div className="liquid-glass max-w-md rounded-[26px] p-8 text-center">
+        <div className="mx-auto mb-5 grid h-12 w-12 place-items-center rounded-2xl bg-amber-400/20 text-2xl">!</div>
+        <h2 className="mb-2 text-xl font-semibold">Account not registered</h2>
+        <p className="mb-6 text-sm text-[var(--lg-muted)]">
           Your account{email ? ` (${email})` : ''} is not registered as a team member yet.
           Please contact your admin to be added.
         </p>
-        <button
-          onClick={handleSignOut}
-          className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
-          style={{ background: 'linear-gradient(135deg, #1282a2, #22b8d4)' }}
-        >
-          Sign Out
-        </button>
+        <button onClick={handleSignOut} className="glass-button is-primary w-full">Sign out</button>
       </div>
     </div>
   );
@@ -66,16 +44,13 @@ function DashboardShell({
   isDataReady,
   handleLoadingComplete,
   theme,
-  pageBg,
 }: {
   children: React.ReactNode;
   showLoading: boolean;
   isDataReady: boolean;
   handleLoadingComplete: () => void;
   theme: Theme;
-  pageBg: string;
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const [pageLoading, setPageLoading] = useState(false);
   const prevPathnameRef = useRef(pathname);
@@ -98,34 +73,19 @@ function DashboardShell({
       {showLoading && (
         <LoadingScreen onComplete={handleLoadingComplete} isDataReady={isDataReady} theme={theme} />
       )}
-      <div
-        className="min-h-screen overflow-hidden transition-colors duration-300"
-        style={{
-          background: pageBg,
-          visibility: showLoading ? 'hidden' : 'visible',
-          position: showLoading ? 'fixed' : undefined,
-          inset: showLoading ? 0 : undefined,
-        }}
-      >
+      <div className={`liquid-desktop ${showLoading ? 'is-loading' : ''}`}>
+        <div className="wallpaper-shape wallpaper-shape-a" />
+        <div className="wallpaper-shape wallpaper-shape-b" />
+        <div className="wallpaper-shape wallpaper-shape-c" />
         {notRegistered ? (
           <NotRegisteredScreen email={user?.email ?? null} />
         ) : (
           <>
-            <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-            <Topbar onMenuClick={() => setSidebarOpen(true)} />
-            <div
-              className="absolute top-0 bottom-0 overflow-y-auto"
-              style={{
-                left: 252,
-                right: 0,
-                paddingTop: 88,
-                paddingLeft: 14,
-                paddingRight: 14,
-                paddingBottom: 14,
-              }}
-            >
+            <Sidebar />
+            <Topbar />
+            <main className="dashboard-scroll">
               {pageLoading ? <PageSkeleton theme={theme} /> : children}
-            </div>
+            </main>
           </>
         )}
       </div>
@@ -150,7 +110,7 @@ export default function DashboardLayout({
       },
     },
   }));
-  const { pageBg, theme } = useThemeColors();
+  const { theme } = useThemeColors();
 
   const [animFinished, setAnimFinished] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -175,20 +135,31 @@ export default function DashboardLayout({
 
   return (
     <QueryClientProvider client={queryClient}>
-      <App>
-        <AxiosErrorInterceptor />
-        {canRenderApp && (
-          <DashboardShell
-            showLoading={showLoading}
-            isDataReady={!loading}
-            handleLoadingComplete={handleLoadingComplete}
-            theme={theme}
-            pageBg={pageBg}
-          >
-            {children}
-          </DashboardShell>
-        )}
-      </App>
+      <ConfigProvider theme={{
+        algorithm: theme === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+        token: {
+          colorPrimary: '#0a84ff',
+          colorBgContainer: theme === 'dark' ? 'rgba(20,27,39,.64)' : 'rgba(255,255,255,.62)',
+          colorBorder: theme === 'dark' ? 'rgba(255,255,255,.14)' : 'rgba(255,255,255,.72)',
+          borderRadius: 12,
+          borderRadiusLG: 18,
+          fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif',
+        },
+      }}>
+        <App>
+          <AxiosErrorInterceptor />
+          {canRenderApp && (
+            <DashboardShell
+              showLoading={showLoading}
+              isDataReady={!loading}
+              handleLoadingComplete={handleLoadingComplete}
+              theme={theme}
+            >
+              {children}
+            </DashboardShell>
+          )}
+        </App>
+      </ConfigProvider>
     </QueryClientProvider>
   );
 }

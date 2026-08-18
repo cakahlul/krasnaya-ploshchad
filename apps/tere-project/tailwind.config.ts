@@ -11,8 +11,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-space-grotesk)', 'Space Grotesk', 'sans-serif'],
-        mono: ['var(--font-ibm-plex-mono)', 'IBM Plex Mono', 'monospace'],
+        sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'Segoe UI', 'sans-serif'],
+        mono: ['SFMono-Regular', 'SF Mono', 'ui-monospace', 'monospace'],
       },
       colors: {
         primary: '#011d4d',

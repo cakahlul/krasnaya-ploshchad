@@ -23,7 +23,7 @@ MAIN_NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 REL_ID = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id"
 GROUPS = {"tunaiku": "Loan", "platform": "Loan", "funding": "Transaction", "ambis": "User"}
 CLOSED_2025_MONTHS = {f"2025-{month:02d}" for month in range(1, 13)}
-CLOSED_2026_MONTHS = {f"2026-{month:02d}" for month in range(1, 7)}
+CLOSED_2026_MONTHS = {f"2026-{month:02d}" for month in range(1, 8)}
 GREEN_AUTOFILL_DATES = {365: ("2025-01-20", "2025-01-31")}
 BLUE_AUTOFILL_DATES = {
     row: ("2026-02-26", "2026-03-13")

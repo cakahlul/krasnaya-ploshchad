@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
+import { LockKeyhole, Mail, MoveRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { signup } from '@src/lib/auth';
 import Link from 'next/link';
+import { signup } from '@src/lib/auth';
+import { ThemeToggle } from '@src/components/ThemeToggle';
 
 export default function SignUp() {
   const [email, setEmail] = useState('');
@@ -11,68 +13,52 @@ export default function SignUp() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSignUp = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSignUp = async (event: FormEvent) => {
+    event.preventDefault();
     setLoading(true);
     try {
       await signup(email, password);
-      router.push('/');
+      router.push('/dashboard');
     } catch (error) {
-      alert(error);
+      alert(String(error));
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-white via-muted to-accent">
-      <div className="w-full max-w-md bg-white/80 shadow-xl backdrop-blur-md rounded-3xl px-8 py-10 animate-bounce-up-down">
-        <h2 className="text-3xl font-extrabold text-primary text-center mb-2 animate-bounce-up-down hover:animate-bounce-up-down transition-all">
-          🎉 Create Your Account
-        </h2>
-        <p className="text-secondary text-center mb-6 animate-slot-in">
-          Let&apos;s start something great together
-        </p>
-
-        <form onSubmit={handleSignUp} className="space-y-4">
-          <input
-            type="email"
-            placeholder="📧 Email"
-            className="w-full px-4 py-3 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-accent transition duration-300"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-          />
-
-          <input
-            type="password"
-            placeholder="🔐 Password"
-            className="w-full px-4 py-3 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-accent transition duration-300"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-          />
-
-          <button
-            type="submit"
-            className="w-full py-3 bg-secondary text-white font-semibold rounded-lg hover:bg-primary active:scale-95 transition-transform duration-200"
-            disabled={loading}
-          >
-            {loading ? 'Signing up...' : 'Sign Up 🚀'}
-          </button>
-
-          <p className="text-center text-sm mt-4">
-            Already registered?{' '}
-            <Link
-              href="/sign-in"
-              className="text-accent font-semibold hover:underline"
-            >
-              Sign In Here 🔐
-            </Link>
-          </p>
-        </form>
+    <main className="auth-desktop">
+      <div className="wallpaper-shape wallpaper-shape-a" />
+      <div className="wallpaper-shape wallpaper-shape-b" />
+      <div className="auth-toolbar liquid-group">
+        <div className="flex items-center gap-2.5"><div className="tere-glyph"><span /><span /><span /></div><strong>TERE</strong></div>
+        <ThemeToggle />
       </div>
-      <footer className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-xs text-secondary text-center animate-slot-in">
-        Made with ✨ and 0 bugs (hopefully) by{' '}
-        <strong className="text-accent">Esasjana</strong> 🚀
-      </footer>
-    </div>
+
+      <section className="auth-window liquid-glass">
+        <div className="auth-window-copy">
+          <div className="auth-window-kicker"><span /> A clearer view of delivery</div>
+          <h1>Bring your work<br />into focus.</h1>
+          <p>Create your workspace account for reporting, delivery health, productivity, and project context.</p>
+          <div className="auth-preview" aria-hidden>
+            <div className="auth-preview-bar"><i /><i /><i /></div>
+            <div className="auth-preview-body"><aside /><div><b /><b /><b /><span /><span /></div></div>
+          </div>
+        </div>
+
+        <form onSubmit={handleSignUp} className="auth-form-panel">
+          <div className="mb-8">
+            <span className="auth-eyebrow">New workspace account</span>
+            <h2>Create your account</h2>
+            <p>Use your company email to get started.</p>
+          </div>
+          <div className="auth-email-form">
+            <label>Email<div><Mail size={16} /><input required type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="you@company.com" /></div></label>
+            <label>Password<div><LockKeyhole size={16} /><input required minLength={8} type="password" autoComplete="new-password" value={password} onChange={event => setPassword(event.target.value)} placeholder="At least 8 characters" /></div></label>
+            <button disabled={loading} className="auth-submit">{loading ? 'Creating account…' : 'Create account'}<MoveRight size={16} /></button>
+          </div>
+          <p className="auth-account-link">Already registered? <Link href="/sign-in">Sign in</Link></p>
+        </form>
+      </section>
+    </main>
   );
 }

@@ -1,17 +1,17 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { SearchOutlined, CloseCircleFilled, LoadingOutlined, TagOutlined, UserOutlined, ClockCircleOutlined, ExperimentOutlined, CheckCircleOutlined, SyncOutlined, LinkOutlined } from '@ant-design/icons';
+import { SearchOutlined, CloseCircleFilled, LoadingOutlined, TagOutlined, UserOutlined, ClockCircleOutlined, ExperimentOutlined, CheckCircleOutlined, LinkOutlined } from '@ant-design/icons';
 import { Modal } from 'antd';
 import { useGlobalSearch, SearchTicket } from '../hooks/useGlobalSearch';
 import { useTicketDetail, TicketDetail } from '../hooks/useTicketDetail';
 import { useThemeColors } from '@src/hooks/useTheme';
+import { getSearchContentState } from './search-content-state';
 
 export default function GlobalSearch() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTicketKey, setSelectedTicketKey] = useState<string | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [jiraHovered, setJiraHovered] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -33,6 +33,7 @@ export default function GlobalSearch() {
   } = useGlobalSearch(300);
 
   const { ticket: selectedTicket, isLoading: isLoadingDetail } = useTicketDetail(selectedTicketKey);
+  const searchContentState = getSearchContentState(isLoading, results.length);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -45,6 +46,22 @@ export default function GlobalSearch() {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const focusSearch = () => inputRef.current?.focus();
+    const handleShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        focusSearch();
+      }
+    };
+    window.addEventListener('tere:search', focusSearch);
+    window.addEventListener('keydown', handleShortcut);
+    return () => {
+      window.removeEventListener('tere:search', focusSearch);
+      window.removeEventListener('keydown', handleShortcut);
+    };
   }, []);
 
   // Handle scroll for infinite loading
@@ -183,10 +200,7 @@ export default function GlobalSearch() {
   };
 
   const getSafeResolution = (ticket: SearchTicket | TicketDetail) => {
-    if (!ticket.resolution) return '';
-    return typeof ticket.resolution === 'object'
-      ? (ticket.resolution as any).name || (ticket.resolution as any).value || 'Resolved'
-      : ticket.resolution;
+    return ticket.resolution ?? '';
   };
 
   const getPriorityStyle = (priority: string): React.CSSProperties => {
@@ -205,24 +219,16 @@ export default function GlobalSearch() {
 
   return (
     <>
-      <div id="global-search-container" className="relative w-full max-w-xl">
+      <div id="global-search-container" role="search" className="relative w-full max-w-xl">
         {/* Search Input */}
         <div className="relative">
-          <div
-            style={{
-              background: isDark ? 'rgba(16,30,50,0.9)' : 'rgba(255,255,255,0.9)',
-              backdropFilter: 'blur(16px)',
-              border: `1px solid ${cardBrd}`,
-              borderRadius: 16,
-              boxShadow: isDark ? '0 4px 24px rgba(0,0,0,0.3)' : '0 4px 24px rgba(1,29,77,0.08)',
-            }}
-            className="overflow-hidden"
-          >
+          <div className="global-search-glass liquid-glass overflow-hidden">
             <div className="flex items-center px-5 py-4">
               <SearchOutlined className="text-xl mr-4" style={{ color: subCol }} />
               <input
                 ref={inputRef}
                 type="text"
+                aria-label="Search tickets, pull requests, and documentation"
                 value={query}
                 onChange={handleInputChange}
                 onFocus={handleInputFocus}
@@ -254,20 +260,18 @@ export default function GlobalSearch() {
 
         {/* Results Dropdown */}
         {isOpen && query.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-2 z-50">
+          <div className="global-search-popover absolute top-full left-0 right-0 mt-2 z-50">
             <div
               ref={resultsRef}
               onScroll={handleScroll}
-              className="max-h-[360px] overflow-y-auto animate-airdrop"
-              style={{
-                background: isDark ? 'rgba(16,30,50,0.96)' : 'rgba(255,255,255,0.96)',
-                backdropFilter: 'blur(16px)',
-                border: `1px solid ${cardBrd}`,
-                borderRadius: 16,
-                boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.4)' : '0 16px 48px rgba(1,29,77,0.12)',
-              }}
+              className="global-search-results liquid-glass max-h-[360px] overflow-y-auto animate-airdrop"
             >
-              {results.length === 0 && !isLoading ? (
+              {searchContentState === 'loading' ? (
+                <div className="search-loading-state" role="status" aria-live="polite">
+                  <LoadingOutlined aria-hidden />
+                  <span><strong>Searching TERE</strong><small>Looking through tickets and project context…</small></span>
+                </div>
+              ) : searchContentState === 'empty' ? (
                 <div className="p-6 text-center">
                   <SearchOutlined className="text-3xl mb-2 opacity-50" style={{ color: subCol }} />
                   <p className="text-sm" style={{ color: subCol }}>No results found</p>
@@ -277,14 +281,15 @@ export default function GlobalSearch() {
                   {results.map((ticket, index) => {
                     const resolutionVal = getSafeResolution(ticket);
                     return (
-                    <div
+                    <button
+                      type="button"
                       key={ticket.key}
                       onClick={() => handleTicketClick(ticket)}
                       onMouseEnter={() => setHoveredIndex(index)}
                       onMouseLeave={() => setHoveredIndex(null)}
-                      className="p-3 rounded-xl cursor-pointer transition-all duration-200 group animate-airdrop-item"
+                      className="w-full border-0 bg-transparent p-3 text-left rounded-xl cursor-pointer transition-all duration-200 group animate-airdrop-item"
                       style={{
-                        animationDelay: `${index * 50}ms`,
+                        animationDelay: `${Math.min(index, 8) * 24}ms`,
                         background: hoveredIndex === index
                           ? (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)')
                           : 'transparent',
@@ -345,7 +350,7 @@ export default function GlobalSearch() {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </button>
                   );
                   })}
 
@@ -384,17 +389,12 @@ export default function GlobalSearch() {
               boxShadow: 'none',
               padding: 0,
             },
-            mask: {
-              backdropFilter: 'blur(8px)',
-              background: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.3)',
-            },
+            mask: { background: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.3)' },
           }}
         >
           {isLoadingDetail ? (
             <TicketDetailSkeleton
               isDark={isDark}
-              cardBg={cardBg}
-              cardBrd={cardBrd}
             />
           ) : selectedTicket ? (
             <TicketDetailCard
@@ -421,23 +421,17 @@ export default function GlobalSearch() {
 
 interface TicketDetailSkeletonProps {
   isDark: boolean;
-  cardBg: string;
-  cardBrd: string;
 }
 
-function TicketDetailSkeleton({ isDark, cardBg, cardBrd }: TicketDetailSkeletonProps) {
+function TicketDetailSkeleton({ isDark }: TicketDetailSkeletonProps) {
   const shimmer = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
   const shimmerLight = isDark ? 'rgba(255,255,255,0.03)' : '#f3f4f6';
 
   return (
     <div
-      className="p-6 animate-pulse"
+      className="liquid-glass p-6 animate-pulse"
       style={{
-        background: isDark ? 'rgba(16,30,50,0.95)' : 'rgba(255,255,255,0.92)',
-        backdropFilter: 'blur(24px)',
         borderRadius: 20,
-        border: `1px solid ${cardBrd}`,
-        boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.4)' : '0 16px 48px rgba(1,29,77,0.12)',
       }}
     >
       <div style={{ background: shimmer, height: 24, borderRadius: 6, width: '33%', marginBottom: 16 }} />
@@ -487,24 +481,21 @@ function TicketDetailCard({
   const [jiraHovered, setJiraHovered] = useState(false);
 
   // Helper for safe rendering
-  const safeRender = (val: any) => {
+  const safeRender = (val: unknown) => {
     if (typeof val === 'object' && val !== null) {
-       return val.value || val.name || val.id || JSON.stringify(val);
+      const record = val as Record<string, unknown>;
+      return String(record.value ?? record.name ?? record.id ?? JSON.stringify(val));
     }
-    return val;
+    return String(val ?? '');
   };
 
   const resolutionVal = getSafeResolution(ticket);
 
   return (
     <div
-      className="overflow-hidden animate-airdrop"
+      className="liquid-glass overflow-hidden animate-airdrop"
       style={{
-        background: isDark ? 'rgba(16,30,50,0.95)' : 'rgba(255,255,255,0.92)',
-        backdropFilter: 'blur(24px)',
         borderRadius: 20,
-        border: `1px solid ${cardBrd}`,
-        boxShadow: isDark ? '0 16px 48px rgba(0,0,0,0.4)' : '0 16px 48px rgba(1,29,77,0.12)',
       }}
     >
 

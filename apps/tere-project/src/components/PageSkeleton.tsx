@@ -3,7 +3,7 @@
 import type { Theme } from '@src/hooks/useTheme';
 
 export default function PageSkeleton({ theme }: { theme: Theme }) {
-  const isVoid = theme === 'void' || theme === 'crimson';
+  const isVoid = theme === 'dark';
   const shimBg = isVoid ? 'rgba(255,255,255,0.05)' : '#ebedf5';
   const shimHi = isVoid ? 'rgba(255,255,255,0.10)' : '#f5f6fb';
   const cardBg = isVoid ? '#101e32' : '#fff';
