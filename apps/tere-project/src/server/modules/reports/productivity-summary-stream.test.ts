@@ -74,6 +74,20 @@ test('a lead streams one point per month and a final complete payload', async ()
 
   const last = events.at(-1);
   assert.equal(last.type, 'complete');
+  assert.deepEqual(last.data.sourceMetadata, {
+    source: 'archive',
+    coverage: { status: 'complete', expected: 2, covered: 2 },
+    fallback: false,
+    reason: null,
+    warning: null,
+    attemptedSources: [
+      { source: 'archive', detail: null },
+      { source: 'archive', detail: null },
+    ],
+    snapshotTimestamp: null,
+  });
+  assert.equal(last.data.bugMetadata.source, 'jira');
+  assert.deepEqual(last.data.bugMetadata.coverage, { status: 'complete', expected: 2, covered: 2 });
   assert.deepEqual(last.data.chart, events
     .filter(event => event.type === 'point')
     .map(event => event.point)

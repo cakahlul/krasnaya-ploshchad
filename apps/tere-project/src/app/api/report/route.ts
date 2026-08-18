@@ -1,6 +1,7 @@
 import { withAuthOrApiKey } from '@server/auth/with-auth-or-api-key';
 import { generateReport, generateReportByDateRange } from '@server/modules/reports/reports.service';
 import { filterReportForMember } from '@server/modules/reports/report-filter';
+import { metadataFromResolution, resolveJiraValue } from '@server/modules/report-source-resolver/report-source-resolver';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,10 +17,12 @@ export const GET = withAuthOrApiKey(async (req, { caller }) => {
 
   if (startDate && endDate) {
     const report = await generateReportByDateRange(startDate, endDate, project, epicId);
-    return Response.json(caller ? filterReportForMember(report, caller) : report);
+    const resolved = await resolveJiraValue(caller ? filterReportForMember(report, caller) : report, report.issues.length);
+    return Response.json({ ...resolved.value, sourceMetadata: metadataFromResolution(resolved) });
   }
 
   if (!sprint) return Response.json({ message: 'sprint or date range is required' }, { status: 400 });
   const report = await generateReport(sprint, project, epicId);
-  return Response.json(caller ? filterReportForMember(report, caller) : report);
+  const resolved = await resolveJiraValue(caller ? filterReportForMember(report, caller) : report, report.issues.length);
+  return Response.json({ ...resolved.value, sourceMetadata: metadataFromResolution(resolved) });
 });

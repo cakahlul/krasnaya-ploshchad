@@ -1,6 +1,8 @@
+import type { ReportSourceAttempt, ReportSourceMetadata } from '@server/modules/report-source-resolver/report-source-resolver';
+
 export type ReportingGroup = "Loan" | "Transaction" | "User" | "Ungrouped";
 export type MetricBasis = "WP" | "SP";
-export type MonthSource = "archive" | "live" | "partial" | "unavailable";
+export type MonthSource = "archive" | "snapshot" | "live" | "partial" | "unavailable";
 export type RuleVersion = "legacy" | "new" | "v3" | "issue-field-presence";
 
 export interface SourceMember {
@@ -22,6 +24,8 @@ export interface MonthSourceResult {
   availability?: { productivity: boolean };
   archiveBacked?: boolean;
   failures?: Failure[];
+  snapshotTimestamp?: string;
+  attempts?: readonly ReportSourceAttempt[];
 }
 
 export interface RangeAggregationPorts {
@@ -45,6 +49,13 @@ export interface Failure {
   group?: ReportingGroup;
   board?: string;
   reason: string;
+}
+
+export interface BugMetadata {
+  source: "jira";
+  coverage: { status: "complete" | "partial" | "unavailable"; expected: number; covered: number };
+  failure: string | null;
+  snapshotTimestamp: null;
 }
 
 function reason(error: unknown): string {
@@ -75,7 +86,9 @@ type LoadedMonth = {
   data: { members?: readonly SourceMember[] } | null;
   bugsRaised: number | null;
   bugsDone: number | null;
-  coverage: { source: MonthSource; productivityAvailable: boolean };
+  coverage: { source: MonthSource; productivityAvailable: boolean; failures: Failure[]; attempts: readonly ReportSourceAttempt[] };
+  snapshotTimestamp?: string;
+  bugMetadata: BugMetadata;
 };
 
 /**
@@ -189,14 +202,9 @@ export async function generateProductivitySummaryRange(
           scope: "productivity",
           reason: reason(productivity.reason),
         });
-      bugs.forEach((bug, index) => {
-        if (bug.status === "rejected")
-          failures.push({
-            scope: "bugs",
-            group: input.selectedGroups[index],
-            reason: reason(bug.reason),
-          });
-      });
+      const bugFailures = bugs
+        .filter((bug): bug is PromiseRejectedResult => bug.status === "rejected")
+        .map(bug => reason(bug.reason));
       const monthData = productivity.status === "fulfilled" ? productivity.value : null;
       const productivityAvailable = monthData !== null
         && monthData.source !== "unavailable"
@@ -213,6 +221,16 @@ export async function generateProductivitySummaryRange(
       console.log(
         `[telemetry] productivity-summary-range month durationMs=${Date.now() - monthStart} month=${month} source=${source}`,
       );
+      const monthBugMetadata: BugMetadata = {
+        source: "jira",
+        coverage: {
+          status: bugsAvailable ? "complete" : fulfilledBugs.length ? "partial" : "unavailable",
+          expected: bugs.length,
+          covered: fulfilledBugs.length,
+        },
+        failure: bugFailures[0] ?? null,
+        snapshotTimestamp: null,
+      };
       const resolved = {
         month,
         data: monthData,
@@ -229,7 +247,10 @@ export async function generateProductivitySummaryRange(
           bugsAvailable,
           appliedRules: monthData?.appliedRules ?? [],
           failures,
+          attempts: monthData?.attempts ?? [{ source: source === 'live' ? 'jira' : source === 'snapshot' ? 'snapshot' : 'archive', detail: failures[0]?.reason ?? null }],
         },
+        snapshotTimestamp: monthData?.snapshotTimestamp,
+        bugMetadata: monthBugMetadata,
       };
       publisher?.publish(resolved);
       return resolved;
@@ -293,7 +314,45 @@ export async function generateProductivitySummaryRange(
   const sourceDistribution = loaded.reduce<Record<MonthSource, number>>((acc, month) => {
     acc[month.coverage.source] = (acc[month.coverage.source] ?? 0) + 1;
     return acc;
-  }, { archive: 0, live: 0, partial: 0, unavailable: 0 });
+  }, { archive: 0, snapshot: 0, live: 0, partial: 0, unavailable: 0 });
+  const attempts = loaded.flatMap(month => month.coverage.attempts);
+  const resolvedSources = [...new Set(loaded.map(month => month.coverage.source))];
+  const selectedSource = resolvedSources.length === 1 && resolvedSources[0] === 'live' ? 'jira' : resolvedSources[0];
+  const sourceMetadata: ReportSourceMetadata = {
+    source: resolvedSources.length === 1
+      ? resolvedSources[0] === 'live' ? 'jira' : resolvedSources[0]
+      : 'mixed',
+    coverage: {
+      status: loaded.every(month => month.coverage.source !== 'partial' && month.coverage.source !== 'unavailable')
+        ? 'complete'
+        : loaded.some(month => month.coverage.source !== 'unavailable') ? 'partial' : 'unavailable',
+      expected: loaded.length,
+      covered: loaded.filter(month => month.coverage.source !== 'unavailable').length,
+    },
+    fallback: loaded.some(month => month.coverage.source === 'partial'
+      || month.coverage.failures.length > 0
+      || month.coverage.attempts.some(attempt => attempt.source !== selectedSource)),
+    reason: loaded.flatMap(month => month.coverage.failures).find(Boolean)?.reason ?? null,
+    warning: resolvedSources.some(source => source === 'partial' || source === 'unavailable')
+      ? 'Report coverage is incomplete' : null,
+    attemptedSources: attempts.map(attempt => ({ source: attempt.source, detail: attempt.detail ?? null })),
+    snapshotTimestamp: resolvedSources.length === 1 && resolvedSources[0] === 'snapshot'
+      ? loaded.every(month => month.snapshotTimestamp === loaded[0]?.snapshotTimestamp)
+        ? loaded[0]?.snapshotTimestamp ?? null : null
+      : null,
+  };
+  const bugMetadata: BugMetadata = {
+    source: "jira",
+    coverage: {
+      status: loaded.every(month => month.bugMetadata.coverage.status === "complete")
+        ? "complete"
+        : loaded.some(month => month.bugMetadata.coverage.status !== "unavailable") ? "partial" : "unavailable",
+      expected: loaded.reduce((sum, month) => sum + month.bugMetadata.coverage.expected, 0),
+      covered: loaded.reduce((sum, month) => sum + month.bugMetadata.coverage.covered, 0),
+    },
+    failure: loaded.map(month => month.bugMetadata.failure).find(Boolean) ?? null,
+    snapshotTimestamp: null,
+  };
   console.log(
     `[telemetry] productivity-summary-range total durationMs=${Date.now() - rangeStart} monthCount=${input.months.length} distribution=${JSON.stringify(sourceDistribution)}`,
   );
@@ -315,6 +374,8 @@ export async function generateProductivitySummaryRange(
       ),
       months: loaded.map((month) => month.coverage),
     },
+    sourceMetadata,
+    bugMetadata,
     summary: {
       activeMembers: fullDetails.length,
       productivityMetric: sumAvailable(chart.map((point) => point.productivityMetric)),

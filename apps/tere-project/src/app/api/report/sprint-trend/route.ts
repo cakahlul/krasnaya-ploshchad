@@ -1,5 +1,6 @@
 import { withAuthOrApiKey } from '@server/auth/with-auth-or-api-key';
 import { generateSprintTrend } from '@server/modules/reports/reports.service';
+import { metadataFromResolution, resolveJiraValue } from '@server/modules/report-source-resolver/report-source-resolver';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,5 +18,6 @@ export const GET = withAuthOrApiKey(async req => {
 
   const sprintIds = sprintsParam.split(',').map(s => s.trim()).filter(Boolean);
   const trend = await generateSprintTrend(sprintIds, project);
-  return Response.json(trend);
+  const resolved = await resolveJiraValue(trend, trend.points.length);
+  return Response.json({ ...resolved.value, sourceMetadata: metadataFromResolution(resolved) });
 });

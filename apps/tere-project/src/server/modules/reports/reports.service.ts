@@ -574,6 +574,14 @@ function filterMembersByProject(
   );
 }
 
+export async function findReportMembers(project: string): Promise<MemberResponse[]> {
+  return filterMembersByProject(await membersService.findAll(), project);
+}
+
+export function filterReportMembersForProject(members: MemberResponse[], project: string): MemberResponse[] {
+  return filterMembersByProject(members, project);
+}
+
 function isBadRequestError(error: unknown): boolean {
   return !!(
     error &&
@@ -593,6 +601,7 @@ async function buildPlannedWPMap(
   wpWeights?: Parameters<
     typeof issueProcessingStrategyFactory.createStrategies
   >[1],
+  plannedDataByProject?: ReadonlyMap<string, JiraIssueEntity[]>,
 ): Promise<Map<string, number>> {
   const accountIdToName = new Map<string, string>(
     members
@@ -609,12 +618,9 @@ async function buildPlannedWPMap(
     );
     const assignees = projectMembers.map((m) => m.jiraId!).filter(Boolean);
     try {
-      const plannedData = await repo.fetchPlannedWPData(
-        plannedWPProject,
-        assignees,
-        sprint,
-        isSubtaskType,
-      );
+      const plannedData = plannedDataByProject
+        ? plannedDataByProject.get(plannedWPProject) ?? []
+        : await repo.fetchPlannedWPData(plannedWPProject, assignees, sprint, isSubtaskType);
       for (const issue of plannedData) {
         const accountId = issue.fields.assignee?.accountId?.toLowerCase();
         if (!accountId) continue;
@@ -653,6 +659,8 @@ export async function generateReport(
   sprint: string,
   project: string,
   epicId?: string,
+  rawDataOverride?: JiraIssueEntity[],
+  plannedDataOverride?: ReadonlyMap<string, JiraIssueEntity[]>,
 ): Promise<GetReportResponseDto> {
   const allMembers = await membersService.findAll();
   const members = filterMembersByProject(allMembers, project).filter(
@@ -672,22 +680,26 @@ export async function generateReport(
       projectList.some(p => p.toLowerCase() === b.shortName.toLowerCase()),
   );
   let rawData: Awaited<ReturnType<typeof repo.fetchRawData>>;
-  try {
-    rawData = await repo.fetchRawData({
-      sprint,
-      assignees,
-      project,
-      isSubtaskType,
-      isShowPlannedWP,
-    });
-  } catch (error) {
-    if (isBadRequestError(error)) {
-      console.warn(
-        `[generateReport] Jira returned 400 for project=${project} sprint=${sprint}, returning empty data`,
-      );
-      rawData = [];
-    } else {
-      throw error;
+  if (rawDataOverride) {
+    rawData = rawDataOverride;
+  } else {
+    try {
+      rawData = await repo.fetchRawData({
+        sprint,
+        assignees,
+        project,
+        isSubtaskType,
+        isShowPlannedWP,
+      });
+    } catch (error) {
+      if (isBadRequestError(error)) {
+        console.warn(
+          `[generateReport] Jira returned 400 for project=${project} sprint=${sprint}, returning empty data`,
+        );
+        rawData = [];
+      } else {
+        throw error;
+      }
     }
   }
   if (epicId) {
@@ -739,7 +751,7 @@ export async function generateReport(
   const plannedWPProjects = projectList.filter(p =>
     plannedWPShortNames.map(n => n.toLowerCase()).includes(p.toLowerCase()),
   );
-  if (plannedWPProjects.length > 0) {
+  if (plannedWPProjects.length > 0 && (!rawDataOverride || plannedDataOverride)) {
     const isMultiProject = projectList.length > 1;
     const plannedWPMap = await buildPlannedWPMap(
       sprint,
@@ -749,6 +761,7 @@ export async function generateReport(
       isMultiProject,
       memberRuleVersions,
       wpWeights,
+      plannedDataOverride,
     );
     teamReport.forEach(report => {
       const mapKey = isMultiProject
@@ -768,6 +781,7 @@ export async function generateReportByDateRange(
   endDate: string,
   project: string,
   epicId?: string,
+  rawDataOverride?: JiraIssueEntity[],
 ): Promise<GetReportResponseDto> {
   const step = async <T>(name: string, run: () => Promise<T>): Promise<T> => {
     const start = Date.now();
@@ -784,7 +798,7 @@ export async function generateReportByDateRange(
   const memberGroups = resolveReportMemberGroups(members, await step('boards', () => boardsService.findAll()));
   const assignees = members.map(m => m.jiraId!).filter(Boolean);
   const isSubtaskType = await step('hasSubtaskType', () => boardsService.hasSubtaskType(project));
-  let rawData = await step('fetchRawData', () => repo.fetchRawDataByDateRange(
+  let rawData = rawDataOverride ?? await step('fetchRawData', () => repo.fetchRawDataByDateRange(
     project,
     assignees,
     startDate,

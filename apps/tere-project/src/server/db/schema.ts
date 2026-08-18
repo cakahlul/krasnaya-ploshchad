@@ -5,6 +5,7 @@ import {
   numeric,
   pgTable,
   unique,
+  uniqueIndex,
   uuid,
   text,
   timestamp,
@@ -272,6 +273,76 @@ export const productivityArchiveCoverage = pgTable('productivity_archive_coverag
     sql`${table.archivedMonth} = date_trunc('month', ${table.archivedMonth})::date`,
   ),
   check('productivity_archive_coverage_row_count_nonempty', sql`${table.rowCount} > 0`),
+]);
+
+export const teamReportingSnapshots = pgTable('team_reporting_snapshot', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  boardId: integer('board_id').notNull(),
+  boardName: text('board_name').notNull(),
+  periodKind: text('period_kind').notNull(),
+  sprintId: text('sprint_id'),
+  sprintName: text('sprint_name'),
+  periodStartDate: date('period_start_date').notNull(),
+  periodEndDate: date('period_end_date').notNull(),
+  reportingMonth: date('reporting_month').notNull(),
+  rawJiraInput: jsonb('raw_jira_input').notNull(),
+  calculatedOutput: jsonb('calculated_output').notNull(),
+  rawInputCount: integer('raw_input_count').notNull(),
+  calculatedOutputCount: integer('calculated_output_count').notNull(),
+  rawInputChecksum: text('raw_input_checksum').notNull(),
+  calculatedOutputChecksum: text('calculated_output_checksum').notNull(),
+  integrityEvidence: jsonb('integrity_evidence').notNull(),
+  requiredSegmentCount: integer('required_segment_count').notNull(),
+  capturedAt: timestamp('captured_at', { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  foreignKey({
+    columns: [table.boardId],
+    foreignColumns: [boards.boardId],
+    name: 'team_reporting_snapshot_board_fkey',
+  }).onDelete('restrict'),
+  check('team_reporting_snapshot_period_kind_supported', sql`${table.periodKind} in ('scrum', 'kanban')`),
+  check(
+    'team_reporting_snapshot_period_identity_valid',
+    sql`(${table.periodKind} = 'scrum' and ${table.sprintId} is not null and btrim(${table.sprintId}) <> '')
+      or (${table.periodKind} = 'kanban' and ${table.sprintId} is null and ${table.sprintName} is null)`,
+  ),
+  check('team_reporting_snapshot_dates_ordered', sql`${table.periodEndDate} >= ${table.periodStartDate}`),
+  check(
+    'team_reporting_snapshot_reporting_month_matches_period_end',
+    sql`${table.reportingMonth} = date_trunc('month', ${table.periodEndDate})::date`,
+  ),
+  check(
+    'team_reporting_snapshot_counts_nonnegative',
+    sql`${table.rawInputCount} >= 0 and ${table.calculatedOutputCount} >= 0 and ${table.requiredSegmentCount} > 0`,
+  ),
+  check(
+    'team_reporting_snapshot_checksums_nonblank',
+    sql`btrim(${table.rawInputChecksum}) <> '' and btrim(${table.calculatedOutputChecksum}) <> ''`,
+  ),
+  uniqueIndex('team_reporting_snapshot_board_sprint_unique')
+    .on(table.boardId, table.sprintId)
+    .where(sql`${table.periodKind} = 'scrum'`),
+  uniqueIndex('team_reporting_snapshot_board_period_unique')
+    .on(table.boardId, table.periodStartDate, table.periodEndDate)
+    .where(sql`${table.periodKind} = 'kanban'`),
+]);
+
+export const teamReportingSnapshotCoverage = pgTable('team_reporting_snapshot_coverage', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  snapshotId: uuid('snapshot_id').notNull(),
+  segmentKey: text('segment_key').notNull(),
+  rawInputCount: integer('raw_input_count').notNull(),
+  calculatedOutputCount: integer('calculated_output_count').notNull(),
+  checksum: text('checksum').notNull(),
+}, table => [
+  foreignKey({
+    columns: [table.snapshotId],
+    foreignColumns: [teamReportingSnapshots.id],
+    name: 'team_reporting_snapshot_coverage_snapshot_fkey',
+  }).onDelete('cascade'),
+  unique('team_reporting_snapshot_coverage_segment_unique').on(table.snapshotId, table.segmentKey),
+  check('team_reporting_snapshot_coverage_counts_nonnegative', sql`${table.rawInputCount} >= 0 and ${table.calculatedOutputCount} >= 0`),
+  check('team_reporting_snapshot_coverage_checksum_nonblank', sql`btrim(${table.checksum}) <> ''`),
 ]);
 
 // api keys

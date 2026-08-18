@@ -44,7 +44,11 @@ export async function handleProductivitySummaryExportPost(req: Request, deps: Ex
   if (parsed.value.kind === 'legacy') {
     const teams = csv(body.teams);
     try {
-      return Response.json(await (deps.exportLegacy ?? exportProductivitySummaryToSpreadsheet)(parsed.value.month, parsed.value.year, accessToken, teams));
+      const result = await (deps.exportLegacy ?? exportProductivitySummaryToSpreadsheet)(parsed.value.month, parsed.value.year, accessToken, teams);
+      return Response.json({ ...result, sourceMetadata: {
+        source: 'jira', coverage: { status: 'complete', expected: 1, covered: 1 }, fallback: false,
+        reason: null, warning: null, attemptedSources: [{ source: 'jira', detail: null }], snapshotTimestamp: null,
+      } });
     } catch (error) {
       return Response.json({ message: error instanceof Error ? error.message : 'Export failed' }, { status: 500 });
     }

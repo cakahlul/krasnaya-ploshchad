@@ -118,6 +118,8 @@ export async function exportProductivitySummaryRangeToSpreadsheet(
     spreadsheetUrl: createResponse.data.spreadsheetUrl!,
     range: data.range,
     coverage: data.coverage,
+    sourceMetadata: data.sourceMetadata,
+    bugMetadata: data.bugMetadata,
     exportedAt: new Date().toISOString(),
   };
 }
