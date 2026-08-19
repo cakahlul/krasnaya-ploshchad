@@ -94,6 +94,7 @@ export interface DashhboardEntity {
   totalMemberWorkingDays?: number;
   sprintStartDate?: string;
   sprintEndDate?: string;
+  sourceMetadata?: ReportSourceMetadata;
 }
 
 export interface DashboardFilter {
