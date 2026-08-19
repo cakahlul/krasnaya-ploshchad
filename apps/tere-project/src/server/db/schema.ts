@@ -391,6 +391,49 @@ export const teamReportingCaptureFailures = pgTable('team_reporting_capture_fail
   index('team_reporting_capture_failure_run_idx').on(table.runId),
 ]);
 
+export const teamReportingCaptureSnapshotAudits = pgTable('team_reporting_capture_snapshot_audit', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  runId: uuid('run_id').notNull(),
+  snapshotId: uuid('snapshot_id').notNull(),
+  previousRawInputChecksum: text('previous_raw_input_checksum').notNull(),
+  nextRawInputChecksum: text('next_raw_input_checksum').notNull(),
+  previousCalculatedOutputChecksum: text('previous_calculated_output_checksum').notNull(),
+  nextCalculatedOutputChecksum: text('next_calculated_output_checksum').notNull(),
+  addedJiraKeys: jsonb('added_jira_keys').notNull(),
+  removedJiraKeys: jsonb('removed_jira_keys').notNull(),
+  changedJiraKeys: jsonb('changed_jira_keys').notNull(),
+  calculatedPaths: jsonb('calculated_paths').notNull(),
+  summary: jsonb('summary').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  foreignKey({
+    columns: [table.runId],
+    foreignColumns: [teamReportingCaptureRuns.id],
+    name: 'team_reporting_capture_snapshot_audit_run_fkey',
+  }).onDelete('restrict'),
+  foreignKey({
+    columns: [table.snapshotId],
+    foreignColumns: [teamReportingSnapshots.id],
+    name: 'team_reporting_capture_snapshot_audit_snapshot_fkey',
+  }).onDelete('restrict'),
+  unique('team_reporting_capture_snapshot_audit_run_snapshot_unique').on(table.runId, table.snapshotId),
+  check('team_reporting_capture_snapshot_audit_checksums_valid', sql`${table.previousRawInputChecksum} ~ '^[a-f0-9]{64}$'
+    and ${table.nextRawInputChecksum} ~ '^[a-f0-9]{64}$'
+    and ${table.previousCalculatedOutputChecksum} ~ '^[a-f0-9]{64}$'
+    and ${table.nextCalculatedOutputChecksum} ~ '^[a-f0-9]{64}$'`),
+  check('team_reporting_capture_snapshot_audit_json_shapes', sql`jsonb_typeof(${table.addedJiraKeys}) = 'array'
+    and jsonb_typeof(${table.removedJiraKeys}) = 'array'
+    and jsonb_typeof(${table.changedJiraKeys}) = 'array'
+    and jsonb_typeof(${table.calculatedPaths}) = 'array'
+    and jsonb_typeof(${table.summary}) = 'object'`),
+  check('team_reporting_capture_snapshot_audit_json_bounded', sql`octet_length(${table.addedJiraKeys}::text) <= 65536
+    and octet_length(${table.removedJiraKeys}::text) <= 65536
+    and octet_length(${table.changedJiraKeys}::text) <= 65536
+    and octet_length(${table.calculatedPaths}::text) <= 65536
+    and octet_length(${table.summary}::text) <= 65536`),
+  index('team_reporting_capture_snapshot_audit_snapshot_idx').on(table.snapshotId),
+]);
+
 // api keys
 export const apiKeys = pgTable('api_keys', {
   id: uuid('id').primaryKey().defaultRandom(),

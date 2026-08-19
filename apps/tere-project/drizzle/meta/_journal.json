@@ -120,6 +120,13 @@
       "when": 1787112748788,
       "tag": "0016_capture_run_evidence",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1787113071224,
+      "tag": "0017_capture_snapshot_audit",
+      "breakpoints": true
     }
   ]
 }
