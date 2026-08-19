@@ -156,24 +156,6 @@ test("does not mark independent archive and live months as a range fallback", as
   assert.equal(result.sourceMetadata.warning, null);
 });
 
-test("does not mark independent archive and live months as a range fallback", async () => {
-  const result = await generateProductivitySummaryRange(
-    { months: ["2025-12", "2026-01"], selectedGroups: ["Loan"], metricBasis: "SP" },
-    {
-      loadMonth: async month => ({
-        source: month === "2025-12" ? "archive" : "live",
-        appliedRules: [],
-        members: [],
-      }),
-    },
-  );
-  assert.equal(result.sourceMetadata.source, "mixed");
-  assert.equal(result.coverage.months.every(month => month.fallback === false), true);
-  assert.equal(result.sourceMetadata.fallback, false);
-  assert.equal(result.sourceMetadata.reason, null);
-  assert.equal(result.sourceMetadata.warning, null);
-});
-
 test("keeps empty successful ranges covered without inventing members", async () => {
   const result = await generateProductivitySummaryRange(
     { months: ["2026-01"], selectedGroups: [], metricBasis: "SP" },
