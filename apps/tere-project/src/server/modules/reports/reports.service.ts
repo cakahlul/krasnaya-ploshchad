@@ -26,6 +26,7 @@ import { targetWpConfigService } from '@server/modules/target-wp-config/target-w
 import { reportingGroupService } from '@server/modules/reporting-groups/reporting-group.service';
 import type { RuleVersion } from '@shared/types/reporting-group.types';
 import type { ReportingGroup } from '@shared/types/reporting-group.types';
+import type { ReportSourceMetadata } from '@server/modules/report-source-resolver/report-source-resolver';
 import type { BoardResponse } from '@shared/types/board.types';
 import { calculateWorkingDays } from '@shared/utils/working-days.util';
 import * as repo from './reports.repository';
@@ -939,6 +940,33 @@ function detectSlowdowns(
   return alerts;
 }
 
+const UNAVAILABLE_SPRINT_REASON = 'SPRINT_REPORT_UNAVAILABLE';
+
+export function buildSprintTrendPoints(
+  reports: readonly { sprintId: string; report?: GetReportResponseDto }[],
+): SprintTrendPointDto[] {
+  return reports.map(({ sprintId, report }) => report
+    ? {
+      sprintId,
+      sprintStartDate: report.sprintStartDate,
+      sprintEndDate: report.sprintEndDate,
+      teams: aggregateReportByTeam(report),
+    }
+    : {
+      sprintId,
+      teams: [],
+      sourceMetadata: {
+        source: 'unavailable',
+        coverage: { status: 'unavailable', expected: 1, covered: 0 },
+        fallback: false,
+        reason: UNAVAILABLE_SPRINT_REASON,
+        warning: 'Sprint report is unavailable',
+        attemptedSources: [{ source: 'jira', detail: UNAVAILABLE_SPRINT_REASON }],
+        snapshotTimestamp: null,
+      } satisfies ReportSourceMetadata,
+    });
+}
+
 export async function generateSprintTrend(
   sprintIds: string[],
   project: string,
@@ -958,19 +986,12 @@ export async function generateSprintTrend(
           `[generateSprintTrend] failed for sprint=${sprintId}:`,
           error,
         );
-        return null;
+        return { sprintId };
       }
     }),
   );
 
-  const points: SprintTrendPointDto[] = reports
-    .filter((r): r is NonNullable<typeof r> => !!r)
-    .map(({ sprintId, report }) => ({
-      sprintId,
-      sprintStartDate: report.sprintStartDate,
-      sprintEndDate: report.sprintEndDate,
-      teams: aggregateReportByTeam(report),
-    }));
+  const points = buildSprintTrendPoints(reports);
 
   return { points, slowdownAlerts: detectSlowdowns(points) };
 }

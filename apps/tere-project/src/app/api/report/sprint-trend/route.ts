@@ -18,11 +18,27 @@ export const GET = withAuthOrApiKey(async req => {
 
   const sprintIds = sprintsParam.split(',').map(s => s.trim()).filter(Boolean);
   const trend = await generateSprintTrend(sprintIds, project);
-  const resolved = await resolveJiraValue(trend, trend.points.length);
-  const sourceMetadata = metadataFromResolution(resolved);
+  const resolved = await resolveJiraValue(trend, sprintIds.length);
+  const liveMetadata = metadataFromResolution(resolved);
+  const unavailablePoints = trend.points.filter(point => point.sourceMetadata?.source === 'unavailable');
+  const sourceMetadata = unavailablePoints.length === 0
+    ? liveMetadata
+    : {
+      ...liveMetadata,
+      source: unavailablePoints.length === sprintIds.length ? 'unavailable' as const : 'partial' as const,
+      coverage: {
+        status: unavailablePoints.length === sprintIds.length ? 'unavailable' as const : 'partial' as const,
+        expected: sprintIds.length,
+        covered: sprintIds.length - unavailablePoints.length,
+      },
+      reason: unavailablePoints[0].sourceMetadata?.reason ?? 'SPRINT_REPORT_UNAVAILABLE',
+      warning: unavailablePoints.length === sprintIds.length
+        ? 'Sprint reports are unavailable'
+        : 'Some sprint reports are unavailable',
+    };
   return Response.json({
     ...resolved.value,
     sourceMetadata,
-    points: resolved.value.points.map(point => ({ ...point, sourceMetadata })),
+    points: resolved.value.points.map(point => ({ ...point, sourceMetadata: point.sourceMetadata ?? sourceMetadata })),
   });
 });
