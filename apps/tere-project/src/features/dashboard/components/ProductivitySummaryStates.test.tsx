@@ -100,7 +100,7 @@ test('never hardcodes a color literal — every color is a theme token (light/vo
   // Only literal color values allowed are the theme-agnostic SVG chrome recharts needs;
   // every semantic color (accent, status, text, border) must go through a --tere-*/--color-* token.
   assert.doesNotMatch(source, /#[0-9a-fA-F]{3,8}/);
-  assert.match(source, /data\.sourceMetadata\.coverage\.status === 'complete'/);
+  assert.match(source, /displayedCoverage/);
 });
 
 test('narrow-viewport horizontal scroll: chart wrapper scrolls, nothing cropped', () => {
@@ -190,12 +190,88 @@ test('renders approved source labels, explicit coverage status, warning, and mon
   );
 
   assert.match(html, /Jira Fallback/);
-  assert.match(html, /Fallback coverage: 2 of 2 months/);
+  assert.match(html, /Partial coverage: 1 of 2 months/);
   assert.match(html, /Using Jira after stored source fallback/);
   assert.match(html, /Captured Report Snapshot/);
   assert.match(html, /Unavailable/);
   assert.match(html, /Source.*Captured Report Snapshot/);
   assert.match(html, /Source.*Unavailable/);
+});
+
+test('does not let complete report metadata hide a component coverage gap', () => {
+  const html = renderToStaticMarkup(
+    <ProductivitySummaryCanonicalResult data={{
+      range: { startMonth: '2026-01', endMonth: '2026-01', monthCount: 1 },
+      metricBasis: 'SP',
+      sourceMetadata: {
+        source: 'jira',
+        coverage: { status: 'complete', expected: 1, covered: 1 },
+        fallback: false,
+        reason: null,
+        warning: null,
+        attemptedSources: [{ source: 'jira', detail: null }],
+        snapshotTimestamp: null,
+      },
+      coverage: {
+        complete: false,
+        months: [{ month: '2026-01', source: 'partial', productivityAvailable: true, bugsAvailable: false }],
+      },
+      summary: { activeMembers: 0, productivityMetric: null, bugsRaised: null },
+    }} />,
+  );
+
+  assert.match(html, /Partial coverage/);
+  assert.doesNotMatch(html, /Complete coverage/);
+  assert.match(html, /role="alert"/);
+});
+
+test('preserves Jira fallback labels in month and member detail', () => {
+  const html = renderToStaticMarkup(
+    <ProductivitySummaryCanonicalResult data={{
+      range: { startMonth: '2026-01', endMonth: '2026-01', monthCount: 1 },
+      selectedGroups: ['User'],
+      metricBasis: 'SP',
+      sourceMetadata: {
+        source: 'jira',
+        coverage: { status: 'fallback', expected: 1, covered: 1 },
+        fallback: true,
+        reason: null,
+        warning: 'Using Jira after stored source fallback',
+        attemptedSources: [{ source: 'snapshot', detail: 'missing' }, { source: 'jira', detail: null }],
+        snapshotTimestamp: null,
+      },
+      coverage: {
+        complete: true,
+        months: [{ month: '2026-01', source: 'live', productivityAvailable: true, bugsAvailable: true }],
+      },
+      summary: { activeMembers: 1, productivityMetric: 8, bugsRaised: 0 },
+      details: [{
+        name: 'Budi',
+        group: 'User',
+        monthly: [{ month: '2026-01', source: 'live', spTotal: 8, wpTotal: 5, workingDays: 1 }],
+      }],
+    }} />,
+  );
+
+  assert.match(html, /Jira Fallback/);
+  assert.doesNotMatch(html, /Live Jira/);
+});
+
+test('does not warn for complete legacy coverage without source metadata', () => {
+  const html = renderToStaticMarkup(
+    <ProductivitySummaryCanonicalResult data={{
+      range: { startMonth: '2026-01', endMonth: '2026-01', monthCount: 1 },
+      metricBasis: 'SP',
+      coverage: {
+        complete: true,
+        months: [{ month: '2026-01', source: 'archive', productivityAvailable: true, bugsAvailable: true }],
+      },
+      summary: { activeMembers: 1, productivityMetric: 8, bugsRaised: 0 },
+    }} />,
+  );
+
+  assert.match(html, /Complete coverage/);
+  assert.doesNotMatch(html, /role="alert"/);
 });
 
 test('renders zero metric and working days as zero, not unavailable', () => {

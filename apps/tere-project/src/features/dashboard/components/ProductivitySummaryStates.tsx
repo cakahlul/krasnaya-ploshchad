@@ -67,7 +67,7 @@ export interface CanonicalProductivitySummary {
 const NOT_AVAILABLE = 'N/A';
 
 function sourceLabel(source: string, fallback = false): string {
-  if (fallback && source === 'jira') return 'Jira Fallback';
+  if (fallback && (source === 'jira' || source === 'live')) return 'Jira Fallback';
   return {
     archive: 'Archived',
     legacy_archive: 'Archived',
@@ -80,9 +80,39 @@ function sourceLabel(source: string, fallback = false): string {
   }[source] ?? 'Unknown source';
 }
 
-function coverageLabel(data: CanonicalProductivitySummary): string {
-  const coverage = data.sourceMetadata?.coverage;
-  if (!coverage) return data.coverage?.complete ? 'Complete coverage' : 'Partial coverage';
+type DisplayCoverage = ReportSourceMetadata['coverage'];
+
+function displayedCoverage(data: CanonicalProductivitySummary): DisplayCoverage | null {
+  const reportCoverage = data.sourceMetadata?.coverage;
+  const months = data.coverage?.months;
+  if (!months) return reportCoverage ?? null;
+
+  const covered = months.filter(month =>
+    month.source !== 'unavailable' && month.productivityAvailable && month.bugsAvailable,
+  ).length;
+  const componentComplete = data.coverage?.complete === true
+    && months.length === data.range.monthCount
+    && months.every(month => month.source !== 'partial' && month.source !== 'unavailable'
+      && month.productivityAvailable && month.bugsAvailable);
+  const componentStatus: DisplayCoverage['status'] = componentComplete
+    ? 'complete'
+    : covered > 0 ? 'partial' : 'unavailable';
+  const status: DisplayCoverage['status'] = !reportCoverage
+    ? componentStatus
+    : reportCoverage.status === 'unavailable' || componentStatus === 'unavailable'
+    ? 'unavailable'
+    : reportCoverage.status === 'partial' || componentStatus === 'partial'
+    ? 'partial'
+    : reportCoverage.status;
+  const expected = Math.max(data.range.monthCount, reportCoverage?.expected ?? 0, months.length);
+  return {
+    status,
+    expected,
+    covered: Math.min(covered, reportCoverage?.covered ?? covered),
+  };
+}
+
+function coverageLabel(coverage: DisplayCoverage): string {
   return `${coverage.status[0].toUpperCase()}${coverage.status.slice(1)} coverage: ${coverage.covered} of ${coverage.expected} months`;
 }
 
@@ -177,6 +207,7 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
     : [...new Set(data.details?.map(member => member.group) ?? [])];
 
   const summaryCards = buildSummaryCards(data);
+  const coverage = displayedCoverage(data);
 
   return (
     <section data-qa="productivity-summary-canonical-result" aria-label="Productivity summary result" style={{ display: 'grid', gap: 16 }}>
@@ -205,16 +236,12 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
       {data.range.monthCount > 1 && data.chart?.length ? (
         <ProductivitySummaryComparisonChart points={data.chart} metricBasis={data.metricBasis} />
       ) : null}
-      {(data.coverage || data.sourceMetadata) && (
+      {coverage && (
         <section aria-labelledby="productivity-coverage-heading" style={{ background: 'var(--tere-card-bg)', border: '1px solid var(--tere-card-brd)', borderRadius: 12, padding: '12px 16px' }}>
           <details>
             <summary style={{ alignItems: 'center', color: 'var(--tere-title)', cursor: 'pointer', display: 'flex', fontSize: 13, fontWeight: 600, gap: 8 }}>
-              <CheckCircle2 aria-hidden size={17} color={data.sourceMetadata
-                ? (data.sourceMetadata.coverage.status === 'complete' && !data.sourceMetadata.fallback
-                  ? 'var(--color-accent)' : 'var(--tere-status-warning)')
-                : data.coverage?.complete === true
-                ? 'var(--color-accent)' : 'var(--tere-status-warning)'} />
-              <span id="productivity-coverage-heading">{coverageLabel(data)}</span>
+              <CheckCircle2 aria-hidden size={17} color={coverage.status === 'complete' && !data.sourceMetadata?.fallback ? 'var(--color-accent)' : 'var(--tere-status-warning)'} />
+              <span id="productivity-coverage-heading">{coverageLabel(coverage)}</span>
               <span style={{ color: 'var(--tere-sub)', fontSize: 11, fontWeight: 400, marginLeft: 'auto' }}>Coverage details</span>
             </summary>
             {data.sourceMetadata ? (
@@ -223,12 +250,12 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
                 {data.sourceMetadata.warning ? ` · ${data.sourceMetadata.warning}` : ''}
               </div>
             ) : null}
-            {data.sourceMetadata?.coverage.status !== 'complete' || data.coverage?.complete === false
-              ? <Alert type="warning" showIcon message={coverageLabel(data)} style={{ marginTop: 12 }} /> : null}
+            {coverage.status !== 'complete'
+              ? <Alert type="warning" showIcon message={coverageLabel(coverage)} style={{ marginTop: 12 }} /> : null}
             <ul style={{ color: 'var(--tere-sub)', columns: '220px', fontSize: 11, lineHeight: 1.8, margin: '12px 0 0', paddingLeft: 18 }}>
                 {(data.coverage?.months ?? []).map(month => (
                   <li key={month.month}>
-                    {month.month} · {sourceLabel(month.source)} · productivity {month.productivityAvailable ? 'ready' : 'Unavailable'} · bugs {month.bugsAvailable ? 'ready' : 'Unavailable'}
+                    {month.month} · {sourceLabel(month.source, data.sourceMetadata?.fallback)} · productivity {month.productivityAvailable ? 'ready' : 'Unavailable'} · bugs {month.bugsAvailable ? 'ready' : 'Unavailable'}
                   </li>
                 ))}
             </ul>
@@ -253,7 +280,7 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
               children: member.monthly.map(month => ({
                 key: `${member.name}-${month.month}`,
                 month: month.month,
-                source: sourceLabel(month.source),
+                source: sourceLabel(month.source, data.sourceMetadata?.fallback),
                 metric: data.metricBasis === 'SP' ? month.spTotal : month.wpTotal,
                 workingDays: month.workingDays,
               })),
