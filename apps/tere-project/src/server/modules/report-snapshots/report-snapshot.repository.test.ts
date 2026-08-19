@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { teamReportingSnapshotCoverage, teamReportingSnapshots } from '@server/db/schema';
+import { teamReportingCaptureSnapshotAudits, teamReportingSnapshotCoverage, teamReportingSnapshots } from '@server/db/schema';
 import { DrizzleTeamReportingSnapshotRepository } from './report-snapshot.repository';
 import { snapshotChecksum, type TeamReportingSnapshotPublication } from './report-snapshot';
 
 function publication(): TeamReportingSnapshotPublication {
-  const rawJiraInput = [{ key: 'ABC-1' }];
-  const calculatedOutput = [{ member: 'Ada' }];
+  const rawJiraInput = { main: [{ key: 'ABC-1', summary: 'Old', token: 'old-token' }], planned: {} };
+  const calculatedOutput = { totals: { points: 1 } };
   return {
     snapshot: {
       boardId: 42, boardName: 'Alpha', periodKind: 'scrum', sprintId: '123', sprintName: 'Sprint 123',
@@ -23,7 +23,9 @@ function publication(): TeamReportingSnapshotPublication {
 class FakeDatabase {
   snapshot: any = null;
   coverage: any[] = [];
+  audits: any[] = [];
   failCoverageInsert = false;
+  failAuditInsert = false;
 
   select() {
     return this.selectRows();
@@ -45,6 +47,12 @@ class FakeDatabase {
           this.coverage = values.map((value: any) => ({ ...value, id: `coverage-${this.coverage.length + 1}` }));
           return this.coverage;
         };
+        const writeAudit = () => {
+          if (this.failAuditInsert) throw new Error('AUDIT_INSERT_FAILED');
+          const audit = { ...values, id: `audit-${this.audits.length + 1}`, createdAt: new Date() };
+          this.audits.push(audit);
+          return [audit];
+        };
         return {
           onConflictDoNothing: () => ({ returning: async () => {
             if (table === teamReportingSnapshots) {
@@ -54,6 +62,10 @@ class FakeDatabase {
             }
             return writeCoverage();
           } }),
+          returning: async () => {
+            if (table === teamReportingCaptureSnapshotAudits) return writeAudit();
+            return writeCoverage();
+          },
           then: (resolve: (value: any[]) => unknown, reject: (reason: unknown) => unknown) => {
             try { return Promise.resolve(writeCoverage()).then(resolve, reject); } catch (error) { return Promise.reject(error).then(resolve, reject); }
           },
@@ -86,10 +98,11 @@ class FakeDatabase {
   }
 
   async transaction<T>(callback: (tx: this) => Promise<T>): Promise<T> {
-    const before = { snapshot: this.snapshot, coverage: [...this.coverage] };
+    const before = { snapshot: this.snapshot, coverage: [...this.coverage], audits: [...this.audits] };
     try { return await callback(this); } catch (error) {
       this.snapshot = before.snapshot;
       this.coverage = before.coverage;
+      this.audits = before.audits;
       throw error;
     }
   }
@@ -136,8 +149,9 @@ test('invalid candidate cannot replace an existing complete snapshot', async () 
   const fake = new FakeDatabase();
   const repo = repository(fake);
   const first = await repo.publish(publication());
-  await assert.rejects(() => repo.publish({ ...publication(), snapshot: { ...publication().snapshot, calculatedOutput: null } }), /SNAPSHOT_INTEGRITY_INVALID/);
+  await assert.rejects(() => repo.publishWithOutcome({ ...publication(), snapshot: { ...publication().snapshot, calculatedOutput: null } }, { runId: 'run-1' }), /SNAPSHOT_INTEGRITY_INVALID/);
   assert.equal((await repo.findByLogicalIdentity({ boardId: 42, periodKind: 'scrum', sprintId: '123' }))?.id, first.id);
+  assert.deepEqual(fake.audits, []);
 });
 
 test('validated changed candidate atomically replaces complete snapshot', async () => {
@@ -160,12 +174,100 @@ test('replacement write failure preserves the prior complete snapshot', async ()
   const repo = repository(fake);
   await repo.publish(publication());
   const changed = publication();
-  changed.snapshot = { ...changed.snapshot, calculatedOutput: [{ member: 'Grace' }] };
+  changed.snapshot = { ...changed.snapshot, calculatedOutput: { totals: { points: 2 } } };
   changed.snapshot.calculatedOutputChecksum = snapshotChecksum(changed.snapshot.calculatedOutput);
   changed.coverage = [{ segmentKey: 'members', rawInputCount: 1, calculatedOutputCount: 1, checksum: snapshotChecksum('members') }];
   fake.failCoverageInsert = true;
 
-  await assert.rejects(() => repo.publish(changed), /COVERAGE_INSERT_FAILED/);
-  assert.deepEqual(fake.snapshot.calculatedOutput, [{ member: 'Ada' }]);
+  await assert.rejects(() => repo.publishWithOutcome(changed, { runId: 'run-1' }), /COVERAGE_INSERT_FAILED/);
+  assert.deepEqual(fake.snapshot.calculatedOutput, { totals: { points: 1 } });
   assert.deepEqual(fake.coverage.map(item => item.segmentKey), ['issues']);
+  assert.deepEqual(fake.audits, []);
+});
+
+test('returns unchanged without mutating coverage or recording audit evidence', async () => {
+  const fake = new FakeDatabase();
+  const repo = repository(fake);
+  await repo.publish(publication());
+  const before = { snapshot: fake.snapshot, coverage: fake.coverage };
+
+  const outcome = await repo.publishWithOutcome(publication(), { runId: 'run-1' });
+
+  assert.equal(outcome.kind, 'unchanged');
+  assert.deepEqual(outcome.snapshot, before.snapshot);
+  assert.equal(fake.coverage, before.coverage);
+  assert.deepEqual(fake.audits, []);
+});
+
+test('replaces changed state and records one redacted structured audit in the same transaction', async () => {
+  const fake = new FakeDatabase();
+  const repo = repository(fake);
+  await repo.publish(publication());
+  const changed = publication();
+  changed.snapshot = {
+    ...changed.snapshot,
+    rawJiraInput: { main: [{ key: 'ABC-1', summary: 'New', token: 'new-token' }, { key: 'ABC-2', summary: 'Added' }], planned: {} },
+    rawInputCount: 2,
+    calculatedOutput: { totals: { points: 2 } },
+  };
+  changed.snapshot.rawInputChecksum = snapshotChecksum(changed.snapshot.rawJiraInput);
+  changed.snapshot.calculatedOutputChecksum = snapshotChecksum(changed.snapshot.calculatedOutput);
+  changed.coverage = [{ segmentKey: 'issues', rawInputCount: 2, calculatedOutputCount: 1, checksum: snapshotChecksum('issues-next') }];
+
+  const outcome = await repo.publishWithOutcome(changed, { runId: 'run-1' });
+
+  assert.equal(outcome.kind, 'replaced');
+  assert.deepEqual(fake.coverage.map(item => item.segmentKey), ['issues']);
+  assert.equal(fake.audits.length, 1);
+  assert.deepEqual(fake.audits[0], {
+    id: 'audit-1', createdAt: fake.audits[0].createdAt, runId: 'run-1', snapshotId: 'snapshot-1',
+    previousRawInputChecksum: publication().snapshot.rawInputChecksum,
+    nextRawInputChecksum: changed.snapshot.rawInputChecksum,
+    previousCalculatedOutputChecksum: publication().snapshot.calculatedOutputChecksum,
+    nextCalculatedOutputChecksum: changed.snapshot.calculatedOutputChecksum,
+    addedJiraKeys: ['ABC-2'], removedJiraKeys: [],
+    changedJiraKeys: [{ key: 'ABC-1', fields: [
+      { path: '$.summary', previous: 'Old', next: 'New' },
+      { path: '$.token', previous: '[REDACTED]', next: '[REDACTED]' },
+    ] }],
+    calculatedPaths: ['$.totals.points'],
+    summary: {
+      addedJiraKeyCount: 1, removedJiraKeyCount: 0, changedJiraKeyCount: 1,
+      calculatedPathCount: 1, rawInputChanged: true, calculatedOutputChanged: true,
+    },
+  });
+});
+
+test('records removed Jira keys deterministically', async () => {
+  const fake = new FakeDatabase();
+  const repo = repository(fake);
+  const initial = publication();
+  initial.snapshot = {
+    ...initial.snapshot,
+    rawJiraInput: { main: [{ key: 'ABC-1', summary: 'Old', token: 'old-token' }, { key: 'ABC-3', summary: 'Removed' }], planned: {} },
+    rawInputCount: 2,
+  };
+  initial.snapshot.rawInputChecksum = snapshotChecksum(initial.snapshot.rawJiraInput);
+  initial.coverage = [{ segmentKey: 'issues', rawInputCount: 2, calculatedOutputCount: 1, checksum: snapshotChecksum('issues-with-removed') }];
+  await repo.publish(initial);
+
+  await repo.publishWithOutcome(publication(), { runId: 'run-1' });
+
+  assert.deepEqual(fake.audits[0].addedJiraKeys, []);
+  assert.deepEqual(fake.audits[0].removedJiraKeys, ['ABC-3']);
+});
+
+test('audit failure preserves the prior complete snapshot and coverage', async () => {
+  const fake = new FakeDatabase();
+  const repo = repository(fake);
+  await repo.publish(publication());
+  const changed = publication();
+  changed.snapshot = { ...changed.snapshot, calculatedOutput: { totals: { points: 2 } } };
+  changed.snapshot.calculatedOutputChecksum = snapshotChecksum(changed.snapshot.calculatedOutput);
+  fake.failAuditInsert = true;
+
+  await assert.rejects(() => repo.publishWithOutcome(changed, { runId: 'run-1' }), /AUDIT_INSERT_FAILED/);
+  assert.deepEqual(fake.snapshot.calculatedOutput, { totals: { points: 1 } });
+  assert.deepEqual(fake.coverage.map(item => item.segmentKey), ['issues']);
+  assert.deepEqual(fake.audits, []);
 });

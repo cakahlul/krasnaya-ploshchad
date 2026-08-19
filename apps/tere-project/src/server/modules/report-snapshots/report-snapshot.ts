@@ -45,10 +45,23 @@ export interface TeamReportingSnapshotPublication {
   readonly coverage: readonly TeamReportingSnapshotCoverage[];
 }
 
+export interface TeamReportingSnapshotPublishOutcome {
+  readonly kind: 'created' | 'unchanged' | 'replaced';
+  readonly snapshot: TeamReportingSnapshot;
+}
+
+export interface TeamReportingSnapshotPublishOptions {
+  readonly runId: string;
+}
+
 export interface TeamReportingSnapshotRepository {
   findByLogicalIdentity(identity: SnapshotPeriodIdentity): Promise<TeamReportingSnapshot | null>;
   findCoverage(snapshotId: string): Promise<readonly TeamReportingSnapshotCoverage[]>;
   publish(publication: TeamReportingSnapshotPublication): Promise<TeamReportingSnapshot>;
+  publishWithOutcome(
+    publication: TeamReportingSnapshotPublication,
+    options: TeamReportingSnapshotPublishOptions,
+  ): Promise<TeamReportingSnapshotPublishOutcome>;
 }
 
 export function snapshotLogicalIdentity(input: SnapshotPeriodIdentityInput): SnapshotPeriodIdentity {
