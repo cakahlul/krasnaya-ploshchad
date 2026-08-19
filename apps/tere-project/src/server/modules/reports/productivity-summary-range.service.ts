@@ -86,7 +86,7 @@ type LoadedMonth = {
   data: { members?: readonly SourceMember[] } | null;
   bugsRaised: number | null;
   bugsDone: number | null;
-  coverage: { source: MonthSource; productivityAvailable: boolean; failures: Failure[]; attempts: readonly ReportSourceAttempt[] };
+  coverage: { source: MonthSource; productivityAvailable: boolean; failures: Failure[]; attempts: readonly ReportSourceAttempt[]; fallback: boolean };
   snapshotTimestamp?: string;
   bugMetadata: BugMetadata;
 };
@@ -218,6 +218,8 @@ export async function generateProductivitySummaryRange(
           ? "partial"
           : monthData!.source
         : "unavailable";
+      const attempts = monthData?.attempts ?? [{ source: source === 'live' ? 'jira' : source === 'snapshot' ? 'snapshot' : 'archive', detail: failures[0]?.reason ?? null }];
+      const fallback = source === 'live' && attempts.some(attempt => attempt.source !== 'jira');
       console.log(
         `[telemetry] productivity-summary-range month durationMs=${Date.now() - monthStart} month=${month} source=${source}`,
       );
@@ -247,7 +249,8 @@ export async function generateProductivitySummaryRange(
           bugsAvailable,
           appliedRules: monthData?.appliedRules ?? [],
           failures,
-          attempts: monthData?.attempts ?? [{ source: source === 'live' ? 'jira' : source === 'snapshot' ? 'snapshot' : 'archive', detail: failures[0]?.reason ?? null }],
+          attempts,
+          fallback,
         },
         snapshotTimestamp: monthData?.snapshotTimestamp,
         bugMetadata: monthBugMetadata,
@@ -271,6 +274,7 @@ export async function generateProductivitySummaryRange(
       monthly: Array<{
         month: string;
         source: MonthSource;
+        fallback: boolean;
         spTotal: number | null;
         spTarget: number | null;
         wpTotal: number | null;
@@ -289,6 +293,7 @@ export async function generateProductivitySummaryRange(
       for (const board of item.boards ?? [item.board]) aggregate.boards.add(board);
       const existing = aggregate.monthly.find(value => value.month === month.month);
       if (existing) {
+        existing.fallback ||= month.coverage.fallback;
         existing.spTotal = addAvailable(existing.spTotal, item.spTotal);
         existing.spTarget = addAvailable(existing.spTarget, memberSpTarget(item));
         existing.wpTotal = addAvailable(existing.wpTotal, item.wpTotal);
@@ -299,6 +304,7 @@ export async function generateProductivitySummaryRange(
         aggregate.monthly.push({
           month: month.month,
           source: month.coverage.source,
+          fallback: month.coverage.fallback,
           spTotal: item.spTotal,
           spTarget: memberSpTarget(item),
           wpTotal: item.wpTotal,
@@ -317,7 +323,6 @@ export async function generateProductivitySummaryRange(
   }, { archive: 0, snapshot: 0, live: 0, partial: 0, unavailable: 0 });
   const attempts = loaded.flatMap(month => month.coverage.attempts);
   const resolvedSources = [...new Set(loaded.map(month => month.coverage.source))];
-  const selectedSource = resolvedSources.length === 1 && resolvedSources[0] === 'live' ? 'jira' : resolvedSources[0];
   const sourceMetadata: ReportSourceMetadata = {
     source: resolvedSources.length === 1
       ? resolvedSources[0] === 'live' ? 'jira' : resolvedSources[0]
@@ -329,11 +334,13 @@ export async function generateProductivitySummaryRange(
       expected: loaded.length,
       covered: loaded.filter(month => month.coverage.source !== 'unavailable').length,
     },
-    fallback: loaded.some(month => month.coverage.source === 'partial'
-      || month.coverage.failures.length > 0
-      || month.coverage.attempts.some(attempt => attempt.source !== selectedSource)),
+    fallback: loaded.some(month => month.coverage.fallback
+      || month.coverage.source === 'partial'
+      || month.coverage.failures.length > 0),
     reason: loaded.flatMap(month => month.coverage.failures).find(Boolean)?.reason ?? null,
-    warning: resolvedSources.some(source => source === 'partial' || source === 'unavailable')
+    warning: loaded.some(month => month.coverage.fallback)
+      ? 'Using Jira after stored source fallback'
+      : resolvedSources.some(source => source === 'partial' || source === 'unavailable')
       ? 'Report coverage is incomplete' : null,
     attemptedSources: attempts.map(attempt => ({ source: attempt.source, detail: attempt.detail ?? null })),
     snapshotTimestamp: resolvedSources.length === 1 && resolvedSources[0] === 'snapshot'

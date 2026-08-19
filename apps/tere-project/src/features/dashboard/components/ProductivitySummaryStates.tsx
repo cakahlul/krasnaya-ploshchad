@@ -39,6 +39,7 @@ export interface CanonicalProductivitySummary {
     months: Array<{
       month: string;
       source: MonthSource;
+      fallback?: boolean;
       productivityAvailable: boolean;
       bugsAvailable: boolean;
     }>;
@@ -57,6 +58,7 @@ export interface CanonicalProductivitySummary {
     monthly: Array<{
       month: string;
       source: MonthSource;
+      fallback?: boolean;
       spTotal: number | null;
       wpTotal: number | null;
       workingDays: number | null;
@@ -114,6 +116,13 @@ function displayedCoverage(data: CanonicalProductivitySummary): DisplayCoverage 
 
 function coverageLabel(coverage: DisplayCoverage): string {
   return `${coverage.status[0].toUpperCase()}${coverage.status.slice(1)} coverage: ${coverage.covered} of ${coverage.expected} months`;
+}
+
+function sourceWarning(metadata: ReportSourceMetadata): string | null {
+  return metadata.warning
+    ?? (metadata.fallback
+      ? metadata.source === 'jira' ? 'Using Jira after stored source fallback' : 'Source fallback was used'
+      : null);
 }
 
 /** Raw values can carry a long float tail; nobody reads 87.43333333333. */
@@ -247,7 +256,7 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
             {data.sourceMetadata ? (
               <div role="status" style={{ color: 'var(--tere-sub)', fontSize: 12, marginTop: 12 }}>
                 Source: {sourceLabel(data.sourceMetadata.source, data.sourceMetadata.fallback)}
-                {data.sourceMetadata.warning ? ` · ${data.sourceMetadata.warning}` : ''}
+                {sourceWarning(data.sourceMetadata) ? ` · ${sourceWarning(data.sourceMetadata)}` : ''}
               </div>
             ) : null}
             {coverage.status !== 'complete'
@@ -255,7 +264,7 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
             <ul style={{ color: 'var(--tere-sub)', columns: '220px', fontSize: 11, lineHeight: 1.8, margin: '12px 0 0', paddingLeft: 18 }}>
                 {(data.coverage?.months ?? []).map(month => (
                   <li key={month.month}>
-                    {month.month} · {sourceLabel(month.source, data.sourceMetadata?.fallback)} · productivity {month.productivityAvailable ? 'ready' : 'Unavailable'} · bugs {month.bugsAvailable ? 'ready' : 'Unavailable'}
+                    {month.month} · {sourceLabel(month.source, month.fallback)} · productivity {month.productivityAvailable ? 'ready' : 'Unavailable'} · bugs {month.bugsAvailable ? 'ready' : 'Unavailable'}
                   </li>
                 ))}
             </ul>
@@ -280,7 +289,7 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
               children: member.monthly.map(month => ({
                 key: `${member.name}-${month.month}`,
                 month: month.month,
-                source: sourceLabel(month.source, data.sourceMetadata?.fallback),
+                source: sourceLabel(month.source, month.fallback),
                 metric: data.metricBasis === 'SP' ? month.spTotal : month.wpTotal,
                 workingDays: month.workingDays,
               })),

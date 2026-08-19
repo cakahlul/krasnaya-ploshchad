@@ -235,26 +235,57 @@ test('preserves Jira fallback labels in month and member detail', () => {
         source: 'jira',
         coverage: { status: 'fallback', expected: 1, covered: 1 },
         fallback: true,
-        reason: null,
-        warning: 'Using Jira after stored source fallback',
+        reason: 'internal fallback reason must stay hidden',
+        warning: null,
         attemptedSources: [{ source: 'snapshot', detail: 'missing' }, { source: 'jira', detail: null }],
         snapshotTimestamp: null,
       },
       coverage: {
         complete: true,
-        months: [{ month: '2026-01', source: 'live', productivityAvailable: true, bugsAvailable: true }],
+        months: [{ month: '2026-01', source: 'live', fallback: true, productivityAvailable: true, bugsAvailable: true }],
       },
       summary: { activeMembers: 1, productivityMetric: 8, bugsRaised: 0 },
       details: [{
         name: 'Budi',
         group: 'User',
-        monthly: [{ month: '2026-01', source: 'live', spTotal: 8, wpTotal: 5, workingDays: 1 }],
+        monthly: [{ month: '2026-01', source: 'live', fallback: true, spTotal: 8, wpTotal: 5, workingDays: 1 }],
       }],
     }} />,
   );
 
   assert.match(html, /Jira Fallback/);
-  assert.doesNotMatch(html, /Live Jira/);
+  assert.match(html, /Using Jira after stored source fallback/);
+  assert.doesNotMatch(html, /internal fallback reason must stay hidden/);
+});
+
+test('uses per-month fallback metadata for mixed live and fallback months', () => {
+  const html = renderToStaticMarkup(
+    <ProductivitySummaryCanonicalResult data={{
+      range: { startMonth: '2026-01', endMonth: '2026-02', monthCount: 2 },
+      metricBasis: 'SP',
+      sourceMetadata: {
+        source: 'mixed',
+        coverage: { status: 'complete', expected: 2, covered: 2 },
+        fallback: true,
+        reason: null,
+        warning: null,
+        attemptedSources: [{ source: 'jira', detail: null }],
+        snapshotTimestamp: null,
+      },
+      coverage: {
+        complete: true,
+        months: [
+          { month: '2026-01', source: 'live', fallback: false, productivityAvailable: true, bugsAvailable: true },
+          { month: '2026-02', source: 'live', fallback: true, productivityAvailable: true, bugsAvailable: true },
+        ],
+      },
+      summary: { activeMembers: 1, productivityMetric: 16, bugsRaised: 0 },
+    }} />,
+  );
+
+  assert.match(html, /2026-01 · Live Jira/);
+  assert.match(html, /2026-02 · Jira Fallback/);
+  assert.match(html, /Source fallback was used/);
 });
 
 test('does not warn for complete legacy coverage without source metadata', () => {

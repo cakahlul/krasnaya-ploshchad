@@ -72,6 +72,34 @@ test("marks a successful live source as fallback when stored attempts were rejec
     { source: "snapshot", detail: "checksum mismatch" },
     { source: "jira", detail: null },
   ]);
+  assert.equal(result.sourceMetadata.warning, "Using Jira after stored source fallback");
+});
+
+test("keeps fallback metadata per month and member while direct live stays live", async () => {
+  const member = { id: "a", name: "A", group: "Loan" as const, board: "L1", spTotal: 8, wpTotal: 5, workingDays: 1 };
+  const result = await generateProductivitySummaryRange(
+    { months: ["2026-01", "2026-02"], selectedGroups: ["Loan"], metricBasis: "SP" },
+    {
+      loadMonth: async month => ({
+        source: "live",
+        appliedRules: [],
+        members: [member],
+        attempts: month === "2026-01"
+          ? [{ source: "jira", detail: null }]
+          : [{ source: "snapshot", detail: "snapshot rejected" }, { source: "jira", detail: null }],
+      }),
+    },
+  );
+
+  assert.deepEqual(result.coverage.months.map(month => ({ source: month.source, fallback: month.fallback })), [
+    { source: "live", fallback: false },
+    { source: "live", fallback: true },
+  ]);
+  assert.deepEqual(result.details[0].monthly.map(month => ({ source: month.source, fallback: month.fallback })), [
+    { source: "live", fallback: false },
+    { source: "live", fallback: true },
+  ]);
+  assert.equal(result.sourceMetadata.warning, "Using Jira after stored source fallback");
 });
 
 test("keeps empty successful ranges covered without inventing members", async () => {
