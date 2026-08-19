@@ -13,4 +13,9 @@ test('uses approved source and coverage labels for every provenance state', () =
   for (const [metadata, expected] of cases) assert.deepEqual(metadataProvenance(metadata as never), { sourceLabel: expected[0], coverageLabel: expected[1], warning: expected[2] });
   assert.equal(metadataProvenance(undefined), null);
   assert.deepEqual(monthProvenance({ source: 'live' }), { sourceLabel: 'Live Jira', coverageLabel: 'Complete', warning: null });
+  assert.deepEqual(monthProvenance({ source: 'live', fallback: true }), {
+    sourceLabel: 'Jira Fallback',
+    coverageLabel: 'Fallback',
+    warning: 'Using Jira after stored source fallback',
+  });
 });

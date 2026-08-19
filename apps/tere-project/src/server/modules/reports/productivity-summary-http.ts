@@ -104,17 +104,26 @@ async function handleProductivitySummaryGetInner(
 type CanonicalRange = Awaited<ReturnType<typeof generateProductivitySummaryRange>>;
 
 function canonicalForCaller(data: CanonicalRange, caller?: SummaryCaller) {
-  if (caller?.isLead) return {
+  const withProvenance = {
     ...data,
     provenance: metadataProvenance(data.sourceMetadata),
+    coverage: {
+      ...data.coverage,
+      months: data.coverage.months.map(month => ({ ...month, ...monthProvenance(month) })),
+    },
     chart: data.chart.map(point => ({ ...point, ...monthProvenance(point) })),
+    details: data.details.map(member => ({
+      ...member,
+      monthly: member.monthly.map(month => ({ ...month, ...monthProvenance(month) })),
+    })),
   };
-  const { chart: _chart, ...memberData } = data;
+  if (caller?.isLead) return withProvenance;
+  const { chart: _chart, ...memberData } = withProvenance;
   return {
     ...memberData,
     provenance: metadataProvenance(data.sourceMetadata),
     details: caller?.fullName
-      ? data.details.filter(item => item.name === caller.fullName)
+      ? withProvenance.details.filter(item => item.name === caller.fullName)
       : [],
   };
 }
@@ -156,7 +165,7 @@ function streamCanonical(
           if (requestedBasis === 'WP' && event.type === 'point' && event.point.metricBasis === 'SP') return;
           send(event.type === 'point'
             ? { ...event, point: { ...event.point, ...monthProvenance(event.point) } }
-            : event);
+            : { ...event, ...monthProvenance(event) });
         });
         send(requestedBasis === 'WP' && data.metricBasis === 'SP'
           ? { type: 'error', status: 400, message: BASIS_CONFLICT }

@@ -96,18 +96,27 @@ export function buildProductivitySummaryRangeSheet(data: ProductivitySummaryRang
   return { title: `Productivity Summary - ${rangeLabel}`, values };
 }
 
+export function productivitySummarySheetDimensions(values: readonly (readonly unknown[])[]) {
+  const chartHeaderRow = values.findIndex(row => row[0] === 'Month' && row[1] === 'Source');
+  return {
+    columnCount: Math.max(1, ...values.map(row => row.length)),
+    frozenRowCount: Math.max(5, chartHeaderRow + 1),
+  };
+}
+
 export async function exportProductivitySummaryRangeToSpreadsheet(
   data: ProductivitySummaryRangeResponse,
   accessToken: string,
 ) {
   const { title, values } = buildProductivitySummaryRangeSheet(data);
+  const dimensions = productivitySummarySheetDimensions(values);
   const oauth2Client = new google.auth.OAuth2();
   oauth2Client.setCredentials({ access_token: accessToken });
   const sheets = google.sheets({ version: 'v4', auth: oauth2Client });
   const createResponse = await sheets.spreadsheets.create({
     requestBody: {
       properties: { title },
-      sheets: [{ properties: { sheetId: 0, title: 'Summary', gridProperties: { rowCount: values.length + 10, columnCount: 10 } } }],
+      sheets: [{ properties: { sheetId: 0, title: 'Summary', gridProperties: { rowCount: values.length + 10, columnCount: dimensions.columnCount } } }],
     },
   });
   const spreadsheetId = createResponse.data.spreadsheetId!;
@@ -119,7 +128,7 @@ export async function exportProductivitySummaryRangeToSpreadsheet(
   await sheets.spreadsheets.batchUpdate({
     spreadsheetId,
     requestBody: { requests: [
-      { updateSheetProperties: { properties: { sheetId: 0, gridProperties: { frozenRowCount: 5 } }, fields: 'gridProperties.frozenRowCount' } },
+      { updateSheetProperties: { properties: { sheetId: 0, gridProperties: { frozenRowCount: dimensions.frozenRowCount } }, fields: 'gridProperties.frozenRowCount' } },
       { repeatCell: { range: { sheetId: 0, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 2 }, cell: { userEnteredFormat: { backgroundColor: { red: 0.4, green: 0.3, blue: 0.7 }, textFormat: { foregroundColor: { red: 1, green: 1, blue: 1 }, bold: true, fontSize: 14 } } }, fields: 'userEnteredFormat(backgroundColor,textFormat)' } },
     ] },
   });

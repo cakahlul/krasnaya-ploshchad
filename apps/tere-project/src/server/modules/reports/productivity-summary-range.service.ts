@@ -122,13 +122,14 @@ function chartPoint(month: LoadedMonth, metricBasis: MetricBasis) {
     bugsRaised: month.bugsRaised,
     bugsDone: month.bugsDone,
     source: month.coverage.source,
+    fallback: month.coverage.fallback,
     metricBasis,
   };
 }
 
 export type RangeProgressEvent =
   | { type: "point"; completed: number; total: number; point: ReturnType<typeof chartPoint> }
-  | { type: "month"; completed: number; total: number; month: string; source: MonthSource };
+  | { type: "month"; completed: number; total: number; month: string; source: MonthSource; fallback: boolean };
 
 /**
  * Emits a chart point per month as it resolves, but only once the metric basis is settled — a
@@ -158,7 +159,7 @@ function createProgressPublisher(
       if (basis === null && month.coverage.source === "archive") basis = "SP";
       pending.push(month);
       if (basis === null) {
-        emit({ type: "month", completed, total, month: month.month, source: month.coverage.source });
+        emit({ type: "month", completed, total, month: month.month, source: month.coverage.source, fallback: month.coverage.fallback });
         return;
       }
       flush();
@@ -219,7 +220,9 @@ export async function generateProductivitySummaryRange(
           : monthData!.source
         : "unavailable";
       const attempts = monthData?.attempts ?? [{ source: source === 'live' ? 'jira' : source === 'snapshot' ? 'snapshot' : 'archive', detail: failures[0]?.reason ?? null }];
-      const fallback = source === 'live' && attempts.some(attempt => attempt.source !== 'jira');
+      const fallback = source === 'live'
+        && attempts.some(attempt => attempt.source === 'jira')
+        && attempts.some(attempt => attempt.source !== 'jira');
       console.log(
         `[telemetry] productivity-summary-range month durationMs=${Date.now() - monthStart} month=${month} source=${source}`,
       );
@@ -330,6 +333,10 @@ export async function generateProductivitySummaryRange(
     || month.coverage.source === 'partial'
     || month.coverage.failures.length > 0);
   const hasIncompleteCoverage = resolvedSources.some(source => source === 'partial' || source === 'unavailable');
+  const fallbackReason = loaded
+    .filter(month => month.coverage.fallback)
+    .flatMap(month => month.coverage.attempts)
+    .find(attempt => attempt.detail)?.detail ?? null;
   const sourceMetadata: ReportSourceMetadata = {
     source: aggregateSource,
     coverage: {
@@ -340,7 +347,7 @@ export async function generateProductivitySummaryRange(
       covered: loaded.filter(month => month.coverage.source !== 'unavailable').length,
     },
     fallback: hasFallback,
-    reason: loaded.flatMap(month => month.coverage.failures).find(Boolean)?.reason ?? null,
+    reason: loaded.flatMap(month => month.coverage.failures).find(Boolean)?.reason ?? fallbackReason,
     warning: hasFallback && aggregateSource === 'jira'
       ? 'Using Jira after stored source fallback'
       : hasIncompleteCoverage

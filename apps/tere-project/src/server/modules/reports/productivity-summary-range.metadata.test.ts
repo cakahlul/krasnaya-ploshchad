@@ -59,7 +59,7 @@ test("marks a successful live source as fallback when stored attempts were rejec
     loadMonth: async () => ({
       source: "live",
       appliedRules: [],
-      members: [],
+      members: [{ id: "a", name: "A", group: "Loan", board: "L1", spTotal: 8, wpTotal: 5, workingDays: 1 }],
       attempts: [
         { source: "snapshot", detail: "checksum mismatch" },
         { source: "jira", detail: null },
@@ -72,6 +72,10 @@ test("marks a successful live source as fallback when stored attempts were rejec
     { source: "snapshot", detail: "checksum mismatch" },
     { source: "jira", detail: null },
   ]);
+  assert.equal(result.sourceMetadata.reason, "checksum mismatch");
+  assert.equal(result.coverage.months[0].fallback, true);
+  assert.equal(result.chart[0].fallback, true);
+  assert.equal(result.details[0].monthly[0].fallback, true);
   assert.equal(result.sourceMetadata.warning, "Using Jira after stored source fallback");
 });
 
@@ -131,6 +135,24 @@ test("uses generic warnings when fallback provenance is not aggregate Jira", asy
     loadMonth: async () => { throw new Error("source unavailable"); },
   });
   assert.equal(unavailable.sourceMetadata.warning, "Report coverage is incomplete");
+});
+
+test("does not mark independent archive and live months as a range fallback", async () => {
+  const result = await generateProductivitySummaryRange(
+    { months: ["2025-12", "2026-01"], selectedGroups: ["Loan"], metricBasis: "SP" },
+    {
+      loadMonth: async month => ({
+        source: month === "2025-12" ? "archive" : "live",
+        appliedRules: [],
+        members: [],
+      }),
+    },
+  );
+  assert.equal(result.sourceMetadata.source, "mixed");
+  assert.equal(result.coverage.months.every(month => month.fallback === false), true);
+  assert.equal(result.sourceMetadata.fallback, false);
+  assert.equal(result.sourceMetadata.reason, null);
+  assert.equal(result.sourceMetadata.warning, null);
 });
 
 test("keeps empty successful ranges covered without inventing members", async () => {
