@@ -68,6 +68,7 @@ test("marks a successful live source as fallback when stored attempts were rejec
   });
   assert.equal(result.sourceMetadata.source, "jira");
   assert.equal(result.sourceMetadata.fallback, true);
+  assert.equal(result.sourceMetadata.reason, "checksum mismatch");
   assert.deepEqual(result.sourceMetadata.attemptedSources, [
     { source: "snapshot", detail: "checksum mismatch" },
     { source: "jira", detail: null },
@@ -135,6 +136,24 @@ test("uses generic warnings when fallback provenance is not aggregate Jira", asy
     loadMonth: async () => { throw new Error("source unavailable"); },
   });
   assert.equal(unavailable.sourceMetadata.warning, "Report coverage is incomplete");
+});
+
+test("does not mark independent archive and live months as a range fallback", async () => {
+  const result = await generateProductivitySummaryRange(
+    { months: ["2025-12", "2026-01"], selectedGroups: ["Loan"], metricBasis: "SP" },
+    {
+      loadMonth: async month => ({
+        source: month === "2025-12" ? "archive" : "live",
+        appliedRules: [],
+        members: [],
+      }),
+    },
+  );
+  assert.equal(result.sourceMetadata.source, "mixed");
+  assert.equal(result.coverage.months.every(month => month.fallback === false), true);
+  assert.equal(result.sourceMetadata.fallback, false);
+  assert.equal(result.sourceMetadata.reason, null);
+  assert.equal(result.sourceMetadata.warning, null);
 });
 
 test("does not mark independent archive and live months as a range fallback", async () => {
