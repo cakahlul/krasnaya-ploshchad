@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import type { CaptureWindow, CaptureSummary, DeveloperCaptureService } from './report-capture';
 
 const DAY = 86_400_000;
@@ -13,6 +14,20 @@ export async function handleDeveloperCapturePost(
     if (!window) return Response.json({ message: 'Invalid capture window' }, { status: 400 });
     const summary: CaptureSummary = await service.capture(window);
     return Response.json(summary);
+  } catch {
+    return Response.json({ message: 'Unable to capture report data' }, { status: 500 });
+  }
+}
+
+export async function handleScheduledCaptureGet(
+  req: Request,
+  service: Pick<DeveloperCaptureService, 'capture'>,
+  now = new Date(),
+  cronSecret = process.env.CRON_SECRET,
+): Promise<Response> {
+  if (!isAuthorizedCron(req, cronSecret)) return Response.json({ message: 'Unauthorized' }, { status: 401 });
+  try {
+    return Response.json(await service.capture(scheduledCaptureWindow(now)));
   } catch {
     return Response.json({ message: 'Unable to capture report data' }, { status: 500 });
   }
@@ -65,4 +80,27 @@ function validDate(value: unknown): value is string {
   if (typeof value !== 'string' || !ISO.test(value)) return false;
   const date = new Date(`${value}T00:00:00.000Z`);
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+function isAuthorizedCron(req: Request, secret: string | undefined): boolean {
+  if (!secret) return false;
+  const authorization = req.headers.get('authorization');
+  if (!authorization) return false;
+  const received = Buffer.from(authorization);
+  const expected = Buffer.from(`Bearer ${secret}`);
+  return received.length === expected.length && timingSafeEqual(received, expected);
+}
+
+function scheduledCaptureWindow(now: Date): CaptureWindow {
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit',
+  }).formatToParts(now);
+  const year = Number(parts.find(part => part.type === 'year')?.value);
+  const month = Number(parts.find(part => part.type === 'month')?.value);
+  const previousYear = month === 1 ? year - 1 : year;
+  const previousMonth = month === 1 ? 12 : month - 1;
+  return {
+    startDate: `${previousYear}-${String(previousMonth).padStart(2, '0')}-01`,
+    endDate: `${year}-${String(month).padStart(2, '0')}-${new Date(Date.UTC(year, month, 0)).getUTCDate()}`,
+  };
 }
