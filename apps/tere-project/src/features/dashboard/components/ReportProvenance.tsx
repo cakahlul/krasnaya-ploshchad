@@ -1,3 +1,4 @@
+import React from 'react';
 import type { ReportSourceMetadata } from '@server/modules/report-source-resolver/report-source-resolver';
 import { reportCoverageLabel, reportProvenanceText, reportSourceLabel } from '../utils/report-provenance';
 
