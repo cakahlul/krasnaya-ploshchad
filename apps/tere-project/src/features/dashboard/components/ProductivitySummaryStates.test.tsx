@@ -100,7 +100,7 @@ test('never hardcodes a color literal — every color is a theme token (light/vo
   // Only literal color values allowed are the theme-agnostic SVG chrome recharts needs;
   // every semantic color (accent, status, text, border) must go through a --tere-*/--color-* token.
   assert.doesNotMatch(source, /#[0-9a-fA-F]{3,8}/);
-  assert.match(source, /color=\{data\.coverage\.complete \? 'var\(--color-accent\)' : 'var\(--tere-status-warning\)'\}/);
+  assert.match(source, /data\.sourceMetadata\.coverage\.status === 'complete'/);
 });
 
 test('narrow-viewport horizontal scroll: chart wrapper scrolls, nothing cropped', () => {
@@ -155,6 +155,47 @@ test('renders server basis, coverage, and Group-member hierarchy without raw Tea
   assert.match(html, /Ari/);
   assert.match(html, /N\/A/);
   assert.doesNotMatch(html, /Tunaiku Raw Team/);
+});
+
+test('renders approved source labels, explicit coverage status, warning, and month detail', () => {
+  const html = renderToStaticMarkup(
+    <ProductivitySummaryCanonicalResult data={{
+      range: { startMonth: '2025-12', endMonth: '2026-01', monthCount: 2 },
+      selectedGroups: ['Loan'],
+      metricBasis: 'SP',
+      sourceMetadata: {
+        source: 'jira',
+        coverage: { status: 'fallback', expected: 2, covered: 2 },
+        fallback: true,
+        reason: 'snapshot rejected',
+        warning: 'Using Jira after stored source fallback',
+        attemptedSources: [{ source: 'snapshot', detail: 'snapshot rejected' }, { source: 'jira', detail: null }],
+        snapshotTimestamp: null,
+      },
+      coverage: {
+        complete: false,
+        months: [
+          { month: '2025-12', source: 'snapshot', productivityAvailable: true, bugsAvailable: true },
+          { month: '2026-01', source: 'unavailable', productivityAvailable: false, bugsAvailable: false },
+        ],
+      },
+      summary: { activeMembers: 1, productivityMetric: 8, bugsRaised: null },
+      details: [{
+        name: 'Ari', group: 'Loan', monthly: [
+          { month: '2025-12', source: 'snapshot', spTotal: 8, wpTotal: null, workingDays: null },
+          { month: '2026-01', source: 'unavailable', spTotal: null, wpTotal: null, workingDays: null },
+        ],
+      }],
+    }} />,
+  );
+
+  assert.match(html, /Jira Fallback/);
+  assert.match(html, /Fallback coverage: 2 of 2 months/);
+  assert.match(html, /Using Jira after stored source fallback/);
+  assert.match(html, /Captured Report Snapshot/);
+  assert.match(html, /Unavailable/);
+  assert.match(html, /Source.*Captured Report Snapshot/);
+  assert.match(html, /Source.*Unavailable/);
 });
 
 test('renders zero metric and working days as zero, not unavailable', () => {
