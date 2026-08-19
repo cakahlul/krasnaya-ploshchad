@@ -95,7 +95,7 @@ export class DrizzleTeamReportingSnapshotRepository implements TeamReportingSnap
       const where = identity.periodKind === 'scrum'
         ? and(eq(teamReportingSnapshots.boardId, identity.boardId), eq(teamReportingSnapshots.periodKind, 'scrum'), eq(teamReportingSnapshots.sprintId, identity.sprintId))
         : and(eq(teamReportingSnapshots.boardId, identity.boardId), eq(teamReportingSnapshots.periodKind, 'kanban'), eq(teamReportingSnapshots.periodStartDate, identity.periodStartDate), eq(teamReportingSnapshots.periodEndDate, identity.periodEndDate));
-      const [existing] = await tx.select().from(teamReportingSnapshots).where(where).limit(1);
+      const [existing] = await tx.select().from(teamReportingSnapshots).where(where).limit(1).for('update');
       if (!existing) throw new Error('SNAPSHOT_PUBLICATION_CONFLICT');
       const snapshot = toSnapshot(existing);
       const coverage = await tx.select({

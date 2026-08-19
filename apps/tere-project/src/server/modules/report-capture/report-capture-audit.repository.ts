@@ -58,7 +58,7 @@ function changes(value: readonly CaptureSnapshotAuditChange[]): Array<{ key: str
       key: change.key,
       fields: change.fields.map((field: { readonly path: string; readonly previous: unknown; readonly next: unknown }) => {
         if (!field || typeof field.path !== 'string' || !field.path.trim() || field.path.length > 512) throw new Error('CAPTURE_AUDIT_INVALID');
-        const redact = /(?:authorization|password|secret|token|api[_-]?key)/i.test(field.path);
+        const redact = isSensitive(field.path);
         return { path: field.path, previous: redact ? '[REDACTED]' : json(field.previous), next: redact ? '[REDACTED]' : json(field.next) };
       }),
     };
@@ -84,9 +84,13 @@ function json(value: unknown, depth = 0): unknown {
   if (typeof value === 'object' && value) {
     const entries = Object.entries(value as Record<string, unknown>);
     if (entries.length > 10_000) throw new Error('CAPTURE_AUDIT_INVALID');
-    return Object.fromEntries(entries.map(([key, item]) => [key, /(?:authorization|password|secret|token|api[_-]?key)/i.test(key) ? '[REDACTED]' : json(item, depth + 1)]));
+    return Object.fromEntries(entries.map(([key, item]) => [key, isSensitive(key) ? '[REDACTED]' : json(item, depth + 1)]));
   }
   throw new Error('CAPTURE_AUDIT_INVALID');
+}
+
+function isSensitive(value: string): boolean {
+  return /(?:authorization|password|secret|token|api[_-]?key|email(?:address)?|phone(?:number)?|accountid|displayname|address)/i.test(value);
 }
 
 function isId(value: unknown): value is string {

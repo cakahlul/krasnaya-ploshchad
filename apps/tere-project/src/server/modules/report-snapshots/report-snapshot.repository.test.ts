@@ -6,7 +6,7 @@ import { DrizzleTeamReportingSnapshotRepository } from './report-snapshot.reposi
 import { snapshotChecksum, type TeamReportingSnapshotPublication } from './report-snapshot';
 
 function publication(): TeamReportingSnapshotPublication {
-  const rawJiraInput = { main: [{ key: 'ABC-1', summary: 'Old', token: 'old-token' }], planned: {} };
+  const rawJiraInput = { main: [{ key: 'ABC-1', emailAddress: 'old@example.com', summary: 'Old', token: 'old-token' }], planned: {} };
   const calculatedOutput = { totals: { points: 1 } };
   return {
     snapshot: {
@@ -26,6 +26,7 @@ class FakeDatabase {
   audits: any[] = [];
   failCoverageInsert = false;
   failAuditInsert = false;
+  onSnapshotLock?: () => void;
 
   select() {
     return this.selectRows();
@@ -35,7 +36,16 @@ class FakeDatabase {
     const rows = (table: unknown) => table === teamReportingSnapshots ? (this.snapshot ? [this.snapshot] : []) : this.coverage;
     return { from: (table: unknown) => ({ where: () => {
       const result = rows(table);
-      return { limit: async () => result.slice(0, 1), then: (resolve: (value: any[]) => unknown) => Promise.resolve(result).then(resolve) };
+      return {
+        limit: () => ({
+          for: async () => {
+            if (table === teamReportingSnapshots) this.onSnapshotLock?.();
+            return rows(table).slice(0, 1);
+          },
+          then: (resolve: (value: any[]) => unknown) => Promise.resolve(result.slice(0, 1)).then(resolve),
+        }),
+        then: (resolve: (value: any[]) => unknown) => Promise.resolve(result).then(resolve),
+      };
     } }) };
   }
 
@@ -206,7 +216,7 @@ test('replaces changed state and records one redacted structured audit in the sa
   const changed = publication();
   changed.snapshot = {
     ...changed.snapshot,
-    rawJiraInput: { main: [{ key: 'ABC-1', summary: 'New', token: 'new-token' }, { key: 'ABC-2', summary: 'Added' }], planned: {} },
+    rawJiraInput: { main: [{ key: 'ABC-1', emailAddress: 'new@example.com', summary: 'New', token: 'new-token' }, { key: 'ABC-2', summary: 'Added' }], planned: {} },
     rawInputCount: 2,
     calculatedOutput: { totals: { points: 2 } },
   };
@@ -227,6 +237,7 @@ test('replaces changed state and records one redacted structured audit in the sa
     nextCalculatedOutputChecksum: changed.snapshot.calculatedOutputChecksum,
     addedJiraKeys: ['ABC-2'], removedJiraKeys: [],
     changedJiraKeys: [{ key: 'ABC-1', fields: [
+      { path: '$.emailAddress', previous: '[REDACTED]', next: '[REDACTED]' },
       { path: '$.summary', previous: 'Old', next: 'New' },
       { path: '$.token', previous: '[REDACTED]', next: '[REDACTED]' },
     ] }],
@@ -236,6 +247,26 @@ test('replaces changed state and records one redacted structured audit in the sa
       calculatedPathCount: 1, rawInputChanged: true, calculatedOutputChanged: true,
     },
   });
+});
+
+test('rechecks a locked snapshot so a concurrent duplicate becomes unchanged without audit', async () => {
+  const fake = new FakeDatabase();
+  const repo = repository(fake);
+  await repo.publish(publication());
+  const changed = publication();
+  changed.snapshot = { ...changed.snapshot, calculatedOutput: { totals: { points: 2 } } };
+  changed.snapshot.calculatedOutputChecksum = snapshotChecksum(changed.snapshot.calculatedOutput);
+  fake.onSnapshotLock = () => {
+    fake.onSnapshotLock = undefined;
+    fake.snapshot = { ...fake.snapshot, ...changed.snapshot, capturedAt: new Date() };
+    fake.coverage = changed.coverage.map(segment => ({ ...segment, snapshotId: fake.snapshot.id }));
+  };
+
+  const outcome = await repo.publishWithOutcome(changed, { runId: 'run-2' });
+
+  assert.equal(outcome.kind, 'unchanged');
+  assert.deepEqual(fake.snapshot.calculatedOutput, { totals: { points: 2 } });
+  assert.deepEqual(fake.audits, []);
 });
 
 test('records removed Jira keys deterministically', async () => {
