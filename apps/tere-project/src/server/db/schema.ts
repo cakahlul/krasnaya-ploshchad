@@ -353,6 +353,7 @@ export const teamReportingCaptureRuns = pgTable('team_reporting_capture_run', {
   startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   status: text('status').notNull(),
+  failureReason: text('failure_reason'),
   attemptedCount: integer('attempted_count').notNull().default(0),
   succeededCount: integer('succeeded_count').notNull().default(0),
   failedCount: integer('failed_count').notNull().default(0),

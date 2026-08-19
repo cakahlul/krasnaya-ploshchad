@@ -63,7 +63,7 @@ export async function capture(window: CaptureWindow, ports: DeveloperCapturePort
   } catch {
     failures.push({ board: 0, period: 'discovery', reason: 'CAPTURE_BOARD_DISCOVERY_FAILED' });
     attempts.push({ board: 0, period: 'discovery', reason: 'CAPTURE_BOARD_DISCOVERY_FAILED', status: 'failure' });
-    return completeCapture(window, ports, run?.id, startedAt, 0, 0, 0, failures, attempts);
+    return completeCapture(window, ports, run?.id, startedAt, 0, 0, 0, failures, attempts, 'CAPTURE_BOARD_DISCOVERY_FAILED');
   }
   const periodLoads = await Promise.allSettled(boards.map(board => ports.periods(board, window)));
   const periods: CapturePeriod[] = [];
@@ -105,17 +105,18 @@ export async function capture(window: CaptureWindow, ports: DeveloperCapturePort
 
 async function completeCapture(
   window: CaptureWindow, ports: DeveloperCapturePorts, runId: string | undefined, startedAt: number | undefined,
-  created: number, changed: number, unchanged: number, failures: readonly CaptureFailure[], attempts: readonly CaptureAttempt[],
+  created: number, changed: number, unchanged: number, failures: readonly CaptureFailure[], attempts: readonly CaptureAttempt[], failureReason?: string,
 ): Promise<CaptureSummary> {
   const successes = created + changed;
   const completion: CaptureRunCompletion = {
     status: failures.length ? (successes + unchanged ? 'partial' : 'failed') : 'complete',
     attempted: attempts.length, succeeded: successes, failed: failures.length, unchanged,
+    ...(failureReason ? { failureReason } : {}),
   };
   if (runId) await ports.runRepository!.complete(runId, completion);
   return {
     attempted: completion.attempted, successes, failures, attempts,
-    ...(runId ? { runId, status: completion.status, created, changed, unchanged, durationMs: Math.max(0, (ports.now ? ports.now() : new Date()).getTime() - (startedAt ?? 0)) } : {}),
+    ...(runId ? { runId, status: completion.status, created, changed, unchanged, ...(failureReason ? { failureReason } : {}), durationMs: Math.max(0, (ports.now ? ports.now() : new Date()).getTime() - (startedAt ?? 0)) } : {}),
   };
 }
 

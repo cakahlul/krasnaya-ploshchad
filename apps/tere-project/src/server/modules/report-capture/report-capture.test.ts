@@ -85,6 +85,27 @@ test('preserves a safe discovery reason for invalid Kanban anchors', async () =>
   assert.deepEqual(result.failures, [{ board: 7, period: 'enumeration', reason: 'CAPTURE_KANBAN_ANCHOR_INVALID' }]);
 });
 
+test('persists a safe run-level reason when board discovery fails', async () => {
+  let completion: unknown;
+  const result = await createDeveloperCaptureService({
+    boards: async () => { throw new Error('JIRA credentials leaked'); },
+    periods: async () => [], fetchJira: async () => ({ rawInput: {}, segments: [] }),
+    calculate: async () => ({ calculatedOutput: {}, segments: [] }),
+    repository: { publish: async () => { throw new Error('unused'); } },
+    runRepository: {
+      create: async () => ({ id: 'run-discovery' } as never),
+      recordFailure: async () => { throw new Error('no board can be persisted'); },
+      complete: async (_runId, value) => { completion = value; return { id: 'run-discovery' } as never; },
+    },
+  }).capture({ startDate: '2026-01-01', endDate: '2026-01-31' });
+
+  assert.deepEqual(result.failures, [{ board: 0, period: 'discovery', reason: 'CAPTURE_BOARD_DISCOVERY_FAILED' }]);
+  assert.deepEqual(completion, {
+    status: 'failed', attempted: 1, succeeded: 0, failed: 1, unchanged: 0,
+    failureReason: 'CAPTURE_BOARD_DISCOVERY_FAILED',
+  });
+});
+
 test('requires a bounded window', async () => {
   const service = createDeveloperCaptureService({ boards: async () => [], periods: async () => [], fetchJira: async () => ({ rawInput: {}, segments: [] }), calculate: async () => ({ calculatedOutput: {}, segments: [] }), repository: { publish: async () => { throw new Error('unused'); } } });
   await assert.rejects(() => service.capture({ startDate: '2026-01-01', endDate: '2028-01-01' }), /CAPTURE_WINDOW_TOO_LARGE/);

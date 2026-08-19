@@ -12,6 +12,7 @@ export interface CaptureRun {
   readonly startedAt: Date;
   readonly completedAt: Date | null;
   readonly status: CaptureRunStatus;
+  readonly failureReason: string | null;
   readonly attempted: number;
   readonly succeeded: number;
   readonly failed: number;
@@ -26,6 +27,7 @@ export interface CaptureRunFailure {
 
 export interface CaptureRunCompletion {
   readonly status: Exclude<CaptureRunStatus, 'running'>;
+  readonly failureReason?: string | null;
   readonly attempted: number;
   readonly succeeded: number;
   readonly failed: number;

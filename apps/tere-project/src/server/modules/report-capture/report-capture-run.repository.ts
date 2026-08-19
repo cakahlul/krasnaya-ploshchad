@@ -12,6 +12,7 @@ function toRun(row: typeof teamReportingCaptureRuns.$inferSelect): CaptureRun {
     startedAt: row.startedAt,
     completedAt: row.completedAt,
     status: row.status as CaptureRunStatus,
+    failureReason: row.failureReason ?? null,
     attempted: row.attemptedCount,
     succeeded: row.succeededCount,
     failed: row.failedCount,
@@ -30,6 +31,7 @@ export class DrizzleCaptureRunRepository implements CaptureRunRepository {
       windowStartDate: input.window.startDate,
       windowEndDate: input.window.endDate,
       status: 'running',
+      failureReason: null,
       attemptedCount: 0,
       succeededCount: 0,
       failedCount: 0,
@@ -55,6 +57,7 @@ export class DrizzleCaptureRunRepository implements CaptureRunRepository {
     assertCompletion(result);
     const [row] = await this.database.update(teamReportingCaptureRuns).set({
       status: result.status,
+      failureReason: result.failureReason ?? null,
       completedAt: new Date(),
       attemptedCount: result.attempted,
       succeededCount: result.succeeded,
@@ -84,6 +87,7 @@ function assertCompletion(result: CaptureRunCompletion): void {
   const counts = [result.attempted, result.succeeded, result.failed, result.unchanged];
   if (!result || !counts.every(value => Number.isInteger(value) && value >= 0)
     || result.succeeded + result.failed + result.unchanged !== result.attempted
+    || result.failureReason !== undefined && result.failureReason !== null && !/^CAPTURE_[A-Z_]{1,96}$/.test(result.failureReason)
     || result.status === 'complete' && result.failed !== 0) throw new Error('CAPTURE_RUN_COMPLETION_INVALID');
 }
 
