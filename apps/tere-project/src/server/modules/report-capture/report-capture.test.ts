@@ -47,14 +47,17 @@ test('creates durable run evidence and counts created, changed, unchanged, and f
   } as never).capture({ startDate: '2026-01-01', endDate: '2026-01-31' }, 'developer@example.com');
 
   assert.deepEqual(events.slice(0, 2), ['create', 'boards']);
-  assert.deepEqual(failures, [{ boardId: 1, period: 'failed', reason: 'CAPTURE_PERIOD_FAILED' }]);
+  assert.deepEqual(failures, [{
+    boardId: 1, period: 'failed', reason: 'CAPTURE_PERIOD_FAILED', stage: 'fetch',
+    detail: 'stage=fetch name=Error message=JIRA_DOWN',
+  }]);
   assert.deepEqual(completion, { status: 'partial', attempted: 4, succeeded: 2, failed: 1, unchanged: 1 });
   assert.deepEqual(result, {
     runId: 'run-1', status: 'partial', attempted: 4, successes: 2, created: 1, changed: 1, unchanged: 1,
-    failures: [{ board: 1, period: 'failed', reason: 'CAPTURE_PERIOD_FAILED' }],
+    failures: [{ board: 1, period: 'failed', reason: 'CAPTURE_PERIOD_FAILED', stage: 'fetch', detail: 'stage=fetch name=Error message=JIRA_DOWN' }],
     attempts: [
       { board: 1, period: 'created', status: 'success' }, { board: 1, period: 'changed', status: 'success' },
-      { board: 1, period: 'unchanged', status: 'success' }, { board: 1, period: 'failed', reason: 'CAPTURE_PERIOD_FAILED', status: 'failure' },
+      { board: 1, period: 'unchanged', status: 'success' }, { board: 1, period: 'failed', reason: 'CAPTURE_PERIOD_FAILED', stage: 'fetch', detail: 'stage=fetch name=Error message=JIRA_DOWN', status: 'failure' },
     ], durationMs: 12,
   });
 });
@@ -82,13 +85,21 @@ test('preserves a safe discovery reason for invalid Kanban anchors', async () =>
     repository: { publish: async () => { throw new Error('unused'); } },
   }).capture({ startDate: '2026-01-01', endDate: '2026-01-31' });
 
-  assert.deepEqual(result.failures, [{ board: 7, period: 'enumeration', reason: 'CAPTURE_KANBAN_ANCHOR_INVALID' }]);
+  assert.deepEqual(result.failures, [{
+    board: 7, period: 'enumeration', reason: 'CAPTURE_KANBAN_ANCHOR_INVALID', stage: 'enumeration',
+    detail: 'stage=enumeration name=Error message=CAPTURE_KANBAN_ANCHOR_INVALID',
+  }]);
 });
 
 test('persists a safe run-level reason when board discovery fails', async () => {
   let completion: unknown;
   const result = await createDeveloperCaptureService({
-    boards: async () => { throw new Error('JIRA credentials leaked'); },
+    boards: async () => {
+      const error = Object.assign(new Error('Request failed with status code 503'), {
+        code: 'ERR_BAD_RESPONSE', response: { status: 503 },
+      });
+      throw error;
+    },
     periods: async () => [], fetchJira: async () => ({ rawInput: {}, segments: [] }),
     calculate: async () => ({ calculatedOutput: {}, segments: [] }),
     repository: { publish: async () => { throw new Error('unused'); } },
@@ -99,11 +110,16 @@ test('persists a safe run-level reason when board discovery fails', async () => 
     },
   }).capture({ startDate: '2026-01-01', endDate: '2026-01-31' });
 
-  assert.deepEqual(result.failures, [{ board: 0, period: 'discovery', reason: 'CAPTURE_BOARD_DISCOVERY_FAILED' }]);
+  assert.deepEqual(result.failures, [{
+    board: 0, period: 'discovery', reason: 'CAPTURE_BOARD_DISCOVERY_FAILED', stage: 'discovery',
+    detail: 'stage=discovery name=Error code=ERR_BAD_RESPONSE status=503 message=Request failed with status code 503',
+  }]);
   assert.deepEqual(completion, {
     status: 'failed', attempted: 1, succeeded: 0, failed: 1, unchanged: 0,
     failureReason: 'CAPTURE_BOARD_DISCOVERY_FAILED',
+    failureDetail: 'stage=discovery name=Error code=ERR_BAD_RESPONSE status=503 message=Request failed with status code 503',
   });
+  assert.equal(result.failureDetail, 'stage=discovery name=Error code=ERR_BAD_RESPONSE status=503 message=Request failed with status code 503');
 });
 
 test('requires a bounded window', async () => {

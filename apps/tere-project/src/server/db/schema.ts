@@ -354,6 +354,7 @@ export const teamReportingCaptureRuns = pgTable('team_reporting_capture_run', {
   completedAt: timestamp('completed_at', { withTimezone: true }),
   status: text('status').notNull(),
   failureReason: text('failure_reason'),
+  failureDetail: text('failure_detail'),
   attemptedCount: integer('attempted_count').notNull().default(0),
   succeededCount: integer('succeeded_count').notNull().default(0),
   failedCount: integer('failed_count').notNull().default(0),
@@ -367,6 +368,7 @@ export const teamReportingCaptureRuns = pgTable('team_reporting_capture_run', {
     or (${table.status} in ('complete', 'partial', 'failed') and ${table.completedAt} is not null
       and ${table.succeededCount} + ${table.failedCount} + ${table.unchangedCount} = ${table.attemptedCount})`),
   check('team_reporting_capture_run_complete_without_failures', sql`${table.status} <> 'complete' or ${table.failedCount} = 0`),
+  check('team_reporting_capture_run_failure_detail_length', sql`${table.failureDetail} is null or char_length(${table.failureDetail}) <= 1000`),
 ]);
 
 export const teamReportingCaptureFailures = pgTable('team_reporting_capture_failure', {
@@ -375,6 +377,8 @@ export const teamReportingCaptureFailures = pgTable('team_reporting_capture_fail
   boardId: integer('board_id').notNull(),
   period: text('period_key').notNull(),
   reason: text('reason').notNull(),
+  stage: text('stage').notNull().default('unknown'),
+  detail: text('detail'),
   occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
 }, table => [
   foreignKey({
@@ -389,6 +393,8 @@ export const teamReportingCaptureFailures = pgTable('team_reporting_capture_fail
   }).onDelete('restrict'),
   check('team_reporting_capture_failure_period_valid', sql`btrim(${table.period}) <> '' and char_length(${table.period}) <= 160`),
   check('team_reporting_capture_failure_reason_safe', sql`${table.reason} ~ '^CAPTURE_[A-Z_]{1,96}$'`),
+  check('team_reporting_capture_failure_stage_supported', sql`${table.stage} in ('discovery', 'enumeration', 'validation', 'fetch', 'calculate', 'publish', 'unknown')`),
+  check('team_reporting_capture_failure_detail_length', sql`${table.detail} is null or char_length(${table.detail}) <= 1000`),
   index('team_reporting_capture_failure_run_idx').on(table.runId),
 ]);
 

@@ -3,7 +3,7 @@ import {
   type TeamReportingSnapshotPublication,
   type TeamReportingSnapshotRepository,
 } from '@server/modules/report-snapshots/report-snapshot';
-import type { CaptureRunCompletion, CaptureRunRepository, CaptureRunStatus } from './report-capture-run';
+import { captureFailureDetail, type CaptureFailureStage, type CaptureRunCompletion, type CaptureRunRepository, type CaptureRunStatus } from './report-capture-run';
 
 export interface CaptureWindow { readonly startDate: string; readonly endDate: string }
 export interface CaptureBoard { readonly boardId: number; readonly boardName: string; readonly isBugMonitoring?: boolean }
@@ -15,11 +15,17 @@ export interface CapturePeriod {
 export interface CaptureSegment { readonly segmentKey: string; readonly value: unknown; readonly count: number }
 export interface JiraCaptureResult { readonly rawInput: unknown; readonly segments: readonly CaptureSegment[] }
 export interface CalculatedCaptureResult { readonly calculatedOutput: unknown; readonly segments: readonly CaptureSegment[] }
-export interface CaptureFailure { readonly board: number; readonly period: string; readonly reason: string }
-export interface CaptureAttempt { readonly board: number; readonly period: string; readonly status: 'success' | 'failure'; readonly reason?: string }
+export interface CaptureFailure {
+  readonly board: number; readonly period: string; readonly reason: string;
+  readonly stage?: CaptureFailureStage; readonly detail?: string | null;
+}
+export interface CaptureAttempt {
+  readonly board: number; readonly period: string; readonly status: 'success' | 'failure'; readonly reason?: string;
+  readonly stage?: CaptureFailureStage; readonly detail?: string | null;
+}
 export interface CaptureSummary {
   readonly attempted: number; readonly successes: number; readonly failures: readonly CaptureFailure[]; readonly attempts: readonly CaptureAttempt[];
-  readonly runId?: string; readonly status?: CaptureRunStatus; readonly created?: number; readonly changed?: number; readonly unchanged?: number; readonly durationMs?: number;
+  readonly runId?: string; readonly status?: CaptureRunStatus; readonly created?: number; readonly changed?: number; readonly unchanged?: number; readonly durationMs?: number; readonly failureDetail?: string;
 }
 
 export interface DeveloperCapturePorts {
@@ -55,26 +61,33 @@ export async function capture(window: CaptureWindow, ports: DeveloperCapturePort
   const recordFailure = async (failure: CaptureFailure) => {
     failures.push(failure);
     attempts.push({ ...failure, status: 'failure' });
-    if (run) await ports.runRepository!.recordFailure(run.id, { boardId: failure.board, period: failure.period, reason: failure.reason });
+    if (run) await ports.runRepository!.recordFailure(run.id, {
+      boardId: failure.board, period: failure.period, reason: failure.reason, stage: failure.stage, detail: failure.detail,
+    });
   };
   let boards: CaptureBoard[];
   try {
     boards = (await ports.boards()).filter(board => Number.isInteger(board.boardId) && board.boardId > 0 && !board.isBugMonitoring);
-  } catch {
-    failures.push({ board: 0, period: 'discovery', reason: 'CAPTURE_BOARD_DISCOVERY_FAILED' });
-    attempts.push({ board: 0, period: 'discovery', reason: 'CAPTURE_BOARD_DISCOVERY_FAILED', status: 'failure' });
-    return completeCapture(window, ports, run?.id, startedAt, 0, 0, 0, failures, attempts, 'CAPTURE_BOARD_DISCOVERY_FAILED');
+  } catch (error) {
+    const detail = captureFailureDetail(error, 'discovery');
+    const failure = { board: 0, period: 'discovery', reason: 'CAPTURE_BOARD_DISCOVERY_FAILED', stage: 'discovery' as const, detail };
+    failures.push(failure);
+    attempts.push({ ...failure, status: 'failure' });
+    return completeCapture(window, ports, run?.id, startedAt, 0, 0, 0, failures, attempts, 'CAPTURE_BOARD_DISCOVERY_FAILED', detail);
   }
   const periodLoads = await Promise.allSettled(boards.map(board => ports.periods(board, window)));
   const periods: CapturePeriod[] = [];
   for (const [index, load] of periodLoads.entries()) {
     if (load.status === 'rejected') {
-      await recordFailure({ board: boards[index].boardId, period: 'enumeration', reason: safeReason(load.reason, 'CAPTURE_PERIOD_ENUMERATION_FAILED') });
+      await recordFailure({
+        board: boards[index].boardId, period: 'enumeration', reason: safeReason(load.reason, 'CAPTURE_PERIOD_ENUMERATION_FAILED'),
+        stage: 'enumeration', detail: captureFailureDetail(load.reason, 'enumeration'),
+      });
       continue;
     }
     for (const period of load.value) {
       if (!validPeriod(period) || period.boardId !== boards[index].boardId) {
-        await recordFailure({ board: boards[index].boardId, period: 'invalid', reason: 'CAPTURE_PERIOD_INVALID' });
+        await recordFailure({ board: boards[index].boardId, period: 'invalid', reason: 'CAPTURE_PERIOD_INVALID', stage: 'validation' });
       } else if (period.periodEndDate >= window.startDate && period.periodEndDate <= window.endDate) {
         periods.push(period);
       }
@@ -84,19 +97,24 @@ export async function capture(window: CaptureWindow, ports: DeveloperCapturePort
   let changed = 0;
   let unchanged = 0;
   for (const period of periods) {
+    let stage: CaptureFailureStage = 'fetch';
     try {
       const jira = await ports.fetchJira(period);
+      stage = 'validation';
       validateJira(jira);
+      stage = 'calculate';
       const calculated = await ports.calculate(period, jira.rawInput);
+      stage = 'validation';
       validateCalculated(calculated);
       const publication = toPublication(period, jira, calculated);
+      stage = 'publish';
       const outcome = await publish(ports.repository, publication, run?.id);
       if (outcome.kind === 'created') created += 1;
       else if (outcome.kind === 'replaced') changed += 1;
       else unchanged += 1;
       attempts.push({ board: period.boardId, period: capturePeriodIdentity(period), status: 'success' });
     } catch (error) {
-      const failure = { board: period.boardId, period: capturePeriodIdentity(period), reason: safeReason(error) };
+      const failure = { board: period.boardId, period: capturePeriodIdentity(period), reason: safeReason(error), stage, detail: captureFailureDetail(error, stage) };
       await recordFailure(failure);
     }
   }
@@ -106,17 +124,20 @@ export async function capture(window: CaptureWindow, ports: DeveloperCapturePort
 async function completeCapture(
   window: CaptureWindow, ports: DeveloperCapturePorts, runId: string | undefined, startedAt: number | undefined,
   created: number, changed: number, unchanged: number, failures: readonly CaptureFailure[], attempts: readonly CaptureAttempt[], failureReason?: string,
+  failureDetail?: string,
 ): Promise<CaptureSummary> {
   const successes = created + changed;
   const completion: CaptureRunCompletion = {
     status: failures.length ? (successes + unchanged ? 'partial' : 'failed') : 'complete',
     attempted: attempts.length, succeeded: successes, failed: failures.length, unchanged,
     ...(failureReason ? { failureReason } : {}),
+    ...(failureDetail ? { failureDetail } : {}),
   };
   if (runId) await ports.runRepository!.complete(runId, completion);
   return {
     attempted: completion.attempted, successes, failures, attempts,
     ...(runId ? { runId, status: completion.status, created, changed, unchanged, ...(failureReason ? { failureReason } : {}), durationMs: Math.max(0, (ports.now ? ports.now() : new Date()).getTime() - (startedAt ?? 0)) } : {}),
+    ...(failureDetail ? { failureDetail } : {}),
   };
 }
 

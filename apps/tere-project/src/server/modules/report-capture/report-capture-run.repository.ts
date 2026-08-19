@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@server/lib/db';
 import { teamReportingCaptureFailures, teamReportingCaptureRuns } from '@server/db/schema';
-import { safeCaptureFailureReason } from './report-capture-run';
-import type { CaptureRun, CaptureRunCompletion, CaptureRunFailure, CaptureRunRepository, CaptureRunStatus, CaptureRunWindow } from './report-capture-run';
+import { MAX_CAPTURE_FAILURE_DETAIL_LENGTH, safeCaptureFailureDetail, safeCaptureFailureReason } from './report-capture-run';
+import type { CaptureFailureStage, CaptureRun, CaptureRunCompletion, CaptureRunFailure, CaptureRunRepository, CaptureRunStatus, CaptureRunWindow } from './report-capture-run';
 
 function toRun(row: typeof teamReportingCaptureRuns.$inferSelect): CaptureRun {
   return {
@@ -13,6 +13,7 @@ function toRun(row: typeof teamReportingCaptureRuns.$inferSelect): CaptureRun {
     completedAt: row.completedAt,
     status: row.status as CaptureRunStatus,
     failureReason: row.failureReason ?? null,
+    failureDetail: row.failureDetail ?? null,
     attempted: row.attemptedCount,
     succeeded: row.succeededCount,
     failed: row.failedCount,
@@ -32,6 +33,7 @@ export class DrizzleCaptureRunRepository implements CaptureRunRepository {
       windowEndDate: input.window.endDate,
       status: 'running',
       failureReason: null,
+      failureDetail: null,
       attemptedCount: 0,
       succeededCount: 0,
       failedCount: 0,
@@ -49,6 +51,8 @@ export class DrizzleCaptureRunRepository implements CaptureRunRepository {
       boardId: failure.boardId,
       period: failure.period,
       reason: safeCaptureFailureReason(failure.reason),
+      stage: failure.stage ?? 'unknown',
+      detail: safeCaptureFailureDetail(failure.detail),
     }).returning();
   }
 
@@ -58,6 +62,7 @@ export class DrizzleCaptureRunRepository implements CaptureRunRepository {
     const [row] = await this.database.update(teamReportingCaptureRuns).set({
       status: result.status,
       failureReason: result.failureReason ?? null,
+      failureDetail: safeCaptureFailureDetail(result.failureDetail),
       completedAt: new Date(),
       attemptedCount: result.attempted,
       succeededCount: result.succeeded,
@@ -81,6 +86,10 @@ function assertFailure(failure: CaptureRunFailure): void {
   if (!failure || !Number.isInteger(failure.boardId) || failure.boardId <= 0 || typeof failure.period !== 'string' || !failure.period.trim() || failure.period.length > 160) {
     throw new Error('CAPTURE_FAILURE_INVALID');
   }
+  if (failure.stage !== undefined && !isStage(failure.stage)) throw new Error('CAPTURE_FAILURE_INVALID');
+  if (failure.detail !== undefined && failure.detail !== null && (typeof failure.detail !== 'string' || failure.detail.length > MAX_CAPTURE_FAILURE_DETAIL_LENGTH)) {
+    throw new Error('CAPTURE_FAILURE_INVALID');
+  }
 }
 
 function assertCompletion(result: CaptureRunCompletion): void {
@@ -88,6 +97,7 @@ function assertCompletion(result: CaptureRunCompletion): void {
   if (!result || !counts.every(value => Number.isInteger(value) && value >= 0)
     || result.succeeded + result.failed + result.unchanged !== result.attempted
     || result.failureReason !== undefined && result.failureReason !== null && !/^CAPTURE_[A-Z_]{1,96}$/.test(result.failureReason)
+    || result.failureDetail !== undefined && result.failureDetail !== null && (typeof result.failureDetail !== 'string' || result.failureDetail.length > MAX_CAPTURE_FAILURE_DETAIL_LENGTH)
     || result.status === 'complete' && result.failed !== 0) throw new Error('CAPTURE_RUN_COMPLETION_INVALID');
 }
 
@@ -98,4 +108,9 @@ function assertId(id: string): void {
 function isDate(value: unknown): value is string {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
     && new Date(`${value}T00:00:00.000Z`).toISOString().slice(0, 10) === value;
+}
+
+function isStage(value: unknown): value is CaptureFailureStage {
+  return value === 'discovery' || value === 'enumeration' || value === 'validation'
+    || value === 'fetch' || value === 'calculate' || value === 'publish' || value === 'unknown';
 }

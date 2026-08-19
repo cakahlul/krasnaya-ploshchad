@@ -134,6 +134,13 @@
       "when": 1787114000000,
       "tag": "0018_capture_run_failure_reason",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1787137388000,
+      "tag": "0019_capture_failure_detail",
+      "breakpoints": true
     }
   ]
 }
