@@ -3,9 +3,10 @@ import { sprintService } from '@server/modules/sprint/sprint.service';
 import { findReportMembers, generateReport, generateReportByDateRange } from '@server/modules/reports/reports.service';
 import * as reportsRepository from '@server/modules/reports/reports.repository';
 import { teamReportingSnapshotRepository } from '@server/modules/report-snapshots/report-snapshot.repository';
-import { resolvePeriodIdentity } from '@shared/utils/period-identity';
+import { resolvePeriodIdentity, validateKanbanAnchor } from '@shared/utils/period-identity';
 import type { JiraIssueEntity } from '@shared/types/report.types';
 import { createDeveloperCaptureService, type CaptureBoard, type CapturePeriod, type DeveloperCaptureService } from './report-capture';
+import { DrizzleCaptureRunRepository } from './report-capture-run.repository';
 
 const DAY = 86_400_000;
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
@@ -20,7 +21,7 @@ interface CaptureInputs {
 async function loadBoards() {
   const boards = await boardsService.findAll();
   boards.forEach(board => boardById.set(board.boardId, board));
-  return boards.map(board => ({ boardId: board.boardId, boardName: board.name, isBugMonitoring: board.isBugMonitoring } satisfies CaptureBoard));
+  return boards.filter(board => !board.isBugMonitoring).map(board => ({ boardId: board.boardId, boardName: board.name, isBugMonitoring: board.isBugMonitoring } satisfies CaptureBoard));
 }
 
 async function periods(board: CaptureBoard, window: { startDate: string; endDate: string }): Promise<readonly CapturePeriod[]> {
@@ -31,16 +32,17 @@ async function periods(board: CaptureBoard, window: { startDate: string; endDate
     return sprints.flatMap(sprint => {
       const startDate = datePart(sprint.startDate);
       const endDate = datePart(sprint.endDate);
-      if (!startDate || !endDate || startDate < window.startDate || endDate > window.endDate) return [];
+      if (!isClosedSprint(sprint.state) || !startDate || !endDate || !isPeriodEndInWindow(endDate, window)) return [];
       return [{ boardId: board.boardId, boardName: board.boardName, periodKind: 'scrum', sprintId: String(sprint.id), sprintName: sprint.name, periodStartDate: startDate, periodEndDate: endDate }];
     });
   }
-  if (!config.kanbanCycleStartDate) return [];
+  const anchor = validateKanbanAnchor(config.kanbanCycleStartDate);
+  if (!anchor.valid) throw new Error(`CAPTURE_${anchor.jiraFallbackReason}`);
   const result = new Map<string, CapturePeriod>();
   for (let time = parseDate(window.startDate); time <= parseDate(window.endDate); time += DAY) {
     const date = new Date(time).toISOString().slice(0, 10);
-    const identity = resolvePeriodIdentity({ boardId: board.boardId, isKanban: true, kanbanCycleStartDate: config.kanbanCycleStartDate, date });
-    if (identity.kind !== 'kanban' || identity.startDate < window.startDate || identity.endDate > window.endDate) continue;
+    const identity = resolvePeriodIdentity({ boardId: board.boardId, isKanban: true, kanbanCycleStartDate: anchor.anchorDate, date });
+    if (identity.kind !== 'kanban' || !isPeriodEndInWindow(identity.endDate, window)) continue;
     const key = `${identity.startDate}/${identity.endDate}`;
     result.set(key, { boardId: board.boardId, boardName: board.boardName, periodKind: 'kanban', periodStartDate: identity.startDate, periodEndDate: identity.endDate });
   }
@@ -90,7 +92,16 @@ export const developerCaptureService: DeveloperCaptureService = createDeveloperC
   fetchJira,
   calculate,
   repository: teamReportingSnapshotRepository,
+  runRepository: new DrizzleCaptureRunRepository(),
 });
+
+export function isPeriodEndInWindow(endDate: string, window: { startDate: string; endDate: string }): boolean {
+  return endDate >= window.startDate && endDate <= window.endDate;
+}
+
+export function isClosedSprint(state: string | undefined): boolean {
+  return state?.toLowerCase() === 'closed';
+}
 
 function datePart(value: string | undefined): string | null {
   const date = value?.slice(0, 10);

@@ -11,7 +11,10 @@ const auth = (email?: string) => ({ email } as DecodedIdToken);
 
 test('route returns the capture summary for an authorized developer', async () => {
   process.env.DEVELOPER_EMAILS = 'dev@example.com';
-  const post = createDeveloperCapturePost({ capture: async () => ({ attempted: 1, successes: 1, failures: [] }) }, handler =>
+  const post = createDeveloperCapturePost({ capture: async (_window, actor) => {
+    assert.equal(actor, 'dev@example.com');
+    return { attempted: 1, successes: 1, failures: [] };
+  } }, handler =>
     (req) => handler(req, { user: auth('dev@example.com') }));
   const response = await post(request);
   assert.equal(response.status, 200);

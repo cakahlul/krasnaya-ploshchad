@@ -85,8 +85,9 @@ test('cron GET fails closed before capture and never exposes its secret', async 
 test('cron GET captures the current and previous Asia/Jakarta months', async () => {
   const response = await handleScheduledCaptureGet(
     new Request('http://localhost/api/report-capture', { headers: { authorization: 'Bearer cron-secret' } }),
-    { capture: async window => {
+    { capture: async (window, actor) => {
       assert.deepEqual(window, { startDate: '2026-02-01', endDate: '2026-03-31' });
+      assert.equal(actor, 'System');
       return { attempted: 2, successes: 2, failures: [] };
     } },
     new Date('2026-02-28T17:00:00.000Z'),

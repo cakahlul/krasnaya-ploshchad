@@ -8,11 +8,12 @@ const MAX_BODY_BYTES = 8 * 1024;
 export async function handleDeveloperCapturePost(
   req: Request,
   service: Pick<DeveloperCaptureService, 'capture'>,
+  actor = 'System',
 ): Promise<Response> {
   try {
     const window = await parseWindow(req);
     if (!window) return Response.json({ message: 'Invalid capture window' }, { status: 400 });
-    const summary: CaptureSummary = await service.capture(window);
+    const summary: CaptureSummary = await service.capture(window, actor);
     return Response.json(summary);
   } catch {
     return Response.json({ message: 'Unable to capture report data' }, { status: 500 });
@@ -27,7 +28,7 @@ export async function handleScheduledCaptureGet(
 ): Promise<Response> {
   if (!isAuthorizedCron(req, cronSecret)) return Response.json({ message: 'Unauthorized' }, { status: 401 });
   try {
-    return Response.json(await service.capture(scheduledCaptureWindow(now)));
+    return Response.json(await service.capture(scheduledCaptureWindow(now), 'System'));
   } catch {
     return Response.json({ message: 'Unable to capture report data' }, { status: 500 });
   }

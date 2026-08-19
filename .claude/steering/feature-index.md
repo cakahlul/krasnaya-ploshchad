@@ -60,6 +60,7 @@
 - `POST /api/report/productivity-summary/export` → `apps/tere-project/src/app/api/report/productivity-summary/export/route.ts`
 - `GET /api/report/sprint-trend` → `apps/tere-project/src/app/api/report/sprint-trend/route.ts`
 - `GET /api/report/productivity-summary/auth/google` → OAuth callback for export to Google Sheets
+- `GET /api/report-capture` → cron-secured operational capture; `POST /api/report-capture` → developer-authorized bounded/manual capture
 
 ### Server modules
 - `apps/tere-project/src/server/modules/dashboard/dashboard.service.ts`
@@ -73,6 +74,8 @@
   - `productivity-summary-export-http.ts` (+ export contract self-checks) — legacy/canonical POST adapter; canonical export consumes the same range aggregate and emits Group/board/member hierarchy, source/rule/basis, available values, and coverage failures
   - `productivity-archive/productivity-archive.ts` (+ `productivity-archive.test.ts`) — immutable archive repository contract, in-memory fake, archive-wins/month-watermark routing, and SP-only historical aggregation (SLS-17157; no DB access)
   - `strategies/` — issue categorizers + complexity-weight strategies (legacy/new/v3)
+- `apps/tere-project/src/server/modules/report-capture/` — bounded developer/cron capture, Asia/Jakarta period ownership, durable run/failure evidence, and operational snapshot publication/audit (`report-capture.ts`, `report-capture-runtime.ts`, `report-capture-http.ts`, `report-capture-runtime.test.ts`)
+- `apps/tere-project/src/server/modules/report-snapshots/` — complete snapshot validation, idempotent/locked publication, and atomic audit replacement (`report-snapshot.ts`, `report-snapshot.repository.ts`)
 - `apps/tere-project/src/server/modules/reporting-groups/` — Group/month rule resolver backed by persisted `group_rule_config`; maps nullable board configuration to `Ungrouped`, prevents multi-Group member attribution, and selects existing legacy/new/v3 formulas without changing them (SLS-17147).
 
 ### Shared types

@@ -5,7 +5,7 @@ import { developerCaptureService } from '@server/modules/report-capture/report-c
 export const dynamic = 'force-dynamic';
 
 export function createDeveloperCapturePost(service = developerCaptureService, authWrapper?: AuthWrapper) {
-  return withDeveloper(req => handleDeveloperCapturePost(req, service), authWrapper);
+  return withDeveloper((req, context) => handleDeveloperCapturePost(req, service, context.user.email!), authWrapper);
 }
 
 export const POST = createDeveloperCapturePost();

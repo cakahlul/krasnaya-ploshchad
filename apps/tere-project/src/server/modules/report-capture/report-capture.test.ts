@@ -23,6 +23,68 @@ test('captures eligible periods independently and isolates malformed Jira respon
   assert.equal(result.failures[0].period, 'bad');
 });
 
+test('creates durable run evidence and counts created, changed, unchanged, and failed periods', async () => {
+  const events: string[] = [];
+  const failures: unknown[] = [];
+  let completion: unknown;
+  const result = await createDeveloperCaptureService({
+    boards: async () => { events.push('boards'); return [{ boardId: 1, boardName: 'One' }]; },
+    periods: async () => [period(1, 'created'), period(1, 'changed'), period(1, 'unchanged'), period(1, 'failed')],
+    fetchJira: async current => current.sprintId === 'failed'
+      ? Promise.reject(new Error('JIRA_DOWN'))
+      : { rawInput: {}, segments: [{ segmentKey: 'report', value: [], count: 0 }] },
+    calculate: async current => ({ calculatedOutput: { sprint: current.sprintId }, segments: [{ segmentKey: 'report', value: [], count: 0 }] }),
+    repository: { publishWithOutcome: async publication => ({
+      kind: publication.snapshot.sprintId === 'created' ? 'created' : publication.snapshot.sprintId === 'changed' ? 'replaced' : 'unchanged',
+      snapshot: publication.snapshot,
+    }) as never },
+    runRepository: {
+      create: async input => { events.push('create'); assert.deepEqual(input, { actor: 'developer@example.com', window: { startDate: '2026-01-01', endDate: '2026-01-31' } }); return { id: 'run-1' } as never; },
+      recordFailure: async (_runId, failure) => { failures.push(failure); },
+      complete: async (_runId, value) => { completion = value; return { id: 'run-1' } as never; },
+    },
+    now: (() => { const dates = [new Date(0), new Date(12)]; return () => dates.shift()!; })(),
+  } as never).capture({ startDate: '2026-01-01', endDate: '2026-01-31' }, 'developer@example.com');
+
+  assert.deepEqual(events.slice(0, 2), ['create', 'boards']);
+  assert.deepEqual(failures, [{ boardId: 1, period: 'failed', reason: 'CAPTURE_PERIOD_FAILED' }]);
+  assert.deepEqual(completion, { status: 'partial', attempted: 4, succeeded: 2, failed: 1, unchanged: 1 });
+  assert.deepEqual(result, {
+    runId: 'run-1', status: 'partial', attempted: 4, successes: 2, created: 1, changed: 1, unchanged: 1,
+    failures: [{ board: 1, period: 'failed', reason: 'CAPTURE_PERIOD_FAILED' }],
+    attempts: [
+      { board: 1, period: 'created', status: 'success' }, { board: 1, period: 'changed', status: 'success' },
+      { board: 1, period: 'unchanged', status: 'success' }, { board: 1, period: 'failed', reason: 'CAPTURE_PERIOD_FAILED', status: 'failure' },
+    ], durationMs: 12,
+  });
+});
+
+test('completes a zero-eligible run after successful discovery', async () => {
+  let completion: unknown;
+  const result = await createDeveloperCaptureService({
+    boards: async () => [], periods: async () => [], fetchJira: async () => ({ rawInput: {}, segments: [] }), calculate: async () => ({ calculatedOutput: {}, segments: [] }),
+    repository: { publishWithOutcome: async () => { throw new Error('unused'); } },
+    runRepository: {
+      create: async () => ({ id: 'run-0' } as never), recordFailure: async () => {},
+      complete: async (_runId, value) => { completion = value; return { id: 'run-0' } as never; },
+    },
+  } as never).capture({ startDate: '2026-01-01', endDate: '2026-01-31' });
+  assert.deepEqual(completion, { status: 'complete', attempted: 0, succeeded: 0, failed: 0, unchanged: 0 });
+  assert.equal(result.status, 'complete');
+});
+
+test('preserves a safe discovery reason for invalid Kanban anchors', async () => {
+  const result = await createDeveloperCaptureService({
+    boards: async () => [{ boardId: 7, boardName: 'Kanban' }],
+    periods: async () => { throw new Error('CAPTURE_KANBAN_ANCHOR_INVALID'); },
+    fetchJira: async () => ({ rawInput: {}, segments: [] }),
+    calculate: async () => ({ calculatedOutput: {}, segments: [] }),
+    repository: { publish: async () => { throw new Error('unused'); } },
+  }).capture({ startDate: '2026-01-01', endDate: '2026-01-31' });
+
+  assert.deepEqual(result.failures, [{ board: 7, period: 'enumeration', reason: 'CAPTURE_KANBAN_ANCHOR_INVALID' }]);
+});
+
 test('requires a bounded window', async () => {
   const service = createDeveloperCaptureService({ boards: async () => [], periods: async () => [], fetchJira: async () => ({ rawInput: {}, segments: [] }), calculate: async () => ({ calculatedOutput: {}, segments: [] }), repository: { publish: async () => { throw new Error('unused'); } } });
   await assert.rejects(() => service.capture({ startDate: '2026-01-01', endDate: '2028-01-01' }), /CAPTURE_WINDOW_TOO_LARGE/);
