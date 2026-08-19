@@ -345,6 +345,52 @@ export const teamReportingSnapshotCoverage = pgTable('team_reporting_snapshot_co
   check('team_reporting_snapshot_coverage_checksum_nonblank', sql`btrim(${table.checksum}) <> ''`),
 ]);
 
+export const teamReportingCaptureRuns = pgTable('team_reporting_capture_run', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  actor: text('actor').notNull(),
+  windowStartDate: date('window_start_date').notNull(),
+  windowEndDate: date('window_end_date').notNull(),
+  startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  status: text('status').notNull(),
+  attemptedCount: integer('attempted_count').notNull().default(0),
+  succeededCount: integer('succeeded_count').notNull().default(0),
+  failedCount: integer('failed_count').notNull().default(0),
+  unchangedCount: integer('unchanged_count').notNull().default(0),
+}, table => [
+  check('team_reporting_capture_run_actor_valid', sql`btrim(${table.actor}) <> '' and char_length(${table.actor}) <= 160`),
+  check('team_reporting_capture_run_window_ordered', sql`${table.windowEndDate} >= ${table.windowStartDate}`),
+  check('team_reporting_capture_run_status_supported', sql`${table.status} in ('running', 'complete', 'partial', 'failed')`),
+  check('team_reporting_capture_run_counts_nonnegative', sql`${table.attemptedCount} >= 0 and ${table.succeededCount} >= 0 and ${table.failedCount} >= 0 and ${table.unchangedCount} >= 0`),
+  check('team_reporting_capture_run_terminal_consistent', sql`(${table.status} = 'running' and ${table.completedAt} is null)
+    or (${table.status} in ('complete', 'partial', 'failed') and ${table.completedAt} is not null
+      and ${table.succeededCount} + ${table.failedCount} + ${table.unchangedCount} = ${table.attemptedCount})`),
+  check('team_reporting_capture_run_complete_without_failures', sql`${table.status} <> 'complete' or ${table.failedCount} = 0`),
+]);
+
+export const teamReportingCaptureFailures = pgTable('team_reporting_capture_failure', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  runId: uuid('run_id').notNull(),
+  boardId: integer('board_id').notNull(),
+  period: text('period_key').notNull(),
+  reason: text('reason').notNull(),
+  occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  foreignKey({
+    columns: [table.runId],
+    foreignColumns: [teamReportingCaptureRuns.id],
+    name: 'team_reporting_capture_failure_run_fkey',
+  }).onDelete('cascade'),
+  foreignKey({
+    columns: [table.boardId],
+    foreignColumns: [boards.boardId],
+    name: 'team_reporting_capture_failure_board_fkey',
+  }).onDelete('restrict'),
+  check('team_reporting_capture_failure_period_valid', sql`btrim(${table.period}) <> '' and char_length(${table.period}) <= 160`),
+  check('team_reporting_capture_failure_reason_safe', sql`${table.reason} ~ '^CAPTURE_[A-Z_]{1,96}$'`),
+  index('team_reporting_capture_failure_run_idx').on(table.runId),
+]);
+
 // api keys
 export const apiKeys = pgTable('api_keys', {
   id: uuid('id').primaryKey().defaultRandom(),
