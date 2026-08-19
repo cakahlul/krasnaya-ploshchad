@@ -36,9 +36,10 @@ export const GET = withAuthOrApiKey(async req => {
         ? 'Sprint reports are unavailable'
         : 'Some sprint reports are unavailable',
     };
+  const report = resolved.value ?? trend;
   return Response.json({
-    ...resolved.value,
+    ...report,
     sourceMetadata,
-    points: resolved.value.points.map(point => ({ ...point, sourceMetadata: point.sourceMetadata ?? sourceMetadata })),
+    points: report.points.map(point => ({ ...point, sourceMetadata: point.sourceMetadata ?? sourceMetadata })),
   });
 });
