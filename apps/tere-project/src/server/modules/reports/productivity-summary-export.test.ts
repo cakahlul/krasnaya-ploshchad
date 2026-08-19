@@ -30,12 +30,12 @@ assert.equal(sheet.title, "Productivity Summary - 2026-04 to 2026-05");
 assert.deepEqual(sheet.values[0], ["Productivity Summary", "2026-04 to 2026-05"]);
 // `Bugs Done` joined the chart and the sheet in dc2359d (SLS-17159); the header and every row
 // carry it, so a row is eight wide.
-assert.deepEqual(sheet.values[4], ["Month", "Source", "Metric Basis", "Active Members", "Productivity %", "SP Total", "Bugs Raised", "Bugs Done"]);
+assert.deepEqual(sheet.values[4], ["Month", "Source", "Metric Basis", "Active Members", "Productivity %", "SP Total", "Bugs Raised", "Bugs Done", "Source Label", "Coverage", "Warning"]);
 assert.equal(sheet.values[5].length, sheet.values[4].length, "every chart row must match the header width");
-assert.deepEqual(sheet.values[6], ["2026-05", "partial", "SP", 1, "", "", "", ""]);
-assert.deepEqual(sheet.values[9], ["Group", "Boards", "Name", "Month", "Source", "Rule", "Metric Basis", "SP Total", "WP Total", "Working Days"]);
-assert.deepEqual(sheet.values[10], ["User", "Ambis Mobile, Ambis Web", "Historical Member", "2026-04", "archive", "v3", "SP", 21, "", 18]);
-assert.deepEqual(sheet.values[11], ["User", "Ambis Mobile, Ambis Web", "Historical Member", "2026-05", "partial", "v3", "SP", "", "", 20]);
+assert.deepEqual(sheet.values[6], ["2026-05", "partial", "SP", 1, "", "", "", "", "Partial", "Partial", "Report coverage is incomplete"]);
+assert.deepEqual(sheet.values[9], ["Group", "Boards", "Name", "Month", "Source", "Rule", "Metric Basis", "SP Total", "WP Total", "Working Days", "Source Label", "Coverage", "Warning"]);
+assert.deepEqual(sheet.values[10], ["User", "Ambis Mobile, Ambis Web", "Historical Member", "2026-04", "archive", "v3", "SP", 21, "", 18, "Archived", "Complete", ""]);
+assert.deepEqual(sheet.values[11], ["User", "Ambis Mobile, Ambis Web", "Historical Member", "2026-05", "partial", "v3", "SP", "", "", 20, "Partial", "Partial", "Report coverage is incomplete"]);
 assert.deepEqual(sheet.values.at(-1), ["2026-05", "bugs", "User", "USR Bugs", "Jira timeout"]);
 
 console.log("productivity-summary export contract self-check: PASS");

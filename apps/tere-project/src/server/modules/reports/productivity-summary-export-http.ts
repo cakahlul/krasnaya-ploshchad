@@ -9,6 +9,7 @@ import {
   exportProductivitySummaryToSpreadsheet,
   type ProductivitySummaryRangeResponse,
 } from './productivity-summary.service';
+import { metadataProvenance } from './productivity-summary-provenance';
 
 interface ExportDependencies {
   rangePorts?: RangeAggregationPorts;
@@ -45,10 +46,11 @@ export async function handleProductivitySummaryExportPost(req: Request, deps: Ex
     const teams = csv(body.teams);
     try {
       const result = await (deps.exportLegacy ?? exportProductivitySummaryToSpreadsheet)(parsed.value.month, parsed.value.year, accessToken, teams);
-      return Response.json({ ...result, sourceMetadata: {
+      const sourceMetadata = {
         source: 'jira', coverage: { status: 'complete', expected: 1, covered: 1 }, fallback: false,
         reason: null, warning: null, attemptedSources: [{ source: 'jira', detail: null }], snapshotTimestamp: null,
-      } });
+      } as const;
+      return Response.json({ ...result, sourceMetadata, provenance: metadataProvenance(sourceMetadata) });
     } catch (error) {
       return Response.json({ message: error instanceof Error ? error.message : 'Export failed' }, { status: 500 });
     }
@@ -71,7 +73,8 @@ export async function handleProductivitySummaryExportPost(req: Request, deps: Ex
     }, deps.rangePorts);
     if (options.metricBasis === 'WP' && data.metricBasis === 'SP')
       return Response.json({ message: 'metricBasis WP is unavailable for archive or mixed ranges' }, { status: 400 });
-    return Response.json(await (deps.exportRange ?? exportProductivitySummaryRangeToSpreadsheet)(data, accessToken));
+    const result = await (deps.exportRange ?? exportProductivitySummaryRangeToSpreadsheet)(data, accessToken) as Record<string, unknown>;
+    return Response.json({ ...result, provenance: metadataProvenance(data.sourceMetadata) });
   } catch (error) {
     return Response.json({ message: error instanceof Error ? error.message : 'Export failed' }, { status: 500 });
   }

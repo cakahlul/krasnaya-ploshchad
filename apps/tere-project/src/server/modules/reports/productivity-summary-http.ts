@@ -7,6 +7,7 @@ import {
   type RangeAggregationPorts,
   type ReportingGroup,
 } from './productivity-summary-range.service';
+import { metadataProvenance, monthProvenance } from './productivity-summary-provenance';
 
 type LegacyGenerator = (
   month: number,
@@ -103,10 +104,15 @@ async function handleProductivitySummaryGetInner(
 type CanonicalRange = Awaited<ReturnType<typeof generateProductivitySummaryRange>>;
 
 function canonicalForCaller(data: CanonicalRange, caller?: SummaryCaller) {
-  if (caller?.isLead) return data;
+  if (caller?.isLead) return {
+    ...data,
+    provenance: metadataProvenance(data.sourceMetadata),
+    chart: data.chart.map(point => ({ ...point, ...monthProvenance(point) })),
+  };
   const { chart: _chart, ...memberData } = data;
   return {
     ...memberData,
+    provenance: metadataProvenance(data.sourceMetadata),
     details: caller?.fullName
       ? data.details.filter(item => item.name === caller.fullName)
       : [],
@@ -134,20 +140,23 @@ function streamCanonical(
           // A non-Lead caller never receives the chart, so they get progress without values.
           if (!caller?.isLead) {
             send(event.type === 'month'
-              ? event
+              ? { ...event, ...monthProvenance(event) }
               : {
                 type: 'month',
                 completed: event.completed,
                 total: event.total,
                 month: event.point.month,
                 source: event.point.source,
+                ...monthProvenance(event.point),
               });
             return;
           }
           // The request is about to fail the basis check; publishing SP points under a WP request
           // would put two units on one axis before the error lands.
           if (requestedBasis === 'WP' && event.type === 'point' && event.point.metricBasis === 'SP') return;
-          send(event);
+          send(event.type === 'point'
+            ? { ...event, point: { ...event.point, ...monthProvenance(event.point) } }
+            : event);
         });
         send(requestedBasis === 'WP' && data.metricBasis === 'SP'
           ? { type: 'error', status: 400, message: BASIS_CONFLICT }

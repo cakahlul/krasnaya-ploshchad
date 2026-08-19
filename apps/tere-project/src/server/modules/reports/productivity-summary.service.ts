@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import { generateReportByDateRange } from './reports.service';
 import { boardsService } from '@server/modules/boards/boards.service';
 import type { generateProductivitySummaryRange } from './productivity-summary-range.service';
+import { metadataProvenance, monthProvenance } from './productivity-summary-provenance';
 
 export interface ProductivitySummaryMemberDto {
   name: string;
@@ -56,13 +57,23 @@ export function buildProductivitySummaryRangeSheet(data: ProductivitySummaryRang
     ['Productivity Summary', rangeLabel],
     ['Selected Groups', data.selectedGroups.join(', ')],
     ['Coverage Complete', data.coverage.complete ? 'Yes' : 'No'],
+    ...(metadataProvenance(data.sourceMetadata) ? [
+      ['Source', metadataProvenance(data.sourceMetadata)!.sourceLabel],
+      ['Coverage', metadataProvenance(data.sourceMetadata)!.coverageLabel],
+      ['Warning', metadataProvenance(data.sourceMetadata)!.warning ?? ''],
+    ] : []),
     [],
-    ['Month', 'Source', 'Metric Basis', 'Active Members', 'Productivity %', 'SP Total', 'Bugs Raised', 'Bugs Done'],
-    ...data.chart.map(point => [point.month, point.source, point.metricBasis, available(point.activeMembers), available(point.productivityPercent), available(point.productivityMetric), available(point.bugsRaised), available(point.bugsDone)]),
+    ['Month', 'Source', 'Metric Basis', 'Active Members', 'Productivity %', 'SP Total', 'Bugs Raised', 'Bugs Done', 'Source Label', 'Coverage', 'Warning'],
+    ...data.chart.map(point => {
+      const provenance = monthProvenance(point);
+      return [point.month, point.source, point.metricBasis, available(point.activeMembers), available(point.productivityPercent), available(point.productivityMetric), available(point.bugsRaised), available(point.bugsDone), provenance.sourceLabel, provenance.coverageLabel, provenance.warning ?? ''];
+    }),
     [],
     ['Details'],
-    ['Group', 'Boards', 'Name', 'Month', 'Source', 'Rule', 'Metric Basis', 'SP Total', 'WP Total', 'Working Days'],
-    ...data.details.flatMap(member => member.monthly.map(month => [
+    ['Group', 'Boards', 'Name', 'Month', 'Source', 'Rule', 'Metric Basis', 'SP Total', 'WP Total', 'Working Days', 'Source Label', 'Coverage', 'Warning'],
+    ...data.details.flatMap(member => member.monthly.map(month => {
+      const provenance = monthProvenance(month);
+      return [
       member.group,
       [...member.boards].sort().join(', '),
       member.name,
@@ -73,7 +84,9 @@ export function buildProductivitySummaryRangeSheet(data: ProductivitySummaryRang
       available(month.spTotal),
       available(month.wpTotal),
       available(month.workingDays),
-    ])),
+        provenance.sourceLabel, provenance.coverageLabel, provenance.warning ?? '',
+      ];
+    })),
     [],
     ['Coverage Failures'],
     ['Month', 'Scope', 'Group', 'Board', 'Reason'],
