@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   resolveReportSource,
   resolveJiraValue,
+  metadataFromResolution,
   type ReportSourceAttempt,
   type ReportSourcePort,
 } from './report-source-resolver';
@@ -183,4 +184,38 @@ test('keeps resolution independent for separate units and never mixes values', a
   assert.deepEqual(first.value, { month: '2026-06' });
   assert.deepEqual(second.value, { month: '2026-07' });
   assert.deepEqual(seen, ['2026-06', '2026-07']);
+});
+
+test('exposes additive provenance for live, fallback, snapshot, partial, and unavailable resolutions', async () => {
+  const live = await resolveJiraValue({ rows: [] });
+  assert.equal(metadataFromResolution(live).coverage.status, 'complete');
+
+  const fallback = await resolveReportSource(unit, [
+    { source: 'snapshot', resolve: async () => ({ source: 'snapshot', detail: 'snapshot unavailable' }) },
+    { source: 'jira', resolve: async () => ({ source: 'jira', coverage: { expected: 1, covered: 1, cutoff: false }, value: { rows: [] } }) },
+  ]);
+  const fallbackMetadata = metadataFromResolution(fallback);
+  assert.equal(fallbackMetadata.source, 'jira');
+  assert.equal(fallbackMetadata.coverage.status, 'fallback');
+  assert.equal(fallbackMetadata.fallback, true);
+  assert.equal(fallbackMetadata.reason, 'snapshot unavailable');
+  assert.equal(fallbackMetadata.warning, 'Using Jira after stored source fallback');
+
+  const snapshot = await resolveReportSource(unit, [{
+    source: 'snapshot',
+    resolve: async () => ({ source: 'snapshot', coverage: { expected: 1, covered: 1, cutoff: false }, value: { rows: [] }, snapshotTimestamp: '2026-06-30T01:02:03.000Z' }),
+  }]);
+  assert.equal(metadataFromResolution(snapshot).snapshotTimestamp, '2026-06-30T01:02:03.000Z');
+
+  const partial = await resolveReportSource(unit, [{
+    source: 'snapshot',
+    resolve: async () => ({ source: 'snapshot', coverage: { expected: 2, covered: 1, cutoff: false }, value: { rows: [] } }),
+  }]);
+  assert.equal(metadataFromResolution(partial).coverage.status, 'partial');
+
+  const unavailable = await resolveReportSource(unit, [{
+    source: 'snapshot',
+    resolve: async () => ({ source: 'snapshot', detail: 'no snapshot' }),
+  }]);
+  assert.equal(metadataFromResolution(unavailable).coverage.status, 'unavailable');
 });

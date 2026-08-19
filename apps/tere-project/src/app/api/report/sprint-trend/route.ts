@@ -19,5 +19,10 @@ export const GET = withAuthOrApiKey(async req => {
   const sprintIds = sprintsParam.split(',').map(s => s.trim()).filter(Boolean);
   const trend = await generateSprintTrend(sprintIds, project);
   const resolved = await resolveJiraValue(trend, trend.points.length);
-  return Response.json({ ...resolved.value, sourceMetadata: metadataFromResolution(resolved) });
+  const sourceMetadata = metadataFromResolution(resolved);
+  return Response.json({
+    ...resolved.value,
+    sourceMetadata,
+    points: resolved.value.points.map(point => ({ ...point, sourceMetadata })),
+  });
 });

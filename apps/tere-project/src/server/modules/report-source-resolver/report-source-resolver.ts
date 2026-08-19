@@ -14,7 +14,7 @@ export interface SourceCoverage {
   readonly cutoff: boolean;
 }
 
-export type CoverageStatus = 'complete' | 'partial' | 'unavailable';
+export type CoverageStatus = 'complete' | 'fallback' | 'partial' | 'unavailable';
 
 export interface ReportCoverage {
   readonly status: CoverageStatus;
@@ -47,14 +47,22 @@ export function reportSourceMetadata(source: ReportSource, detail: string | null
 
 export function metadataFromResolution<T>(resolution: ReportSourceResolution<T>): ReportSourceMetadata {
   const selected = resolution.source === 'partial' || resolution.source === 'unavailable' ? null : resolution.source;
+  const fallback = selected !== null && resolution.attempts.some(attempt => attempt.source !== selected);
+  const selectedAttempt = selected === null
+    ? undefined
+    : resolution.attempts.find(attempt => attempt.source === selected);
   return {
     source: resolution.source,
-    coverage: resolution.coverage,
-    fallback: selected !== null && resolution.attempts.some(attempt => attempt.source !== selected),
+    coverage: fallback && resolution.coverage.status === 'complete'
+      ? { ...resolution.coverage, status: 'fallback' }
+      : resolution.coverage,
+    fallback,
     reason: resolution.attempts.find(attempt => attempt.detail)?.detail ?? null,
-    warning: resolution.source === 'partial' || resolution.source === 'unavailable' ? 'Report coverage is incomplete' : null,
+    warning: resolution.source === 'partial' || resolution.source === 'unavailable'
+      ? 'Report coverage is incomplete'
+      : fallback ? 'Using Jira after stored source fallback' : null,
     attemptedSources: resolution.attempts.map(attempt => ({ source: attempt.source, detail: attempt.detail ?? null })),
-    snapshotTimestamp: null,
+    snapshotTimestamp: selectedAttempt?.snapshotTimestamp ?? null,
   };
 }
 
@@ -74,6 +82,7 @@ export interface ReportSourceAttempt<T = unknown> {
   readonly coverage?: SourceCoverage;
   readonly value?: T;
   readonly detail?: string;
+  readonly snapshotTimestamp?: string;
 }
 
 export interface ReportSourcePort<U extends ReportUnit, T = unknown> {
