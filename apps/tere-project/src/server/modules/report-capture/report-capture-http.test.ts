@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { handleDeveloperCapturePost } from './report-capture-http';
+import { handleDeveloperCapturePost, handleScheduledCaptureGet } from './report-capture-http';
 
 const request = (body: unknown) => new Request('http://localhost/api/report-capture', {
   method: 'POST', body: JSON.stringify(body), headers: { 'content-type': 'application/json' },
@@ -52,4 +52,60 @@ test('does not expose service failures', async () => {
   const response = await handleDeveloperCapturePost(request({ startDate: '2026-01-01', endDate: '2026-01-31' }), { capture: async () => { throw new Error('secret'); } });
   assert.equal(response.status, 500);
   assert.deepEqual(await response.json(), { message: 'Unable to capture report data' });
+});
+
+test('cron GET fails closed before capture and never exposes its secret', async () => {
+  const secret = 'cron-secret-not-for-clients';
+  for (const authorization of [undefined, 'Basic abc', 'Bearer', 'Bearer wrong-secret']) {
+    let invoked = false;
+    const headers = authorization ? { authorization } : undefined;
+    const response = await handleScheduledCaptureGet(
+      new Request('http://localhost/api/report-capture', { headers }),
+      { capture: async () => { invoked = true; return { attempted: 0, successes: 0, failures: [] }; } },
+      new Date('2026-02-28T17:00:00.000Z'),
+      secret,
+    );
+    assert.equal(response.status, 401);
+    assert.equal(invoked, false);
+    assert.equal((await response.text()).includes(secret), false);
+  }
+
+  let invoked = false;
+  const response = await handleScheduledCaptureGet(
+    new Request('http://localhost/api/report-capture', { headers: { authorization: `Bearer ${secret}` } }),
+    { capture: async () => { invoked = true; return { attempted: 0, successes: 0, failures: [] }; } },
+    new Date('2026-02-28T17:00:00.000Z'),
+    undefined,
+  );
+  assert.equal(response.status, 401);
+  assert.equal(invoked, false);
+  assert.equal((await response.text()).includes(secret), false);
+});
+
+test('cron GET captures the current and previous Asia/Jakarta months', async () => {
+  const response = await handleScheduledCaptureGet(
+    new Request('http://localhost/api/report-capture', { headers: { authorization: 'Bearer cron-secret' } }),
+    { capture: async window => {
+      assert.deepEqual(window, { startDate: '2026-02-01', endDate: '2026-03-31' });
+      return { attempted: 2, successes: 2, failures: [] };
+    } },
+    new Date('2026-02-28T17:00:00.000Z'),
+    'cron-secret',
+  );
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { attempted: 2, successes: 2, failures: [] });
+});
+
+test('cron GET rolls January Asia/Jakarta back into December', async () => {
+  const response = await handleScheduledCaptureGet(
+    new Request('http://localhost/api/report-capture', { headers: { authorization: 'Bearer cron-secret' } }),
+    { capture: async window => {
+      assert.deepEqual(window, { startDate: '2025-12-01', endDate: '2026-01-31' });
+      return { attempted: 2, successes: 2, failures: [] };
+    } },
+    new Date('2025-12-31T17:00:00.000Z'),
+    'cron-secret',
+  );
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { attempted: 2, successes: 2, failures: [] });
 });
