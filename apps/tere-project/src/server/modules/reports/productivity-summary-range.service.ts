@@ -323,10 +323,15 @@ export async function generateProductivitySummaryRange(
   }, { archive: 0, snapshot: 0, live: 0, partial: 0, unavailable: 0 });
   const attempts = loaded.flatMap(month => month.coverage.attempts);
   const resolvedSources = [...new Set(loaded.map(month => month.coverage.source))];
+  const aggregateSource: ReportSourceMetadata['source'] = resolvedSources.length === 1
+    ? resolvedSources[0] === 'live' ? 'jira' : resolvedSources[0]
+    : 'mixed';
+  const hasFallback = loaded.some(month => month.coverage.fallback
+    || month.coverage.source === 'partial'
+    || month.coverage.failures.length > 0);
+  const hasIncompleteCoverage = resolvedSources.some(source => source === 'partial' || source === 'unavailable');
   const sourceMetadata: ReportSourceMetadata = {
-    source: resolvedSources.length === 1
-      ? resolvedSources[0] === 'live' ? 'jira' : resolvedSources[0]
-      : 'mixed',
+    source: aggregateSource,
     coverage: {
       status: loaded.every(month => month.coverage.source !== 'partial' && month.coverage.source !== 'unavailable')
         ? 'complete'
@@ -334,14 +339,13 @@ export async function generateProductivitySummaryRange(
       expected: loaded.length,
       covered: loaded.filter(month => month.coverage.source !== 'unavailable').length,
     },
-    fallback: loaded.some(month => month.coverage.fallback
-      || month.coverage.source === 'partial'
-      || month.coverage.failures.length > 0),
+    fallback: hasFallback,
     reason: loaded.flatMap(month => month.coverage.failures).find(Boolean)?.reason ?? null,
-    warning: loaded.some(month => month.coverage.fallback)
+    warning: hasFallback && aggregateSource === 'jira'
       ? 'Using Jira after stored source fallback'
-      : resolvedSources.some(source => source === 'partial' || source === 'unavailable')
-      ? 'Report coverage is incomplete' : null,
+      : hasIncompleteCoverage
+      ? 'Report coverage is incomplete'
+      : hasFallback ? 'Source fallback was used' : null,
     attemptedSources: attempts.map(attempt => ({ source: attempt.source, detail: attempt.detail ?? null })),
     snapshotTimestamp: resolvedSources.length === 1 && resolvedSources[0] === 'snapshot'
       ? loaded.every(month => month.snapshotTimestamp === loaded[0]?.snapshotTimestamp)

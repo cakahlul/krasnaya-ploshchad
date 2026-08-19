@@ -102,6 +102,37 @@ test("keeps fallback metadata per month and member while direct live stays live"
   assert.equal(result.sourceMetadata.warning, "Using Jira after stored source fallback");
 });
 
+test("uses generic warnings when fallback provenance is not aggregate Jira", async () => {
+  const mixed = await generateProductivitySummaryRange(
+    { months: ["2026-01", "2026-02"], selectedGroups: ["Loan"], metricBasis: "SP" },
+    {
+      loadMonth: async month => month === "2026-01"
+        ? { source: "archive", appliedRules: [], members: [] }
+        : {
+          source: "live", appliedRules: [], members: [], attempts: [
+            { source: "snapshot", detail: "stored source rejected" },
+            { source: "jira", detail: null },
+          ],
+        },
+    },
+  );
+  assert.equal(mixed.sourceMetadata.source, "mixed");
+  assert.equal(mixed.sourceMetadata.fallback, true);
+  assert.equal(mixed.sourceMetadata.warning, "Source fallback was used");
+
+  const partial = await generateProductivitySummaryRange(input, {
+    loadMonth: async () => ({
+      source: "partial", appliedRules: [], members: [], failures: [{ scope: "productivity", reason: "coverage gap" }],
+    }),
+  });
+  assert.equal(partial.sourceMetadata.warning, "Report coverage is incomplete");
+
+  const unavailable = await generateProductivitySummaryRange(input, {
+    loadMonth: async () => { throw new Error("source unavailable"); },
+  });
+  assert.equal(unavailable.sourceMetadata.warning, "Report coverage is incomplete");
+});
+
 test("keeps empty successful ranges covered without inventing members", async () => {
   const result = await generateProductivitySummaryRange(
     { months: ["2026-01"], selectedGroups: [], metricBasis: "SP" },
