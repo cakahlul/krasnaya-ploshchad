@@ -29,6 +29,11 @@ import type { ReportingGroup } from '@shared/types/reporting-group.types';
 import type { ReportSourceMetadata } from '@server/modules/report-source-resolver/report-source-resolver';
 import type { BoardResponse } from '@shared/types/board.types';
 import { calculateWorkingDays } from '@shared/utils/working-days.util';
+import {
+  employmentPeriodFor,
+  isMemberActiveDuring,
+  type EmploymentPeriod,
+} from '@shared/utils/member-lifecycle.util';
 import * as repo from './reports.repository';
 
 const DEFAULT_DAILY_TARGET_WP: Record<string, number> = {
@@ -228,6 +233,7 @@ export function processRawData(
       .filter((m): m is typeof m & { jiraId: string } => !!m.jiraId)
       .map((m) => [m.fullName, m.jiraId]),
   );
+  const memberByName = new Map(members.map(member => [member.fullName, member]));
 
   function makeReportEntry(m: MemberResponse, team: string): JiraIssueReportResponseDto {
     return {
@@ -349,8 +355,13 @@ export function processRawData(
     if (sprintDetails && leaveData) {
       const memberId = nameToId.get(report.member) ?? '';
       const memberLeaveDates = leaveData.get(memberId) ?? [];
-      const start = parseLocalDate(sprintDetails.startDate);
-      const end = parseLocalDate(sprintDetails.endDate);
+      const period = {
+        startDate: formatToYYYYMMDD(parseLocalDate(sprintDetails.startDate)),
+        endDate: formatToYYYYMMDD(parseLocalDate(sprintDetails.endDate)),
+      };
+      const employedPeriod = employmentPeriodFor(memberByName.get(report.member) ?? {}, period) ?? period;
+      const start = parseLocalDate(employedPeriod.startDate);
+      const end = parseLocalDate(employedPeriod.endDate);
       report.workingDays = calculateWorkingDays(
         start,
         end,
@@ -560,25 +571,70 @@ export function summarizeTeamReport(
   };
 }
 
+/** Re-applies lifecycle visibility to stored reports captured before the roster rule existed. */
+export async function filterReportForLifecycle(
+  report: GetReportResponseDto,
+  period: EmploymentPeriod,
+): Promise<GetReportResponseDto> {
+  const roster = await membersService.findAll();
+  const knownNames = new Set(roster.map(member => member.fullName));
+  const activeNames = new Set(
+    roster
+      .filter(member => isMemberActiveDuring(member, period))
+      .map(member => member.fullName),
+  );
+  const issues = report.issues.filter(issue => !knownNames.has(issue.member) || activeNames.has(issue.member));
+  if (issues.length === report.issues.length) return report;
+
+  const summary = summarizeTeamReport(
+    issues,
+    report.sprintStartDate && report.sprintEndDate
+      ? { startDate: report.sprintStartDate, endDate: report.sprintEndDate }
+      : null,
+    [],
+  );
+  return {
+    ...report,
+    ...summary,
+    ...(report.totalWorkingDays === undefined ? {} : { totalWorkingDays: report.totalWorkingDays }),
+    ...(report.sprintName === undefined ? {} : { sprintName: report.sprintName }),
+    ...(report.sprintId === undefined ? {} : { sprintId: report.sprintId }),
+  };
+}
+
 function filterMembersByProject(
   members: MemberResponse[],
   project: string,
+  period?: EmploymentPeriod,
 ): MemberResponse[] {
   const projectList = project
     .split(',')
     .map(p => p.trim().toLowerCase())
     .filter(Boolean);
   return members.filter(
-    m => !m.isLead && m.teams.some(t => projectList.includes(t.toLowerCase())),
+    m => !m.isLead
+      && (!period || isMemberActiveDuring(m, period))
+      && m.teams.some(t => projectList.includes(t.toLowerCase())),
   );
 }
 
-export async function findReportMembers(project: string): Promise<MemberResponse[]> {
-  return filterMembersByProject(await membersService.findAll(), project);
+export async function findReportMembers(
+  project: string,
+  startDate?: string,
+  endDate?: string,
+): Promise<MemberResponse[]> {
+  const period = startDate && endDate ? { startDate, endDate } : undefined;
+  return filterMembersByProject(await membersService.findAll(), project, period);
 }
 
-export function filterReportMembersForProject(members: MemberResponse[], project: string): MemberResponse[] {
-  return filterMembersByProject(members, project);
+export function filterReportMembersForProject(
+  members: MemberResponse[],
+  project: string,
+  startDate?: string,
+  endDate?: string,
+): MemberResponse[] {
+  const period = startDate && endDate ? { startDate, endDate } : undefined;
+  return filterMembersByProject(members, project, period);
 }
 
 function isBadRequestError(error: unknown): boolean {
@@ -662,8 +718,15 @@ export async function generateReport(
   plannedDataOverride?: ReadonlyMap<string, JiraIssueEntity[]>,
   sprintDetailsOverride?: { startDate: string; endDate: string },
 ): Promise<GetReportResponseDto> {
+  const sprintDetails = sprintDetailsOverride ?? await getSprintDetails(sprint);
+  const reportPeriod = sprintDetails
+    ? {
+        startDate: formatToYYYYMMDD(parseLocalDate(sprintDetails.startDate)),
+        endDate: formatToYYYYMMDD(parseLocalDate(sprintDetails.endDate)),
+      }
+    : undefined;
   const allMembers = await membersService.findAll();
-  const members = filterMembersByProject(allMembers, project).filter(
+  const members = filterMembersByProject(allMembers, project, reportPeriod).filter(
     m => !m.isLead,
   );
   const assignees = members.map(m => m.jiraId!).filter(Boolean);
@@ -711,7 +774,6 @@ export async function generateReport(
       );
     });
   }
-  const sprintDetails = sprintDetailsOverride ?? await getSprintDetails(sprint);
   let leaveData: Map<string, LeaveDateRange[]> = new Map();
   let nationalHolidays: string[] = [];
   let sprintStartDateStr: string | undefined;
@@ -792,7 +854,7 @@ export async function generateReportByDateRange(
     }
   };
   const allMembers = await step('members', () => membersService.findAll());
-  const members = filterMembersByProject(allMembers, project).filter(
+  const members = filterMembersByProject(allMembers, project, { startDate, endDate }).filter(
     m => !m.isLead,
   );
   const memberGroups = resolveReportMemberGroups(members, await step('boards', () => boardsService.findAll()));
@@ -1001,8 +1063,17 @@ export async function getEpics(
   startDate?: string,
   endDate?: string,
 ): Promise<EpicDto[]> {
+  const sprintDetails = startDate && endDate
+    ? { startDate, endDate }
+    : sprint ? await getSprintDetails(sprint) : null;
+  const reportPeriod = sprintDetails
+    ? {
+        startDate: formatToYYYYMMDD(parseLocalDate(sprintDetails.startDate)),
+        endDate: formatToYYYYMMDD(parseLocalDate(sprintDetails.endDate)),
+      }
+    : undefined;
   const allMembers = await membersService.findAll();
-  const assignees = filterMembersByProject(allMembers, project)
+  const assignees = filterMembersByProject(allMembers, project, reportPeriod)
     .map(m => m.jiraId!)
     .filter(Boolean);
   const isSubtaskType = await boardsService.hasSubtaskType(project);
@@ -1055,11 +1126,16 @@ export async function generateOpenSprintReport(
   const sprints = await sprintService.fetchAllSprint(boardId);
   const activeSprint = sprints.find(s => s.state === 'active');
   if (!activeSprint) return null;
+  const sprintDetails = {
+    startDate: activeSprint.startDate,
+    endDate: activeSprint.endDate,
+  };
+  const reportPeriod = {
+    startDate: formatToYYYYMMDD(parseLocalDate(sprintDetails.startDate)),
+    endDate: formatToYYYYMMDD(parseLocalDate(sprintDetails.endDate)),
+  };
   const allMembers = await membersService.findAll();
-  const members = allMembers.filter(
-    m =>
-      m.teams.some(t => t.toLowerCase() === project.toLowerCase()) && !m.isLead,
-  );
+  const members = filterMembersByProject(allMembers, project, reportPeriod);
   const memberGroups = resolveReportMemberGroups(members, await boardsService.findAll());
   const assignees = members.map(m => m.jiraId!).filter(Boolean);
   const isSubtaskType = await boardsService.hasSubtaskType(project);
@@ -1069,10 +1145,6 @@ export async function generateOpenSprintReport(
     activeSprint.id,
     isSubtaskType,
   );
-  const sprintDetails = {
-    startDate: activeSprint.startDate,
-    endDate: activeSprint.endDate,
-  };
   const start = formatToYYYYMMDD(parseLocalDate(sprintDetails.startDate));
   const end = formatToYYYYMMDD(parseLocalDate(sprintDetails.endDate));
   const leaveData = await fetchLeaveData(start, end, members);

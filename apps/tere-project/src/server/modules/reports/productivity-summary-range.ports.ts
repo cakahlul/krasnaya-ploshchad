@@ -10,6 +10,7 @@ import { membersService } from '@server/modules/members/members.service';
 import type { BoardResponse } from '@shared/types/board.types';
 import type { JiraBugEntity } from '@shared/types/bug-monitoring.types';
 import type { MemberResponse } from '@shared/types/member.types';
+import { isMemberActiveDuring, monthPeriod } from '@shared/utils/member-lifecycle.util';
 import { generateProductivitySummaryBoard, type ProductivitySummaryMemberDto } from './productivity-summary.service';
 import { SP_PER_WORKING_DAY } from './productivity-summary-range.service';
 import type { MonthSourceResult, RangeAggregationPorts, ReportingGroup, RuleVersion, SourceMember } from './productivity-summary-range.service';
@@ -77,6 +78,7 @@ interface Dependencies {
 function archiveMembers(rows: readonly ArchiveDeveloperSprint[], groups: readonly ReportingGroup[], roster: readonly MemberResponse[], month: string) {
   const members = new Map<string, SourceMember>();
   const lifecycle = new Map(roster.map(member => [member.email.trim().toLowerCase(), member]));
+  const period = monthPeriod(month);
   const ambiguous = new Set<string>();
   const failures: NonNullable<MonthSourceResult['failures']> = [];
   for (const row of rows) {
@@ -85,7 +87,7 @@ function archiveMembers(rows: readonly ArchiveDeveloperSprint[], groups: readonl
       failures.push({ scope: 'productivity', reason: `MEMBER_LIFECYCLE_UNRESOLVED:${row.developerIdentityNormalized}` });
       continue;
     }
-    if (memberLifecycle.joinDate > `${month}-31` || (memberLifecycle.resignDate && memberLifecycle.resignDate < `${month}-01`)) continue;
+    if (!isMemberActiveDuring(memberLifecycle, period)) continue;
     const group = row.reportingGroupSnapshot ?? 'Ungrouped';
     if (!groups.includes(group)) continue;
     if (ambiguous.has(row.developerIdentityNormalized)) continue;
@@ -165,6 +167,8 @@ export function createProductivitySummaryRangePorts(deps: Dependencies): RangeAg
       }));
       const boardGroups = new Map(selectedBoards.map(board => [board.shortName, board.reportingGroup ?? 'Ungrouped'] as const));
       const identities = new Map(roster.map(member => [member.fullName.trim().toLowerCase(), member.email.trim().toLowerCase()]));
+      const lifecycle = new Map(roster.map(member => [member.email.trim().toLowerCase(), member]));
+      const period = monthPeriod(month);
       const failures = loaded.flatMap((result, index) => result.status === 'rejected'
         ? [{ scope: 'productivity' as const, group: boardGroups.get(selectedBoards[index].shortName), board: selectedBoards[index].shortName, reason: result.reason instanceof Error ? result.reason.message : 'Unknown board failure' }]
         : []);
@@ -179,6 +183,7 @@ export function createProductivitySummaryRangePorts(deps: Dependencies): RangeAg
             failures.push({ scope: 'productivity', group: boardGroups.get(board), board, reason: `MEMBER_IDENTITY_UNRESOLVED:${item.name}` });
             continue;
           }
+          if (!isMemberActiveDuring(lifecycle.get(id) ?? {}, period)) continue;
           if (ambiguous.has(id)) continue;
           const current = members.get(id);
           const group = boardGroups.get(board) ?? 'Ungrouped';

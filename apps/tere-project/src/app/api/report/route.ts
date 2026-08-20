@@ -1,11 +1,12 @@
 import { withAuthOrApiKey } from '@server/auth/with-auth-or-api-key';
-import { generateReport, generateReportByDateRange } from '@server/modules/reports/reports.service';
+import { filterReportForLifecycle, generateReport, generateReportByDateRange } from '@server/modules/reports/reports.service';
 import { filterReportForMember } from '@server/modules/reports/report-filter';
 import { boardsService } from '@server/modules/boards/boards.service';
 import { sprintService } from '@server/modules/sprint/sprint.service';
 import { teamReportingSnapshotRepository } from '@server/modules/report-snapshots/report-snapshot.repository';
 import { metadataFromResolution } from '@server/modules/report-source-resolver/report-source-resolver';
 import { resolveTeamReport } from '@server/modules/reports/team-report-source-resolver';
+import { isIsoDate } from '@shared/utils/member-lifecycle.util';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,7 @@ export const GET = withAuthOrApiKey(async (req, { caller }) => {
   if ((startDate || endDate) && !(startDate && endDate)) {
     return Response.json({ message: 'startDate and endDate are both required' }, { status: 400 });
   }
-  if (startDate && endDate && (!isValidIsoDate(startDate) || !isValidIsoDate(endDate) || startDate > endDate)) {
+  if (startDate && endDate && (!isIsoDate(startDate) || !isIsoDate(endDate) || startDate > endDate)) {
     return Response.json({ message: 'startDate and endDate must be valid ISO dates in ascending order' }, { status: 400 });
   }
   if (!startDate && !endDate && !sprint) {
@@ -72,7 +73,15 @@ export const GET = withAuthOrApiKey(async (req, { caller }) => {
       { status: 503 },
     );
   }
-  const report = caller ? filterReportForMember(resolved.value, caller) : resolved.value;
+  const period = startDate && endDate
+    ? { startDate, endDate }
+    : resolved.value.sprintStartDate && resolved.value.sprintEndDate
+      ? { startDate: resolved.value.sprintStartDate, endDate: resolved.value.sprintEndDate }
+      : null;
+  const lifecycleReport = period
+    ? await filterReportForLifecycle(resolved.value, period)
+    : resolved.value;
+  const report = caller ? filterReportForMember(lifecycleReport, caller) : lifecycleReport;
   return Response.json({ ...report, sourceMetadata });
 });
 
@@ -81,9 +90,4 @@ function parseBoardIds(value: string): number[] | null {
   if (values.length === 0 || values.some(item => !/^\d+$/.test(item))) return null;
   const ids = [...new Set(values.map(Number))];
   return ids.every(id => Number.isInteger(id) && id > 0) ? ids : null;
-}
-
-function isValidIsoDate(value: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value)
-    && new Date(value + 'T00:00:00.000Z').toISOString().slice(0, 10) === value;
 }
