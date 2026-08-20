@@ -3,6 +3,7 @@ import type { SnapshotPeriodIdentity } from '@server/modules/report-snapshots/re
 export type ReportSource = 'archive' | 'snapshot' | 'jira';
 export type ReportUnit =
   | { readonly kind: 'team-reporting-sprint'; readonly identity: SnapshotPeriodIdentity }
+  | { readonly kind: 'team-reporting-request'; readonly key: string }
   | { readonly kind: 'productivity-month'; readonly month: string };
 
 export interface SourceCoverage {

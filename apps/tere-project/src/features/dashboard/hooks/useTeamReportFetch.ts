@@ -21,6 +21,8 @@ export function useTeamReportFetch() {
       project,
       startDate,
       endDate,
+      undefined,
+      selectedTeams,
     ),
     enabled: hasValidFilter && !!project && selectedTeams.length > 0,
   });
