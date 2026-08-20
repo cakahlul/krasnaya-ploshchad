@@ -52,7 +52,11 @@ async function periods(board: CaptureBoard, window: { startDate: string; endDate
 async function fetchJira(period: CapturePeriod) {
   const board = boardById.get(period.boardId);
   if (!board) throw new Error('CAPTURE_BOARD_INVALID');
-  const members = await findReportMembers(board.shortName);
+  const members = await findReportMembers(
+    board.shortName,
+    period.periodStartDate,
+    period.periodEndDate,
+  );
   const assignees = members.map(member => member.jiraId).filter((id): id is string => Boolean(id));
   const allBoards = await boardsService.findAll();
   const isSubtaskType = await boardsService.hasSubtaskType(board.shortName);

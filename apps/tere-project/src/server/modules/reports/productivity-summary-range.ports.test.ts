@@ -34,6 +34,26 @@ test('loads live productivity by Group boards and counts active bugs at month en
   assert.equal(await ports.loadBugRaisedCount?.('2026-01', 'Loan'), 2);
 });
 
+test('excludes live members outside the selected month', async () => {
+  const ports = createProductivitySummaryRangePorts({
+    findBoards: async () => [board({ shortName: 'LN', reportingGroup: 'Loan' })],
+    findMembers: async () => [
+      { fullName: 'Joined Later', email: 'later@example.com', joinDate: '2026-02-15', resignDate: null },
+      { fullName: 'Resigned Earlier', email: 'earlier@example.com', joinDate: '2025-01-01', resignDate: '2026-01-31' },
+    ] as never,
+    loadBoard: async () => [
+      { name: 'Joined Later', team: 'LN', spTotal: 8, wpTotal: 5, workingDays: 1 },
+      { name: 'Resigned Earlier', team: 'LN', spTotal: 8, wpTotal: 5, workingDays: 1 },
+    ] as never,
+    routeMonth: async () => ({ source: 'live', metricBasis: null, rows: null, failure: null }),
+    fetchBugs: async () => [],
+    resolveRule: async () => ({ ruleVersion: 'v3' }),
+  });
+
+  const month = await ports.loadMonth('2026-02', ['Loan']);
+  assert.deepEqual(month.members.map(member => member.name), ['Joined Later']);
+});
+
 test('loads archive rows with historical Group and board snapshots', async () => {
   const ports = createProductivitySummaryRangePorts({
     findBoards: async () => [],

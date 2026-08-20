@@ -2,6 +2,7 @@ import { TalentLeaveRepository, TalentLeaveEntity, LeaveFilterDto, talentLeaveRe
 import type { TalentLeaveResponse, CreateLeaveRequest, UpdateLeaveRequest } from '@shared/types/talent-leave.types';
 import { membersService } from '@server/modules/members/members.service';
 import { userAccessService } from '@server/modules/user-access/user-access.service';
+import type { EmploymentPeriod } from '@shared/utils/member-lifecycle.util';
 
 class TalentLeaveService {
   constructor(private readonly repository: TalentLeaveRepository) {}
@@ -65,8 +66,8 @@ class TalentLeaveService {
     await this.repository.delete(id);
   }
 
-  async findAllTalents(): Promise<Array<{ id: string; name: string; team: string }>> {
-    return membersService.findAllAsTalents();
+  async findAllTalents(period?: EmploymentPeriod): Promise<Array<{ id: string; name: string; team: string }>> {
+    return membersService.findAllAsTalents(period);
   }
 
   private async getAuthorizedMember(memberId: string, requesterEmail?: string) {

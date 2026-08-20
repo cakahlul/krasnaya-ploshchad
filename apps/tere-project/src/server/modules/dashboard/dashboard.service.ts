@@ -1,5 +1,5 @@
 import { serverCache } from '@server/cache/server-cache';
-import { generateOpenSprintReport, generateReportByDateRange, getSprintWorkItemStats } from '@server/modules/reports/reports.service';
+import { filterReportMembersForProject, generateOpenSprintReport, generateReportByDateRange, getSprintWorkItemStats } from '@server/modules/reports/reports.service';
 import { boardsService } from '@server/modules/boards/boards.service';
 import { membersService } from '@server/modules/members/members.service';
 import * as repo from '@server/modules/reports/reports.repository';
@@ -107,8 +107,11 @@ export async function getDashboardSummary(
       if (sprintId) {
         try {
           const allMembers = await membersService.findAll();
-          const teamMembers = allMembers.filter(
-            m => m.teams.some(t => t.toLowerCase() === board.shortName.toLowerCase()) && !m.isLead,
+          const teamMembers = filterReportMembersForProject(
+            allMembers,
+            board.shortName,
+            report?.sprintStartDate,
+            report?.sprintEndDate,
           );
           const assignees = teamMembers.map(m => m.jiraId!).filter(Boolean);
           const isSubtaskType = await boardsService.hasSubtaskType(board.shortName);

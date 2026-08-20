@@ -19,8 +19,14 @@ export const talentLeaveRepository = {
     return response.data;
   },
 
-  fetchTalentList: async (): Promise<TalentResponse[]> => {
-    const response = await axiosClient.get('/talent-leave/talents');
+  fetchTalentList: async (startDate?: string, endDate?: string): Promise<TalentResponse[]> => {
+    const params = new URLSearchParams();
+    if (startDate && endDate) {
+      params.set('startDate', startDate);
+      params.set('endDate', endDate);
+    }
+    const query = params.toString();
+    const response = await axiosClient.get(`/talent-leave/talents${query ? `?${query}` : ''}`);
     return response.data;
   },
 

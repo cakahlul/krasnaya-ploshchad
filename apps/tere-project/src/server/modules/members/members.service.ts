@@ -6,6 +6,7 @@ import type {
   UpdateMemberRequest,
 } from '@shared/types/member.types';
 import type { TalentResponse } from '@shared/types/talent-leave.types';
+import { isMemberActiveDuring, type EmploymentPeriod } from '@shared/utils/member-lifecycle.util';
 import { MemoryCache } from '@server/lib/cache';
 
 const CACHE_KEY = 'all_members';
@@ -42,11 +43,12 @@ class MembersService {
     return this.entityToDto(created);
   }
 
-  async findAll(): Promise<MemberResponse[]> {
-    return this.cache.getOrLoad(CACHE_KEY, async () => {
+  async findAll(period?: EmploymentPeriod): Promise<MemberResponse[]> {
+    const members = await this.cache.getOrLoad(CACHE_KEY, async () => {
       const entities = await this.repository.findAll();
       return entities.map((e) => this.entityToDto(e));
     });
+    return period ? members.filter(member => isMemberActiveDuring(member, period)) : members;
   }
 
   async findOne(id: string): Promise<MemberResponse> {
@@ -92,8 +94,8 @@ class MembersService {
   }
 
   /** Returns members as TalentResponse — `id` is the Jira accountId, used as the natural key for talent-leave. */
-  async findAllAsTalents(): Promise<TalentResponse[]> {
-    const members = await this.repository.findAll();
+  async findAllAsTalents(period?: EmploymentPeriod): Promise<TalentResponse[]> {
+    const members = await this.findAll(period);
     return members
       .filter((m) => !!m.jiraId)
       .map((m) => ({

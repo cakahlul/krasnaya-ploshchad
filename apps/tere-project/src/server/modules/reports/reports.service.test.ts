@@ -8,7 +8,14 @@ import { sprintService } from '@server/modules/sprint/sprint.service';
 import { talentLeaveService } from '@server/modules/talent-leave/talent-leave.service';
 import { targetWpConfigService } from '@server/modules/target-wp-config/target-wp-config.service';
 import { wpWeightConfigService } from '@server/modules/wp-weight-config/wp-weight-config.service';
-import { buildSprintTrendPoints, generateReport, summarizeTeamReport } from './reports.service';
+import {
+  buildSprintTrendPoints,
+  filterReportForLifecycle,
+  filterReportMembersForProject,
+  generateReport,
+  processRawData,
+  summarizeTeamReport,
+} from './reports.service';
 
 test('keeps failed sprint trend requests as unavailable points', () => {
   const points = buildSprintTrendPoints([
@@ -68,6 +75,103 @@ test('uses capture sprint dates for Scrum report calendar inputs', async () => {
       holidayRange.map(date => [date.getFullYear(), date.getMonth() + 1, date.getDate()]),
       [[2026, 1, 5], [2026, 1, 16]],
     );
+  } finally {
+    mock.restoreAll();
+  }
+});
+
+test('filters report members by employment overlap before Jira assignee selection', () => {
+  const members = [
+    { fullName: 'Active', teams: ['TEAM'], joinDate: '2026-01-16', resignDate: null, isLead: false },
+    { fullName: 'Not Yet Joined', teams: ['TEAM'], joinDate: '2026-01-17', resignDate: null, isLead: false },
+    { fullName: 'Already Resigned', teams: ['TEAM'], joinDate: '2025-01-01', resignDate: '2026-01-04', isLead: false },
+  ] as never;
+
+  assert.deepEqual(
+    filterReportMembersForProject(members, 'TEAM', '2026-01-05', '2026-01-16')
+      .map(member => member.fullName),
+    ['Active'],
+  );
+});
+
+test('clamps live report capacity to the member employment interval', () => {
+  const report = processRawData(
+    [{
+      id: '1',
+      key: 'TEAM-1',
+      fields: {
+        assignee: { accountId: 'acc-1' },
+        issuetype: { name: 'Story' },
+        resolution: { name: 'Done' },
+        customfield_10796: { value: 'SP Product' },
+        customfield_11015: { id: '10651' },
+      },
+    }] as never,
+    [{
+      fullName: 'Joins Mid-Sprint',
+      jiraId: 'acc-1',
+      level: 'senior',
+      teams: ['TEAM'],
+      joinDate: '2026-01-08',
+      resignDate: null,
+    }] as never,
+    { startDate: '2026-01-05', endDate: '2026-01-16' },
+    new Map(),
+    [],
+    false,
+    undefined,
+    { senior: 8 },
+  );
+
+  assert.equal(report[0].workingDays, 7);
+  assert.equal(report[0].targetWeightPoints, 56);
+});
+
+test('removes out-of-lifecycle members from stored report responses', async () => {
+  mock.method(membersService, 'findAll', async () => [
+    { fullName: 'Active', joinDate: '2025-01-01', resignDate: null },
+    { fullName: 'Former', joinDate: '2025-01-01', resignDate: '2025-12-31' },
+  ] as never);
+
+  const issue = (member: string) => ({
+    member,
+    team: 'TEAM',
+    productivityRate: '100%',
+    wpProductivity: '100%',
+    totalWeightPoints: 8,
+    devDefect: 0,
+    devDefectRate: '100%',
+    level: 'senior',
+    weightPointsProduct: 8,
+    weightPointsTechDebt: 0,
+    targetWeightPoints: 8,
+    issueKeys: [`${member}-1`],
+    epicKeys: [],
+    epicBreakdown: {},
+    workingDays: 1,
+    wpToHours: 1,
+    spProduct: 8,
+    spTechDebt: 0,
+    spMeeting: 0,
+    spTotal: 8,
+    leaveDays: 0,
+    sickDays: 0,
+  });
+
+  try {
+    const filtered = await filterReportForLifecycle({
+      issues: [issue('Active'), issue('Former')],
+      totalWeightPointsProduct: 16,
+      totalWeightPointsTechDebt: 0,
+      productPercentage: '100%',
+      techDebtPercentage: '0%',
+      averageProductivity: '100%',
+      sprintStartDate: '2026-01-01',
+      sprintEndDate: '2026-01-31',
+    } as never, { startDate: '2026-01-01', endDate: '2026-01-31' });
+
+    assert.deepEqual(filtered.issues.map(item => item.member), ['Active']);
+    assert.equal(filtered.totalWeightPointsProduct, 8);
   } finally {
     mock.restoreAll();
   }

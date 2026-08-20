@@ -13,6 +13,7 @@ import { useBoards } from '@src/features/dashboard/hooks/useBoards';
 import { useMembers } from '@src/features/dashboard/hooks/useMembers';
 import { useThemeColors } from '@src/hooks/useTheme';
 import type { MemberResponse } from '@shared/types/member.types';
+import { isMemberActiveDuring } from '@shared/utils/member-lifecycle.util';
 import dynamic from 'next/dynamic';
 
 const GlobalSearch = dynamic(
@@ -405,8 +406,14 @@ function LeadDashboard({ teams, bugBoards, members, boardShortNameMap, boardKanb
           {teams.map((team, bi) => {
             const bc = boardColors[bi % boardColors.length];
             const shortName = boardShortNameMap.get(team.boardId) ?? '';
+            const period = {
+              startDate: team.sprintStartDate ?? startDate,
+              endDate: team.sprintEndDate ?? endDate,
+            };
             const boardMembers = members.filter(m =>
-              !m.isLead && m.teams.some(t => t.toLowerCase() === shortName.toLowerCase())
+              !m.isLead
+              && isMemberActiveDuring(m, period)
+              && m.teams.some(t => t.toLowerCase() === shortName.toLowerCase())
             );
 
             return (
