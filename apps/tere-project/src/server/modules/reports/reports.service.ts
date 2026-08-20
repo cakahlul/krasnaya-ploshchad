@@ -455,7 +455,7 @@ export function processRawData(
   return Array.from(reports.values()).filter(r => r.issueKeys.length > 0);
 }
 
-function summarizeTeamReport(
+export function summarizeTeamReport(
   issues: JiraIssueReportResponseDto[],
   sprintDetails?: { startDate: string; endDate: string } | null,
   nationalHolidays: string[] = [],
@@ -541,8 +541,8 @@ function summarizeTeamReport(
     productPercentage: `${productPercentage.toFixed(2)}%`,
     techDebtPercentage: `${techDebtPercentage.toFixed(2)}%`,
     averageProductivity: `${averageProductivity.toFixed(2)}%`,
-    totalWorkingDays,
-    averageWorkingDays,
+    ...(totalWorkingDays === undefined ? {} : { totalWorkingDays }),
+    ...(averageWorkingDays === undefined ? {} : { averageWorkingDays }),
     averageWpPerHour,
     totalWeightPoints,
     totalSP: parseFloat(totalSP.toFixed(2)),
@@ -553,12 +553,10 @@ function summarizeTeamReport(
     totalLeave,
     totalSick,
     totalMemberWorkingDays,
-    sprintStartDate: sprintDetails
-      ? formatToYYYYMMDD(parseLocalDate(sprintDetails.startDate))
-      : undefined,
-    sprintEndDate: sprintDetails
-      ? formatToYYYYMMDD(parseLocalDate(sprintDetails.endDate))
-      : undefined,
+    ...(sprintDetails ? {
+      sprintStartDate: formatToYYYYMMDD(parseLocalDate(sprintDetails.startDate)),
+      sprintEndDate: formatToYYYYMMDD(parseLocalDate(sprintDetails.endDate)),
+    } : {}),
   };
 }
 
@@ -662,6 +660,7 @@ export async function generateReport(
   epicId?: string,
   rawDataOverride?: JiraIssueEntity[],
   plannedDataOverride?: ReadonlyMap<string, JiraIssueEntity[]>,
+  sprintDetailsOverride?: { startDate: string; endDate: string },
 ): Promise<GetReportResponseDto> {
   const allMembers = await membersService.findAll();
   const members = filterMembersByProject(allMembers, project).filter(
@@ -712,7 +711,7 @@ export async function generateReport(
       );
     });
   }
-  const sprintDetails = await getSprintDetails(sprint);
+  const sprintDetails = sprintDetailsOverride ?? await getSprintDetails(sprint);
   let leaveData: Map<string, LeaveDateRange[]> = new Map();
   let nationalHolidays: string[] = [];
   let sprintStartDateStr: string | undefined;

@@ -106,8 +106,9 @@ export async function capture(window: CaptureWindow, ports: DeveloperCapturePort
       const calculated = await ports.calculate(period, jira.rawInput);
       stage = 'validation';
       validateCalculated(calculated);
-      const publication = toPublication(period, jira, calculated);
+      validatePublicationSegments(jira, calculated);
       stage = 'publish';
+      const publication = toPublication(period, jira, calculated);
       const outcome = await publish(ports.repository, publication, run?.id);
       if (outcome.kind === 'created') created += 1;
       else if (outcome.kind === 'replaced') changed += 1;
@@ -153,11 +154,9 @@ function capturePeriodIdentity(period: CapturePeriod): string { return period.sp
 
 function toPublication(period: CapturePeriod, jira: JiraCaptureResult, calculated: CalculatedCaptureResult): TeamReportingSnapshotPublication {
   const coverage = jira.segments.map(segment => {
-    const output = calculated.segments.find(item => item.segmentKey === segment.segmentKey);
-    if (!output) throw new Error('CAPTURE_SEGMENT_MISMATCH');
+    const output = calculated.segments.find(item => item.segmentKey === segment.segmentKey)!;
     return { segmentKey: segment.segmentKey, rawInputCount: segment.count, calculatedOutputCount: output.count, checksum: snapshotChecksum(segment.value) };
   });
-  if (coverage.length === 0 || coverage.length !== calculated.segments.length) throw new Error('CAPTURE_SEGMENT_MISMATCH');
   const rawInputCount = jira.segments.reduce((sum, segment) => sum + segment.count, 0);
   const calculatedOutputCount = calculated.segments.reduce((sum, segment) => sum + segment.count, 0);
   return {
@@ -172,6 +171,13 @@ function toPublication(period: CapturePeriod, jira: JiraCaptureResult, calculate
       integrityEvidence: { source: 'jira', rawInputCount, calculatedOutputCount, segmentCount: coverage.length },
     }, coverage,
   };
+}
+
+function validatePublicationSegments(jira: JiraCaptureResult, calculated: CalculatedCaptureResult): void {
+  if (jira.segments.length === 0 || jira.segments.length !== calculated.segments.length
+    || jira.segments.some(segment => !calculated.segments.some(item => item.segmentKey === segment.segmentKey))) {
+    throw new Error('CAPTURE_SEGMENT_MISMATCH');
+  }
 }
 
 function validateJira(value: JiraCaptureResult): asserts value is JiraCaptureResult {

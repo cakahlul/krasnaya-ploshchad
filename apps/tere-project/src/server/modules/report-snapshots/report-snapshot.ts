@@ -135,18 +135,18 @@ export function isCompleteSnapshotPublication(publication: TeamReportingSnapshot
   }, publication.coverage);
 }
 
-function canonicalJson(value: unknown): string {
+function canonicalJson(value: unknown, path = '$'): string {
   if (value === null) return 'null';
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (Array.isArray(value)) return `[${value.map((item, index) => canonicalJson(item, `${path}[${index}]`)).join(',')}]`;
   if (typeof value === 'object') {
     const entries = Object.entries(value as Record<string, unknown>)
       .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`);
+      .map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item, `${path}.${key}`)}`);
     return `{${entries.join(',')}}`;
   }
-  if (typeof value === 'number' && !Number.isFinite(value)) throw new Error('SNAPSHOT_NON_JSON_VALUE');
+  if (typeof value === 'number' && !Number.isFinite(value)) throw new Error(`SNAPSHOT_NON_JSON_VALUE path=${path}`);
   if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return JSON.stringify(value);
-  throw new Error('SNAPSHOT_NON_JSON_VALUE');
+  throw new Error(`SNAPSHOT_NON_JSON_VALUE path=${path}`);
 }
 
 function isIsoDate(value: string): boolean {

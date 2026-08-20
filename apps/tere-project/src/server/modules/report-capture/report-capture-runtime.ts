@@ -80,7 +80,10 @@ async function calculate(period: CapturePeriod, rawInput: unknown) {
   if (!Array.isArray(inputs.main) || !inputs.planned || typeof inputs.planned !== 'object' || Array.isArray(inputs.planned)
     || Object.values(inputs.planned).some(value => !Array.isArray(value))) throw new Error('CAPTURE_JIRA_INVALID');
   const calculatedOutput = period.periodKind === 'scrum'
-    ? await generateReport(period.sprintId!, board.shortName, undefined, inputs.main, new Map(Object.entries(inputs.planned)))
+    ? await generateReport(period.sprintId!, board.shortName, undefined, inputs.main, new Map(Object.entries(inputs.planned)), {
+      startDate: period.periodStartDate,
+      endDate: period.periodEndDate,
+    })
     : await generateReportByDateRange(period.periodStartDate, period.periodEndDate, board.shortName, undefined, inputs.main);
   const count = 'details' in calculatedOutput && Array.isArray(calculatedOutput.details) ? calculatedOutput.details.length : 1;
   return { calculatedOutput, segments: [{ segmentKey: 'report', value: calculatedOutput, count }, ...Object.keys(inputs.planned).map(project => ({ segmentKey: `planned:${project}`, value: calculatedOutput, count }))] };

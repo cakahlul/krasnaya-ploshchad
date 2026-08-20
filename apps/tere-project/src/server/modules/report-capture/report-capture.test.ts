@@ -62,6 +62,45 @@ test('creates durable run evidence and counts created, changed, unchanged, and f
   });
 });
 
+test('labels snapshot serialization failures as publish failures', async () => {
+  const result = await createDeveloperCaptureService({
+    boards: async () => [{ boardId: 1, boardName: 'One' }],
+    periods: async () => [period(1, 'serialize')],
+    fetchJira: async () => ({ rawInput: {}, segments: [{ segmentKey: 'report', value: [], count: 0 }] }),
+    calculate: async () => ({
+      calculatedOutput: { averageWorkingDays: undefined },
+      segments: [{ segmentKey: 'report', value: [], count: 0 }],
+    }),
+    repository: { publish: async () => { throw new Error('unused'); } },
+  }).capture({ startDate: '2026-01-01', endDate: '2026-01-31' });
+
+  assert.deepEqual(result.failures, [{
+    board: 1,
+    period: 'serialize',
+    reason: 'CAPTURE_PERIOD_FAILED',
+    stage: 'publish',
+    detail: 'stage=publish name=Error message=SNAPSHOT_NON_JSON_VALUE path=$.averageWorkingDays',
+  }]);
+});
+
+test('labels segment mismatches as validation failures', async () => {
+  const result = await createDeveloperCaptureService({
+    boards: async () => [{ boardId: 1, boardName: 'One' }],
+    periods: async () => [period(1, 'mismatch')],
+    fetchJira: async () => ({ rawInput: {}, segments: [{ segmentKey: 'report', value: [], count: 0 }] }),
+    calculate: async () => ({ calculatedOutput: {}, segments: [{ segmentKey: 'other', value: [], count: 0 }] }),
+    repository: { publish: async () => { throw new Error('unused'); } },
+  }).capture({ startDate: '2026-01-01', endDate: '2026-01-31' });
+
+  assert.deepEqual(result.failures, [{
+    board: 1,
+    period: 'mismatch',
+    reason: 'CAPTURE_SEGMENT_MISMATCH',
+    stage: 'validation',
+    detail: 'stage=validation name=Error message=CAPTURE_SEGMENT_MISMATCH',
+  }]);
+});
+
 test('completes a zero-eligible run after successful discovery', async () => {
   let completion: unknown;
   const result = await createDeveloperCaptureService({

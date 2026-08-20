@@ -105,6 +105,13 @@ test('rejects incomplete logical identities', () => {
   }), /SCRUM_SPRINT_ID_REQUIRED/);
 });
 
+test('reports the path of a non-JSON snapshot value', () => {
+  assert.throws(
+    () => snapshotChecksum({ report: { averageWorkingDays: undefined } }),
+    /SNAPSHOT_NON_JSON_VALUE path=\$\.report\.averageWorkingDays/,
+  );
+});
+
 test('accepts a snapshot only when checksums, counts, and required coverage agree', () => {
   const { snapshot, coverage } = completeSnapshot();
   assert.equal(isCompleteSnapshot(snapshot, coverage), true);
