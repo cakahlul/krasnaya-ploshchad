@@ -1,6 +1,7 @@
 import type { SnapshotPeriodIdentity } from '@server/modules/report-snapshots/report-snapshot';
 
 export type ReportSource = 'archive' | 'snapshot' | 'jira';
+export type ReportSourceFailureKind = 'missing' | 'error';
 export type ReportUnit =
   | { readonly kind: 'team-reporting-sprint'; readonly identity: SnapshotPeriodIdentity }
   | { readonly kind: 'team-reporting-request'; readonly key: string }
@@ -48,7 +49,9 @@ export function reportSourceMetadata(source: ReportSource, detail: string | null
 
 export function metadataFromResolution<T>(resolution: ReportSourceResolution<T>): ReportSourceMetadata {
   const selected = resolution.source === 'partial' || resolution.source === 'unavailable' ? null : resolution.source;
-  const fallback = selected !== null && resolution.attempts.some(attempt => attempt.source !== selected);
+  const fallback = selected !== null && resolution.attempts.some(attempt =>
+    attempt.source !== selected && attempt.failureKind !== 'missing',
+  );
   const selectedAttempt = selected === null
     ? undefined
     : resolution.attempts.find(attempt => attempt.source === selected);
@@ -80,6 +83,7 @@ export async function resolveJiraValue<T>(value: T, expected = 1): Promise<Repor
 
 export interface ReportSourceAttempt<T = unknown> {
   readonly source: ReportSource;
+  readonly failureKind?: ReportSourceFailureKind;
   readonly coverage?: SourceCoverage;
   readonly value?: T;
   readonly detail?: string;
@@ -137,17 +141,27 @@ export async function resolveReportSource<U extends ReportUnit, T = unknown>(
           source: port.source,
           coverage: undefined,
           detail: sourceMismatch ? `source identity mismatch: ${attempt.source}` : attempt.detail,
+          failureKind: attempt.failureKind ?? 'error',
         }
         : attempt;
       if (!normalized.detail) {
         const status = coverageStatus(normalized.coverage);
-        if (status === 'partial') normalized = { ...normalized, detail: normalized.coverage?.cutoff ? 'coverage is cutoff' : 'coverage is incomplete' };
-        if (status === 'unavailable') normalized = { ...normalized, detail: 'no complete coverage evidence' };
+        if (status === 'partial') normalized = {
+          ...normalized,
+          detail: normalized.coverage?.cutoff ? 'coverage is cutoff' : 'coverage is incomplete',
+          failureKind: normalized.failureKind ?? 'error',
+        };
+        if (status === 'unavailable') normalized = {
+          ...normalized,
+          detail: 'no complete coverage evidence',
+          failureKind: normalized.failureKind ?? 'missing',
+        };
       }
     } catch (error) {
       normalized = {
         source: port.source,
         detail: error instanceof Error ? error.message : String(error),
+        failureKind: 'error',
       };
     }
     attempts.push(normalized);

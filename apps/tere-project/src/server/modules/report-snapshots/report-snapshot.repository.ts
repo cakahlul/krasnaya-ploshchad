@@ -7,6 +7,7 @@ import type {
   SnapshotPeriodIdentity,
   TeamReportingSnapshot,
   TeamReportingSnapshotCoverage,
+  TeamReportingSnapshotLookup,
   TeamReportingSnapshotPublishOptions,
   TeamReportingSnapshotPublishOutcome,
   TeamReportingSnapshotPublication,
@@ -41,13 +42,20 @@ export class DrizzleTeamReportingSnapshotRepository implements TeamReportingSnap
   constructor(private readonly database: typeof db = db) {}
 
   async findByLogicalIdentity(identity: SnapshotPeriodIdentity): Promise<TeamReportingSnapshot | null> {
+    const lookup = await this.findByLogicalIdentityStatus(identity);
+    return lookup.status === 'complete' ? lookup.snapshot : null;
+  }
+
+  async findByLogicalIdentityStatus(identity: SnapshotPeriodIdentity): Promise<TeamReportingSnapshotLookup> {
     const where = identity.periodKind === 'scrum'
       ? and(eq(teamReportingSnapshots.boardId, identity.boardId), eq(teamReportingSnapshots.periodKind, 'scrum'), eq(teamReportingSnapshots.sprintId, identity.sprintId))
       : and(eq(teamReportingSnapshots.boardId, identity.boardId), eq(teamReportingSnapshots.periodKind, 'kanban'), eq(teamReportingSnapshots.periodStartDate, identity.periodStartDate), eq(teamReportingSnapshots.periodEndDate, identity.periodEndDate));
     const [row] = await this.database.select().from(teamReportingSnapshots).where(where).limit(1);
-    if (!row) return null;
+    if (!row) return { status: 'missing' };
     const snapshot = toSnapshot(row);
-    return isCompleteSnapshot(snapshot, await this.findCoverage(snapshot.id)) ? snapshot : null;
+    return isCompleteSnapshot(snapshot, await this.findCoverage(snapshot.id))
+      ? { status: 'complete', snapshot }
+      : { status: 'invalid' };
   }
 
   async findCoverage(snapshotId: string): Promise<readonly TeamReportingSnapshotCoverage[]> {

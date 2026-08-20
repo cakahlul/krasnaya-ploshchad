@@ -219,3 +219,29 @@ test('exposes additive provenance for live, fallback, snapshot, partial, and una
   }]);
   assert.equal(metadataFromResolution(unavailable).coverage.status, 'unavailable');
 });
+
+test('does not label Jira as fallback when stored data is simply missing', async () => {
+  const result = await resolveReportSource(unit, [
+    { source: 'snapshot', resolve: async () => ({ source: 'snapshot', failureKind: 'missing', detail: 'SNAPSHOT_NOT_FOUND' }) },
+    { source: 'jira', resolve: async () => ({ source: 'jira', coverage: { expected: 1, covered: 1, cutoff: false }, value: { rows: [] } }) },
+  ]);
+
+  const metadata = metadataFromResolution(result);
+  assert.equal(metadata.source, 'jira');
+  assert.equal(metadata.coverage.status, 'complete');
+  assert.equal(metadata.fallback, false);
+  assert.equal(metadata.warning, null);
+});
+
+test('does not label Jira as fallback when archive has no data', async () => {
+  const result = await resolveReportSource(unit, [
+    { source: 'archive', resolve: async () => ({ source: 'archive', coverage: { expected: 0, covered: 0, cutoff: false } }) },
+    { source: 'jira', resolve: async () => ({ source: 'jira', coverage: { expected: 1, covered: 1, cutoff: false }, value: { rows: [] } }) },
+  ]);
+
+  const metadata = metadataFromResolution(result);
+  assert.equal(metadata.source, 'jira');
+  assert.equal(metadata.coverage.status, 'complete');
+  assert.equal(metadata.fallback, false);
+  assert.equal(metadata.warning, null);
+});

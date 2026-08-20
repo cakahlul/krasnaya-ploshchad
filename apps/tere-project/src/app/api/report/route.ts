@@ -60,6 +60,7 @@ export const GET = withAuthOrApiKey(async (req, { caller }) => {
       findBoards: () => boardsService.findAll(),
       findSprints: boardId => sprintService.fetchAllSprint(boardId),
       findSnapshot: identity => teamReportingSnapshotRepository.findByLogicalIdentity(identity),
+      findSnapshotStatus: identity => teamReportingSnapshotRepository.findByLogicalIdentityStatus(identity),
       generateSprintReport: generateReport,
       generateDateRangeReport: generateReportByDateRange,
     },

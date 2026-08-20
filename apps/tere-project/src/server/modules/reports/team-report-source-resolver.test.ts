@@ -79,7 +79,7 @@ test('returns the complete captured sprint without calling live Jira', async () 
   });
 });
 
-test('falls back to one live Jira report when the selected snapshot is unavailable', async () => {
+test('uses normal live Jira when the selected snapshot does not exist', async () => {
   let liveCalls = 0;
   const result = await resolveTeamReport(
     { project: 'ALPHA', sprint: '42' },
@@ -93,9 +93,43 @@ test('falls back to one live Jira report when the selected snapshot is unavailab
   assert.equal(result.value, report);
   assert.equal(liveCalls, 1);
   const metadata = metadataFromResolution(result);
+  assert.equal(metadata.fallback, false);
+  assert.equal(metadata.coverage.status, 'complete');
+  assert.equal(metadata.reason, 'SNAPSHOT_NOT_FOUND');
+  assert.equal(metadata.warning, null);
+});
+
+test('keeps Jira fallback warning when stored snapshot data is invalid', async () => {
+  const result = await resolveTeamReport(
+    { project: 'ALPHA', sprint: '42' },
+    ports({
+      findSnapshotStatus: async () => ({ status: 'invalid' }),
+      generateSprintReport: async () => report,
+    }),
+  );
+
+  assert.equal(result.source, 'jira');
+  const metadata = metadataFromResolution(result);
   assert.equal(metadata.fallback, true);
   assert.equal(metadata.coverage.status, 'fallback');
-  assert.equal(metadata.reason, 'SNAPSHOT_NOT_FOUND_OR_INCOMPLETE');
+  assert.equal(metadata.reason, 'SNAPSHOT_INCOMPLETE_OR_CORRUPT');
+  assert.equal(metadata.warning, 'Using Jira after stored source fallback');
+});
+
+test('keeps Jira fallback warning when snapshot lookup fails', async () => {
+  const result = await resolveTeamReport(
+    { project: 'ALPHA', sprint: '42' },
+    ports({
+      findSnapshotStatus: async () => { throw new Error('snapshot database unavailable'); },
+      generateSprintReport: async () => report,
+    }),
+  );
+
+  assert.equal(result.source, 'jira');
+  const metadata = metadataFromResolution(result);
+  assert.equal(metadata.fallback, true);
+  assert.equal(metadata.coverage.status, 'fallback');
+  assert.equal(metadata.reason, 'SNAPSHOT_LOOKUP_FAILED');
   assert.equal(metadata.warning, 'Using Jira after stored source fallback');
 });
 
@@ -242,7 +276,7 @@ test('recalculates multiple complete snapshots from stored inputs without live J
   assert.deepEqual(result.coverage, { status: 'complete', expected: 2, covered: 2 });
 });
 
-test('does not mix a partial snapshot set with a live report', async () => {
+test('uses normal live Jira when one requested period has no snapshot', async () => {
   let liveCalls = 0;
   const result = await resolveTeamReport(
     { project: 'ALPHA', sprint: '42,43' },
@@ -257,7 +291,7 @@ test('does not mix a partial snapshot set with a live report', async () => {
 
   assert.equal(result.source, 'jira');
   assert.equal(liveCalls, 1);
-  assert.equal(metadataFromResolution(result).fallback, true);
+  assert.equal(metadataFromResolution(result).fallback, false);
 });
 
 test('uses the whole Scrum period whose end date is exactly the selected range end', async () => {

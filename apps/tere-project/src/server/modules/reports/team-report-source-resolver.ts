@@ -4,6 +4,7 @@ import { resolvePeriodIdentity, validateKanbanAnchor } from '@shared/utils/perio
 import type {
   SnapshotPeriodIdentity,
   TeamReportingSnapshot,
+  TeamReportingSnapshotLookup,
 } from '@server/modules/report-snapshots/report-snapshot';
 import {
   resolveReportSource,
@@ -25,6 +26,7 @@ export interface TeamReportingSourcePorts {
   findBoards(): Promise<readonly BoardResponse[]>;
   findSprints(boardId: number): Promise<readonly SprintPeriod[]>;
   findSnapshot(identity: SnapshotPeriodIdentity): Promise<TeamReportingSnapshot | null>;
+  findSnapshotStatus?(identity: SnapshotPeriodIdentity): Promise<TeamReportingSnapshotLookup>;
   generateSprintReport(
     sprint: string,
     project: string,
@@ -61,6 +63,11 @@ interface SnapshotRecord {
   readonly input?: CapturedInput;
 }
 
+type SnapshotLoad =
+  | { readonly kind: 'missing' }
+  | { readonly kind: 'invalid' }
+  | { readonly kind: 'complete'; readonly record: SnapshotRecord };
+
 export async function resolveTeamReport(
   request: TeamReportingSourceRequest,
   ports: TeamReportingSourcePorts,
@@ -76,17 +83,45 @@ export async function resolveTeamReport(
       source: 'snapshot',
       resolve: async () => {
         if (discovered.identities.length === 0) {
-          return { source: 'snapshot', detail: discovered.detail ?? 'SNAPSHOT_IDENTITY_UNAVAILABLE' };
+          const detail = discovered.detail ?? 'SNAPSHOT_IDENTITY_UNAVAILABLE';
+          return {
+            source: 'snapshot',
+            detail,
+            failureKind: detail === 'SNAPSHOT_IDENTITY_UNAVAILABLE' ? 'missing' : 'error',
+          };
         }
 
         let records: SnapshotRecord[];
         try {
           const loaded = await Promise.all(discovered.identities.map(async identity => {
-            const stored = await ports.findSnapshot(identity);
-            return stored ? { snapshot: stored, input: capturedInput(stored.rawJiraInput) ?? undefined } : null;
+            let lookup: TeamReportingSnapshotLookup;
+            if (ports.findSnapshotStatus) {
+              lookup = await ports.findSnapshotStatus(identity);
+            } else {
+              const stored = await ports.findSnapshot(identity);
+              lookup = stored ? { status: 'complete', snapshot: stored } : { status: 'missing' };
+            }
+            if (lookup.status === 'missing') return { kind: 'missing' } satisfies SnapshotLoad;
+            if (lookup.status === 'invalid') return { kind: 'invalid' } satisfies SnapshotLoad;
+            return {
+              kind: 'complete',
+              record: { snapshot: lookup.snapshot, input: capturedInput(lookup.snapshot.rawJiraInput) ?? undefined },
+            } satisfies SnapshotLoad;
           }));
-          if (loaded.some((value, index) => value !== null
-            && !snapshotMatchesIdentity(value.snapshot, discovered.identities[index]))) {
+          if (loaded.some(value => value.kind === 'invalid')) {
+            return {
+              source: 'snapshot',
+              coverage: {
+                expected: discovered.identities.length,
+                covered: loaded.filter(value => value.kind === 'complete').length,
+                cutoff: false,
+              },
+              detail: 'SNAPSHOT_INCOMPLETE_OR_CORRUPT',
+              failureKind: 'error',
+            };
+          }
+          if (loaded.some((value, index) => value.kind === 'complete'
+            && !snapshotMatchesIdentity(value.record.snapshot, discovered.identities[index]))) {
             return {
               source: 'snapshot',
               coverage: {
@@ -95,9 +130,10 @@ export async function resolveTeamReport(
                 cutoff: false,
               },
               detail: 'SNAPSHOT_IDENTITY_MISMATCH',
+              failureKind: 'error',
             };
           }
-          const missing = loaded.filter((value): value is null => value === null).length;
+          const missing = loaded.filter(value => value.kind === 'missing').length;
           if (missing > 0) {
             return {
               source: 'snapshot',
@@ -106,12 +142,13 @@ export async function resolveTeamReport(
                 covered: discovered.identities.length - missing,
                 cutoff: false,
               },
-              detail: 'SNAPSHOT_NOT_FOUND_OR_INCOMPLETE',
+              detail: 'SNAPSHOT_NOT_FOUND',
+              failureKind: 'missing',
             };
           }
-          records = loaded as SnapshotRecord[];
+          records = loaded.flatMap(value => value.kind === 'complete' ? [value.record] : []);
         } catch {
-          return { source: 'snapshot', detail: 'SNAPSHOT_LOOKUP_FAILED' };
+          return { source: 'snapshot', detail: 'SNAPSHOT_LOOKUP_FAILED', failureKind: 'error' };
         }
 
         if (records.some(record => record.input === undefined)) {
@@ -123,6 +160,7 @@ export async function resolveTeamReport(
               cutoff: false,
             },
             detail: 'SNAPSHOT_INPUT_INVALID',
+            failureKind: 'error',
           };
         }
         if (records.some(record => !isReportResponse(record.snapshot.calculatedOutput))) {
@@ -134,6 +172,7 @@ export async function resolveTeamReport(
               cutoff: false,
             },
             detail: 'SNAPSHOT_REPORT_INVALID',
+            failureKind: 'error',
           };
         }
 
@@ -154,6 +193,7 @@ export async function resolveTeamReport(
               cutoff: false,
             },
             detail: 'SNAPSHOT_RECALCULATION_FAILED',
+            failureKind: 'error',
           };
         }
       },

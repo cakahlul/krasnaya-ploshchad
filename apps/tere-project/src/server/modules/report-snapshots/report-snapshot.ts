@@ -33,6 +33,11 @@ export interface TeamReportingSnapshot {
   readonly capturedAt: Date;
 }
 
+export type TeamReportingSnapshotLookup =
+  | { readonly status: 'missing' }
+  | { readonly status: 'invalid' }
+  | { readonly status: 'complete'; readonly snapshot: TeamReportingSnapshot };
+
 export interface TeamReportingSnapshotCoverage {
   readonly segmentKey: string;
   readonly rawInputCount: number;

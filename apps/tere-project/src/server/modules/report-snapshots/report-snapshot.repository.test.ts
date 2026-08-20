@@ -122,6 +122,19 @@ function repository(fake: FakeDatabase): DrizzleTeamReportingSnapshotRepository 
   return new DrizzleTeamReportingSnapshotRepository(fake as never);
 }
 
+test('distinguishes missing and invalid stored snapshot lookup states', async () => {
+  const fake = new FakeDatabase();
+  const repo = repository(fake);
+  const identity = { boardId: 42, periodKind: 'scrum' as const, sprintId: '123' };
+
+  assert.deepEqual(await repo.findByLogicalIdentityStatus(identity), { status: 'missing' });
+  await repo.publish(publication());
+  assert.equal((await repo.findByLogicalIdentityStatus(identity)).status, 'complete');
+
+  fake.coverage[0].checksum = 'corrupt';
+  assert.deepEqual(await repo.findByLogicalIdentityStatus(identity), { status: 'invalid' });
+});
+
 test('hides corrupt or incomplete stored coverage on read', async () => {
   const fake = new FakeDatabase();
   const repo = repository(fake);
