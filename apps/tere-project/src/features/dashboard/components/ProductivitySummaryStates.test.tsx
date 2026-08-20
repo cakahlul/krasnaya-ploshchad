@@ -100,7 +100,7 @@ test('never hardcodes a color literal — every color is a theme token (light/vo
   // Only literal color values allowed are the theme-agnostic SVG chrome recharts needs;
   // every semantic color (accent, status, text, border) must go through a --tere-*/--color-* token.
   assert.doesNotMatch(source, /#[0-9a-fA-F]{3,8}/);
-  assert.match(source, /color=\{data\.coverage\.complete \? 'var\(--color-accent\)' : 'var\(--tere-status-warning\)'\}/);
+  assert.match(source, /displayedCoverage/);
 });
 
 test('narrow-viewport horizontal scroll: chart wrapper scrolls, nothing cropped', () => {
@@ -155,6 +155,154 @@ test('renders server basis, coverage, and Group-member hierarchy without raw Tea
   assert.match(html, /Ari/);
   assert.match(html, /N\/A/);
   assert.doesNotMatch(html, /Tunaiku Raw Team/);
+});
+
+test('renders approved source labels, explicit coverage status, warning, and month detail', () => {
+  const html = renderToStaticMarkup(
+    <ProductivitySummaryCanonicalResult data={{
+      range: { startMonth: '2025-12', endMonth: '2026-01', monthCount: 2 },
+      selectedGroups: ['Loan'],
+      metricBasis: 'SP',
+      sourceMetadata: {
+        source: 'jira',
+        coverage: { status: 'fallback', expected: 2, covered: 2 },
+        fallback: true,
+        reason: 'snapshot rejected',
+        warning: 'Using Jira after stored source fallback',
+        attemptedSources: [{ source: 'snapshot', detail: 'snapshot rejected' }, { source: 'jira', detail: null }],
+        snapshotTimestamp: null,
+      },
+      coverage: {
+        complete: false,
+        months: [
+          { month: '2025-12', source: 'snapshot', productivityAvailable: true, bugsAvailable: true },
+          { month: '2026-01', source: 'unavailable', productivityAvailable: false, bugsAvailable: false },
+        ],
+      },
+      summary: { activeMembers: 1, productivityMetric: 8, bugsRaised: null },
+      details: [{
+        name: 'Ari', group: 'Loan', monthly: [
+          { month: '2025-12', source: 'snapshot', spTotal: 8, wpTotal: null, workingDays: null },
+          { month: '2026-01', source: 'unavailable', spTotal: null, wpTotal: null, workingDays: null },
+        ],
+      }],
+    }} />,
+  );
+
+  assert.match(html, /Jira Fallback/);
+  assert.match(html, /Partial coverage: 1 of 2 months/);
+  assert.match(html, /Using Jira after stored source fallback/);
+  assert.match(html, /Captured Report Snapshot/);
+  assert.match(html, /Unavailable/);
+  assert.match(html, /Source.*Captured Report Snapshot/);
+  assert.match(html, /Source.*Unavailable/);
+});
+
+test('does not let complete report metadata hide a component coverage gap', () => {
+  const html = renderToStaticMarkup(
+    <ProductivitySummaryCanonicalResult data={{
+      range: { startMonth: '2026-01', endMonth: '2026-01', monthCount: 1 },
+      metricBasis: 'SP',
+      sourceMetadata: {
+        source: 'jira',
+        coverage: { status: 'complete', expected: 1, covered: 1 },
+        fallback: false,
+        reason: null,
+        warning: null,
+        attemptedSources: [{ source: 'jira', detail: null }],
+        snapshotTimestamp: null,
+      },
+      coverage: {
+        complete: false,
+        months: [{ month: '2026-01', source: 'partial', productivityAvailable: true, bugsAvailable: false }],
+      },
+      summary: { activeMembers: 0, productivityMetric: null, bugsRaised: null },
+    }} />,
+  );
+
+  assert.match(html, /Partial coverage/);
+  assert.doesNotMatch(html, /Complete coverage/);
+  assert.match(html, /role="alert"/);
+});
+
+test('preserves Jira fallback labels in month and member detail', () => {
+  const html = renderToStaticMarkup(
+    <ProductivitySummaryCanonicalResult data={{
+      range: { startMonth: '2026-01', endMonth: '2026-01', monthCount: 1 },
+      selectedGroups: ['User'],
+      metricBasis: 'SP',
+      sourceMetadata: {
+        source: 'jira',
+        coverage: { status: 'fallback', expected: 1, covered: 1 },
+        fallback: true,
+        reason: 'internal fallback reason must stay hidden',
+        warning: null,
+        attemptedSources: [{ source: 'snapshot', detail: 'missing' }, { source: 'jira', detail: null }],
+        snapshotTimestamp: null,
+      },
+      coverage: {
+        complete: true,
+        months: [{ month: '2026-01', source: 'live', fallback: true, productivityAvailable: true, bugsAvailable: true }],
+      },
+      summary: { activeMembers: 1, productivityMetric: 8, bugsRaised: 0 },
+      details: [{
+        name: 'Budi',
+        group: 'User',
+        monthly: [{ month: '2026-01', source: 'live', fallback: true, spTotal: 8, wpTotal: 5, workingDays: 1 }],
+      }],
+    }} />,
+  );
+
+  assert.match(html, /Jira Fallback/);
+  assert.match(html, /Using Jira after stored source fallback/);
+  assert.doesNotMatch(html, /internal fallback reason must stay hidden/);
+});
+
+test('uses per-month fallback metadata for mixed live and fallback months', () => {
+  const html = renderToStaticMarkup(
+    <ProductivitySummaryCanonicalResult data={{
+      range: { startMonth: '2026-01', endMonth: '2026-02', monthCount: 2 },
+      metricBasis: 'SP',
+      sourceMetadata: {
+        source: 'mixed',
+        coverage: { status: 'complete', expected: 2, covered: 2 },
+        fallback: true,
+        reason: null,
+        warning: null,
+        attemptedSources: [{ source: 'jira', detail: null }],
+        snapshotTimestamp: null,
+      },
+      coverage: {
+        complete: true,
+        months: [
+          { month: '2026-01', source: 'live', fallback: false, productivityAvailable: true, bugsAvailable: true },
+          { month: '2026-02', source: 'live', fallback: true, productivityAvailable: true, bugsAvailable: true },
+        ],
+      },
+      summary: { activeMembers: 1, productivityMetric: 16, bugsRaised: 0 },
+    }} />,
+  );
+
+  assert.match(html, /2026-01 · Live Jira/);
+  assert.match(html, /2026-02 · Jira Fallback/);
+  assert.match(html, /Source fallback was used/);
+});
+
+test('does not warn for complete legacy coverage without source metadata', () => {
+  const html = renderToStaticMarkup(
+    <ProductivitySummaryCanonicalResult data={{
+      range: { startMonth: '2026-01', endMonth: '2026-01', monthCount: 1 },
+      metricBasis: 'SP',
+      coverage: {
+        complete: true,
+        months: [{ month: '2026-01', source: 'archive', productivityAvailable: true, bugsAvailable: true }],
+      },
+      summary: { activeMembers: 1, productivityMetric: 8, bugsRaised: 0 },
+    }} />,
+  );
+
+  assert.match(html, /Complete coverage/);
+  assert.doesNotMatch(html, /role="alert"/);
 });
 
 test('renders zero metric and working days as zero, not unavailable', () => {

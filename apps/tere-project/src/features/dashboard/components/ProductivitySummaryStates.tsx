@@ -2,6 +2,7 @@ import React from 'react';
 import { Alert, Table, Tag } from 'antd';
 import { Activity, Bug, CheckCircle2, Gauge, Target, TrendingDown, TrendingUp, Users } from 'lucide-react';
 import type { ReportingGroup } from '@src/shared/types/reporting-group.types';
+import type { ReportSourceMetadata } from '@server/modules/report-source-resolver/report-source-resolver';
 import {
   CartesianGrid,
   Legend,
@@ -26,17 +27,19 @@ interface ProductivitySummaryChartPoint {
   bugsRaised: number | null;
 }
 
-type MonthSource = 'archive' | 'live' | 'partial' | 'unavailable';
+type MonthSource = 'archive' | 'snapshot' | 'live' | 'partial' | 'unavailable';
 
 export interface CanonicalProductivitySummary {
   range: { startMonth: string; endMonth: string; monthCount: number };
   selectedGroups?: ReportingGroup[];
   metricBasis: 'WP' | 'SP';
+  sourceMetadata?: ReportSourceMetadata;
   coverage?: {
     complete: boolean;
     months: Array<{
       month: string;
       source: MonthSource;
+      fallback?: boolean;
       productivityAvailable: boolean;
       bugsAvailable: boolean;
     }>;
@@ -55,6 +58,7 @@ export interface CanonicalProductivitySummary {
     monthly: Array<{
       month: string;
       source: MonthSource;
+      fallback?: boolean;
       spTotal: number | null;
       wpTotal: number | null;
       workingDays: number | null;
@@ -63,6 +67,63 @@ export interface CanonicalProductivitySummary {
 }
 
 const NOT_AVAILABLE = 'N/A';
+
+function sourceLabel(source: string, fallback = false): string {
+  if (fallback && (source === 'jira' || source === 'live')) return 'Jira Fallback';
+  return {
+    archive: 'Archived',
+    legacy_archive: 'Archived',
+    snapshot: 'Captured Report Snapshot',
+    jira: 'Live Jira',
+    live: 'Live Jira',
+    partial: 'Partial coverage',
+    unavailable: 'Unavailable',
+    mixed: 'Mixed sources',
+  }[source] ?? 'Unknown source';
+}
+
+type DisplayCoverage = ReportSourceMetadata['coverage'];
+
+function displayedCoverage(data: CanonicalProductivitySummary): DisplayCoverage | null {
+  const reportCoverage = data.sourceMetadata?.coverage;
+  const months = data.coverage?.months;
+  if (!months) return reportCoverage ?? null;
+
+  const covered = months.filter(month =>
+    month.source !== 'unavailable' && month.productivityAvailable && month.bugsAvailable,
+  ).length;
+  const componentComplete = data.coverage?.complete === true
+    && months.length === data.range.monthCount
+    && months.every(month => month.source !== 'partial' && month.source !== 'unavailable'
+      && month.productivityAvailable && month.bugsAvailable);
+  const componentStatus: DisplayCoverage['status'] = componentComplete
+    ? 'complete'
+    : covered > 0 ? 'partial' : 'unavailable';
+  const status: DisplayCoverage['status'] = !reportCoverage
+    ? componentStatus
+    : reportCoverage.status === 'unavailable' || componentStatus === 'unavailable'
+    ? 'unavailable'
+    : reportCoverage.status === 'partial' || componentStatus === 'partial'
+    ? 'partial'
+    : reportCoverage.status;
+  const expected = Math.max(data.range.monthCount, reportCoverage?.expected ?? 0, months.length);
+  return {
+    status,
+    expected,
+    covered: Math.min(covered, reportCoverage?.covered ?? covered),
+  };
+}
+
+function coverageLabel(coverage: DisplayCoverage): string {
+  return `${coverage.status[0].toUpperCase()}${coverage.status.slice(1)} coverage: ${coverage.covered} of ${coverage.expected} months`;
+}
+
+function sourceWarning(metadata: ReportSourceMetadata): string | null {
+  return metadata.warning
+    ?? (metadata.fallback
+      ? metadata.source === 'jira' ? 'Using Jira after stored source fallback' : 'Source fallback was used'
+      : null);
+}
 
 /** Raw values can carry a long float tail; nobody reads 87.43333333333. */
 const round = (metric: number | null | undefined, decimals = 1) =>
@@ -155,6 +216,7 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
     : [...new Set(data.details?.map(member => member.group) ?? [])];
 
   const summaryCards = buildSummaryCards(data);
+  const coverage = displayedCoverage(data);
 
   return (
     <section data-qa="productivity-summary-canonical-result" aria-label="Productivity summary result" style={{ display: 'grid', gap: 16 }}>
@@ -183,19 +245,26 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
       {data.range.monthCount > 1 && data.chart?.length ? (
         <ProductivitySummaryComparisonChart points={data.chart} metricBasis={data.metricBasis} />
       ) : null}
-      {data.coverage && (
+      {coverage && (
         <section aria-labelledby="productivity-coverage-heading" style={{ background: 'var(--tere-card-bg)', border: '1px solid var(--tere-card-brd)', borderRadius: 12, padding: '12px 16px' }}>
           <details>
             <summary style={{ alignItems: 'center', color: 'var(--tere-title)', cursor: 'pointer', display: 'flex', fontSize: 13, fontWeight: 600, gap: 8 }}>
-              <CheckCircle2 aria-hidden size={17} color={data.coverage.complete ? 'var(--color-accent)' : 'var(--tere-status-warning)'} />
-              <span id="productivity-coverage-heading">{data.coverage.complete ? 'All selected months are available' : 'Some source data is unavailable'}</span>
+              <CheckCircle2 aria-hidden size={17} color={coverage.status === 'complete' && !data.sourceMetadata?.fallback ? 'var(--color-accent)' : 'var(--tere-status-warning)'} />
+              <span id="productivity-coverage-heading">{coverageLabel(coverage)}</span>
               <span style={{ color: 'var(--tere-sub)', fontSize: 11, fontWeight: 400, marginLeft: 'auto' }}>Coverage details</span>
             </summary>
-            {!data.coverage.complete ? <Alert type="warning" showIcon message="Partial coverage" style={{ marginTop: 12 }} /> : null}
+            {data.sourceMetadata ? (
+              <div role="status" style={{ color: 'var(--tere-sub)', fontSize: 12, marginTop: 12 }}>
+                Source: {sourceLabel(data.sourceMetadata.source, data.sourceMetadata.fallback)}
+                {sourceWarning(data.sourceMetadata) ? ` · ${sourceWarning(data.sourceMetadata)}` : ''}
+              </div>
+            ) : null}
+            {coverage.status !== 'complete'
+              ? <Alert type="warning" showIcon message={coverageLabel(coverage)} style={{ marginTop: 12 }} /> : null}
             <ul style={{ color: 'var(--tere-sub)', columns: '220px', fontSize: 11, lineHeight: 1.8, margin: '12px 0 0', paddingLeft: 18 }}>
-                {data.coverage.months.map(month => (
+                {(data.coverage?.months ?? []).map(month => (
                   <li key={month.month}>
-                    {month.month} · {month.source} · productivity {month.productivityAvailable ? 'ready' : 'N/A'} · bugs {month.bugsAvailable ? 'ready' : 'N/A'}
+                    {month.month} · {sourceLabel(month.source, month.fallback)} · productivity {month.productivityAvailable ? 'ready' : 'Unavailable'} · bugs {month.bugsAvailable ? 'ready' : 'Unavailable'}
                   </li>
                 ))}
             </ul>
@@ -220,6 +289,7 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
               children: member.monthly.map(month => ({
                 key: `${member.name}-${month.month}`,
                 month: month.month,
+                source: sourceLabel(month.source, month.fallback),
                 metric: data.metricBasis === 'SP' ? month.spTotal : month.wpTotal,
                 workingDays: month.workingDays,
               })),
@@ -239,6 +309,7 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
                     columns={[
                       { title: 'Member', dataIndex: 'member' },
                       { title: 'Month', dataIndex: 'month' },
+                      { title: 'Source', dataIndex: 'source' },
                       { title: data.metricBasis, dataIndex: 'metric', render: metric => metric === undefined ? '' : <span data-qa="productivity-member-metric">{value(metric)}</span> },
                       { title: 'Working days', dataIndex: 'workingDays', render: days => days === undefined ? '' : <span data-qa="productivity-member-working-days">{value(days)}</span> },
                     ]}

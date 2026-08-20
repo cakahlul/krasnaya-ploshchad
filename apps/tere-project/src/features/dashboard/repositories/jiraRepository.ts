@@ -9,6 +9,7 @@ export const jiraRepository = {
     startDate?: string,
     endDate?: string,
     epicId?: string,
+    boardIds?: number[],
   ): Promise<DashboardDto> => {
     const params = new URLSearchParams();
     params.append('project', project);
@@ -20,6 +21,9 @@ export const jiraRepository = {
     }
     if (epicId && epicId !== 'all') {
       params.append('epicId', epicId);
+    }
+    if (boardIds?.length) {
+      params.append('boardIds', boardIds.join(','));
     }
     const response = await axiosClient.get(`/report?${params.toString()}`);
     return response.data;

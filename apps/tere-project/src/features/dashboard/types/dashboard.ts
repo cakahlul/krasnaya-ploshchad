@@ -1,3 +1,5 @@
+import type { ReportSourceMetadata } from '@server/modules/report-source-resolver/report-source-resolver';
+
 export interface EpicBreakdown {
   productivityRate: string;
   wpProductivity: string;
@@ -68,6 +70,7 @@ export interface DashboardDto {
   totalMemberWorkingDays?: number;
   sprintStartDate?: string;
   sprintEndDate?: string;
+  sourceMetadata?: ReportSourceMetadata;
 }
 
 export interface DashhboardEntity {
@@ -91,6 +94,7 @@ export interface DashhboardEntity {
   totalMemberWorkingDays?: number;
   sprintStartDate?: string;
   sprintEndDate?: string;
+  sourceMetadata?: ReportSourceMetadata;
 }
 
 export interface DashboardFilter {

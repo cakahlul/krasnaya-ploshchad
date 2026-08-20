@@ -26,6 +26,7 @@ import { targetWpConfigService } from '@server/modules/target-wp-config/target-w
 import { reportingGroupService } from '@server/modules/reporting-groups/reporting-group.service';
 import type { RuleVersion } from '@shared/types/reporting-group.types';
 import type { ReportingGroup } from '@shared/types/reporting-group.types';
+import type { ReportSourceMetadata } from '@server/modules/report-source-resolver/report-source-resolver';
 import type { BoardResponse } from '@shared/types/board.types';
 import { calculateWorkingDays } from '@shared/utils/working-days.util';
 import * as repo from './reports.repository';
@@ -454,7 +455,7 @@ export function processRawData(
   return Array.from(reports.values()).filter(r => r.issueKeys.length > 0);
 }
 
-function summarizeTeamReport(
+export function summarizeTeamReport(
   issues: JiraIssueReportResponseDto[],
   sprintDetails?: { startDate: string; endDate: string } | null,
   nationalHolidays: string[] = [],
@@ -540,8 +541,8 @@ function summarizeTeamReport(
     productPercentage: `${productPercentage.toFixed(2)}%`,
     techDebtPercentage: `${techDebtPercentage.toFixed(2)}%`,
     averageProductivity: `${averageProductivity.toFixed(2)}%`,
-    totalWorkingDays,
-    averageWorkingDays,
+    ...(totalWorkingDays === undefined ? {} : { totalWorkingDays }),
+    ...(averageWorkingDays === undefined ? {} : { averageWorkingDays }),
     averageWpPerHour,
     totalWeightPoints,
     totalSP: parseFloat(totalSP.toFixed(2)),
@@ -552,12 +553,10 @@ function summarizeTeamReport(
     totalLeave,
     totalSick,
     totalMemberWorkingDays,
-    sprintStartDate: sprintDetails
-      ? formatToYYYYMMDD(parseLocalDate(sprintDetails.startDate))
-      : undefined,
-    sprintEndDate: sprintDetails
-      ? formatToYYYYMMDD(parseLocalDate(sprintDetails.endDate))
-      : undefined,
+    ...(sprintDetails ? {
+      sprintStartDate: formatToYYYYMMDD(parseLocalDate(sprintDetails.startDate)),
+      sprintEndDate: formatToYYYYMMDD(parseLocalDate(sprintDetails.endDate)),
+    } : {}),
   };
 }
 
@@ -572,6 +571,14 @@ function filterMembersByProject(
   return members.filter(
     m => !m.isLead && m.teams.some(t => projectList.includes(t.toLowerCase())),
   );
+}
+
+export async function findReportMembers(project: string): Promise<MemberResponse[]> {
+  return filterMembersByProject(await membersService.findAll(), project);
+}
+
+export function filterReportMembersForProject(members: MemberResponse[], project: string): MemberResponse[] {
+  return filterMembersByProject(members, project);
 }
 
 function isBadRequestError(error: unknown): boolean {
@@ -593,6 +600,7 @@ async function buildPlannedWPMap(
   wpWeights?: Parameters<
     typeof issueProcessingStrategyFactory.createStrategies
   >[1],
+  plannedDataByProject?: ReadonlyMap<string, JiraIssueEntity[]>,
 ): Promise<Map<string, number>> {
   const accountIdToName = new Map<string, string>(
     members
@@ -609,12 +617,9 @@ async function buildPlannedWPMap(
     );
     const assignees = projectMembers.map((m) => m.jiraId!).filter(Boolean);
     try {
-      const plannedData = await repo.fetchPlannedWPData(
-        plannedWPProject,
-        assignees,
-        sprint,
-        isSubtaskType,
-      );
+      const plannedData = plannedDataByProject
+        ? plannedDataByProject.get(plannedWPProject) ?? []
+        : await repo.fetchPlannedWPData(plannedWPProject, assignees, sprint, isSubtaskType);
       for (const issue of plannedData) {
         const accountId = issue.fields.assignee?.accountId?.toLowerCase();
         if (!accountId) continue;
@@ -653,6 +658,9 @@ export async function generateReport(
   sprint: string,
   project: string,
   epicId?: string,
+  rawDataOverride?: JiraIssueEntity[],
+  plannedDataOverride?: ReadonlyMap<string, JiraIssueEntity[]>,
+  sprintDetailsOverride?: { startDate: string; endDate: string },
 ): Promise<GetReportResponseDto> {
   const allMembers = await membersService.findAll();
   const members = filterMembersByProject(allMembers, project).filter(
@@ -672,22 +680,26 @@ export async function generateReport(
       projectList.some(p => p.toLowerCase() === b.shortName.toLowerCase()),
   );
   let rawData: Awaited<ReturnType<typeof repo.fetchRawData>>;
-  try {
-    rawData = await repo.fetchRawData({
-      sprint,
-      assignees,
-      project,
-      isSubtaskType,
-      isShowPlannedWP,
-    });
-  } catch (error) {
-    if (isBadRequestError(error)) {
-      console.warn(
-        `[generateReport] Jira returned 400 for project=${project} sprint=${sprint}, returning empty data`,
-      );
-      rawData = [];
-    } else {
-      throw error;
+  if (rawDataOverride) {
+    rawData = rawDataOverride;
+  } else {
+    try {
+      rawData = await repo.fetchRawData({
+        sprint,
+        assignees,
+        project,
+        isSubtaskType,
+        isShowPlannedWP,
+      });
+    } catch (error) {
+      if (isBadRequestError(error)) {
+        console.warn(
+          `[generateReport] Jira returned 400 for project=${project} sprint=${sprint}, returning empty data`,
+        );
+        rawData = [];
+      } else {
+        throw error;
+      }
     }
   }
   if (epicId) {
@@ -699,7 +711,7 @@ export async function generateReport(
       );
     });
   }
-  const sprintDetails = await getSprintDetails(sprint);
+  const sprintDetails = sprintDetailsOverride ?? await getSprintDetails(sprint);
   let leaveData: Map<string, LeaveDateRange[]> = new Map();
   let nationalHolidays: string[] = [];
   let sprintStartDateStr: string | undefined;
@@ -739,7 +751,7 @@ export async function generateReport(
   const plannedWPProjects = projectList.filter(p =>
     plannedWPShortNames.map(n => n.toLowerCase()).includes(p.toLowerCase()),
   );
-  if (plannedWPProjects.length > 0) {
+  if (plannedWPProjects.length > 0 && (!rawDataOverride || plannedDataOverride)) {
     const isMultiProject = projectList.length > 1;
     const plannedWPMap = await buildPlannedWPMap(
       sprint,
@@ -749,6 +761,7 @@ export async function generateReport(
       isMultiProject,
       memberRuleVersions,
       wpWeights,
+      plannedDataOverride,
     );
     teamReport.forEach(report => {
       const mapKey = isMultiProject
@@ -768,6 +781,7 @@ export async function generateReportByDateRange(
   endDate: string,
   project: string,
   epicId?: string,
+  rawDataOverride?: JiraIssueEntity[],
 ): Promise<GetReportResponseDto> {
   const step = async <T>(name: string, run: () => Promise<T>): Promise<T> => {
     const start = Date.now();
@@ -784,7 +798,7 @@ export async function generateReportByDateRange(
   const memberGroups = resolveReportMemberGroups(members, await step('boards', () => boardsService.findAll()));
   const assignees = members.map(m => m.jiraId!).filter(Boolean);
   const isSubtaskType = await step('hasSubtaskType', () => boardsService.hasSubtaskType(project));
-  let rawData = await step('fetchRawData', () => repo.fetchRawDataByDateRange(
+  let rawData = rawDataOverride ?? await step('fetchRawData', () => repo.fetchRawDataByDateRange(
     project,
     assignees,
     startDate,
@@ -925,6 +939,33 @@ function detectSlowdowns(
   return alerts;
 }
 
+const UNAVAILABLE_SPRINT_REASON = 'SPRINT_REPORT_UNAVAILABLE';
+
+export function buildSprintTrendPoints(
+  reports: readonly { sprintId: string; report?: GetReportResponseDto }[],
+): SprintTrendPointDto[] {
+  return reports.map(({ sprintId, report }) => report
+    ? {
+      sprintId,
+      sprintStartDate: report.sprintStartDate,
+      sprintEndDate: report.sprintEndDate,
+      teams: aggregateReportByTeam(report),
+    }
+    : {
+      sprintId,
+      teams: [],
+      sourceMetadata: {
+        source: 'unavailable',
+        coverage: { status: 'unavailable', expected: 1, covered: 0 },
+        fallback: false,
+        reason: UNAVAILABLE_SPRINT_REASON,
+        warning: 'Sprint report is unavailable',
+        attemptedSources: [{ source: 'jira', detail: UNAVAILABLE_SPRINT_REASON }],
+        snapshotTimestamp: null,
+      } satisfies ReportSourceMetadata,
+    });
+}
+
 export async function generateSprintTrend(
   sprintIds: string[],
   project: string,
@@ -944,19 +985,12 @@ export async function generateSprintTrend(
           `[generateSprintTrend] failed for sprint=${sprintId}:`,
           error,
         );
-        return null;
+        return { sprintId };
       }
     }),
   );
 
-  const points: SprintTrendPointDto[] = reports
-    .filter((r): r is NonNullable<typeof r> => !!r)
-    .map(({ sprintId, report }) => ({
-      sprintId,
-      sprintStartDate: report.sprintStartDate,
-      sprintEndDate: report.sprintEndDate,
-      teams: aggregateReportByTeam(report),
-    }));
+  const points = buildSprintTrendPoints(reports);
 
   return { points, slowdownAlerts: detectSlowdowns(points) };
 }

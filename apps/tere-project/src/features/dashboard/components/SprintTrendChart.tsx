@@ -17,6 +17,8 @@ import { useTeamReportFilterStore } from '../store/teamReportFilterStore';
 import { useMultiSprintDataTransform } from '../hooks/useMultiSprintDataTransform';
 import { useBoards } from '../hooks/useBoards';
 import { useThemeColors } from '@src/hooks/useTheme';
+import { ReportProvenance } from './ReportProvenance';
+import { reportProvenanceText } from '../utils/report-provenance';
 
 type Metric = 'velocity' | 'wpAttainment' | 'spVelocity';
 
@@ -93,6 +95,12 @@ export function SprintTrendChart() {
     <div style={cardStyle(T)}>
       <Header T={T} />
 
+      {data?.sourceMetadata && (
+        <div style={{ color: T.subCol, marginBottom: 12 }}>
+          <ReportProvenance metadata={data.sourceMetadata} />
+        </div>
+      )}
+
       {data?.slowdownAlerts && data.slowdownAlerts.length > 0 && (
         <div style={{ marginBottom: 12 }}>
           {data.slowdownAlerts.map(alert => (
@@ -131,39 +139,52 @@ export function SprintTrendChart() {
       ) : chartData.length === 0 ? (
         <Empty description="No data for selected sprints" />
       ) : (
-        <ResponsiveContainer width="100%" height={320}>
-          <LineChart data={chartData} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
-            <CartesianGrid stroke={T.rowBrd} strokeDasharray="3 3" />
-            <XAxis dataKey="sprint" tick={{ fill: T.subCol, fontSize: 11 }} />
-            <YAxis
-              tick={{ fill: T.subCol, fontSize: 11 }}
-              tickFormatter={v => (metric === 'wpAttainment' ? `${v}%` : `${v}`)}
-            />
-            <Tooltip
-              contentStyle={{
-                background: T.cardBg,
-                border: `1px solid ${T.cardBrd}`,
-                borderRadius: 6,
-                color: T.titleCol,
-              }}
-              formatter={(value: number) =>
-                metric === 'wpAttainment' ? `${value.toFixed(1)}%` : value.toFixed(2)
-              }
-            />
-            <Legend wrapperStyle={{ fontSize: 12, color: T.subCol }} />
-            {teamKeys.map((team, idx) => (
-              <Line
-                key={team}
-                type="monotone"
-                dataKey={team}
-                stroke={TEAM_COLORS[idx % TEAM_COLORS.length]}
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
+        <>
+          <ResponsiveContainer width="100%" height={320}>
+            <LineChart data={chartData} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
+              <CartesianGrid stroke={T.rowBrd} strokeDasharray="3 3" />
+              <XAxis dataKey="sprint" tick={{ fill: T.subCol, fontSize: 11 }} />
+              <YAxis
+                tick={{ fill: T.subCol, fontSize: 11 }}
+                tickFormatter={v => (metric === 'wpAttainment' ? `${v}%` : `${v}`)}
               />
-            ))}
-          </LineChart>
-        </ResponsiveContainer>
+              <Tooltip
+                contentStyle={{
+                  background: T.cardBg,
+                  border: `1px solid ${T.cardBrd}`,
+                  borderRadius: 6,
+                  color: T.titleCol,
+                }}
+                formatter={(value: number) =>
+                  metric === 'wpAttainment' ? `${value.toFixed(1)}%` : value.toFixed(2)
+                }
+              />
+              <Legend wrapperStyle={{ fontSize: 12, color: T.subCol }} />
+              {teamKeys.map((team, idx) => (
+                <Line
+                  key={team}
+                  type="monotone"
+                  dataKey={team}
+                  stroke={TEAM_COLORS[idx % TEAM_COLORS.length]}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+          <details style={{ color: T.subCol, fontSize: 12, marginTop: 8 }}>
+            <summary>Show sprint data source details</summary>
+            <ul>
+              {data?.points.map(point => (
+                <li key={point.sprintId}>
+                  {sprintNameById.get(point.sprintId) ?? `#${point.sprintId}`}: {' '}
+                  {point.sourceMetadata ? reportProvenanceText(point.sourceMetadata) : 'Source not provided'}
+                </li>
+              ))}
+            </ul>
+          </details>
+        </>
       )}
     </div>
   );

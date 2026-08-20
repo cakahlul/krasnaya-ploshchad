@@ -1,4 +1,5 @@
 import { Level } from './common.types';
+import type { ReportSourceMetadata } from '@server/modules/report-source-resolver/report-source-resolver';
 
 // ── Jira API raw shapes ──────────────────────────────────────────────────────
 
@@ -180,6 +181,8 @@ export interface SprintTrendPointDto {
   sprintStartDate?: string;
   sprintEndDate?: string;
   teams: SprintTrendTeamMetricsDto[];
+  /** Optional provenance for this independently resolved sprint point. */
+  sourceMetadata?: ReportSourceMetadata;
 }
 
 export interface SprintSlowdownAlertDto {
@@ -193,6 +196,7 @@ export interface SprintSlowdownAlertDto {
 export interface SprintTrendResponseDto {
   points: SprintTrendPointDto[];
   slowdownAlerts: SprintSlowdownAlertDto[];
+  sourceMetadata?: ReportSourceMetadata;
 }
 
 export interface GetReportResponseDto {
@@ -218,6 +222,7 @@ export interface GetReportResponseDto {
   sprintEndDate?: string;
   sprintName?: string;
   sprintId?: number;
+  sourceMetadata?: ReportSourceMetadata;
 }
 
 // ── Epic Explorer (SLS-16795 / Epic SLS-16789) ───────────────────────────────

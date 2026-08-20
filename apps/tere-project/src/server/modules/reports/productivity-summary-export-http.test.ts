@@ -12,6 +12,11 @@ const rangeData: ProductivitySummaryRangeResponse = {
   summary: { activeMembers: 0, productivityMetric: 0, bugsRaised: 0 },
   details: [],
   chart: [],
+  sourceMetadata: {
+    source: 'jira', coverage: { status: 'complete', expected: 1, covered: 1 }, fallback: false,
+    reason: null, warning: null, attemptedSources: [{ source: 'jira', detail: null }], snapshotTimestamp: null,
+  },
+  bugMetadata: { source: 'jira', coverage: { status: 'complete', expected: 0, covered: 0 }, failure: null, snapshotTimestamp: null },
 };
 const unusedPorts: RangeAggregationPorts = {
   loadMonth: async () => { throw new Error('unused'); },
@@ -35,6 +40,8 @@ async function verify() {
   assert.equal(canonical.status, 200);
   assert.deepEqual(canonicalInput, { months: ['2026-04'], selectedGroups: ['User'], metricBasis: 'SP' });
   assert.strictEqual(exportedData, rangeData);
+  assert.deepEqual(exportedData?.sourceMetadata.attemptedSources, [{ source: 'jira', detail: null }]);
+  assert.deepEqual(exportedData?.bugMetadata.coverage, { status: 'complete', expected: 0, covered: 0 });
 
   canonicalInput = undefined;
   const defaults = await handleProductivitySummaryExportPost(new Request('http://local/export', {

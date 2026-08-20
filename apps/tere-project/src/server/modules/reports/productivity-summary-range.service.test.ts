@@ -68,10 +68,7 @@ async function main() {
   );
   assert.equal(result.metricBasis, "SP");
   assert.equal(result.coverage.complete, false);
-  assert.equal(
-    result.coverage.months[1].failures[0].reason,
-    "Jira unavailable",
-  );
+  assert.equal(result.bugMetadata.failure, "Jira unavailable");
   assert.equal(
     result.chart[1].bugsRaised,
     2,

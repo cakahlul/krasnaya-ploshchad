@@ -57,7 +57,7 @@ async function main() {
   assert.ok(totalLine, "range-total telemetry line emitted");
   assert.match(totalLine!, /durationMs=\d+/);
   assert.match(totalLine!, /monthCount=2/);
-  assert.match(totalLine!, /distribution=\{"archive":1,"live":1,"partial":0,"unavailable":0\}/);
+  assert.match(totalLine!, /distribution=\{"archive":1,"snapshot":0,"live":1,"partial":0,"unavailable":0\}/);
 
   // Fully archived set.
   const archivedCapture = captureLogs();
@@ -83,7 +83,7 @@ async function main() {
   assert.ok(archivedMonthLines.every((line) => /source=archive/.test(line)), "every month reports source=archive");
   const archivedTotalLine = archivedTelemetry.find((line) => line.includes("range total"));
   assert.ok(archivedTotalLine, "range-total telemetry line emitted for fully archived set");
-  assert.match(archivedTotalLine!, /distribution=\{"archive":2,"live":0,"partial":0,"unavailable":0\}/);
+  assert.match(archivedTotalLine!, /distribution=\{"archive":2,"snapshot":0,"live":0,"partial":0,"unavailable":0\}/);
 
   console.log("productivity-summary-range-telemetry self-check: PASS");
 }

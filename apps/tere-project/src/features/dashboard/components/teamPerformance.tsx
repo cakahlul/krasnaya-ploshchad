@@ -3,6 +3,7 @@
 import { Tooltip } from 'antd';
 import { useTeamReportTransform } from '../hooks/useTeamReportTransform';
 import { useThemeColors } from '@src/hooks/useTheme';
+import { ReportProvenance } from './ReportProvenance';
 
 const mono = "var(--font-ibm-plex-mono), 'IBM Plex Mono', monospace";
 const sans = "var(--font-space-grotesk), 'Space Grotesk', sans-serif";
@@ -305,6 +306,11 @@ export default function TeamPerformance() {
         <span style={{ fontSize: 13, fontWeight: 600, color: titleCol, fontFamily: sans }}>
           Sprint Performance
         </span>
+        {data?.sourceMetadata && (
+          <div style={{ color: T.subCol, marginTop: 4 }}>
+            <ReportProvenance metadata={data.sourceMetadata} />
+          </div>
+        )}
       </div>
 
       {/* Row 1 — Key Metrics */}

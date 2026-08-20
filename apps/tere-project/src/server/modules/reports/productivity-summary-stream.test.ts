@@ -74,6 +74,20 @@ test('a lead streams one point per month and a final complete payload', async ()
 
   const last = events.at(-1);
   assert.equal(last.type, 'complete');
+  assert.deepEqual(last.data.sourceMetadata, {
+    source: 'archive',
+    coverage: { status: 'complete', expected: 2, covered: 2 },
+    fallback: false,
+    reason: null,
+    warning: null,
+    attemptedSources: [
+      { source: 'archive', detail: null },
+      { source: 'archive', detail: null },
+    ],
+    snapshotTimestamp: null,
+  });
+  assert.equal(last.data.bugMetadata.source, 'jira');
+  assert.deepEqual(last.data.bugMetadata.coverage, { status: 'complete', expected: 2, covered: 2 });
   assert.deepEqual(last.data.chart, events
     .filter(event => event.type === 'point')
     .map(event => event.point)
@@ -93,6 +107,37 @@ test('a non-lead gets progress without values and no chart in the payload', asyn
   const complete = events.at(-1);
   assert.equal(complete.type, 'complete');
   assert.equal('chart' in complete.data, false);
+});
+
+test('keeps Jira Fallback labels and warnings in JSON, progress, chart, and details', async () => {
+  const fallbackPorts: RangeAggregationPorts = {
+    loadMonth: async () => ({
+      source: 'live',
+      attempts: [
+        { source: 'snapshot', detail: 'snapshot rejected' },
+        { source: 'jira', detail: null },
+      ],
+      appliedRules: [],
+      members: [{ id: 'a', name: 'A', group: 'User', board: 'SLS', spTotal: 8, wpTotal: 5, spTarget: 16, workingDays: 2 }],
+    }),
+  };
+  const fallbackDeps = { generateLegacy: async () => ({}) as never, rangePorts: fallbackPorts };
+  const json = await handleProductivitySummaryGet(request('startMonth=2026-06&endMonth=2026-06&groups=User&metricBasis=SP'), LEAD, fallbackDeps);
+  const body = await json.json();
+  assert.equal(body.chart[0].sourceLabel, 'Jira Fallback');
+  assert.equal(body.chart[0].coverageLabel, 'Fallback');
+  assert.equal(body.chart[0].warning, 'Using Jira after stored source fallback');
+  assert.equal(body.coverage.months[0].fallback, true);
+  assert.equal(body.details[0].monthly[0].sourceLabel, 'Jira Fallback');
+
+  const ndjson = await handleProductivitySummaryGet(request('startMonth=2026-06&endMonth=2026-06&groups=User&metricBasis=SP', NDJSON_MEDIA_TYPE), LEAD, fallbackDeps);
+  const events = await readEvents(ndjson);
+  const progress = events.find(event => event.type === 'month');
+  assert.equal(progress.sourceLabel, 'Jira Fallback');
+  assert.equal(progress.warning, 'Using Jira after stored source fallback');
+  const point = events.find(event => event.type === 'point');
+  assert.equal(point.point.sourceLabel, 'Jira Fallback');
+  assert.equal(point.point.coverageLabel, 'Fallback');
 });
 
 test('a WP request over archived months errors instead of streaming SP points', async () => {

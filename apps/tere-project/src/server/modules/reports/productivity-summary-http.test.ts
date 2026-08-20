@@ -90,3 +90,22 @@ test('aggregates before member filtering and exposes chart only to leads', async
   assert.equal('chart' in unknown, false);
   assert.deepEqual(unknown.details, []);
 });
+
+test('adds source metadata without changing the canonical envelope', async () => {
+  const response = await handleProductivitySummaryGet(
+    request('startMonth=2026-01&endMonth=2026-01&groups=Loan&metricBasis=SP'),
+    { isLead: true, fullName: 'Lead' },
+    { generateLegacy: async () => ({}) as never, rangePorts: ports },
+  );
+  const body = await response.json();
+  assert.deepEqual(body.sourceMetadata, {
+    source: 'jira',
+    coverage: { status: 'complete', expected: 1, covered: 1 },
+    fallback: false,
+    reason: null,
+    warning: null,
+    attemptedSources: [{ source: 'jira', detail: null }],
+    snapshotTimestamp: null,
+  });
+  assert.equal(body.summary.activeMembers, 2);
+});

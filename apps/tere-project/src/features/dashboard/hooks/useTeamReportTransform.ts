@@ -172,6 +172,7 @@ export const useTeamReportTransform = () => {
       totalWorkingDays: data.totalWorkingDays,
       sprintStartDate: data.sprintStartDate,
       sprintEndDate: data.sprintEndDate,
+      sourceMetadata: data.sourceMetadata,
     };
   }, [data, selectedMemberKeys, epicId]);
 
