@@ -45,7 +45,7 @@ test('shows lead comparison chart for a multi-month response and preserves null 
   assert.match(html, /<th scope="row">2026-01<\/th><td>N\/A<\/td><td>N\/A<\/td><td>3<\/td><td>N\/A<\/td>/);
 });
 
-test('hides comparison chart when capability data is absent, empty, or range has one month', () => {
+test('shows comparison chart for a single month when chart data is available', () => {
   const base = {
     metricBasis: 'WP' as const,
     summary: { activeMembers: 1, productivityMetric: 8, bugsRaised: 0 },
@@ -73,7 +73,7 @@ test('hides comparison chart when capability data is absent, empty, or range has
 
   assert.doesNotMatch(nonLead, /productivity-summary-comparison-chart/);
   assert.doesNotMatch(empty, /productivity-summary-comparison-chart/);
-  assert.doesNotMatch(singleMonth, /productivity-summary-comparison-chart/);
+  assert.match(singleMonth, /productivity-summary-comparison-chart/);
 });
 
 test('keeps chart nulls as gaps and uses responsive accessible themed primitives', () => {
