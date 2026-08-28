@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, DatePicker, Progress, Select, Table, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { TrendingUp, TrendingDown } from 'lucide-react';
@@ -58,7 +58,7 @@ interface ProductivitySummaryData {
 }
 
 export default function ProductivitySummary() {
-  const [selectedRange, setSelectedRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([dayjs(), dayjs()]);
+  const [selectedRange, setSelectedRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([dayjs().subtract(1, 'month'), dayjs()]);
   const [selectedGroups, setSelectedGroups] = useState<ReportingGroup[]>([]);
   const [data, setData] = useState<ProductivitySummaryData | CanonicalProductivitySummary | null>(null);
   const [loading, setLoading] = useState(false);
@@ -72,6 +72,7 @@ export default function ProductivitySummary() {
   const endMonth = selectedRange[1].format('YYYY-MM');
   const monthCount = inclusiveMonthCount(startMonth, endMonth);
   const request = buildProductivitySummaryParams(startMonth, endMonth, selectedGroups, 'SP');
+  const initialRequest = useRef(request);
 
   const fetchData = async (request: ProductivitySummaryParams) => {
     const validationError = validateProductivitySummaryRange(request.startMonth, request.endMonth);
@@ -114,6 +115,12 @@ export default function ProductivitySummary() {
       setProgress(null);
     }
   };
+
+  // An empty groups query is the API's all-groups default.
+  useEffect(() => {
+    const timer = setTimeout(() => void fetchData(initialRequest.current), 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleCalculate = () => void fetchData(request);
 

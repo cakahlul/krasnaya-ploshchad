@@ -242,7 +242,7 @@ export function ProductivitySummaryCanonicalResult({ data }: { data: CanonicalPr
           </div>
         ))}
       </dl>
-      {data.range.monthCount > 1 && data.chart?.length ? (
+      {data.chart?.length ? (
         <ProductivitySummaryComparisonChart points={data.chart} metricBasis={data.metricBasis} />
       ) : null}
       {coverage && (

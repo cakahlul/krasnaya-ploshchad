@@ -28,6 +28,13 @@ test('uses the SP-only canonical query and does not expose a Team selector', () 
   assert.doesNotMatch(source, /MultiSelectTeam|selectedTeams|teamsParam/);
 });
 
+test('loads the previous-to-current-month, all-groups request when opened', () => {
+  assert.match(source, /const initialRequest = useRef\(request\)/);
+  assert.match(source, /useEffect\(\(\) => \{\s+const timer = setTimeout\(\(\) => void fetchData\(initialRequest\.current\), 0\);\s+return \(\) => clearTimeout\(timer\);\s+\}, \[\]\)/);
+  assert.match(source, /const \[selectedRange, setSelectedRange\].*= useState.*\[dayjs\(\)\.subtract\(1, 'month'\), dayjs\(\)\]/);
+  assert.match(source, /const \[selectedGroups, setSelectedGroups\] = useState<ReportingGroup\[\]>\(\[\]\)/);
+});
+
 test('reuses current canonical request for export without resetting filters', () => {
   assert.match(source, /<ProductivitySummaryExportButton[\s\S]*request=\{request\}/);
   assert.doesNotMatch(source, /setSelectedRange\([^)]*catch|setSelectedGroups\([^)]*catch/);
