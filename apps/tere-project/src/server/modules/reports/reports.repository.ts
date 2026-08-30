@@ -16,7 +16,7 @@ const BASE_RETRY_DELAY = 1000;
 const REPORT_FIELDS = [
   'summary', 'customfield_10005', 'customfield_10796', 'customfield_10865',
   'customfield_11015', 'customfield_11444', 'customfield_11312', 'customfield_11543',
-  'assignee', 'issuetype', 'parent', 'resolution',
+  'assignee', 'issuetype', 'parent', 'resolution', 'resolutiondate',
 ].join(',');
 
 async function executeWithRetry<T>(operation: () => Promise<T>): Promise<T> {
