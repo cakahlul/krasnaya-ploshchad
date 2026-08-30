@@ -1,6 +1,5 @@
 import type { BoardResponse } from '@shared/types/board.types';
 import type { GetReportResponseDto, JiraIssueEntity } from '@shared/types/report.types';
-import { resolvePeriodIdentity, validateKanbanAnchor } from '@shared/utils/period-identity';
 import type {
   SnapshotPeriodIdentity,
   TeamReportingSnapshot,
@@ -11,6 +10,7 @@ import {
   type ReportSourceResolution,
   type ReportUnit,
 } from '@server/modules/report-source-resolver/report-source-resolver';
+import { combineCapturedReports } from './reports.service';
 
 const DAY = 86_400_000;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -77,6 +77,9 @@ export async function resolveTeamReport(
     kind: 'team-reporting-request',
     key: requestKey(request),
   };
+
+  const mixed = await resolveMixedKanbanRange(request, discovered, ports);
+  if (mixed) return mixed;
 
   return resolveReportSource(unit, [
     {
@@ -214,7 +217,7 @@ export async function resolveTeamReport(
 async function discoverIdentities(
   request: TeamReportingSourceRequest,
   ports: TeamReportingSourcePorts,
-): Promise<{ identities: SnapshotPeriodIdentity[]; detail?: string }> {
+): Promise<{ identities: SnapshotPeriodIdentity[]; detail?: string; kanbanBoardId?: number }> {
   let boards: readonly BoardResponse[];
   try {
     boards = await ports.findBoards();
@@ -233,7 +236,10 @@ async function discoverIdentities(
     : configured.filter(board => requestedBoardIds.has(board.boardId));
 
   if (request.startDate && request.endDate) {
-    return discoverDateRangeIdentities(request, selected, ports);
+    const discovered = await discoverDateRangeIdentities(request, selected, ports);
+    return selected.length === 1 && selected[0].isKanban
+      ? { ...discovered, kanbanBoardId: selected[0].boardId }
+      : discovered;
   }
 
   if (request.sprint) {
@@ -254,6 +260,52 @@ async function discoverIdentities(
   return { identities: [], detail: 'SNAPSHOT_IDENTITY_UNAVAILABLE' };
 }
 
+async function resolveMixedKanbanRange(
+  request: TeamReportingSourceRequest,
+  discovered: { kanbanBoardId?: number },
+  ports: TeamReportingSourcePorts,
+): Promise<ReportSourceResolution<GetReportResponseDto> | null> {
+  if (!request.startDate || !request.endDate || request.epicId || !discovered.kanbanBoardId) return null;
+  const today = jakartaDate();
+  const snapshots: Array<{ report: GetReportResponseDto; capturedAt: Date }> = [];
+  const liveDates = new Set<string>();
+  for (const week of mondaySundayWeeksWithin(request.startDate, request.endDate)) {
+    if (week.endDate >= today) {
+      addDates(liveDates, week.startDate, week.endDate);
+      continue;
+    }
+    const identity: SnapshotPeriodIdentity = { boardId: discovered.kanbanBoardId, periodKind: 'kanban', periodStartDate: week.startDate, periodEndDate: week.endDate };
+    let lookup: TeamReportingSnapshotLookup;
+    try {
+      lookup = ports.findSnapshotStatus
+        ? await ports.findSnapshotStatus(identity)
+        : await ports.findSnapshot(identity).then(snapshot => snapshot ? { status: 'complete' as const, snapshot } : { status: 'missing' as const });
+    } catch {
+      return null;
+    }
+    if (lookup.status === 'complete' && snapshotMatchesIdentity(lookup.snapshot, identity) && isReportResponse(lookup.snapshot.calculatedOutput)) {
+      snapshots.push({ report: lookup.snapshot.calculatedOutput, capturedAt: lookup.snapshot.capturedAt });
+    } else {
+      addDates(liveDates, week.startDate, week.endDate);
+    }
+  }
+  const coveredDays = new Set<string>();
+  for (const week of mondaySundayWeeksWithin(request.startDate, request.endDate)) addDates(coveredDays, week.startDate, week.endDate);
+  for (let date = request.startDate; date <= request.endDate; date = nextDate(date)) if (!coveredDays.has(date)) liveDates.add(date);
+  if (snapshots.length === 0) return null;
+  const live = await Promise.all(compactDateRanges(liveDates).map(range => ports.generateDateRangeReport(range.startDate, range.endDate, request.project)));
+  const value = combineCapturedReports([...snapshots.map(snapshot => snapshot.report), ...live], { startDate: request.startDate, endDate: request.endDate });
+  return {
+    source: live.length ? 'mixed' : 'snapshot',
+    value,
+    coverage: { status: 'complete', expected: snapshots.length + live.length, covered: snapshots.length + live.length },
+    attempts: [
+      ...(snapshots.length ? [{ source: 'snapshot' as const, coverage: { expected: snapshots.length, covered: snapshots.length, cutoff: false }, snapshotTimestamp: latestDate(snapshots) }] : []),
+      ...(live.length ? [{ source: 'jira' as const, coverage: { expected: live.length, covered: live.length, cutoff: false } }] : []),
+    ],
+  };
+}
+
 async function discoverDateRangeIdentities(
   request: TeamReportingSourceRequest,
   selected: readonly BoardResponse[],
@@ -268,27 +320,15 @@ async function discoverDateRangeIdentities(
   const identities: SnapshotPeriodIdentity[] = [];
   for (const board of selected) {
     if (board.isKanban) {
-      const anchor = validateKanbanAnchor(board.kanbanCycleStartDate);
-      if (!anchor.valid) return { identities: [], detail: anchor.jiraFallbackReason };
-      for (let time = parseDate(startDate); time <= parseDate(endDate); time += DAY) {
-        const period = resolvePeriodIdentity({
+      const weeks = completeMondaySundayWeeks(startDate, endDate);
+      if (weeks === null) return { identities: [], detail: 'SNAPSHOT_RANGE_NOT_WEEK_ALIGNED' };
+      for (const { startDate: periodStartDate, endDate: periodEndDate } of weeks) {
+        identities.push({
           boardId: board.boardId,
-          isKanban: true,
-          kanbanCycleStartDate: anchor.anchorDate,
-          date: new Date(time).toISOString().slice(0, 10),
+          periodKind: 'kanban',
+          periodStartDate,
+          periodEndDate,
         });
-        if (period.kind !== 'kanban' || period.endDate < startDate || period.endDate > endDate) continue;
-        if (!identities.some(identity => identity.periodKind === 'kanban'
-          && identity.boardId === board.boardId
-          && identity.periodStartDate === period.startDate
-          && identity.periodEndDate === period.endDate)) {
-          identities.push({
-            boardId: board.boardId,
-            periodKind: 'kanban',
-            periodStartDate: period.startDate,
-            periodEndDate: period.endDate,
-          });
-        }
       }
       continue;
     }
@@ -306,6 +346,7 @@ async function discoverDateRangeIdentities(
         || !sprintStartDate
         || !sprintEndDate
         || sprintStartDate > sprintEndDate
+        || sprintStartDate < startDate
         || sprintEndDate < startDate
         || sprintEndDate > endDate) continue;
       identities.push({ boardId: board.boardId, periodKind: 'scrum', sprintId: String(sprint.id) });
@@ -321,6 +362,14 @@ async function reportFromSnapshots(
 ): Promise<GetReportResponseDto> {
   if (records.length === 1 && !request.epicId) {
     return records[0].snapshot.calculatedOutput as GetReportResponseDto;
+  }
+  if (!request.epicId) {
+    const startDate = request.startDate ?? records.reduce((min, record) => record.snapshot.periodStartDate < min ? record.snapshot.periodStartDate : min, records[0].snapshot.periodStartDate);
+    const endDate = request.endDate ?? records.reduce((max, record) => record.snapshot.periodEndDate > max ? record.snapshot.periodEndDate : max, records[0].snapshot.periodEndDate);
+    return combineCapturedReports(
+      records.map(record => record.snapshot.calculatedOutput as GetReportResponseDto),
+      { startDate, endDate },
+    );
   }
 
   const inputs = records.map(record => record.input);
@@ -524,4 +573,48 @@ function validDate(value: string): boolean {
 
 function parseDate(value: string): number {
   return Date.parse(value + 'T00:00:00.000Z');
+}
+
+function completeMondaySundayWeeks(startDate: string, endDate: string): Array<{ startDate: string; endDate: string }> | null {
+  if (new Date(parseDate(startDate)).getUTCDay() !== 1 || new Date(parseDate(endDate)).getUTCDay() !== 0) return null;
+  const weeks: Array<{ startDate: string; endDate: string }> = [];
+  for (let start = startDate; start <= endDate; start = new Date(parseDate(start) + 7 * DAY).toISOString().slice(0, 10)) {
+    weeks.push({ startDate: start, endDate: new Date(parseDate(start) + 6 * DAY).toISOString().slice(0, 10) });
+  }
+  return weeks;
+}
+
+function mondaySundayWeeksWithin(startDate: string, endDate: string): Array<{ startDate: string; endDate: string }> {
+  const weeks: Array<{ startDate: string; endDate: string }> = [];
+  let weekStart = nextDate(startDate, (8 - new Date(parseDate(startDate)).getUTCDay()) % 7);
+  while (nextDate(weekStart, 6) <= endDate) {
+    weeks.push({ startDate: weekStart, endDate: nextDate(weekStart, 6) });
+    weekStart = nextDate(weekStart, 7);
+  }
+  return weeks;
+}
+
+function addDates(target: Set<string>, startDate: string, endDate: string): void {
+  for (let date = startDate; date <= endDate; date = nextDate(date)) target.add(date);
+}
+
+function compactDateRanges(dates: ReadonlySet<string>): Array<{ startDate: string; endDate: string }> {
+  const sorted = [...dates].sort();
+  const ranges: Array<{ startDate: string; endDate: string }> = [];
+  for (const date of sorted) {
+    const previous = ranges.at(-1);
+    if (previous && nextDate(previous.endDate) === date) previous.endDate = date;
+    else ranges.push({ startDate: date, endDate: date });
+  }
+  return ranges;
+}
+
+function nextDate(date: string, days = 1): string { return new Date(parseDate(date) + days * DAY).toISOString().slice(0, 10); }
+function latestDate(snapshots: readonly { capturedAt: Date }[]): string | undefined {
+  return snapshots.map(snapshot => snapshot.capturedAt).sort((a, b) => b.getTime() - a.getTime())[0]?.toISOString();
+}
+function jakartaDate(now = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find(part => part.type === type)?.value;
+  return `${value('year')}-${value('month')}-${value('day')}`;
 }

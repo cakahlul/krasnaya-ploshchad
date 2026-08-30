@@ -42,6 +42,9 @@ Ask Claude things like:
 - "What's the current open sprint status for project PROJ?"
 - "Get the productivity summary for March 2025"
 - "List the epics for project PROJ this sprint"
+- "Compare productivity across Sprint 25, Sprint 26, and Sprint 27"
+- "Show the team dashboard summary for this month"
+- "Show the bug-monitoring summary for board 177"
 
 ## Available Tools
 
@@ -75,6 +78,26 @@ Get monthly productivity summary with WP and SP metrics.
 - `month` (required) — Month number (1-12)
 - `year` (required) — Year (e.g., 2025)
 - `teams` — Comma-separated team names to filter
+
+### `get-sprint-trend`
+Compare report metrics across sprints, including captured/live source metadata.
+
+**Parameters:**
+- `project` (required) — Jira project key
+- `sprints` (required) — Comma-separated sprint names or IDs
+
+### `get-dashboard-summary`
+Get the team dashboard summary, with the API key creator's board access.
+
+**Parameters:**
+- `startDate` / `endDate` — Optional YYYY-MM-DD range
+
+### `get-bug-monitoring`
+Get an aggregate bug summary or detailed issue list.
+
+**Parameters:**
+- `boardId` (required) — Bug-monitoring board ID
+- `detail` — `true` for the issue list; omitted for the summary
 
 ## Environment Variables
 

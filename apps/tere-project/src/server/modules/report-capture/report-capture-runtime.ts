@@ -3,7 +3,6 @@ import { sprintService } from '@server/modules/sprint/sprint.service';
 import { findReportMembers, generateReport, generateReportByDateRange } from '@server/modules/reports/reports.service';
 import * as reportsRepository from '@server/modules/reports/reports.repository';
 import { teamReportingSnapshotRepository } from '@server/modules/report-snapshots/report-snapshot.repository';
-import { resolvePeriodIdentity, validateKanbanAnchor } from '@shared/utils/period-identity';
 import type { JiraIssueEntity } from '@shared/types/report.types';
 import { createDeveloperCaptureService, type CaptureBoard, type CapturePeriod, type DeveloperCaptureService } from './report-capture';
 import { DrizzleCaptureRunRepository } from './report-capture-run.repository';
@@ -12,6 +11,7 @@ const DAY = 86_400_000;
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 const boardById = new Map<number, Awaited<ReturnType<typeof boardsService.findAll>>[number]>();
+const kanbanMonthInputs = new Map<string, Promise<readonly JiraIssueEntity[]>>();
 
 interface CaptureInputs {
   readonly main: JiraIssueEntity[];
@@ -36,22 +36,19 @@ async function periods(board: CaptureBoard, window: { startDate: string; endDate
       return [{ boardId: board.boardId, boardName: board.boardName, periodKind: 'scrum', sprintId: String(sprint.id), sprintName: sprint.name, periodStartDate: startDate, periodEndDate: endDate }];
     });
   }
-  const anchor = validateKanbanAnchor(config.kanbanCycleStartDate);
-  if (!anchor.valid) throw new Error(`CAPTURE_${anchor.jiraFallbackReason}`);
-  const result = new Map<string, CapturePeriod>();
-  for (let time = parseDate(window.startDate); time <= parseDate(window.endDate); time += DAY) {
-    const date = new Date(time).toISOString().slice(0, 10);
-    const identity = resolvePeriodIdentity({ boardId: board.boardId, isKanban: true, kanbanCycleStartDate: anchor.anchorDate, date });
-    if (identity.kind !== 'kanban' || !isPeriodEndInWindow(identity.endDate, window)) continue;
-    const key = `${identity.startDate}/${identity.endDate}`;
-    result.set(key, { boardId: board.boardId, boardName: board.boardName, periodKind: 'kanban', periodStartDate: identity.startDate, periodEndDate: identity.endDate });
-  }
-  return [...result.values()];
+  return elapsedKanbanWeeks(window, jakartaDate()).map(period => ({
+    boardId: board.boardId,
+    boardName: board.boardName,
+    periodKind: 'kanban' as const,
+    periodStartDate: period.startDate,
+    periodEndDate: period.endDate,
+  }));
 }
 
 async function fetchJira(period: CapturePeriod) {
   const board = boardById.get(period.boardId);
   if (!board) throw new Error('CAPTURE_BOARD_INVALID');
+  if (period.periodKind === 'kanban') return fetchKanbanWeek(period, board.shortName);
   const members = await findReportMembers(
     board.shortName,
     period.periodStartDate,
@@ -74,6 +71,31 @@ async function fetchJira(period: CapturePeriod) {
   const rawInput: CaptureInputs = { main, planned };
   const segments = [{ segmentKey: 'report', value: main, count: main.length }, ...Object.entries(planned).map(([project, data]) => ({ segmentKey: `planned:${project}`, value: data, count: data.length }))];
   return { rawInput, segments };
+}
+
+async function fetchKanbanWeek(period: CapturePeriod, project: string) {
+  const monthly = monthBoundsBetween(period.periodStartDate, period.periodEndDate).map(({ startDate, endDate }) => {
+    const key = `${period.boardId}:${startDate}`;
+    const value = kanbanMonthInputs.get(key) ?? loadKanbanMonth(project, startDate, endDate);
+    kanbanMonthInputs.set(key, value);
+    return value;
+  });
+  const main = uniqueByKey((await Promise.all(monthly)).flat())
+    .filter(issue => {
+      const date = resolutionDate(issue);
+      return date !== null && date >= period.periodStartDate && date <= period.periodEndDate;
+    });
+  return {
+    rawInput: { main, planned: {} } satisfies CaptureInputs,
+    segments: [{ segmentKey: 'report', value: main, count: main.length }],
+  };
+}
+
+async function loadKanbanMonth(project: string, startDate: string, endDate: string): Promise<readonly JiraIssueEntity[]> {
+  const members = await findReportMembers(project, startDate, endDate);
+  const assignees = members.map(member => member.jiraId).filter((id): id is string => Boolean(id));
+  const isSubtaskType = await boardsService.hasSubtaskType(project);
+  return reportsRepository.fetchRawDataByDateRange(project, assignees, startDate, endDate, isSubtaskType);
 }
 
 async function calculate(period: CapturePeriod, rawInput: unknown) {
@@ -106,6 +128,17 @@ export function isPeriodEndInWindow(endDate: string, window: { startDate: string
   return endDate >= window.startDate && endDate <= window.endDate;
 }
 
+export function elapsedKanbanWeeks(window: { startDate: string; endDate: string }, today: string): Array<{ startDate: string; endDate: string }> {
+  const firstMonday = mondayOnOrAfter(window.startDate);
+  const weeks: Array<{ startDate: string; endDate: string }> = [];
+  for (let startDate = firstMonday; ; startDate = nextDate(startDate, 7)) {
+    const endDate = nextDate(startDate, 6);
+    if (endDate > window.endDate || endDate >= today) break;
+    weeks.push({ startDate, endDate });
+  }
+  return weeks;
+}
+
 export function isClosedSprint(state: string | undefined): boolean {
   return state?.toLowerCase() === 'closed';
 }
@@ -115,3 +148,45 @@ function datePart(value: string | undefined): string | null {
   return date && ISO.test(date) && Number.isFinite(parseDate(date)) ? date : null;
 }
 function parseDate(value: string): number { return Date.parse(`${value}T00:00:00Z`); }
+
+function monthBounds(date: string): { startDate: string; endDate: string } {
+  const [year, month] = date.split('-').map(Number);
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return { startDate: `${year}-${String(month).padStart(2, '0')}-01`, endDate: `${year}-${String(month).padStart(2, '0')}-${lastDay}` };
+}
+
+function monthBoundsBetween(startDate: string, endDate: string): Array<{ startDate: string; endDate: string }> {
+  const months: Array<{ startDate: string; endDate: string }> = [];
+  for (let date = monthBounds(startDate).startDate; date <= endDate; date = nextMonth(date)) months.push(monthBounds(date));
+  return months;
+}
+
+function uniqueByKey(issues: readonly JiraIssueEntity[]): JiraIssueEntity[] {
+  const keys = new Set<string>();
+  return issues.filter(issue => !keys.has(issue.key) && (keys.add(issue.key), true));
+}
+
+function resolutionDate(issue: JiraIssueEntity): string | null {
+  const value = issue.fields.resolutiondate;
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toISOString().slice(0, 10) : null;
+}
+
+function jakartaDate(now = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(now);
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find(part => part.type === type)?.value;
+  return `${value('year')}-${value('month')}-${value('day')}`;
+}
+
+function mondayOnOrAfter(date: string): string {
+  const day = new Date(parseDate(date)).getUTCDay();
+  return nextDate(date, (8 - day) % 7);
+}
+function nextDate(date: string, days: number): string { return new Date(parseDate(date) + days * DAY).toISOString().slice(0, 10); }
+function nextMonth(date: string): string {
+  const value = new Date(parseDate(date));
+  return new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth() + 1, 1)).toISOString().slice(0, 10);
+}

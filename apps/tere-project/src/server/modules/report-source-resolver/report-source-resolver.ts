@@ -48,7 +48,8 @@ export function reportSourceMetadata(source: ReportSource, detail: string | null
 }
 
 export function metadataFromResolution<T>(resolution: ReportSourceResolution<T>): ReportSourceMetadata {
-  const selected = resolution.source === 'partial' || resolution.source === 'unavailable' ? null : resolution.source;
+  const selected: ReportSource | null = resolution.source === 'archive' || resolution.source === 'snapshot' || resolution.source === 'jira'
+    ? resolution.source : null;
   const fallback = selected !== null && resolution.attempts.some(attempt =>
     attempt.source !== selected && attempt.failureKind !== 'missing',
   );
@@ -97,6 +98,7 @@ export interface ReportSourcePort<U extends ReportUnit, T = unknown> {
 
 export type ReportSourceResolution<T = unknown> =
   | { readonly source: ReportSource; readonly value: T; readonly coverage: ReportCoverage; readonly attempts: readonly ReportSourceAttempt<T>[] }
+  | { readonly source: 'mixed'; readonly value: T; readonly coverage: ReportCoverage; readonly attempts: readonly ReportSourceAttempt<T>[] }
   | { readonly source: 'partial' | 'unavailable'; readonly value: null; readonly coverage: ReportCoverage; readonly attempts: readonly ReportSourceAttempt<T>[] };
 
 export function coverageStatus(coverage: SourceCoverage | undefined): CoverageStatus {

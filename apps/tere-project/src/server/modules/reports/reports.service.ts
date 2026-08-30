@@ -571,6 +571,86 @@ export function summarizeTeamReport(
   };
 }
 
+/** Combines already-calculated, non-overlapping report periods without Jira access. */
+export function combineCapturedReports(
+  reports: readonly GetReportResponseDto[],
+  period: { startDate: string; endDate: string },
+): GetReportResponseDto {
+  const members = new Map<string, JiraIssueReportResponseDto>();
+  for (const report of reports) for (const source of report.issues) {
+    const key = `${source.member}\u0000${source.team}`;
+    const target = members.get(key) ?? {
+      ...source,
+      issueKeys: [], epicKeys: [], epicBreakdown: {},
+      totalWeightPoints: 0, weightPointsProduct: 0, weightPointsTechDebt: 0,
+      devDefect: 0, targetWeightPoints: 0, workingDays: 0, leaveDays: 0, sickDays: 0,
+      spProduct: 0, spTechDebt: 0, spMeeting: 0, spTotal: 0,
+    };
+    target.totalWeightPoints += source.totalWeightPoints;
+    target.weightPointsProduct += source.weightPointsProduct;
+    target.weightPointsTechDebt += source.weightPointsTechDebt;
+    target.devDefect += source.devDefect;
+    target.targetWeightPoints += source.targetWeightPoints;
+    target.workingDays = (target.workingDays ?? 0) + (source.workingDays ?? 0);
+    target.leaveDays = (target.leaveDays ?? 0) + (source.leaveDays ?? 0);
+    target.sickDays = (target.sickDays ?? 0) + (source.sickDays ?? 0);
+    target.spProduct = (target.spProduct ?? 0) + (source.spProduct ?? 0);
+    target.spTechDebt = (target.spTechDebt ?? 0) + (source.spTechDebt ?? 0);
+    target.spMeeting = (target.spMeeting ?? 0) + (source.spMeeting ?? 0);
+    target.spTotal = (target.spTotal ?? 0) + (source.spTotal ?? 0);
+    target.issueKeys = uniqueStrings([...target.issueKeys, ...source.issueKeys]);
+    target.epicKeys = uniqueStrings([...(target.epicKeys ?? []), ...(source.epicKeys ?? [])]);
+    target.epicBreakdown = combineEpicBreakdowns(target.epicBreakdown ?? {}, source.epicBreakdown ?? {});
+    members.set(key, target);
+  }
+  const issues = [...members.values()].map(finalizeCapturedIssue);
+  const combined = summarizeTeamReport(issues);
+  return {
+    ...combined,
+    totalWorkingDays: Math.max(0, ...reports.map(report => report.totalWorkingDays ?? 0)),
+    sprintStartDate: period.startDate,
+    sprintEndDate: period.endDate,
+  };
+}
+
+function combineEpicBreakdowns(
+  current: Record<string, import('@shared/types/report.types').EpicBreakdownDto>,
+  incoming: Record<string, import('@shared/types/report.types').EpicBreakdownDto>,
+) {
+  const output = { ...current };
+  for (const [key, source] of Object.entries(incoming)) {
+    const target = output[key] ?? { ...source, issueKeys: [], totalWeightPoints: 0, weightPointsProduct: 0, weightPointsTechDebt: 0, devDefect: 0, spProduct: 0, spTechDebt: 0, spMeeting: 0, spTotal: 0 };
+    target.totalWeightPoints += source.totalWeightPoints;
+    target.weightPointsProduct += source.weightPointsProduct;
+    target.weightPointsTechDebt += source.weightPointsTechDebt;
+    target.devDefect += source.devDefect;
+    target.spProduct = (target.spProduct ?? 0) + (source.spProduct ?? 0);
+    target.spTechDebt = (target.spTechDebt ?? 0) + (source.spTechDebt ?? 0);
+    target.spMeeting = (target.spMeeting ?? 0) + (source.spMeeting ?? 0);
+    target.spTotal = (target.spTotal ?? 0) + (source.spTotal ?? 0);
+    target.issueKeys = uniqueStrings([...target.issueKeys, ...source.issueKeys]);
+    output[key] = target;
+  }
+  return output;
+}
+
+function finalizeCapturedIssue(issue: JiraIssueReportResponseDto): JiraIssueReportResponseDto {
+  const hours = (issue.workingDays ?? 0) * 8;
+  issue.wpProductivity = issue.targetWeightPoints > 0 ? `${(issue.totalWeightPoints / issue.targetWeightPoints * 100).toFixed(2)}%` : '0.00%';
+  issue.wpToHours = hours > 0 ? issue.totalWeightPoints / hours : 0;
+  issue.productivityRate = hours > 0 ? `${((issue.spTotal ?? 0) / hours * 100).toFixed(2)}%` : '0.00%';
+  issue.devDefectRate = calculateDefectRate(issue.devDefect);
+  for (const epic of Object.values(issue.epicBreakdown ?? {})) {
+    epic.wpProductivity = issue.targetWeightPoints > 0 ? `${(epic.totalWeightPoints / issue.targetWeightPoints * 100).toFixed(2)}%` : '0.00%';
+    epic.wpToHours = hours > 0 ? epic.totalWeightPoints / hours : 0;
+    epic.productivityRate = hours > 0 ? `${((epic.spTotal ?? 0) / hours * 100).toFixed(2)}%` : '0.00%';
+    epic.devDefectRate = calculateDefectRate(epic.devDefect);
+  }
+  return issue;
+}
+
+function uniqueStrings(values: readonly string[]): string[] { return [...new Set(values)]; }
+
 /** Re-applies lifecycle visibility to stored reports captured before the roster rule existed. */
 export async function filterReportForLifecycle(
   report: GetReportResponseDto,

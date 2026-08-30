@@ -568,6 +568,9 @@ export default function McpConnectionPage() {
               '"Get talent leave for today"',
               '"Show talent who are on leave next week"',
               '"Get talent leave dates for last week"',
+              '"Compare productivity across Sprint 25, Sprint 26, and Sprint 27"',
+              '"Show the team dashboard summary for this month"',
+              '"Show the bug-monitoring summary for board 177"',
             ].map((prompt, i) => (
               <div
                 key={i}
@@ -636,6 +639,19 @@ export default function McpConnectionPage() {
               {
                 name: 'get-productivity-summary',
                 desc: 'Monthly productivity metrics',
+              },
+              { name: 'list-sprints', desc: 'Find active and closed sprints' },
+              {
+                name: 'get-sprint-trend',
+                desc: 'Compare performance across sprints',
+              },
+              {
+                name: 'get-dashboard-summary',
+                desc: 'Team dashboard summary by date range',
+              },
+              {
+                name: 'get-bug-monitoring',
+                desc: 'Bug summary or issue list by board',
               },
               {
                 name: 'get-talent-leave',

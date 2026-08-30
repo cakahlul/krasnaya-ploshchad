@@ -216,28 +216,26 @@ test('applies an epic filter from stored input without fetching live Jira', asyn
   assert.equal(recalculationCalls, 1);
 });
 
-test('resolves a Kanban snapshot by its derived whole-period dates', async () => {
+test('resolves a Kanban report from Monday-Sunday snapshots', async () => {
   const kanban: BoardResponse = {
     ...board,
     boardId: 9,
     name: 'Kanban Team',
     shortName: 'KANBAN',
     isKanban: true,
-    kanbanCycleStartDate: '2026-07-01',
+    kanbanCycleStartDate: undefined,
   };
   let liveCalls = 0;
   const result = await resolveTeamReport(
-    { project: 'KANBAN', startDate: '2026-07-01', endDate: '2026-07-14' },
+    { project: 'KANBAN', startDate: '2026-07-06', endDate: '2026-07-19' },
     ports({
       findBoards: async () => [kanban],
       findSprints: async () => { throw new Error('Kanban must not discover Scrum sprints'); },
       findSnapshot: async identity => {
-        assert.deepEqual(identity, {
-          boardId: 9,
-          periodKind: 'kanban',
-          periodStartDate: '2026-07-01',
-          periodEndDate: '2026-07-14',
-        });
+        assert.equal(identity.boardId, 9);
+        assert.equal(identity.periodKind, 'kanban');
+        assert.equal(new Date(`${identity.periodStartDate}T00:00:00Z`).getUTCDay(), 1);
+        assert.equal(new Date(`${identity.periodEndDate}T00:00:00Z`).getUTCDay(), 0);
         return {
           ...snapshot(),
           boardId: 9,
@@ -245,9 +243,14 @@ test('resolves a Kanban snapshot by its derived whole-period dates', async () =>
           periodKind: 'kanban',
           sprintId: null,
           sprintName: null,
+          periodStartDate: identity.periodStartDate,
+          periodEndDate: identity.periodEndDate,
         };
       },
-      generateDateRangeReport: async () => { liveCalls++; return report; },
+      generateDateRangeReport: async (_startDate, _endDate, _project, _epicId, rawDataOverride) => {
+        if (rawDataOverride === undefined) liveCalls++;
+        return report;
+      },
     }),
   );
 
@@ -255,7 +258,57 @@ test('resolves a Kanban snapshot by its derived whole-period dates', async () =>
   assert.equal(liveCalls, 0);
 });
 
-test('recalculates multiple complete snapshots from stored inputs without live Jira', async () => {
+test('uses Jira when a requested Kanban week has no snapshot', async () => {
+  const kanban: BoardResponse = {
+    ...board,
+    boardId: 9,
+    name: 'Kanban Team',
+    shortName: 'KANBAN',
+    isKanban: true,
+    kanbanCycleStartDate: undefined,
+  };
+  let liveCalls = 0;
+  const result = await resolveTeamReport(
+    { project: 'KANBAN', startDate: '2026-07-27', endDate: '2026-08-09' },
+    ports({
+      findBoards: async () => [kanban],
+      findSprints: async () => [],
+      findSnapshot: async () => null,
+      generateDateRangeReport: async () => { liveCalls++; return report; },
+    }),
+  );
+
+  assert.equal(result.source, 'jira');
+  assert.equal(liveCalls, 1);
+  assert.equal(metadataFromResolution(result).reason, 'SNAPSHOT_NOT_FOUND');
+});
+
+test('combines captured Kanban weeks with only the missing live week', async () => {
+  const kanban: BoardResponse = { ...board, boardId: 9, shortName: 'KANBAN', isKanban: true };
+  const stored = {
+    ...report,
+    issues: [{ member: 'A', team: 'KANBAN', level: 'senior', productivityRate: '10.00%', wpProductivity: '10.00%', devDefect: 0, devDefectRate: '100%', totalWeightPoints: 8, weightPointsProduct: 8, weightPointsTechDebt: 0, targetWeightPoints: 80, issueKeys: ['KANBAN-1'], workingDays: 5, spProduct: 8, spTechDebt: 0, spMeeting: 0, spTotal: 8 }],
+  } as GetReportResponseDto;
+  const live = { ...stored, issues: [{ ...stored.issues[0], totalWeightPoints: 16, weightPointsProduct: 16, issueKeys: ['KANBAN-2'], spProduct: 16, spTotal: 16 }] };
+  const liveRanges: string[] = [];
+  const result = await resolveTeamReport(
+    { project: 'KANBAN', startDate: '2026-07-27', endDate: '2026-08-09' },
+    ports({
+      findBoards: async () => [kanban],
+      findSnapshot: async identity => identity.periodStartDate === '2026-07-27'
+        ? { ...snapshot(stored), boardId: 9, periodKind: 'kanban', sprintId: null, sprintName: null, periodStartDate: '2026-07-27', periodEndDate: '2026-08-02' }
+        : null,
+      generateDateRangeReport: async (startDate, endDate) => { liveRanges.push(`${startDate}/${endDate}`); return live; },
+    }),
+  );
+
+  assert.equal(result.source, 'mixed');
+  assert.deepEqual(liveRanges, ['2026-08-03/2026-08-09']);
+  assert.equal(result.value?.totalWeightPoints, 24);
+  assert.equal(metadataFromResolution(result).source, 'mixed');
+});
+
+test('combines multiple complete snapshots without live Jira or raw-data recalculation', async () => {
   let liveCalls = 0;
   let recalculationCalls = 0;
   const result = await resolveTeamReport(
@@ -272,7 +325,7 @@ test('recalculates multiple complete snapshots from stored inputs without live J
 
   assert.equal(result.source, 'snapshot');
   assert.equal(liveCalls, 0);
-  assert.equal(recalculationCalls, 1);
+  assert.equal(recalculationCalls, 0);
   assert.deepEqual(result.coverage, { status: 'complete', expected: 2, covered: 2 });
 });
 

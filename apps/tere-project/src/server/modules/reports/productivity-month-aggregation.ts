@@ -88,5 +88,5 @@ export async function resolveProductivityMonth(
   }]);
   attempts.push(...live.attempts);
   if (live.source === 'jira') return { source: 'jira', month, periods: 0, members: live.value as ProductivityMember[], attempts };
-  return { source: live.source === 'archive' ? 'unavailable' : live.source, month, periods: 0, members: [], attempts };
+  return { source: live.source === 'archive' || live.source === 'mixed' ? 'unavailable' : live.source, month, periods: 0, members: [], attempts };
 }

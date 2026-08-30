@@ -9,6 +9,9 @@ import { registerGetProductivitySummary } from './tools/get-productivity-summary
 import { registerGetTalentDateLeave } from './tools/get-talent-date-leave.js';
 import { registerGetTalentLeave } from './tools/get-talent-leave.js';
 import { registerListSprints } from './tools/list-sprints.js';
+import { registerGetSprintTrend } from './tools/get-sprint-trend.js';
+import { registerGetDashboardSummary } from './tools/get-dashboard-summary.js';
+import { registerGetBugMonitoring } from './tools/get-bug-monitoring.js';
 
 const server = new McpServer({
   name: 'tere-report-server',
@@ -22,6 +25,9 @@ registerGetProductivitySummary(server);
 registerGetTalentDateLeave(server);
 registerGetTalentLeave(server);
 registerListSprints(server);
+registerGetSprintTrend(server);
+registerGetDashboardSummary(server);
+registerGetBugMonitoring(server);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
