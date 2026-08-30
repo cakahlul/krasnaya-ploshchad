@@ -1,4 +1,4 @@
-import { withAuth } from '@server/auth/with-auth';
+import { withAuthOrApiKey } from '@server/auth/with-auth-or-api-key';
 import {
   getDashboardBoardIdsForMember,
   getDashboardSummary,
@@ -8,12 +8,8 @@ import { membersService } from '@server/modules/members/members.service';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withAuth(async (req, { user }) => {
-  if (!user.email) {
-    return Response.json({ message: 'No email in token' }, { status: 401 });
-  }
-
-  const member = await membersService.findByEmail(user.email);
+export const GET = withAuthOrApiKey(async (req, { caller }) => {
+  const member = caller && await membersService.findByEmail(caller.email);
   if (!member) {
     return Response.json({ message: 'Forbidden' }, { status: 403 });
   }
