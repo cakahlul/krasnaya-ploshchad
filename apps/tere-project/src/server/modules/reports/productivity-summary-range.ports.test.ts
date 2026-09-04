@@ -32,6 +32,7 @@ test('loads live productivity by Group boards and counts active bugs at month en
   assert.deepEqual(month.members[0], { id: 'dev@example.com', name: 'Dev', group: 'Loan', board: 'LN', boards: ['LN', 'LN2'], spTotal: 10, wpTotal: 6, spTarget: 8, workingDays: 1 });
   assert.deepEqual(month.failures, [{ scope: 'productivity', group: 'Loan', board: 'BROKEN', reason: 'Jira unavailable' }]);
   assert.equal(await ports.loadBugRaisedCount?.('2026-01', 'Loan'), 2);
+  assert.equal(await ports.loadBugDoneCount?.('2026-01', 'Loan'), 2);
 });
 
 test('excludes live members outside the selected month', async () => {

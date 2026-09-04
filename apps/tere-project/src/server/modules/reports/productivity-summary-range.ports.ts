@@ -230,7 +230,7 @@ export function createProductivitySummaryRangePorts(deps: Dependencies): RangeAg
       const boards = (await deps.findBoards()).filter(board => board.isBugMonitoring && (board.reportingGroup ?? 'Ungrouped') === group);
       const bugs = await Promise.all(boards.map(board => deps.fetchBugs(board.boardId)));
       console.log(`[telemetry] productivity-summary-range bug-board-call fn=loadBugDoneCount durationMs=${Date.now() - start} month=${month} group=${group} boardCount=${boards.length}`);
-      return bugs.flat().filter(bug => bug.fields.resolutiondate?.slice(0, 7) === month).length;
+      return bugs.flat().filter(bug => bug.fields.created.slice(0, 7) === month).length;
     },
   };
 }
