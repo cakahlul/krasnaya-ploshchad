@@ -9,7 +9,7 @@ const jiraBug = (created: string, resolutiondate: string | null) => ({
     summary: 'boom',
     status: { name: resolutiondate ? 'Done' : 'In Progress' },
     priority: { name: 'High' },
-    'NOC Issues Priority': { value: 'P1' },
+    customfield_10805: { value: 'P1' },
     assignee: null,
     created,
     updated: '2026-08-04T00:00:00.000Z',

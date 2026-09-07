@@ -24,7 +24,7 @@ const DAY_MS = 86_400_000;
 export function transformBugs(jiraBugs: readonly JiraBugEntity[], now = Date.now()): Bug[] {
   return jiraBugs.map((bug) => {
     const closedDate = bug.fields.resolutiondate?.slice(0, 10) ?? null;
-    const nocField = bug.fields['NOC Issues Priority'];
+    const nocField = bug.fields.customfield_10805;
     const nocPriority = typeof nocField === 'string'
       ? nocField
       : nocField?.value ?? nocField?.name ?? 'Unspecified';
