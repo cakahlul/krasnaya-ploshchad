@@ -3,6 +3,7 @@ export interface Bug {
   summary: string;
   status: string;
   priority: string;
+  nocPriority: string;
   assignee: string | null;
   created: string;
   updated: string;
@@ -46,6 +47,7 @@ export interface JiraBugFieldsEntity {
   summary: string;
   status: { name: string };
   priority: { name: string } | null;
+  'NOC Issues Priority'?: { value?: string; name?: string } | string | null;
   assignee: { displayName: string; emailAddress: string } | null;
   created: string;
   updated: string;

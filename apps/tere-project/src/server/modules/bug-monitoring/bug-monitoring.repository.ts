@@ -154,7 +154,7 @@ export class BugMonitoringRepository {
       const params: Record<string, unknown> = {
         jql,
         maxResults: MAX_RESULTS,
-        fields: ['summary', 'status', 'priority', 'assignee', 'created', 'updated', 'resolution', 'resolutiondate'].join(','),
+        fields: ['summary', 'status', 'priority', 'NOC Issues Priority', 'assignee', 'created', 'updated', 'resolution', 'resolutiondate'].join(','),
       };
       if (nextPageToken) params.nextPageToken = nextPageToken;
       const response = await withRetry(() =>

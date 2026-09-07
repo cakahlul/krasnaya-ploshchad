@@ -46,7 +46,7 @@ function BoardContent({ boardId, showAllBugs }: { boardId?: number; showAllBugs:
     const activePriorityMap: Record<string, number> = {};
     data.bugsByStatus.forEach(group => {
       group.bugs.forEach(bug => {
-        activePriorityMap[bug.priority] = (activePriorityMap[bug.priority] || 0) + 1;
+        activePriorityMap[bug.nocPriority] = (activePriorityMap[bug.nocPriority] || 0) + 1;
       });
     });
     const activePriorityDistribution = Object.entries(activePriorityMap).map(([priority, count]) => ({ priority, count }));
