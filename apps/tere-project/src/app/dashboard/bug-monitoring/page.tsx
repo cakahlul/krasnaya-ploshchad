@@ -28,7 +28,7 @@ const DEFAULT_STYLE = { icon: '\uD83D\uDC1B', gradient: 'from-gray-500 to-slate-
 
 const ACTIVE_STATUSES = ['To Do', 'In Progress', 'Ready to Test', 'Detected', 'In Review'];
 
-function BoardContent({ boardId, showAllBugs }: { boardId: number; showAllBugs: boolean }) {
+function BoardContent({ boardId, showAllBugs }: { boardId?: number; showAllBugs: boolean }) {
   const { data, isLoading, error } = useBugMonitoring(boardId);
   const { cardBg, cardBrd, subCol } = useThemeColors();
 
@@ -148,40 +148,21 @@ function BoardContent({ boardId, showAllBugs }: { boardId: number; showAllBugs: 
   );
 }
 
-function NocP1CodeIssueChart({ boards }: { boards: Array<{ boardId: number; name: string }> }) {
-  const [boardId, setBoardId] = useState<number>();
+function NocP1CodeIssueChart({ boardId }: { boardId?: number }) {
   const { data, isLoading, error } = useBugMonitoring(boardId, true);
-  const { accent, cardBg, cardBrd, subCol } = useThemeColors();
+  const { cardBg, cardBrd } = useThemeColors();
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-2 mb-3">
-        <span style={{ fontSize: 12, color: subCol }}>NOC P1 Code Issues:</span>
-        <button
-          onClick={() => setBoardId(undefined)}
-          style={{ background: boardId === undefined ? accent : cardBg, border: `1px solid ${cardBrd}`, borderRadius: 8, color: boardId === undefined ? '#fff' : subCol, cursor: 'pointer', fontSize: 12, padding: '5px 10px' }}
-        >
-          All Boards
-        </button>
-        {boards.map(board => (
-          <button
-            key={board.boardId}
-            onClick={() => setBoardId(board.boardId)}
-            style={{ background: boardId === board.boardId ? accent : cardBg, border: `1px solid ${cardBrd}`, borderRadius: 8, color: boardId === board.boardId ? '#fff' : subCol, cursor: 'pointer', fontSize: 12, padding: '5px 10px' }}
-          >
-            {board.name}
-          </button>
-        ))}
-      </div>
       {isLoading ? (
         <div className="animate-pulse rounded-xl" style={{ background: cardBg, border: `1px solid ${cardBrd}`, height: 480 }} />
       ) : error ? (
-        <Alert message="Error Loading NOC P1 Code Issues" type="error" showIcon />
+        <Alert message="Error Loading P1 Code Issues" type="error" showIcon />
       ) : data && (
         <BugTrendChart
           bugs={data.allBugs}
           showActiveOnly={false}
-          title="NOC P1 Code Issues Trend"
+          title="P1 Code Issues Trend"
           description="Cumulative active vs closed issues with NOC Issues Priority P1 and NOC Issue Type Code Issue"
         />
       )}
@@ -193,6 +174,7 @@ export default function BugMonitoringPage() {
   const { boards, isLoading: boardsLoading } = useBoards();
   const bugBoards = useMemo(() => boards.filter(b => b.isBugMonitoring), [boards]);
   const [activeBoard, setActiveBoard] = useState<number | null>(null);
+  const [chartBoard, setChartBoard] = useState<number>();
   const [showAllBugs, setShowAllBugs] = useState(true);
   const [viewMode, setViewMode] = useState<'list' | 'charts'>('list');
   const {
@@ -401,7 +383,7 @@ export default function BugMonitoringPage() {
             </div>
           </div>
 
-          {/* Board Tabs */}
+          {/* Board Filter */}
           {boardsLoading ? (
             <div className="flex gap-3 mb-6">
               {[1, 2, 3].map(i => (
@@ -417,7 +399,7 @@ export default function BugMonitoringPage() {
                 />
               ))}
             </div>
-          ) : (
+          ) : viewMode === 'list' ? (
             <div className="flex gap-3 mb-6">
               {bugBoards.map((board) => {
                 const style = BOARD_STYLES[board.shortName] ?? DEFAULT_STYLE;
@@ -472,13 +454,24 @@ export default function BugMonitoringPage() {
                 );
               })}
             </div>
+          ) : (
+            <div className="flex flex-wrap gap-3 mb-6">
+              <button onClick={() => setChartBoard(undefined)} className="relative flex items-center gap-3 text-left transition-all duration-200" style={{ padding: '12px 20px', borderRadius: 12, fontWeight: 600, border: chartBoard === undefined ? '1px solid transparent' : `1px solid ${cardBrd}`, background: chartBoard === undefined ? `linear-gradient(135deg, ${accent}, ${accentL})` : cardBg, color: chartBoard === undefined ? '#fff' : rowCol, cursor: 'pointer', fontFamily: "'Space Grotesk',sans-serif" }}>
+                All Bug Boards
+              </button>
+              {bugBoards.map(board => (
+                <button key={board.boardId} onClick={() => setChartBoard(board.boardId)} className="relative flex items-center gap-3 text-left transition-all duration-200" style={{ padding: '12px 20px', borderRadius: 12, fontWeight: 600, border: chartBoard === board.boardId ? '1px solid transparent' : `1px solid ${cardBrd}`, background: chartBoard === board.boardId ? `linear-gradient(135deg, ${accent}, ${accentL})` : cardBg, color: chartBoard === board.boardId ? '#fff' : rowCol, cursor: 'pointer', fontFamily: "'Space Grotesk',sans-serif" }}>
+                  {board.name}
+                </button>
+              ))}
+            </div>
           )}
 
           {/* Board Content */}
-          {selectedBoard && (
+          {(viewMode === 'charts' || selectedBoard) && (
             <AnimatePresence mode="wait">
               <motion.div
-                key={`${selectedBoard}-${viewMode}`}
+                key={`${viewMode === 'charts' ? chartBoard ?? 'all' : selectedBoard}-${viewMode}`}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
@@ -488,8 +481,8 @@ export default function BugMonitoringPage() {
                   <BugListView boardId={selectedBoard} />
                 ) : (
                   <>
-                    <BoardContent boardId={selectedBoard} showAllBugs={showAllBugs} />
-                    <NocP1CodeIssueChart boards={bugBoards} />
+                    <NocP1CodeIssueChart boardId={chartBoard} />
+                    <BoardContent boardId={chartBoard} showAllBugs={showAllBugs} />
                   </>
                 )}
               </motion.div>

@@ -44,8 +44,18 @@ class BugMonitoringService {
   constructor(private readonly repo: BugMonitoringRepository) {}
 
   async getBugsForBoard(boardId: number): Promise<BugMonitoringData> {
-    const allJira = await this.repo.fetchBugsByBoard(boardId);
-    const allBugs = transformBugs(allJira);
+    return this.toMonitoringData(await this.repo.fetchBugsByBoard(boardId));
+  }
+
+  async getBugsForBoards(boardId?: number): Promise<BugMonitoringData> {
+    const boardIds = boardId === undefined
+      ? (await boardsService.findAll()).filter(board => board.isBugMonitoring).map(board => board.boardId)
+      : [boardId];
+    return this.toMonitoringData((await Promise.all(boardIds.map(id => this.repo.fetchBugsByBoard(id)))).flat());
+  }
+
+  private toMonitoringData(jiraBugs: readonly JiraBugEntity[]): BugMonitoringData {
+    const allBugs = transformBugs(jiraBugs);
     const activeBugs = allBugs.filter((b) => ACTIVE_STATUSES.includes(b.status));
 
     return {
@@ -59,16 +69,9 @@ class BugMonitoringService {
     const boardIds = boardId === undefined
       ? (await boardsService.findAll()).filter(board => board.isBugMonitoring).map(board => board.boardId)
       : [boardId];
-    const allBugs = transformBugs((await Promise.all(
+    return this.toMonitoringData((await Promise.all(
       boardIds.map(id => this.repo.fetchNocP1CodeIssuesByBoard(id)),
     )).flat());
-    const activeBugs = allBugs.filter(bug => ACTIVE_STATUSES.includes(bug.status));
-
-    return {
-      bugsByStatus: this.groupBugsByStatus(activeBugs),
-      statistics: this.calculateStatistics(allBugs),
-      allBugs,
-    };
   }
 
   async getBugSummary(boardId: number): Promise<BugSummaryDto> {

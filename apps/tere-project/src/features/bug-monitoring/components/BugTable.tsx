@@ -28,6 +28,17 @@ const priorityColors: Record<string, string> = {
 };
 
 export default function BugTable({ bugsByStatus }: BugTableProps) {
+  if (bugsByStatus.length === 0) {
+    return (
+      <div className="bg-white/90 backdrop-blur-sm shadow-sm border border-gray-100 rounded-2xl overflow-hidden">
+        <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+          <h2 className="text-xl font-bold flex items-center gap-2 text-gray-800"><span className="text-2xl">📋</span> Active Bug List</h2>
+        </div>
+        <p className="p-6 text-sm text-gray-500">No active bugs.</p>
+      </div>
+    );
+  }
+
   const columns: ColumnsType<Bug> = [
     {
       title: 'Bug Key',
