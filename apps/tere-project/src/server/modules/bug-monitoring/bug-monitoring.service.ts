@@ -8,6 +8,7 @@ import {
   JiraBugEntity,
 } from '@shared/types/bug-monitoring.types';
 import { BugSummaryDto } from '@shared/types/dashboard.types';
+import { boardsService } from '@server/modules/boards/boards.service';
 
 const ACTIVE_STATUSES = ['To Do', 'In Progress', 'Ready to Test', 'Detected', 'In Review'];
 const PRIORITY_ORDER = ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'None'];
@@ -46,6 +47,22 @@ class BugMonitoringService {
     const allJira = await this.repo.fetchBugsByBoard(boardId);
     const allBugs = transformBugs(allJira);
     const activeBugs = allBugs.filter((b) => ACTIVE_STATUSES.includes(b.status));
+
+    return {
+      bugsByStatus: this.groupBugsByStatus(activeBugs),
+      statistics: this.calculateStatistics(allBugs),
+      allBugs,
+    };
+  }
+
+  async getNocP1CodeIssues(boardId?: number): Promise<BugMonitoringData> {
+    const boardIds = boardId === undefined
+      ? (await boardsService.findAll()).filter(board => board.isBugMonitoring).map(board => board.boardId)
+      : [boardId];
+    const allBugs = transformBugs((await Promise.all(
+      boardIds.map(id => this.repo.fetchNocP1CodeIssuesByBoard(id)),
+    )).flat());
+    const activeBugs = allBugs.filter(bug => ACTIVE_STATUSES.includes(bug.status));
 
     return {
       bugsByStatus: this.groupBugsByStatus(activeBugs),

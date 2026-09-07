@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Segmented, DatePicker, Row, Col } from 'antd';
+import { Segmented, DatePicker } from 'antd';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 import type { Bug } from '../types/bug-monitoring.types';
-import dayjs, { Dayjs } from 'dayjs';
+import { Dayjs } from 'dayjs';
 import { useThemeColors } from '@src/hooks/useTheme';
 
 const { RangePicker } = DatePicker;
@@ -13,11 +13,13 @@ const { RangePicker } = DatePicker;
 interface BugTrendChartProps {
   bugs: Bug[];
   showActiveOnly: boolean;
+  title?: string;
+  description?: string;
 }
 
 type TimeRange = 'week' | 'month' | 'year' | 'custom';
 
-export default function BugTrendChart({ bugs, showActiveOnly }: BugTrendChartProps) {
+export default function BugTrendChart({ bugs, showActiveOnly, title, description }: BugTrendChartProps) {
   const T = useThemeColors();
   const [timeRange, setTimeRange] = useState<TimeRange>('month');
   const [customDateRange, setCustomDateRange] = useState<[Dayjs, Dayjs] | null>(null);
@@ -139,10 +141,10 @@ export default function BugTrendChart({ bugs, showActiveOnly }: BugTrendChartPro
           <div>
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
               <span className="text-2xl animate-pulse">📈</span> 
-              {showActiveOnly ? 'Active Bugs Trend' : 'Bug Trends'}
+              {title ?? (showActiveOnly ? 'Active Bugs Trend' : 'Bug Trends')}
             </h2>
             <p className="text-sm text-gray-500 font-medium mt-1">
-              {showActiveOnly ? 'Cumulative Active bugs over time' : 'Cumulative Active vs Closed bugs over time'}
+              {description ?? (showActiveOnly ? 'Cumulative Active bugs over time' : 'Cumulative Active vs Closed bugs over time')}
             </p>
           </div>
           <div className="flex items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-100">

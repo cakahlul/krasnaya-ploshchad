@@ -18,6 +18,11 @@ export function buildBugJql(board: { shortName: string; bugIssueType?: string; b
   return `project = ${board.shortName}${issueTypeClause} ORDER BY created DESC`;
 }
 
+export function buildNocP1CodeIssueJql(board: { shortName: string; bugIssueType?: string; bugJql?: string }): string {
+  const base = buildBugJql(board).replace(/\s+ORDER BY\s+[\s\S]*$/i, '');
+  return `${base} AND "NOC Issues Priority" = P1 AND "NOC Issue Type" = "Code Issue" ORDER BY created DESC`;
+}
+
 export function buildBugSnapshotJql(
   board: { shortName: string; bugIssueType?: string; bugJql?: string },
   monthEnd: string,
@@ -122,6 +127,14 @@ export class BugMonitoringRepository {
     if (!board) throw new Error(`No bug monitoring board found for boardId ${boardId}`);
 
     return this.fetchBugs(board, buildBugSnapshotJql(board, monthEnd));
+  }
+
+  async fetchNocP1CodeIssuesByBoard(boardId: number): Promise<JiraBugEntity[]> {
+    const boards = await boardsService.findAll();
+    const board = boards.find(b => b.boardId === boardId && b.isBugMonitoring);
+    if (!board) throw new Error(`No bug monitoring board found for boardId ${boardId}`);
+
+    return this.fetchBugs(board, buildNocP1CodeIssueJql(board));
   }
 
   private async fetchBugs(
