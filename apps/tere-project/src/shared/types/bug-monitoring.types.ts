@@ -47,7 +47,7 @@ export interface JiraBugFieldsEntity {
   summary: string;
   status: { name: string };
   priority: { name: string } | null;
-  'NOC Issues Priority'?: { value?: string; name?: string } | string | null;
+  customfield_10805?: { value?: string; name?: string } | string | null;
   assignee: { displayName: string; emailAddress: string } | null;
   created: string;
   updated: string;
