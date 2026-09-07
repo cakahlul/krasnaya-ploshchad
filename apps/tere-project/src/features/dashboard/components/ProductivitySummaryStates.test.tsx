@@ -78,8 +78,8 @@ test('shows comparison chart for a single month when chart data is available', (
 
 test('keeps chart nulls as gaps and uses responsive accessible themed primitives', () => {
   assert.equal((source.match(/connectNulls=\{false\}/g) ?? []).length, 4);
-  assert.equal((source.match(/<YAxis/g) ?? []).length, 1);
-  assert.doesNotMatch(source, /orientation="right"|yAxisId=/);
+  assert.equal((source.match(/<YAxis/g) ?? []).length, 2);
+  assert.match(source, /<YAxis yAxisId="productivity" orientation="right"/);
   assert.match(source, /<ResponsiveContainer/);
   assert.match(source, /accessibilityLayer/);
   assert.match(source, /<figure[\s\S]*aria-labelledby=/);

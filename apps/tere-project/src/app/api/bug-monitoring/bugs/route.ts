@@ -4,10 +4,14 @@ import { bugMonitoringService } from '@server/modules/bug-monitoring/bug-monitor
 export const dynamic = 'force-dynamic';
 
 export const GET = withAuthOrApiKey(async (req) => {
-  const boardId = new URL(req.url).searchParams.get('boardId');
-  if (!boardId) {
+  const params = new URL(req.url).searchParams;
+  const boardId = params.get('boardId');
+  const nocP1CodeIssue = params.get('nocP1CodeIssue') === 'true';
+  if (!boardId && !nocP1CodeIssue) {
     return Response.json({ message: 'boardId is required' }, { status: 400 });
   }
-  const data = await bugMonitoringService.getBugsForBoard(Number(boardId));
+  const data = nocP1CodeIssue
+    ? await bugMonitoringService.getNocP1CodeIssues(boardId ? Number(boardId) : undefined)
+    : await bugMonitoringService.getBugsForBoard(Number(boardId));
   return Response.json(data);
 });

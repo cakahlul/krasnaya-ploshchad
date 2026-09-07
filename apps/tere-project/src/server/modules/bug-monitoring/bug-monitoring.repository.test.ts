@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applyCloseOverrides, buildBugJql, buildBugSnapshotJql, countActiveBugsAtMonthEnd } from './bug-monitoring.repository';
+import { applyCloseOverrides, buildBugJql, buildBugSnapshotJql, buildNocP1CodeIssueJql, countActiveBugsAtMonthEnd } from './bug-monitoring.repository';
 
 test('uses a project-specific bug JQL unchanged', () => {
   assert.equal(
@@ -13,6 +13,13 @@ test('keeps the existing project and issue-type query as fallback', () => {
   assert.equal(
     buildBugJql({ shortName: 'INCF', bugIssueType: 'Bug' }),
     'project = INCF AND issuetype = Bug ORDER BY created DESC',
+  );
+});
+
+test('adds the NOC P1 Code Issue filter to the board query', () => {
+  assert.equal(
+    buildNocP1CodeIssueJql({ shortName: 'INCF', bugIssueType: 'Bug' }),
+    'project = INCF AND issuetype = Bug AND "NOC Issues Priority" = P1 AND "NOC Issue Type" = "Code Issue" ORDER BY created DESC',
   );
 });
 
