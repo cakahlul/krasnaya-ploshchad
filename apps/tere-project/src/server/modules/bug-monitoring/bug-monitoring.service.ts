@@ -11,7 +11,7 @@ import { BugSummaryDto } from '@shared/types/dashboard.types';
 import { boardsService } from '@server/modules/boards/boards.service';
 
 const ACTIVE_STATUSES = ['To Do', 'In Progress', 'Ready to Test', 'Detected', 'In Review'];
-const PRIORITY_ORDER = ['Highest', 'High', 'Medium', 'Low', 'Lowest', 'None'];
+const PRIORITY_ORDER = ['P1', 'P2', 'P3', 'P4', 'P5', 'Unspecified'];
 
 const DAY_MS = 86_400_000;
 
@@ -24,6 +24,10 @@ const DAY_MS = 86_400_000;
 export function transformBugs(jiraBugs: readonly JiraBugEntity[], now = Date.now()): Bug[] {
   return jiraBugs.map((bug) => {
     const closedDate = bug.fields.resolutiondate?.slice(0, 10) ?? null;
+    const nocField = bug.fields['NOC Issues Priority'];
+    const nocPriority = typeof nocField === 'string'
+      ? nocField
+      : nocField?.value ?? nocField?.name ?? 'Unspecified';
     const createdMs = new Date(bug.fields.created).getTime();
     const endMs = closedDate ? new Date(`${closedDate}T23:59:59.999Z`).getTime() : now;
     return {
@@ -31,6 +35,7 @@ export function transformBugs(jiraBugs: readonly JiraBugEntity[], now = Date.now
       summary: bug.fields.summary,
       status: bug.fields.status.name,
       priority: bug.fields.priority?.name ?? 'None',
+      nocPriority,
       assignee: bug.fields.assignee?.displayName ?? null,
       created: bug.fields.created,
       updated: bug.fields.updated,
@@ -122,7 +127,7 @@ class BugMonitoringService {
 
     bugs.forEach((b) => {
       countByStatus[b.status] = (countByStatus[b.status] ?? 0) + 1;
-      priorityCount[b.priority] = (priorityCount[b.priority] ?? 0) + 1;
+      priorityCount[b.nocPriority] = (priorityCount[b.nocPriority] ?? 0) + 1;
       const a = b.assignee ?? 'Unassigned';
       assigneeCount[a] = (assigneeCount[a] ?? 0) + 1;
       totalDays += b.daysOpen;

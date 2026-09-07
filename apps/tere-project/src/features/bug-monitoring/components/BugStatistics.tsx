@@ -30,7 +30,16 @@ const STATUS_COLORS: Record<string, string> = {
 
 // When rendering, components should prefer using useThemeColors() tokens so crimson theme can override these.
 
-export function resolvedStatusColorMapping(T: any) {
+type ThemeColors = {
+  statusInfo?: string;
+  statusOrange?: string;
+  statusDanger?: string;
+  statusPurple?: string;
+  statusSuccess?: string;
+  statusWarning?: string;
+};
+
+export function resolvedStatusColorMapping(T: ThemeColors) {
   return {
     'To Do': T.statusInfo || '#6B7280',
     'In Progress': T.statusOrange || '#F97316',
@@ -46,9 +55,7 @@ export function resolvedStatusColorMapping(T: any) {
   };
 }
 
-const PRIORITY_COLORS = ['#EF4444', '#F97316', '#FBBF24', '#3B82F6', '#10B981', '#6B7280'];
-
-function resolvedPriorityColors(T: any) {
+function resolvedPriorityColors(T: ThemeColors) {
   return [T.statusDanger, T.statusOrange, T.statusWarning, T.statusInfo, T.statusSuccess, '#6B7280'];
 }
 
@@ -182,7 +189,8 @@ export default function BugStatisticsView({ statistics }: BugStatisticsProps) {
       {/* Priority Distribution Bar Chart */}
       <motion.div variants={itemVariants} className="lg:col-span-4">
         <div className="bg-white/90 backdrop-blur-sm border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-          <h3 className="text-xl font-bold text-gray-800 mb-6 border-b border-gray-100 pb-2">Bug Distribution by Priority</h3>
+          <h3 className="text-xl font-bold text-gray-800 border-b border-gray-100 pb-2">Bug Distribution by Priority</h3>
+          <p className="text-sm text-gray-500 mb-4">Uses the NOC Issues Priority column.</p>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={priorityData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />

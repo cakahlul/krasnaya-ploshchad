@@ -3,6 +3,7 @@ export interface Bug {
   summary: string;
   status: string;
   priority: string;
+  nocPriority: string;
   assignee: string | null;
   created: string;
   updated: string;

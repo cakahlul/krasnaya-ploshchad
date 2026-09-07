@@ -9,6 +9,7 @@ const jiraBug = (created: string, resolutiondate: string | null) => ({
     summary: 'boom',
     status: { name: resolutiondate ? 'Done' : 'In Progress' },
     priority: { name: 'High' },
+    'NOC Issues Priority': { value: 'P1' },
     assignee: null,
     created,
     updated: '2026-08-04T00:00:00.000Z',
@@ -31,6 +32,11 @@ test('an open bug keeps accruing days up to now', () => {
 
   assert.equal(bug.closedDate, null);
   assert.equal(bug.daysOpen, 3);
+});
+
+test('exposes the NOC Issues Priority value', () => {
+  const [bug] = transformBugs([jiraBug('2026-08-01T00:00:00.000Z', null)], NOW);
+  assert.equal(bug.nocPriority, 'P1');
 });
 
 test('a close date before creation reports zero days rather than a negative count', () => {
