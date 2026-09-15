@@ -23,6 +23,22 @@ test('renders a canonical response with unavailable values without crashing', ()
   assert.equal(html.match(/N\/A/g)?.length, 4);
 });
 
+test('shows the latest selected month\'s active members, not the range total', () => {
+  const html = renderToStaticMarkup(
+    <ProductivitySummaryCanonicalResult data={{
+      range: { startMonth: '2026-06', endMonth: '2026-07', monthCount: 2 },
+      metricBasis: 'SP',
+      summary: { activeMembers: 78, productivityMetric: 10, bugsRaised: 0 },
+      chart: [
+        { month: '2026-06', activeMembers: 40, productivityMetric: 5, bugsRaised: 0 },
+        { month: '2026-07', activeMembers: 38, productivityMetric: 5, bugsRaised: 0 },
+      ],
+    }} />,
+  );
+
+  assert.match(html, /Active members<\/dt><dd[^>]*>38<\/dd><p[^>]*>in 2026-07<\/p>/);
+});
+
 test('shows lead comparison chart for a multi-month response and preserves null gaps', () => {
   const html = renderToStaticMarkup(
     <ProductivitySummaryCanonicalResult data={{

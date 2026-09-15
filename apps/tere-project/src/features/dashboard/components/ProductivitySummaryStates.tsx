@@ -153,11 +153,12 @@ const whole = (metric: number | null | undefined) =>
  */
 function buildSummaryCards(data: CanonicalProductivitySummary) {
   const { summary, chart, range, metricBasis } = data;
+  const latestMonth = chart?.at(-1);
   const cards: Array<{ label: string; value: string; hint?: string; icon: typeof Users }> = [
     {
       label: 'Active members',
-      value: whole(summary.activeMembers),
-      hint: `across ${range.monthCount} month${range.monthCount === 1 ? '' : 's'}`,
+      value: whole(latestMonth ? latestMonth.activeMembers : summary.activeMembers),
+      hint: `in ${latestMonth?.month ?? range.endMonth}`,
       icon: Users,
     },
     {
