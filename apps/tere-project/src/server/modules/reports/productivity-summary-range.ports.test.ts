@@ -5,7 +5,9 @@ import { createProductivitySummaryRangePorts } from './productivity-summary-rang
 const board = (overrides: Record<string, unknown>) => ({
   id: '1', boardId: 1, name: 'Loan', shortName: 'LN', reportingGroup: 'Loan', ...overrides,
 }) as never;
-const bug = (created: string) => ({ fields: { created } }) as never;
+const bug = (created: string, resolution?: string) => ({
+  fields: { created, resolution: resolution ? { name: resolution } : undefined },
+}) as never;
 
 test('loads live productivity by Group boards and counts active bugs at month end', async () => {
   const ports = createProductivitySummaryRangePorts({
@@ -21,7 +23,11 @@ test('loads live productivity by Group boards and counts active bugs at month en
       return [{ name: 'Dev', team, spTotal: team === 'LN' ? 8 : 2, wpTotal: team === 'LN' ? 5 : 1, workingDays: 1 }] as never;
     },
     routeMonth: async () => ({ source: 'live', metricBasis: null, rows: null, failure: null }),
-    fetchBugs: async () => [bug('2026-01-01'), bug('2026-01-31'), bug('2026-02-01')],
+    fetchBugs: async () => [
+      bug('2026-01-01', 'Done'),
+      bug('2026-01-31'),
+      bug('2026-02-01', 'Done'),
+    ],
     resolveRule: async () => ({ ruleVersion: 'v3' }),
   });
 
@@ -32,7 +38,7 @@ test('loads live productivity by Group boards and counts active bugs at month en
   assert.deepEqual(month.members[0], { id: 'dev@example.com', name: 'Dev', group: 'Loan', board: 'LN', boards: ['LN', 'LN2'], spTotal: 10, wpTotal: 6, spTarget: 8, workingDays: 1 });
   assert.deepEqual(month.failures, [{ scope: 'productivity', group: 'Loan', board: 'BROKEN', reason: 'Jira unavailable' }]);
   assert.equal(await ports.loadBugRaisedCount?.('2026-01', 'Loan'), 2);
-  assert.equal(await ports.loadBugDoneCount?.('2026-01', 'Loan'), 2);
+  assert.equal(await ports.loadBugDoneCount?.('2026-01', 'Loan'), 1);
 });
 
 test('excludes live members outside the selected month', async () => {
