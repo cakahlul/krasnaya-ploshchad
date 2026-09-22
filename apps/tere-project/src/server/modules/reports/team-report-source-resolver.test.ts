@@ -99,6 +99,21 @@ test('uses normal live Jira when the selected snapshot does not exist', async ()
   assert.equal(metadata.warning, null);
 });
 
+test('falls back to Jira when a closed sprint was re-dated after capture', async () => {
+  let liveCalls = 0;
+  const result = await resolveTeamReport(
+    { project: 'ALPHA', sprint: '42' },
+    ports({
+      findSprints: async () => [{ id: 42, state: 'closed', startDate: '2026-07-01', endDate: '2026-07-15' }],
+      generateSprintReport: async () => { liveCalls++; return report; },
+    }),
+  );
+
+  assert.equal(result.source, 'jira');
+  assert.equal(liveCalls, 1);
+  assert.equal(metadataFromResolution(result).fallback, true);
+});
+
 test('keeps Jira fallback warning when stored snapshot data is invalid', async () => {
   const result = await resolveTeamReport(
     { project: 'ALPHA', sprint: '42' },

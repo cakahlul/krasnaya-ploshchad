@@ -1,7 +1,14 @@
 import { createHash } from 'node:crypto';
 
 export type SnapshotPeriodIdentity =
-  | { readonly boardId: number; readonly periodKind: 'scrum'; readonly sprintId: string }
+  | {
+    readonly boardId: number;
+    readonly periodKind: 'scrum';
+    readonly sprintId: string;
+    /** Current Jira dates, used to reject a snapshot captured before a sprint was re-dated. */
+    readonly periodStartDate?: string;
+    readonly periodEndDate?: string;
+  }
   | { readonly boardId: number; readonly periodKind: 'kanban'; readonly periodStartDate: string; readonly periodEndDate: string };
 
 export type SnapshotPeriodIdentityInput = {
