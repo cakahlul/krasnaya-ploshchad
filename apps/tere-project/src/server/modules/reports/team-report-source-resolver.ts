@@ -245,27 +245,25 @@ async function discoverIdentities(
   if (request.sprint) {
     const sprintIds = split(request.sprint);
     const scrumBoards = selected.filter(board => !board.isKanban);
-    const identities = await Promise.all(scrumBoards.map(async board => {
-      try {
-        const sprints = await ports.findSprints(board.boardId);
-        return sprintIds.map(sprintId => {
-          const sprint = sprints.find(value => String(value.id) === sprintId);
-          const startDate = datePart(sprint?.startDate);
-          const endDate = datePart(sprint?.endDate);
-          return {
-            boardId: board.boardId,
-            periodKind: 'scrum' as const,
-            sprintId,
-            ...(startDate && endDate ? { periodStartDate: startDate, periodEndDate: endDate } : {}),
-          };
-        });
-      } catch {
-        // Jira sprint metadata is advisory here; retain the valid stored snapshot if unavailable.
-        return sprintIds.map(sprintId => ({ boardId: board.boardId, periodKind: 'scrum' as const, sprintId }));
-      }
+    let boardSprints: readonly (readonly SprintPeriod[])[];
+    try {
+      boardSprints = await Promise.all(scrumBoards.map(board => ports.findSprints(board.boardId)));
+    } catch {
+      return { identities: [], detail: 'SNAPSHOT_PERIOD_DISCOVERY_FAILED' };
+    }
+    const identities = scrumBoards.flatMap((board, index) => sprintIds.flatMap(sprintId => {
+      const sprint = boardSprints[index].find(value => String(value.id) === sprintId);
+      const startDate = datePart(sprint?.startDate);
+      const endDate = datePart(sprint?.endDate);
+      return sprint?.state?.toLowerCase() === 'closed' && startDate && endDate
+        ? [{ boardId: board.boardId, periodKind: 'scrum' as const, sprintId, periodStartDate: startDate, periodEndDate: endDate }]
+        : [];
     }));
+    if (identities.length !== scrumBoards.length * sprintIds.length) {
+      return { identities: [], detail: 'SNAPSHOT_PERIOD_NOT_CLOSED_OR_CHANGED' };
+    }
     return {
-      identities: identities.flat(),
+      identities,
     };
   }
 
@@ -579,8 +577,12 @@ function split(value: string): string[] {
 }
 
 function datePart(value: string | undefined): string | null {
-  const date = value?.slice(0, 10);
-  return date && validDate(date) ? date : null;
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (!Number.isFinite(parsed.getTime())) return null;
+  const wib = new Date(parsed.getTime() + 7 * 60 * 60 * 1000);
+  const date = `${wib.getUTCFullYear()}-${String(wib.getUTCMonth() + 1).padStart(2, '0')}-${String(wib.getUTCDate()).padStart(2, '0')}`;
+  return validDate(date) ? date : null;
 }
 
 function validDate(value: string): boolean {

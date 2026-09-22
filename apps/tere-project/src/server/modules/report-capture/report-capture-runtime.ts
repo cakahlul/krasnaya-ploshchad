@@ -144,8 +144,12 @@ export function isClosedSprint(state: string | undefined): boolean {
 }
 
 function datePart(value: string | undefined): string | null {
-  const date = value?.slice(0, 10);
-  return date && ISO.test(date) && Number.isFinite(parseDate(date)) ? date : null;
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (!Number.isFinite(parsed.getTime())) return null;
+  const wib = new Date(parsed.getTime() + 7 * 60 * 60 * 1000);
+  const date = `${wib.getUTCFullYear()}-${String(wib.getUTCMonth() + 1).padStart(2, '0')}-${String(wib.getUTCDate()).padStart(2, '0')}`;
+  return ISO.test(date) && Number.isFinite(parseDate(date)) ? date : null;
 }
 function parseDate(value: string): number { return Date.parse(`${value}T00:00:00Z`); }
 
