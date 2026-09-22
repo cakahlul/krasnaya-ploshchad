@@ -245,12 +245,27 @@ async function discoverIdentities(
   if (request.sprint) {
     const sprintIds = split(request.sprint);
     const scrumBoards = selected.filter(board => !board.isKanban);
+    const identities = await Promise.all(scrumBoards.map(async board => {
+      try {
+        const sprints = await ports.findSprints(board.boardId);
+        return sprintIds.map(sprintId => {
+          const sprint = sprints.find(value => String(value.id) === sprintId);
+          const startDate = datePart(sprint?.startDate);
+          const endDate = datePart(sprint?.endDate);
+          return {
+            boardId: board.boardId,
+            periodKind: 'scrum' as const,
+            sprintId,
+            ...(startDate && endDate ? { periodStartDate: startDate, periodEndDate: endDate } : {}),
+          };
+        });
+      } catch {
+        // Jira sprint metadata is advisory here; retain the valid stored snapshot if unavailable.
+        return sprintIds.map(sprintId => ({ boardId: board.boardId, periodKind: 'scrum' as const, sprintId }));
+      }
+    }));
     return {
-      identities: scrumBoards.flatMap(board => sprintIds.map(sprintId => ({
-        boardId: board.boardId,
-        periodKind: 'scrum',
-        sprintId,
-      }))),
+      identities: identities.flat(),
     };
   }
 
@@ -523,6 +538,8 @@ function snapshotMatchesIdentity(
   if (snapshot.boardId !== identity.boardId || snapshot.periodKind !== identity.periodKind) return false;
   return identity.periodKind === 'scrum'
     ? snapshot.sprintId === identity.sprintId
+      && (identity.periodStartDate === undefined || snapshot.periodStartDate === identity.periodStartDate)
+      && (identity.periodEndDate === undefined || snapshot.periodEndDate === identity.periodEndDate)
     : snapshot.sprintId === null
       && snapshot.periodStartDate === identity.periodStartDate
       && snapshot.periodEndDate === identity.periodEndDate;
