@@ -23,6 +23,7 @@ interface SprintPeriod {
 }
 
 export interface TeamReportingSourcePorts {
+  supplementSnapshot?(snapshot: TeamReportingSnapshot): Promise<GetReportResponseDto | null>;
   findBoards(): Promise<readonly BoardResponse[]>;
   findSprints(boardId: number): Promise<readonly SprintPeriod[]>;
   findSnapshot(identity: SnapshotPeriodIdentity): Promise<TeamReportingSnapshot | null>;
@@ -81,7 +82,8 @@ export async function resolveTeamReport(
   const mixed = await resolveMixedKanbanRange(request, discovered, ports);
   if (mixed) return mixed;
 
-  return resolveReportSource(unit, [
+  let supplemented = 0;
+  const resolved = await resolveReportSource(unit, [
     {
       source: 'snapshot',
       resolve: async () => {
@@ -180,6 +182,11 @@ export async function resolveTeamReport(
         }
 
         try {
+          records = await Promise.all(records.map(async record => {
+            const enriched = await supplementSnapshot(record.snapshot, ports);
+            if (enriched.live) supplemented++;
+            return { ...record, snapshot: { ...record.snapshot, calculatedOutput: enriched.report } };
+          }));
           const value = await reportFromSnapshots(request, records, ports);
           return {
             source: 'snapshot',
@@ -212,6 +219,19 @@ export async function resolveTeamReport(
       }),
     },
   ]);
+  return resolved.source === 'snapshot' && supplemented
+    ? { ...resolved, source: 'mixed', attempts: [...resolved.attempts, { source: 'jira', coverage: { expected: supplemented, covered: supplemented, cutoff: false } }] }
+    : resolved;
+}
+
+async function supplementSnapshot(snapshot: TeamReportingSnapshot, ports: TeamReportingSourcePorts) {
+  const stored = snapshot.calculatedOutput as GetReportResponseDto;
+  const live = await ports.supplementSnapshot?.(snapshot);
+  if (!live) return { report: stored, live: false };
+  const names = new Set(live.issues.map(issue => issue.member));
+  const retained = { ...stored, issues: stored.issues.filter(issue => !names.has(issue.member)) };
+  const report = combineCapturedReports([retained, live], { startDate: snapshot.periodStartDate, endDate: snapshot.periodEndDate });
+  return { report, live: true };
 }
 
 async function discoverIdentities(
@@ -282,6 +302,7 @@ async function resolveMixedKanbanRange(
   const today = jakartaDate();
   const snapshots: Array<{ report: GetReportResponseDto; capturedAt: Date }> = [];
   const liveDates = new Set<string>();
+  let supplemented = 0;
   for (const week of mondaySundayWeeksWithin(request.startDate, request.endDate)) {
     if (week.endDate >= today) {
       addDates(liveDates, week.startDate, week.endDate);
@@ -297,7 +318,9 @@ async function resolveMixedKanbanRange(
       return null;
     }
     if (lookup.status === 'complete' && snapshotMatchesIdentity(lookup.snapshot, identity) && isReportResponse(lookup.snapshot.calculatedOutput)) {
-      snapshots.push({ report: lookup.snapshot.calculatedOutput, capturedAt: lookup.snapshot.capturedAt });
+      const enriched = await supplementSnapshot(lookup.snapshot, ports);
+      if (enriched.live) supplemented++;
+      snapshots.push({ report: enriched.report, capturedAt: lookup.snapshot.capturedAt });
     } else {
       addDates(liveDates, week.startDate, week.endDate);
     }
@@ -309,12 +332,12 @@ async function resolveMixedKanbanRange(
   const live = await Promise.all(compactDateRanges(liveDates).map(range => ports.generateDateRangeReport(range.startDate, range.endDate, request.project)));
   const value = combineCapturedReports([...snapshots.map(snapshot => snapshot.report), ...live], { startDate: request.startDate, endDate: request.endDate });
   return {
-    source: live.length ? 'mixed' : 'snapshot',
+    source: live.length || supplemented ? 'mixed' : 'snapshot',
     value,
     coverage: { status: 'complete', expected: snapshots.length + live.length, covered: snapshots.length + live.length },
     attempts: [
       ...(snapshots.length ? [{ source: 'snapshot' as const, coverage: { expected: snapshots.length, covered: snapshots.length, cutoff: false }, snapshotTimestamp: latestDate(snapshots) }] : []),
-      ...(live.length ? [{ source: 'jira' as const, coverage: { expected: live.length, covered: live.length, cutoff: false } }] : []),
+      ...(live.length + supplemented ? [{ source: 'jira' as const, coverage: { expected: live.length + supplemented, covered: live.length + supplemented, cutoff: false } }] : []),
     ],
   };
 }
