@@ -100,7 +100,7 @@ export default function MemberFormModal({
   return (
     <Modal
       title={
-        <div className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-cyan-500">
+        <div className="text-xl font-bold text-slate-900">
           {isEditMode ? 'Edit Member' : 'Add New Member'}
         </div>
       }
@@ -200,9 +200,8 @@ export default function MemberFormModal({
         >
           {({ getFieldValue }) =>
             getFieldValue('isLead') ? (
-              <div className="mb-4 rounded-xl bg-purple-50 border border-purple-100 px-4 py-3 text-sm text-purple-700">
-                This member has lead access to view all teams and bug
-                monitoring.
+              <div className="mb-4 rounded-xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-700">
+                This member can access lead-only workflows for their assigned teams.
               </div>
             ) : null
           }
@@ -262,7 +261,7 @@ export default function MemberFormModal({
             type="primary"
             htmlType="submit"
             loading={isSubmitting}
-            className="rounded-lg bg-gradient-to-r from-purple-600 to-indigo-500 hover:from-purple-500 hover:to-indigo-400 border-none px-6"
+            className="rounded-lg px-6"
           >
             {isEditMode ? 'Update Member' : 'Save Member'}
           </Button>

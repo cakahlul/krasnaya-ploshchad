@@ -22,7 +22,7 @@ export default function TalentLeavePage() {
   const { openCreateModal, modalState } = useTalentLeaveStore();
   const { isLoading, data: leaveRecords } = useTalentLeave();
   const { member } = useMemberProfile();
-  const { accent, accentL, titleCol, subCol, isDark, cardBg, cardBrd, iconBg } = useThemeColors();
+  const { accent, titleCol, subCol, isDark, iconBg } = useThemeColors();
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [toast, setToast] = useState<{
     show: boolean;
@@ -57,7 +57,7 @@ export default function TalentLeavePage() {
     <div className="relative p-6 overflow-x-hidden tere-input tere-modal tere-table">
       {isLoading && <LoadingBar />}
 
-      <div className="flex justify-between items-start mb-4">
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 style={{ fontSize: 22, fontWeight: 700, color: titleCol, margin: 0, fontFamily: sans, letterSpacing: -0.3 }}>
             Talent Leave
@@ -77,8 +77,7 @@ export default function TalentLeavePage() {
             fontFamily: sans,
             opacity: isDark ? 0.85 : 1,
           }}>
-            *Penghitungan jumlah berdasarkan total hari cuti yang diambil pada
-            rentang tanggal yang ditampilkan tanpa menghitung hari libur.
+            Totals reflect leave days in the selected range and exclude holidays.
           </p>
         </div>
           <div className="flex gap-3 items-center">

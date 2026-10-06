@@ -134,15 +134,12 @@ export default function BugTrendChart({ bugs, showActiveOnly, title, description
       transition={{ duration: 0.5 }}
       className="mb-8"
     >
-      <div className="bg-white/90 backdrop-blur-sm shadow-sm border border-gray-100 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+      <div className="bg-white/90 border border-gray-100 rounded-xl overflow-hidden">
         
         {/* Header content matching the previous Card Title */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-6 border-b border-gray-100 bg-gray-50/50">
           <div>
-            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <span className="text-2xl animate-pulse">📈</span> 
-              {title ?? (showActiveOnly ? 'Active Bugs Trend' : 'Bug Trends')}
-            </h2>
+            <h2 className="text-xl font-bold text-gray-800">{title ?? (showActiveOnly ? 'Active Bugs Trend' : 'Bug Trends')}</h2>
             <p className="text-sm text-gray-500 font-medium mt-1">
               {description ?? (showActiveOnly ? 'Cumulative Active bugs over time' : 'Cumulative Active vs Closed bugs over time')}
             </p>

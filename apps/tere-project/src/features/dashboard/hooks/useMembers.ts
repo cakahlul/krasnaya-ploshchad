@@ -10,13 +10,13 @@ async function fetchMembers(): Promise<MemberResponse[]> {
   return response.data;
 }
 
-export function useMembers() {
+export function useMembers(enabled = true) {
   const { user } = useUser();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['members'],
     queryFn: fetchMembers,
-    enabled: !!user?.email,
+    enabled: enabled && !!user?.email,
     staleTime: 10 * 60 * 1000,
   });
 

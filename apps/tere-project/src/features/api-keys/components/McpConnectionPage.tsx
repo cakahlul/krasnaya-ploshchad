@@ -22,7 +22,6 @@ export default function McpConnectionPage() {
   const revokeApiKey = useRevokeApiKey();
   const {
     accent,
-    accentL,
     cardBg,
     cardBrd,
     titleCol,
@@ -101,7 +100,7 @@ export default function McpConnectionPage() {
   const warnBg = isDark ? '#1a1a2e' : '#fff7ed';
   const warnBrd = isDark ? '#ff6b3540' : '#fed7aa';
   const warnCol = isDark ? '#fbbf24' : '#c2410c';
-  const stepNumBg = `linear-gradient(135deg, ${accent}, ${accentL})`;
+  const stepNumBg = accent;
 
   /* ---- Table columns ---- */
   const columns: ColumnsType<ApiKeyResponse> = [
@@ -204,8 +203,7 @@ export default function McpConnectionPage() {
             fontFamily: sans,
           }}
         >
-          Connect Claude Code to Tere via Model Context Protocol for AI-powered
-          team reports
+          Connect approved MCP clients to the reports you are permitted to access.
         </p>
       </div>
 

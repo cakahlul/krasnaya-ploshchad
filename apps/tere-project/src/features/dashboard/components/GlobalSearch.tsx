@@ -512,7 +512,7 @@ function TicketDetailCard({
       <div className="relative px-6 pt-6 pb-4">
         <div
           className="absolute inset-0"
-          style={{ background: `linear-gradient(135deg, ${accent}15, ${accentL}10)` }}
+          style={{ background: `${accent}12` }}
         />
         <div className="relative">
           <div className="flex items-center justify-between mb-3">

@@ -216,6 +216,7 @@ function IconConfiguration({ color }: { color: string }) {
 interface MenuItem {
   key: string;
   label: string;
+  section: 'Home' | 'Delivery' | 'Operations' | 'Administration';
   icon: (color: string) => React.ReactNode;
   roles: string[];
   children?: { tab: ConfigTabId; label: string }[];
@@ -225,48 +226,56 @@ const menuItems: MenuItem[] = [
   {
     key: '/dashboard',
     label: 'Main Dashboard',
+    section: 'Home',
     icon: c => <IconDashboard color={c} />,
     roles: ['Lead', 'Member'],
   },
   {
     key: '/dashboard/reports',
     label: 'Team Reporting',
+    section: 'Delivery',
     icon: c => <IconTeamReporting color={c} />,
     roles: ['Lead', 'Member'],
   },
   {
     key: '/dashboard/epic-explorer',
     label: 'Epic Explorer',
+    section: 'Delivery',
     icon: c => <IconEpicExplorer color={c} />,
     roles: ['Lead', 'Member'],
   },
   {
     key: '/dashboard/productivity-summary',
     label: 'Productivity Summary',
+    section: 'Delivery',
     icon: c => <IconProductivity color={c} />,
     roles: ['Lead'],
   },
   {
     key: '/dashboard/bug-monitoring',
     label: 'Bug Monitoring',
+    section: 'Operations',
     icon: c => <IconBug color={c} />,
     roles: ['Lead'],
   },
   {
     key: '/dashboard/talent-leave',
     label: 'Talent Leave',
+    section: 'Operations',
     icon: c => <IconTalentLeave color={c} />,
     roles: ['Lead', 'Member'],
   },
   {
     key: '/dashboard/team-members',
     label: 'Team Members',
+    section: 'Administration',
     icon: c => <IconTeamMembers color={c} />,
     roles: ['Lead'],
   },
   {
     key: '/dashboard/configuration',
     label: 'Configuration',
+    section: 'Administration',
     icon: c => <IconConfiguration color={c} />,
     roles: ['Lead'],
     children: CONFIG_TABS.map(t => ({ tab: t.id, label: t.label })),
@@ -274,40 +283,11 @@ const menuItems: MenuItem[] = [
   {
     key: '/dashboard/mcp-connection',
     label: 'MCP Connection',
+    section: 'Administration',
     icon: c => <IconApiKey color={c} />,
     roles: ['Lead', 'Member'],
   },
 ];
-
-/* ------------------------------------------------------------------ */
-/*  Fun quotes                                                         */
-/* ------------------------------------------------------------------ */
-
-const FUN_QUOTES = [
-  '"Ship it before the sprint gods notice."',
-  '"A bug-free build is just a myth with tests."',
-  '"Keep calm and clear your Jira board."',
-  '"Coffee first, deploy later."',
-  '"Velocity is a vibe, not a number."',
-  '"Today\u2019s blocker is tomorrow\u2019s retro joke."',
-  '"Merge conflicts build character."',
-  '"No meetings before noon. Ever."',
-];
-
-const SOVIET_QUOTES = [
-  '"Workers of the sprint, unite and ship."',
-  '"Every bug resolved is labor for the collective."',
-  '"Discipline in Jira, victory in delivery."',
-  '"Fuel the collective. Then deploy."',
-  '"Velocity is planned production."',
-  '"Today\'s blocker is tomorrow\'s organized work."',
-  '"Merge conflicts are resolved by comradeship."',
-  '"Meetings serve the plan, not the clock."',
-];
-
-/* ------------------------------------------------------------------ */
-/*  Sidebar Component                                                  */
-/* ------------------------------------------------------------------ */
 
 export default function Sidebar({
   isOpen,
@@ -320,7 +300,7 @@ export default function Sidebar({
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isDark, isCrimson, accent, accentL } = useThemeColors();
+  const { isDark, accent } = useThemeColors();
 
   const CONFIG_KEY = '/dashboard/configuration';
   const [expandedKey, setExpandedKey] = useState<string | null>(
@@ -348,11 +328,6 @@ export default function Sidebar({
   const { teams: dashTeams } = useDashboardSummary(
     managedBoardIds.length > 0 ? managedBoardIds : undefined,
   );
-
-  const [quote] = useState(() => {
-    const pool = isCrimson ? SOVIET_QUOTES : FUN_QUOTES;
-    return pool[Math.floor(Math.random() * pool.length)];
-  });
 
   const effectiveRole = member
     ? member.isLead
@@ -389,16 +364,12 @@ export default function Sidebar({
   );
 
   /* ---- derived colours ---- */
-  const sidebarBg = isCrimson
-    ? 'linear-gradient(180deg, #1a0202 0%, #2a0404 60%, #1a0202 100%)'
-    : isDark
-      ? 'linear-gradient(180deg, #0d1829 0%, #0f1f36 100%)'
-      : '#ffffff';
+  const sidebarBg = isDark ? '#151d22' : 'rgba(255,255,255,0.82)';
   const navTextColor = isDark ? 'rgba(255,255,255,0.7)' : '#4b5563';
-  const navTextActive = isDark ? (isCrimson ? '#fff6e6' : '#ffffff') : '#011d4d';
-  const hoverBg = isDark ? (isCrimson ? 'rgba(194,21,24,0.18)' : 'rgba(255,255,255,0.06)') : '#f3f4f6';
+  const navTextActive = isDark ? '#ffffff' : '#102a36';
+  const hoverBg = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(8,126,164,0.06)';
   const activeBg = isDark ? `${accent}22` : `${accent}12`;
-  const quoteColor = isDark ? (isCrimson ? 'rgba(255,215,0,0.5)' : 'rgba(255,255,255,0.3)') : '#9ca3af';
+  const sectionColor = isDark ? 'rgba(255,255,255,0.3)' : '#607782';
 
   /* ---- Header chip: Lead = Team Health, Member = personal progress ---- */
   const allChipMembers = dashTeams.flatMap(t => t.memberSummaries ?? []);
@@ -443,7 +414,7 @@ export default function Sidebar({
             <div
               className="text-[17px] font-bold leading-none"
               style={{
-                color: parseFloat(chipAvgProd) >= 100 ? (isCrimson ? '#FFD700' : '#34d399') : (isCrimson ? '#FF6B3A' : '#fbbf24'),
+                color: parseFloat(chipAvgProd) >= 100 ? '#34d399' : '#fbbf24',
               }}
             >
               {chipAvgProd}%
@@ -480,7 +451,7 @@ export default function Sidebar({
                   className="h-full rounded-full"
                   style={{
                     width: `${Math.min(pct, 100)}%`,
-                    background: `linear-gradient(90deg, ${accent}, ${accentL})`,
+                    background: accent,
                     transition: 'width 0.5s ease',
                   }}
                 />
@@ -511,9 +482,7 @@ export default function Sidebar({
       <div
         className="px-3 pt-4 pb-3 rounded-t-[20px]"
         style={{
-          background: isCrimson
-            ? `linear-gradient(160deg, #2a0404 0%, #1a0202 50%, rgba(194,21,24,0.45) 100%)`
-            : `linear-gradient(160deg, #0b1a2e 0%, #0f2b3d 50%, ${accent}30 100%)`,
+          background: isDark ? '#17242c' : '#17313d',
         }}
       >
         <div className="flex items-center gap-3 px-1">
@@ -521,7 +490,7 @@ export default function Sidebar({
           <div
             className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
             style={{
-              background: `linear-gradient(135deg, ${accent}, ${accentL})`,
+              background: accent,
             }}
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -547,14 +516,7 @@ export default function Sidebar({
             </svg>
           </div>
           <div>
-            <div className="text-white font-bold text-lg leading-tight flex items-center gap-1">
-              TERE
-              {isCrimson && (
-                <svg width="14" height="14" viewBox="0 0 24 24" className="inline-block ml-0.5">
-                  <path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.8 22 12 18.77 5.2 22 7 14.14 2 9.27l7.1-1.01L12 2z" fill="#FFD700" stroke="#C21518" strokeWidth="0.5"/>
-                </svg>
-              )}
-            </div>
+            <div className="text-white font-bold text-lg leading-tight">TERE</div>
             <div className="text-[11px] text-white/50 leading-tight">
               v2.5 &middot;{' '}
               {member?.isLead
@@ -586,7 +548,8 @@ export default function Sidebar({
 
       {/* ---- Navigation ---- */}
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-        {filteredMenuItems.map(item => {
+        {filteredMenuItems.map((item, index) => {
+          const showSection = index === 0 || filteredMenuItems[index - 1].section !== item.section;
           const isActive = pathname === item.key;
           const isExpanded = expandedKey === item.key;
           const iconColor = isActive
@@ -596,7 +559,12 @@ export default function Sidebar({
               : '#6b7280';
 
           return (
-            <div key={item.key}>
+            <div key={item.key} className={showSection ? 'pt-3 first:pt-0' : undefined}>
+              {showSection && (
+                <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: sectionColor }}>
+                  {item.section}
+                </p>
+              )}
               <button
                 onClick={() => handleParentClick(item)}
                 aria-expanded={item.children ? isExpanded : undefined}
@@ -697,11 +665,8 @@ export default function Sidebar({
 
       {/* ---- Footer ---- */}
       <div className="px-4 pb-4 pt-2">
-        <p className="text-[10px] leading-snug" style={{ color: quoteColor }}>
-          {quote}
-        </p>
         <div
-          className="mt-2 pt-2"
+          className="pt-2"
           style={{
             borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#f0f0f0'}`,
           }}
@@ -710,9 +675,7 @@ export default function Sidebar({
             className="text-[9px] leading-relaxed"
             style={{ color: isDark ? 'rgba(255,255,255,0.2)' : '#c0c0c0' }}
           >
-            Made with caffeine & chaos by{' '}
-            <span style={{ fontWeight: 600 }}>Esasjana</span> — proudly assisted
-            by AI that never sleeps (but sometimes hallucinates)
+            Tere is an internal delivery workspace.
           </p>
         </div>
       </div>

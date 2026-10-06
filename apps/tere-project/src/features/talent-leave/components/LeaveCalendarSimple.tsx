@@ -42,7 +42,8 @@ export function LeaveCalendarSimple({ canEditOwn = false, canManageAll = false, 
   } = useThemeColors();
 
   useEffect(() => {
-    setIsMounted(true);
+    const timer = window.setTimeout(() => setIsMounted(true), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   // Format dates to YYYY-MM-DD
@@ -337,7 +338,7 @@ export function LeaveCalendarSimple({ canEditOwn = false, canManageAll = false, 
                           >
                             <div
                               style={{
-                                background: 'linear-gradient(135deg, ' + accent + ', ' + accentL + ')',
+                                background: accent,
                                 color: '#fff',
                                 fontWeight: 700,
                                 textAlign: 'center',

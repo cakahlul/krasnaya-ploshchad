@@ -8,75 +8,63 @@ import axiosClient from '@src/lib/axiosClient';
 const STATUS_MESSAGES: Record<number, { title: string; description: string }> =
   {
     400: {
-      title: "That request didn't make sense 🤔",
-      description:
-        "Something's off with the data you sent. The server is very confused right now.",
+      title: 'Invalid request',
+      description: 'Review the entered values and try again.',
     },
     401: {
-      title: "Who are you again? 🕵️",
-      description:
-        "Your session expired or you're not logged in. Time to prove yourself!",
+      title: 'Sign-in required',
+      description: 'Your session has expired. Sign in again to continue.',
     },
     403: {
-      title: "Access denied, rookie 🚫",
-      description:
-        "You don't have clearance for this. Maybe bribe the admin? (kidding)",
+      title: 'Access denied',
+      description: 'You do not have permission to perform this action.',
     },
     404: {
-      title: "Gone fishing 🎣",
-      description:
-        "That resource vanished into thin air. It either never existed or ghosted us.",
+      title: 'Not found',
+      description: 'The requested resource is unavailable.',
     },
     408: {
-      title: "Still waiting... like your PR reviewer on a Friday ⏳",
-      description: "The request timed out. The server is having a slow day.",
+      title: 'Request timed out',
+      description: 'The service did not respond in time. Try again.',
     },
     409: {
-      title: "There's a conflict! ⚔️",
-      description:
-        "Two things are fighting over the same data. Only one can win.",
+      title: 'Update conflict',
+      description: 'The data changed before your update could be applied. Refresh and try again.',
     },
     422: {
-      title: "Almost, but not quite 🤏",
-      description:
-        "The data looked good but didn't pass validation. So close, yet so far.",
+      title: 'Validation failed',
+      description: 'Review the entered values and try again.',
     },
     429: {
-      title: "Whoa, slow down turbo! 🏎️",
-      description:
-        "You're sending too many requests. Even servers need a breather.",
+      title: 'Too many requests',
+      description: 'Wait briefly before trying again.',
     },
     500: {
-      title: "Server tripped on its shoelaces 😵",
-      description:
-        "Something exploded on our end. Our team is already crying about it.",
+      title: 'Service error',
+      description: 'The service could not complete this request. Try again shortly.',
     },
     502: {
-      title: "Bad gateway? More like bad day 🌩️",
-      description:
-        "The server got a bad response from upstream. Classic domino effect.",
+      title: 'Upstream service error',
+      description: 'A connected service returned an error. Try again shortly.',
     },
     503: {
-      title: "Server is taking a nap 😴",
-      description: "Service unavailable. Someone forgot to wake it up on time.",
+      title: 'Service unavailable',
+      description: 'The service is temporarily unavailable. Try again shortly.',
     },
     504: {
-      title: "Upstream fell asleep too 💤",
-      description:
-        "Gateway timeout. Everyone on the chain is having a slow day.",
+      title: 'Upstream timeout',
+      description: 'A connected service did not respond in time. Try again.',
     },
   };
 
 const FALLBACK_MESSAGE = {
-  title: "Something went sideways 🛸",
-  description:
-    "An unexpected error occurred. We're as surprised as you are, honestly.",
+  title: 'Unexpected error',
+  description: 'The request could not be completed. Try again.',
 };
 
 const NETWORK_MESSAGE = {
-  title: "Houston, we have a problem 🚀",
-  description:
-    "Can't reach the server. Check your internet — even pigeons would be faster right now.",
+  title: 'Network unavailable',
+  description: 'Check your connection and try again.',
 };
 
 export default function AxiosErrorInterceptor() {

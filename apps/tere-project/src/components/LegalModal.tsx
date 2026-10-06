@@ -106,7 +106,7 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
       <div
         className="relative flex max-h-[85vh] w-full max-w-lg flex-col rounded-t-3xl sm:rounded-3xl"
         style={{
-          background: 'linear-gradient(160deg, #0b1a30 0%, #051025 100%)',
+          background: '#101418',
           border: '1px solid rgba(255,255,255,0.08)',
           boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
         }}
@@ -168,9 +168,7 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
             className="mt-8 text-center text-xs italic"
             style={{ color: 'rgba(255,255,255,0.2)' }}
           >
-            {type === 'terms'
-              ? 'Last updated: whenever we had a good sprint.'
-              : 'Last updated: right after we cleaned up our own data hygiene.'}
+            Last updated: September 2026.
           </p>
         </div>
 
@@ -184,8 +182,7 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
             onClick={onClose}
             className="w-full rounded-xl py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
             style={{
-              background: 'linear-gradient(135deg, #1282a2, #22b8d4)',
-              boxShadow: '0 4px 16px rgba(18,130,162,0.25)',
+              background: '#087ea4',
             }}
           >
             Got it

@@ -59,7 +59,7 @@ export default function TeamMembersPage() {
   const { members, isLoading } = useMembers();
   const { boards } = useBoards();
   const deleteMember = useDeleteMember();
-  const { accent, accentL, cardBg, cardBrd, titleCol, subCol, rowCol } =
+  const { accent, cardBg, cardBrd, titleCol, subCol, rowCol } =
     useThemeColors();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -212,7 +212,7 @@ export default function TeamMembersPage() {
     <div className="relative p-6 tere-table tere-modal">
       <div
         style={{ marginBottom: 18 }}
-        className="flex justify-between items-center"
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
       >
         <div>
           <h2
@@ -243,7 +243,7 @@ export default function TeamMembersPage() {
           icon={<UserPlus size={16} />}
           onClick={handleAdd}
           style={{
-            background: `linear-gradient(135deg, ${accent}, ${accentL})`,
+            background: accent,
             border: 'none',
             borderRadius: 8,
           }}

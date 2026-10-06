@@ -1,8 +1,8 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
-export type Theme = 'light' | 'void' | 'crimson';
+export type Theme = 'light' | 'dark' | 'system';
 
 interface ThemeContextType {
   theme: Theme;
@@ -11,139 +11,79 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-
-const THEME_ORDER: Theme[] = ['light', 'void', 'crimson'];
-
-function SocialistSwitchAnimation({ show }: { show: boolean }) {
-  if (!show) return null;
-
-  return (
-    <div className="socialist-switch-overlay" aria-hidden>
-      <div className="socialist-switch-rays" />
-      <div className="socialist-switch-banner">Workers of data, unite!</div>
-      <div className="socialist-switch-star" />
-      {Array.from({ length: 18 }).map((_, i) => (
-        <span
-          key={i}
-          className="socialist-switch-spark"
-          style={{
-            left: `${8 + (i * 5) % 84}%`,
-            animationDelay: `${i * 45}ms`,
-            transform: `rotate(${i * 23}deg)`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
+const THEMES: Theme[] = ['light', 'dark', 'system'];
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('light');
+  const [theme, setThemeState] = useState<Theme>('system');
+  const [systemDark, setSystemDark] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [showSocialistAnimation, setShowSocialistAnimation] = useState(false);
-  const [socialistAnimationKey, setSocialistAnimationKey] = useState(0);
 
   useEffect(() => {
-    const stored = localStorage.getItem('theme') as Theme | null;
-    if (stored && THEME_ORDER.includes(stored)) {
-      setThemeState(stored);
-    }
-    setMounted(true);
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const sync = () => setSystemDark(media.matches);
+    media.addEventListener('change', sync);
+    const timer = window.setTimeout(() => {
+      const savedTheme = localStorage.getItem('theme');
+      setThemeState(savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system' ? savedTheme : 'system');
+      sync();
+      setMounted(true);
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+      media.removeEventListener('change', sync);
+    };
   }, []);
 
+  const resolved = theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
   useEffect(() => {
     if (!mounted) return;
-    const el = document.documentElement;
-    el.classList.remove('light', 'void', 'crimson', 'dark');
-    el.classList.add(theme);
-    // Keep 'dark' class for Tailwind dark: utilities on void & crimson
-    if (theme === 'void' || theme === 'crimson') {
-      el.classList.add('dark');
-    }
+    const root = document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(resolved);
     localStorage.setItem('theme', theme);
-
-  }, [theme, mounted]);
-
-  const toggleTheme = () => {
-    setThemeState(prev => {
-      const idx = THEME_ORDER.indexOf(prev);
-      return THEME_ORDER[(idx + 1) % THEME_ORDER.length];
-    });
-  };
-
-  const setTheme = (newTheme: Theme) => {
-    if (newTheme === 'crimson') {
-      setShowSocialistAnimation(true);
-      setSocialistAnimationKey(k => k + 1);
-      setTimeout(() => setShowSocialistAnimation(false), 2800);
-    }
-    setThemeState(newTheme);
-  };
+  }, [mounted, resolved, theme]);
 
   if (!mounted) return null;
-
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{
+      theme,
+      setTheme: setThemeState,
+      toggleTheme: () => setThemeState(current => THEMES[(THEMES.indexOf(current) + 1) % THEMES.length]),
+    }}>
       {children}
-      <SocialistSwitchAnimation key={socialistAnimationKey} show={showSocialistAnimation} />
     </ThemeContext.Provider>
   );
 }
 
 export function useTheme() {
   const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
+  if (!context) throw new Error('useTheme must be used within a ThemeProvider');
   return context;
 }
 
-/** Helper to get theme-aware colors inline */
 export function useThemeColors() {
   const { theme } = useTheme();
-  const isVoid = theme === 'void';
-  const isCrimson = theme === 'crimson';
-  const isDark = isVoid || isCrimson;
-
-  const accent = isCrimson ? '#C21518' : '#1282a2';
-  const accentL = isCrimson ? '#FF6B3A' : '#22b8d4';
+  const isDark = typeof document === 'undefined'
+    ? theme === 'dark'
+    : document.documentElement.classList.contains('dark');
+  const dark = (light: string, value: string) => isDark ? value : light;
 
   return {
-    theme, isVoid, isCrimson, isDark, accent, accentL,
-    pageBg: isVoid ? '#080f1e' : isCrimson ? '#1a0202' : '#f2f4f9',
-    cardBg: isVoid ? '#101e32' : isCrimson ? '#2B1810' : '#fff',
-    cardBrd: isVoid ? 'rgba(255,255,255,0.06)' : isCrimson ? 'rgba(194,21,24,0.45)' : '#ebedf5',
-    titleCol: isVoid ? '#e8edf5' : isCrimson ? '#fff6e6' : '#011d4d',
-    subCol: isVoid ? 'rgba(255,255,255,0.3)' : isCrimson ? 'rgba(255,215,0,0.65)' : '#9ca3af',
-    rowCol: isVoid ? 'rgba(255,255,255,0.8)' : isCrimson ? 'rgba(255,240,200,0.9)' : '#011d4d',
-    rowBrd: isVoid ? 'rgba(255,255,255,0.04)' : isCrimson ? 'rgba(194,21,24,0.15)' : '#f5f6fb',
-    headBg: isVoid ? 'rgba(255,255,255,0.03)' : isCrimson ? 'rgba(194,21,24,0.12)' : '#fafbfd',
-    iconBg: isVoid ? 'rgba(255,255,255,0.06)' : isCrimson ? 'rgba(194,21,24,0.20)' : '#f2f4f8',
-    iconStr: isVoid ? 'rgba(255,255,255,0.4)' : isCrimson ? '#FFD700' : '#6b7280',
-    // Soviet palette for crimson — propaganda poster status colors
-    statusSuccess: isCrimson ? '#FFD700' : isDark ? '#34d399' : '#10b981',
-    statusSuccessBg: isCrimson ? 'rgba(255,215,0,0.12)' : isDark ? '#0a2a1e' : '#f0fdf7',
-    statusSuccessBrd: isCrimson ? 'rgba(255,215,0,0.35)' : isDark ? '#10b98130' : '#d1fae5',
-    statusWarning: isCrimson ? '#FF6B3A' : isDark ? '#f59e0b' : '#d97706',
-    statusWarningBg: isCrimson ? 'rgba(255,107,58,0.12)' : isDark ? '#2e1f08' : '#fff8ed',
-    statusWarningBrd: isCrimson ? 'rgba(255,107,58,0.35)' : isDark ? '#f59e0b30' : '#d9770630',
-    statusDanger: isCrimson ? '#FF4444' : isDark ? '#ef4444' : '#ef4444',
-    statusDangerBg: isCrimson ? 'rgba(255,68,68,0.15)' : isDark ? '#2a0f10' : '#fff1f1',
-    statusDangerBrd: isCrimson ? 'rgba(255,68,68,0.40)' : isDark ? '#ef444430' : '#fecaca',
-    statusInfo: isCrimson ? '#C21518' : isDark ? '#3b82f6' : '#3b82f6',
-    statusInfoBg: isCrimson ? 'rgba(194,21,24,0.18)' : isDark ? '#0d1a35' : '#eff6ff',
-    statusInfoBrd: isCrimson ? 'rgba(194,21,24,0.40)' : isDark ? '#3b82f630' : '#bfdbfe',
-    statusPurple: isCrimson ? '#FFD700' : isDark ? '#8b5cf6' : '#8b5cf6',
-    statusPurpleBg: isCrimson ? 'rgba(255,215,0,0.10)' : isDark ? '#1a0f2e' : '#f5f3ff',
-    statusPurpleBrd: isCrimson ? 'rgba(255,215,0,0.30)' : isDark ? '#8b5cf630' : '#e9d5ff',
-    statusOrange: isCrimson ? '#FF6B3A' : isDark ? '#f97316' : '#f97316',
-    statusOrangeBg: isCrimson ? 'rgba(255,107,58,0.12)' : isDark ? '#1f0e04' : '#fff7ed',
-    statusOrangeBrd: isCrimson ? 'rgba(255,107,58,0.35)' : isDark ? '#f9731630' : '#fed7aa',
-    chartLineA: isCrimson ? '#FFD700' : '#10b981',
-    chartLineB: isCrimson ? '#FF6B3A' : '#ef4444',
-    chartLineC: isCrimson ? '#FFD70088' : '#3b82f6',
-    chartLineD: isCrimson ? '#C2151888' : '#8b5cf6',
-    chartGradientA: isCrimson ? ['#FFD700', 'rgba(255,215,0,0)'] : ['#EF4444', 'rgba(239,68,68,0)'],
-    chartGradientB: isCrimson ? ['#FF6B3A', 'rgba(255,107,58,0)'] : ['#10B981', 'rgba(16,185,129,0)'],
+    theme, resolvedTheme: isDark ? ('dark' as const) : ('light' as const), isDark,
+    accent: dark('#087ea4', '#67d2ff'), accentL: dark('#0ea5c9', '#9ae4ff'),
+    pageBg: dark('#f4f7f8', '#101418'), cardBg: dark('rgba(255,255,255,.76)', 'rgba(24,31,37,.78)'),
+    cardBrd: dark('rgba(20,57,73,.12)', 'rgba(214,235,244,.12)'), titleCol: dark('#102a36', '#edf6f9'),
+    subCol: dark('#607782', 'rgba(237,246,249,.62)'), rowCol: dark('#163744', 'rgba(237,246,249,.88)'),
+    rowBrd: dark('rgba(20,57,73,.08)', 'rgba(214,235,244,.08)'), headBg: dark('rgba(255,255,255,.48)', 'rgba(255,255,255,.04)'),
+    iconBg: dark('rgba(8,126,164,.10)', 'rgba(103,210,255,.12)'), iconStr: dark('#42606c', 'rgba(237,246,249,.7)'),
+    statusSuccess: dark('#087f5b', '#62d6a6'), statusSuccessBg: dark('#e7f7ef', 'rgba(98,214,166,.12)'), statusSuccessBrd: dark('#bcebd4', 'rgba(98,214,166,.26)'),
+    statusWarning: dark('#a45b09', '#f6c56f'), statusWarningBg: dark('#fff4de', 'rgba(246,197,111,.12)'), statusWarningBrd: dark('#f3d49a', 'rgba(246,197,111,.26)'),
+    statusDanger: dark('#be3e3a', '#ff8e8a'), statusDangerBg: dark('#ffebea', 'rgba(255,142,138,.12)'), statusDangerBrd: dark('#f6c2c0', 'rgba(255,142,138,.28)'),
+    statusInfo: dark('#2563a8', '#81b8ff'), statusInfoBg: dark('#eaf2ff', 'rgba(129,184,255,.12)'), statusInfoBrd: dark('#c8ddfb', 'rgba(129,184,255,.26)'),
+    statusPurple: dark('#6941c6', '#c2a8ff'), statusPurpleBg: dark('#f1edff', 'rgba(194,168,255,.12)'), statusPurpleBrd: dark('#dbd0ff', 'rgba(194,168,255,.25)'),
+    statusOrange: dark('#b84f16', '#fbb07b'), statusOrangeBg: dark('#fff0e8', 'rgba(251,176,123,.12)'), statusOrangeBrd: dark('#f7ceb4', 'rgba(251,176,123,.25)'),
+    chartLineA: dark('#138b67', '#62d6a6'), chartLineB: dark('#c84a46', '#ff8e8a'), chartLineC: dark('#337ab7', '#81b8ff'), chartLineD: dark('#7a5bd3', '#c2a8ff'),
+    chartGradientA: isDark ? ['#62d6a6', 'rgba(98,214,166,0)'] : ['#138b67', 'rgba(19,139,103,0)'],
+    chartGradientB: isDark ? ['#ff8e8a', 'rgba(255,142,138,0)'] : ['#c84a46', 'rgba(200,74,70,0)'],
   };
 }

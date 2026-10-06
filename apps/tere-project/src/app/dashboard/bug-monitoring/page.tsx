@@ -19,13 +19,6 @@ import { useThemeColors } from '@src/hooks/useTheme';
 
 // One entry per bug board configured in `boards` (is_bug_monitoring), the same three the
 // productivity summary counts against: INCL (Loan), INCF (Transaction), BUZZ (User).
-const BOARD_STYLES: Record<string, { icon: string; gradient: string; accent: string }> = {
-  BUZZ: { icon: '\u26A1', gradient: 'from-violet-500 to-purple-600', accent: 'violet' },
-  INCF: { icon: '\uD83C\uDFE6', gradient: 'from-cyan-500 to-blue-600', accent: 'cyan' },
-  INCL: { icon: '\uD83D\uDCB0', gradient: 'from-emerald-500 to-teal-600', accent: 'emerald' },
-};
-const DEFAULT_STYLE = { icon: '\uD83D\uDC1B', gradient: 'from-gray-500 to-slate-600', accent: 'gray' };
-
 const ACTIVE_STATUSES = ['To Do', 'In Progress', 'Ready to Test', 'Detected', 'In Review'];
 
 function BoardContent({ boardId, showAllBugs }: { boardId?: number; showAllBugs: boolean }) {
@@ -178,7 +171,7 @@ export default function BugMonitoringPage() {
   const [showAllBugs, setShowAllBugs] = useState(true);
   const [viewMode, setViewMode] = useState<'list' | 'charts'>('list');
   const {
-    accent, accentL, cardBg, cardBrd, titleCol, subCol, rowCol, isDark, iconBg,
+    accent, cardBg, cardBrd, titleCol, subCol, rowCol, isDark, iconBg,
   } = useThemeColors();
 
   // Auto-select first bug board once loaded
@@ -193,7 +186,7 @@ export default function BugMonitoringPage() {
       <div className="relative p-6 tere-table tere-tabs tere-input">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="mb-6 flex items-start justify-between">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div style={{ marginBottom: 18 }}>
               <h2
                 style={{
@@ -402,7 +395,6 @@ export default function BugMonitoringPage() {
           ) : viewMode === 'list' ? (
             <div className="flex gap-3 mb-6">
               {bugBoards.map((board) => {
-                const style = BOARD_STYLES[board.shortName] ?? DEFAULT_STYLE;
                 const isActive = selectedBoard === board.boardId;
                 return (
                   <button
@@ -414,15 +406,12 @@ export default function BugMonitoringPage() {
                       borderRadius: 12,
                       fontWeight: 600,
                       border: isActive ? '1px solid transparent' : `1px solid ${cardBrd}`,
-                      background: isActive
-                        ? `linear-gradient(135deg, ${accent}, ${accentL})`
-                        : cardBg,
+                      background: isActive ? accent : cardBg,
                       color: isActive ? '#fff' : rowCol,
                       cursor: 'pointer',
                       fontFamily: "'Space Grotesk',sans-serif",
                     }}
                   >
-                    <span style={{ fontSize: 22 }}>{style.icon}</span>
                     <div>
                       <div style={{ fontSize: 15, fontWeight: 700 }}>{board.name}</div>
                       <div
@@ -456,11 +445,11 @@ export default function BugMonitoringPage() {
             </div>
           ) : (
             <div className="flex flex-wrap gap-3 mb-6">
-              <button onClick={() => setChartBoard(undefined)} className="relative flex items-center gap-3 text-left transition-all duration-200" style={{ padding: '12px 20px', borderRadius: 12, fontWeight: 600, border: chartBoard === undefined ? '1px solid transparent' : `1px solid ${cardBrd}`, background: chartBoard === undefined ? `linear-gradient(135deg, ${accent}, ${accentL})` : cardBg, color: chartBoard === undefined ? '#fff' : rowCol, cursor: 'pointer', fontFamily: "'Space Grotesk',sans-serif" }}>
+              <button onClick={() => setChartBoard(undefined)} className="relative flex items-center gap-3 text-left transition-all duration-200" style={{ padding: '12px 20px', borderRadius: 12, fontWeight: 600, border: chartBoard === undefined ? '1px solid transparent' : `1px solid ${cardBrd}`, background: chartBoard === undefined ? accent : cardBg, color: chartBoard === undefined ? '#fff' : rowCol, cursor: 'pointer', fontFamily: "'Space Grotesk',sans-serif" }}>
                 All Bug Boards
               </button>
               {bugBoards.map(board => (
-                <button key={board.boardId} onClick={() => setChartBoard(board.boardId)} className="relative flex items-center gap-3 text-left transition-all duration-200" style={{ padding: '12px 20px', borderRadius: 12, fontWeight: 600, border: chartBoard === board.boardId ? '1px solid transparent' : `1px solid ${cardBrd}`, background: chartBoard === board.boardId ? `linear-gradient(135deg, ${accent}, ${accentL})` : cardBg, color: chartBoard === board.boardId ? '#fff' : rowCol, cursor: 'pointer', fontFamily: "'Space Grotesk',sans-serif" }}>
+                <button key={board.boardId} onClick={() => setChartBoard(board.boardId)} className="relative flex items-center gap-3 text-left transition-all duration-200" style={{ padding: '12px 20px', borderRadius: 12, fontWeight: 600, border: chartBoard === board.boardId ? '1px solid transparent' : `1px solid ${cardBrd}`, background: chartBoard === board.boardId ? accent : cardBg, color: chartBoard === board.boardId ? '#fff' : rowCol, cursor: 'pointer', fontFamily: "'Space Grotesk',sans-serif" }}>
                   {board.name}
                 </button>
               ))}

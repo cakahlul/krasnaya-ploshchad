@@ -2,37 +2,21 @@
 
 import type { Theme } from '@src/hooks/useTheme';
 
-export default function PageSkeleton({ theme }: { theme: Theme }) {
-  const isVoid = theme === 'void' || theme === 'crimson';
-  const shimBg = isVoid ? 'rgba(255,255,255,0.05)' : '#ebedf5';
-  const shimHi = isVoid ? 'rgba(255,255,255,0.10)' : '#f5f6fb';
-  const cardBg = isVoid ? '#101e32' : '#fff';
-  const cardBrd = isVoid ? 'rgba(255,255,255,0.06)' : '#ebedf5';
-
-  const Skel = ({ w, h, r = 10, mb = 0 }: { w: string; h: string; r?: number; mb?: number }) => (
-    <div
-      style={{
-        width: w,
-        height: h,
-        borderRadius: r,
-        background: shimBg,
-        marginBottom: mb,
-        overflow: 'hidden',
-        position: 'relative',
-        flexShrink: 0,
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: `linear-gradient(90deg, transparent 0%, ${shimHi} 50%, transparent 100%)`,
-          backgroundSize: '200% 100%',
-          animation: 'skelShim 1.2s ease-in-out infinite',
-        }}
-      />
+function Skel({ w, h, r = 10, mb = 0 }: { w: string; h: string; r?: number; mb?: number }) {
+  const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  const shimBg = isDark ? 'rgba(255,255,255,0.05)' : '#ebedf5';
+  const shimHi = isDark ? 'rgba(255,255,255,0.10)' : '#f5f6fb';
+  return (
+    <div style={{ width: w, height: h, borderRadius: r, background: shimBg, marginBottom: mb, overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
+      <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(90deg, transparent 0%, ${shimHi} 50%, transparent 100%)`, backgroundSize: '200% 100%', animation: 'skelShim 1.2s ease-in-out infinite' }} />
     </div>
   );
+}
+
+export default function PageSkeleton({ theme }: { theme: Theme }) {
+  const isDark = theme === 'dark';
+  const cardBg = isDark ? '#101e32' : '#fff';
+  const cardBrd = isDark ? 'rgba(255,255,255,0.06)' : '#ebedf5';
 
   return (
     <div style={{ paddingBottom: 24 }}>
@@ -42,7 +26,7 @@ export default function PageSkeleton({ theme }: { theme: Theme }) {
         <Skel w="340px" h="16px" r={6} />
       </div>
       {/* KPI cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 14 }}>
+      <div className="grid grid-cols-2 lg:grid-cols-4" style={{ gap: 12, marginBottom: 14 }}>
         {[0, 1, 2, 3].map(i => (
           <div
             key={i}
@@ -63,7 +47,7 @@ export default function PageSkeleton({ theme }: { theme: Theme }) {
         ))}
       </div>
       {/* Two-col */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 12, marginBottom: 14 }}>
         {[0, 1].map(i => (
           <div
             key={i}

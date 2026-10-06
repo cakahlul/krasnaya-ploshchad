@@ -43,7 +43,7 @@
 ### Feature module (frontend)
 - `apps/tere-project/src/features/dashboard/`
   - `components/` — `ProductivitySummary.tsx` (+ `ProductivitySummary.contract.test.ts`), `ProductivitySummaryStates.tsx` (+ test), `GlobalSearch.tsx`, `ProductivitySummaryExportButton.tsx`, `filterReport.tsx`, `epicSelect.tsx`, `DateRangeSelect.tsx`, `SprintSelect.tsx`, `TeamSelect.tsx`, `MultiSelectSprint.tsx`, `MultiSelectTeam.tsx`, `SprintTrendChart.tsx`
-  - `hooks/` — 18 hooks including `useSprintFetch.ts`, `useMultiTeamSprintFetch.ts`, `useSprintDataTransform.ts`, `useMultiSprintDataTransform.ts`, `useBoards.ts`, `useGlobalSearch.ts`, `useMemberIssues.ts`, `useMemberProfile.ts`, `useTargetWpConfig.ts`, `useWpWeightConfig.ts`, `useTeamReportAutoDefaults.ts`, `useSprintTrend.ts`
+  - `hooks/` — 18 hooks including `useDashboardSummary.ts` (board-scoped dashboard summaries, fetched in three-board batches), `useSprintFetch.ts`, `useMultiTeamSprintFetch.ts`, `useSprintDataTransform.ts`, `useMultiSprintDataTransform.ts`, `useBoards.ts`, `useGlobalSearch.ts`, `useMemberIssues.ts`, `useMemberProfile.ts`, `useTargetWpConfig.ts`, `useWpWeightConfig.ts`, `useTeamReportAutoDefaults.ts`, `useSprintTrend.ts`
   - `repositories/jiraRepository.ts` — client-side Jira data fetcher
   - `store/sprintFilterStore.ts`, `store/teamReportFilterStore.ts` — Zustand
   - `types/dashboard.ts`
@@ -51,7 +51,8 @@
   - `utils/productivity-summary-stream.ts` (+ test) — `fetch` against the same summary URL with `Accept: application/x-ndjson` (Firebase token attached like `axiosClient` does) plus `createNdjsonParser`, which buffers a line split across chunk boundaries. `ProductivitySummary.tsx` consumes it to show real "month N of M" progress and to draw `ProductivitySummaryComparisonChart` from points already received while the remaining months load.
 
 ### API routes
-- `POST /api/dashboard/summary` → `apps/tere-project/src/app/api/dashboard/summary/route.ts`
+- `GET /api/boards` → `apps/tere-project/src/app/api/boards/route.ts` — always scoped to the caller's assigned non-bug boards, including Leads
+- `GET /api/dashboard/summary` → `apps/tere-project/src/app/api/dashboard/summary/route.ts` — always scoped to the caller's assigned boards (including Leads); non-Leads receive only their own metrics; optional authorized `boardId` returns one board summary for progressive dashboard loading
 - `GET /api/report` → `apps/tere-project/src/app/api/report/route.ts`
 - `GET /api/report/all` → `apps/tere-project/src/app/api/report/all/route.ts`
 - `GET /api/report/epics` → `apps/tere-project/src/app/api/report/epics/route.ts`

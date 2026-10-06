@@ -1,24 +1,12 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import dynamic from 'next/dynamic';
-import {
-  motion,
-  useMotionTemplate,
-  useMotionValue,
-  useSpring,
-  useTransform,
-} from 'framer-motion';
+import { motion } from 'framer-motion';
 import { login, signInWithGoogle } from '@src/lib/auth';
 import { getAuth } from 'firebase/auth';
 import useUser from '@src/hooks/useUser';
 import { useRouter } from 'next/navigation';
 import LegalModal, { type LegalModalType } from '@src/components/LegalModal';
-
-const Stat3DScene = dynamic(() => import('./Stat3DScene'), {
-  ssr: false,
-  loading: () => null,
-});
 
 async function createSessionCookie() {
   const auth = getAuth();
@@ -33,13 +21,6 @@ async function createSessionCookie() {
   });
 }
 
-const FEATURE_CHIPS = [
-  { label: 'Sprint WP tracking', icon: '📊' },
-  { label: 'Productivity analytics', icon: '⚡' },
-  { label: 'Bug monitoring', icon: '🐛' },
-  { label: 'Leave & holidays', icon: '🗓️' },
-];
-
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -51,42 +32,6 @@ export default function SignIn() {
   const [legalModal, setLegalModal] = useState<LegalModalType | null>(null);
   const { loginPageMessage } = useUser();
   const router = useRouter();
-
-  // 3D card tilt — tracks cursor over card and tilts in 3D based on offset
-  // from center. Activated after the intro animation completes so initial
-  // load isn't fighting motion values.
-  const [cardInteractive, setCardInteractive] = useState(false);
-  const cardMouseX = useMotionValue(0);
-  const cardMouseY = useMotionValue(0);
-  const cardSpringX = useSpring(cardMouseX, { stiffness: 160, damping: 18 });
-  const cardSpringY = useSpring(cardMouseY, { stiffness: 160, damping: 18 });
-  const cardRotateY = useTransform(cardSpringX, [-200, 200], [-9, 9]);
-  const cardRotateX = useTransform(cardSpringY, [-200, 200], [7, -7]);
-  // Cursor-following highlight position (% within the card)
-  const glareX = useTransform(cardMouseX, [-220, 220], ['10%', '90%']);
-  const glareY = useTransform(cardMouseY, [-280, 280], ['10%', '90%']);
-  const glareBackground = useMotionTemplate`radial-gradient(circle at ${glareX} ${glareY}, rgba(127,216,238,0.13) 0%, rgba(167,139,250,0.06) 30%, transparent 55%)`;
-
-  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardInteractive) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    cardMouseX.set(e.clientX - rect.left - rect.width / 2);
-    cardMouseY.set(e.clientY - rect.top - rect.height / 2);
-  };
-
-  const handleCardMouseLeave = () => {
-    cardMouseX.set(0);
-    cardMouseY.set(0);
-  };
-
-  const handleCardTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!cardInteractive) return;
-    const touch = e.touches[0];
-    if (!touch) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    cardMouseX.set(touch.clientX - rect.left - rect.width / 2);
-    cardMouseY.set(touch.clientY - rect.top - rect.height / 2);
-  };
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -122,33 +67,8 @@ export default function SignIn() {
   return (
     <div
       className="relative min-h-screen w-full overflow-x-hidden overflow-y-auto font-sans"
-      style={{ background: 'linear-gradient(135deg, #060d1a, #011d4d, #034078)' }}
+      style={{ background: '#07121d' }}
     >
-      {/* Grid overlay — denser on mobile, looser on desktop */}
-      <div
-        className="pointer-events-none absolute inset-0 bg-[length:40px_40px] sm:bg-[length:60px_60px]"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
-        }}
-      />
-
-      {/* Accent glow orb — scales with viewport */}
-      <div
-        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[280px] w-[280px] sm:h-[420px] sm:w-[420px] lg:h-[600px] lg:w-[600px] rounded-full"
-        style={{
-          background: 'radial-gradient(circle, rgba(18,130,162,0.15) 0%, transparent 70%)',
-        }}
-      />
-
-      {/* Full-page 3D layer — sits behind content. pointer-events:none on the wrapper
-          so DOM stays clickable; R3F uses document.body as event source so bars
-          still raycast hover/click correctly when cursor is over them. Visible on
-          all screen sizes — the scene auto-repositions for mobile vs desktop. */}
-      <div className="pointer-events-none fixed inset-0 z-[5]">
-        <Stat3DScene />
-      </div>
-
       {/* Two-column layout */}
       <div className="relative z-10 flex min-h-screen flex-col lg:flex-row">
         {/* Left panel — branding. Tight on mobile, comfortable on tablet,
@@ -158,7 +78,7 @@ export default function SignIn() {
           <div className="flex items-center justify-center lg:justify-start gap-2.5 sm:gap-3">
             <div
               className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg"
-              style={{ background: 'linear-gradient(135deg, #1282a2, #22b8d4)' }}
+              style={{ background: '#1282a2' }}
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="h-4 w-4 sm:h-[18px] sm:w-[18px]">
                 <rect x="1" y="9" width="3.5" height="8" rx="1" fill="white" />
@@ -196,7 +116,7 @@ export default function SignIn() {
                 className="text-[10px] sm:text-[11px] font-medium uppercase tracking-[0.16em]"
                 style={{ color: '#7fd8ee' }}
               >
-                v2.0 · Now Live
+                Delivery workspace
               </span>
             </div>
 
@@ -204,17 +124,7 @@ export default function SignIn() {
               className="max-w-xl text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold leading-tight text-white"
               style={{ textShadow: '0 2px 14px rgba(0,0,0,0.5)' }}
             >
-              Your team&apos;s data,{' '}
-              <span
-                style={{
-                  background: 'linear-gradient(135deg, #a78bfa, #7fd8ee, #fbb6ce)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                finally fun to look at.
-              </span>
+              Know what needs attention. Act with context.
             </h1>
 
             <p
@@ -224,81 +134,30 @@ export default function SignIn() {
                 textShadow: '0 1px 8px rgba(0,0,0,0.45)',
               }}
             >
-              Sprint tracking, productivity, bug monitoring & leave — one dashboard your team will actually
-              enjoy opening.
+              Track delivery, investigate risks, and manage team operations from one place.
             </p>
 
-            <div className="hidden md:flex flex-wrap justify-center lg:justify-start gap-1.5 sm:gap-2">
-              {FEATURE_CHIPS.map((f) => (
-                <div
-                  key={f.label}
-                  className="flex items-center gap-1.5 rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs transition-colors duration-200 hover:bg-white/10"
-                  style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'rgba(255,255,255,0.75)',
-                    backdropFilter: 'blur(8px)',
-                  }}
-                >
-                  <span className="text-sm leading-none">{f.icon}</span>
-                  <span>{f.label}</span>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
 
         {/* Right panel - Sign-in card */}
         <div
           className="flex w-full items-center justify-center overflow-x-hidden px-4 py-4 sm:px-6 sm:py-8 md:px-10 lg:w-1/2 lg:px-16 lg:py-12"
-          style={{ perspective: '1400px' }}
         >
           <div className="w-full max-w-sm sm:max-w-md">
-            {/* Glassmorphic card — smooth blur-in fade. Card materializes from
-                blurred to sharp with subtle lift, then becomes interactively
-                tiltable on cursor + glare highlight follows the pointer. */}
             <motion.div
-              initial={{ opacity: 0, y: 12, scale: 0.98, filter: 'blur(12px)' }}
-              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-              transition={{
-                duration: 1.1,
-                ease: [0.22, 1, 0.36, 1],
-                delay: 0.45,
-              }}
-              onAnimationComplete={() => setCardInteractive(true)}
-              onMouseMove={handleCardMouseMove}
-              onMouseLeave={handleCardMouseLeave}
-              onTouchMove={handleCardTouchMove}
-              onTouchEnd={handleCardMouseLeave}
-              onTouchCancel={handleCardMouseLeave}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
               className="relative overflow-hidden rounded-2xl sm:rounded-[24px] p-5 sm:p-7 lg:p-10"
               style={{
                 background: 'rgba(255,255,255,0.04)',
-                backdropFilter: 'blur(24px)',
-                WebkitBackdropFilter: 'blur(24px)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
                 border: '1px solid rgba(255,255,255,0.08)',
-                boxShadow: '0 8px 48px rgba(0,0,0,0.4)',
-                transformStyle: 'preserve-3d',
-                willChange: 'transform',
-                ...(cardInteractive
-                  ? { rotateY: cardRotateY, rotateX: cardRotateX }
-                  : {}),
+                boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
               }}
             >
-              {/* Cursor-following highlight overlay — adds the "glass card has
-                  depth" feel when interacting */}
-              {cardInteractive && (
-                <motion.div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: glareBackground,
-                    borderRadius: 'inherit',
-                    pointerEvents: 'none',
-                    mixBlendMode: 'plus-lighter',
-                  }}
-                />
-              )}
               {loginPageMessage && (
                 <div
                   className="mb-4 sm:mb-6 rounded-lg border-l-4 p-3 sm:p-4"
@@ -313,9 +172,7 @@ export default function SignIn() {
                 </div>
               )}
 
-              <h2 className="mb-2 text-xl sm:text-2xl font-bold text-white">
-                Welcome back <span className="inline-block">&#x1F44B;</span>
-              </h2>
+              <h2 className="mb-2 text-xl sm:text-2xl font-bold text-white">Sign in to Tere</h2>
               <p className="mb-6 sm:mb-8 text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
                 Sign in to access your team dashboard
               </p>
@@ -328,9 +185,8 @@ export default function SignIn() {
                 className="group relative flex w-full items-center justify-center gap-2 sm:gap-3 rounded-xl px-3 py-3 sm:px-4 sm:py-3.5 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                 style={{
                   background: success
-                    ? 'linear-gradient(135deg, #059669, #10b981)'
-                    : 'linear-gradient(135deg, #1282a2, #22b8d4)',
-                  boxShadow: '0 4px 24px rgba(18,130,162,0.3)',
+                    ? '#059669'
+                    : '#1282a2',
                 }}
               >
                 {googleLoading ? (
@@ -470,9 +326,8 @@ export default function SignIn() {
                     className="w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                     style={{
                       background: success
-                        ? 'linear-gradient(135deg, #059669, #10b981)'
-                        : 'linear-gradient(135deg, #1282a2, #22b8d4)',
-                      boxShadow: '0 4px 24px rgba(18,130,162,0.25)',
+                        ? '#059669'
+                        : '#1282a2',
                     }}
                   >
                     {success ? 'Redirecting...' : loading ? 'Signing in...' : 'Sign in'}
@@ -515,7 +370,7 @@ export default function SignIn() {
               className="mt-4 sm:mt-6 text-center text-[10px] sm:text-xs italic px-2"
               style={{ color: 'rgba(255,255,255,0.2)' }}
             >
-              Your data is safe. Unlike your WP score on a bad sprint.
+              Use your company account to continue.
             </p>
           </div>
         </div>

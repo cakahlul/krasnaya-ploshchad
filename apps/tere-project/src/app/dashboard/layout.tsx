@@ -27,7 +27,7 @@ function NotRegisteredScreen({ email }: { email: string | null }) {
   return (
     <div
       className="min-h-screen flex items-center justify-center"
-      style={{ background: isDark ? 'linear-gradient(180deg, #0d1829 0%, #0f1f36 100%)' : '#f9fafb' }}
+      style={{ background: isDark ? '#101418' : '#f4f7f8' }}
     >
       <div
         className="max-w-md w-full mx-4 rounded-2xl p-8 text-center"
@@ -37,7 +37,6 @@ function NotRegisteredScreen({ email }: { email: string | null }) {
           boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
         }}
       >
-        <div className="text-4xl mb-4">🚧</div>
         <h2
           className="text-xl font-bold mb-2"
           style={{ color: isDark ? '#ffffff' : '#111827' }}
@@ -51,7 +50,7 @@ function NotRegisteredScreen({ email }: { email: string | null }) {
         <button
           onClick={handleSignOut}
           className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
-          style={{ background: 'linear-gradient(135deg, #1282a2, #22b8d4)' }}
+          style={{ background: '#087ea4' }}
         >
           Sign Out
         </button>
@@ -99,7 +98,7 @@ function DashboardShell({
         <LoadingScreen onComplete={handleLoadingComplete} isDataReady={isDataReady} theme={theme} />
       )}
       <div
-        className="min-h-screen overflow-hidden transition-colors duration-300"
+        className="tere-workspace min-h-screen overflow-hidden transition-colors duration-300"
         style={{
           background: pageBg,
           visibility: showLoading ? 'hidden' : 'visible',
@@ -114,13 +113,9 @@ function DashboardShell({
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
             <Topbar onMenuClick={() => setSidebarOpen(true)} />
             <div
-              className="absolute top-0 bottom-0 overflow-y-auto"
+              className="absolute top-0 bottom-0 left-3 right-3 lg:left-[252px] lg:right-3 overflow-y-auto"
               style={{
-                left: 252,
-                right: 0,
                 paddingTop: 88,
-                paddingLeft: 14,
-                paddingRight: 14,
                 paddingBottom: 14,
               }}
             >
@@ -150,7 +145,7 @@ export default function DashboardLayout({
       },
     },
   }));
-  const { pageBg, theme } = useThemeColors();
+  const { pageBg, resolvedTheme } = useThemeColors();
 
   const [animFinished, setAnimFinished] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -182,7 +177,7 @@ export default function DashboardLayout({
             showLoading={showLoading}
             isDataReady={!loading}
             handleLoadingComplete={handleLoadingComplete}
-            theme={theme}
+            theme={resolvedTheme}
             pageBg={pageBg}
           >
             {children}

@@ -41,34 +41,16 @@ export default function EpicInfoCard({ epic }: { epic: ExplorerEpicInfo }) {
         boxShadow: `0 1px 0 ${c.cardBrd}`,
       }}
     >
-      {/* Gradient accent header — epics are the top of the hierarchy, give them presence. */}
       <div
         style={{
           padding: '18px 20px',
-          background: `linear-gradient(135deg, ${c.statusPurpleBg}, ${c.cardBg} 70%)`,
+          background: c.statusPurpleBg,
           borderBottom: `1px solid ${c.cardBrd}`,
           display: 'flex',
           alignItems: 'center',
           gap: 12,
         }}
       >
-        <span
-          aria-hidden
-          style={{
-            width: 40,
-            height: 40,
-            flexShrink: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: 10,
-            background: c.statusPurpleBg,
-            border: `1px solid ${c.statusPurpleBrd}`,
-            fontSize: 20,
-          }}
-        >
-          🏛️
-        </span>
         <h3 style={{ fontSize: 18, fontWeight: 700, color: c.titleCol, margin: 0 }}>
           {orDash(epic.summary)}
         </h3>

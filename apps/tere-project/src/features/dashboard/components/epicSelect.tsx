@@ -239,7 +239,7 @@ export function EpicSelect({ isStoryGrouping = false }: { isStoryGrouping?: bool
           </div>
 
           {/* Footer actions */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderTop: '1px solid #f3f0ff', background: 'linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderTop: '1px solid #f3f0ff', background: '#faf5ff' }}>
             <div style={{ display: 'flex', gap: 6 }}>
               <button
                 type="button"

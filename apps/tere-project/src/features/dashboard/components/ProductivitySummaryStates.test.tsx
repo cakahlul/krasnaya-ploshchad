@@ -112,7 +112,7 @@ test('keeps chart nulls as gaps and uses responsive accessible themed primitives
   }
 });
 
-test('never hardcodes a color literal — every color is a theme token (light/void/crimson)', () => {
+test('never hardcodes a color literal — every color is a light or dark theme token', () => {
   // Only literal color values allowed are the theme-agnostic SVG chrome recharts needs;
   // every semantic color (accent, status, text, border) must go through a --tere-*/--color-* token.
   assert.doesNotMatch(source, /#[0-9a-fA-F]{3,8}/);

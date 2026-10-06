@@ -12,9 +12,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 export function getDashboardBoardIdsForMember(
   member: { isLead?: boolean; teams: readonly string[] },
   boards: readonly { boardId: number; shortName: string; isBugMonitoring?: boolean }[],
-): number[] | undefined {
-  if (member.isLead) return undefined;
-
+): number[] {
   const teams = new Set(member.teams.map(team => team.trim().toLowerCase()));
   return boards
     .filter(board => !board.isBugMonitoring && teams.has(board.shortName.toLowerCase()))
@@ -36,6 +34,34 @@ export function toDashboardMemberSummary(issue: {
     totalWeightPoints: issue.totalWeightPoints,
     targetWeightPoints: issue.targetWeightPoints,
     spTotal: issue.spTotal ?? 0,
+  };
+}
+
+export function restrictDashboardSummaryToMember(
+  summary: DashboardSummaryResponseDto,
+  fullName: string,
+): DashboardSummaryResponseDto {
+  const name = fullName.trim().toLowerCase();
+  return {
+    ...summary,
+    teams: summary.teams.map(team => {
+      const memberSummaries = team.memberSummaries.filter(member =>
+        member.name.trim().toLowerCase() === name,
+      );
+      return {
+        ...team,
+        averageProductivity: null,
+        averageWpPerHour: null,
+        teamMembers: memberSummaries.length,
+        memberSummaries,
+        totalEpics: 0,
+        productPercentage: null,
+        techDebtPercentage: null,
+        totalWorkItems: 0,
+        closedWorkItems: 0,
+        averageHoursOpen: null,
+      };
+    }),
   };
 }
 

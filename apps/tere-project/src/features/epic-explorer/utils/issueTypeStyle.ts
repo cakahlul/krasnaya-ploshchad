@@ -16,7 +16,7 @@ export interface IssueTypeStyle {
 /**
  * Maps a Jira issue type to a color + glyph so the hierarchy reads at a glance
  * instead of a monotone table. Colors are pulled from the theme status palette
- * so all three themes (light / void / crimson) stay coherent.
+ * so light and dark themes stay coherent.
  */
 export function issueTypeStyle(issueType: string, c: Colors): IssueTypeStyle {
   const t = issueType.toLowerCase();

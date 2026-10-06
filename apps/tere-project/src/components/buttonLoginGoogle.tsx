@@ -12,10 +12,10 @@ export default function GoogleLoginButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="w-full flex items-center justify-center gap-3 py-3 mt-2 bg-white text-secondary font-semibold rounded-lg shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all duration-200 border border-muted animate-fade-in"
+      className="mt-2 flex w-full items-center justify-center gap-3 rounded-lg border border-slate-200 bg-white py-3 font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60"
     >
-      <GoogleOutlined className="text-red-500 text-xl animate-bounce-left-right" />
-      <span className="text-sm">Login with Google ✨</span>
+      <GoogleOutlined className="text-xl text-red-500" />
+      <span className="text-sm">Continue with Google</span>
     </button>
   );
 }

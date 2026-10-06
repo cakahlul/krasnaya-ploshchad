@@ -2,25 +2,22 @@
 
 export default function MaintenancePage() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-accent via-muted to-white text-center px-6 relative overflow-hidden">
-      <div className="animate-slot-in mb-8 text-6xl">🛠️</div>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-6 text-center dark:bg-slate-950">
 
-      <h1 className="text-3xl font-bold text-primary animate-slot-in mb-2">
-        We’re Fixing Things Up!
+      <h1 className="mb-2 text-3xl font-bold text-primary">
+        Maintenance in progress
       </h1>
 
-      <p className="text-secondary text-base max-w-md animate-slot-in delay-200">
-        This page is currently under maintenance. We’re brewing fresh code,
-        chasing bugs, and probably arguing over dark mode vs light mode. Come
-        back later — it’ll be worth it 🚀
+      <p className="max-w-md text-base text-slate-600 dark:text-slate-300">
+        This service is temporarily unavailable while maintenance is performed.
       </p>
 
-      <div className="mt-10 animate-slot-in delay-300">
+      <div className="mt-10">
         <button
           onClick={() => window.location.reload()}
           className="bg-secondary hover:bg-primary text-white font-semibold py-2 px-6 rounded-full transition-all duration-300 active:scale-95"
         >
-          Try Again Later 🔄
+          Try again
         </button>
       </div>
     </div>

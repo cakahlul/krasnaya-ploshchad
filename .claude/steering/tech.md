@@ -105,6 +105,7 @@ There is **no separate backend service**. All server-side logic for Tere runs in
 - Jira credentials and Firebase service-account keys live in env vars; never commit `.env`.
 - API-key auth supported for programmatic access (used by MCP server).
 - RBAC enforced via `with-role` HOF.
+- Dashboard summaries and board lists are authorized by assigned board short names for every role, including Leads; non-Leads receive only their own metrics.
 - Sensitive Jira data must not be exposed publicly.
 
 ## Development Workflow

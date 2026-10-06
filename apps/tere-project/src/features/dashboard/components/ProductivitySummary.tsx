@@ -301,7 +301,7 @@ export default function ProductivitySummary() {
             Productivity Summary
           </h2>
           <p style={{ color: T.subCol, margin: '4px 0 0', fontSize: 12.5, fontFamily: sans }}>
-            Productivity overview by reporting Group
+            Compare reporting groups over a selected month range.
           </p>
         </div>
         <ProductivitySummaryExportButton

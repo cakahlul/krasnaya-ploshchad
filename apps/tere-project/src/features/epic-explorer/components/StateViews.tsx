@@ -59,7 +59,7 @@ function StateCard({ glyph, title, message, tone, assertive }: StateCardProps) {
 export function NotFound() {
   return (
     <StateCard
-      glyph="🔍"
+      glyph="?"
       tone="warning"
       title="Epic not found"
       message="This epic does not exist in the selected project, or it may have been moved or deleted."
@@ -70,7 +70,7 @@ export function NotFound() {
 export function NoAccess() {
   return (
     <StateCard
-      glyph="🔒"
+      glyph="!"
       tone="warning"
       title="No access to this epic"
       message="You do not have permission to view this epic in Jira. Ask a project admin if you believe this is a mistake."
@@ -81,7 +81,7 @@ export function NoAccess() {
 export function Unauthorized() {
   return (
     <StateCard
-      glyph="⚠️"
+      glyph="!"
       tone="error"
       assertive
       title="Session expired"
@@ -93,7 +93,7 @@ export function Unauthorized() {
 export function JiraError({ detail }: { detail?: string | null }) {
   return (
     <StateCard
-      glyph="🛑"
+      glyph="!"
       tone="error"
       assertive
       title="Could not load epic from Jira"
@@ -108,7 +108,7 @@ export function JiraError({ detail }: { detail?: string | null }) {
 export function EmptyEpic() {
   return (
     <StateCard
-      glyph="📭"
+      glyph="i"
       tone="info"
       title="No child issues"
       message="This epic loaded successfully but has no stories, tasks, or sub-tasks under it yet."
@@ -120,7 +120,7 @@ export function PartialAuthzNote({ hiddenCount }: { hiddenCount: number }) {
   if (hiddenCount <= 0) return null;
   return (
     <StateCard
-      glyph="👁️"
+      glyph="i"
       tone="info"
       title={`${hiddenCount} item${hiddenCount === 1 ? '' : 's'} hidden`}
       message={`${hiddenCount} child issue${

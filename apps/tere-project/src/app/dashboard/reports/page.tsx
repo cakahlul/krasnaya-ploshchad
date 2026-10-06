@@ -31,19 +31,19 @@ export default function Dashboard() {
 
   return (
     <RoleBasedRoute allowedRoles={['Lead', 'Member']}>
-      <div className="relative p-6 tere-table tere-input">
+      <div className="tere-delivery-page relative tere-table tere-input">
         {showLoading && (
           <LoadingBar
             isDataReady={!effectiveLoading}
             onComplete={handleLoadingComplete}
           />
         )}
-        <div style={{ marginBottom: 18 }}>
+        <div className="tere-delivery-page__intro" style={{ marginBottom: 18 }}>
           <h2 style={{ fontSize: 22, fontWeight: 700, color: titleCol, margin: 0, fontFamily: "'Space Grotesk',sans-serif", letterSpacing: -0.3 }}>
             Team Reporting
           </h2>
           <p style={{ color: subCol, margin: '4px 0 0', fontSize: 12.5, fontFamily: "'Space Grotesk',sans-serif" }}>
-            Sprint performance overview · All teams
+            Compare delivery by board, sprint, or date range.
           </p>
         </div>
         <FilterReport />

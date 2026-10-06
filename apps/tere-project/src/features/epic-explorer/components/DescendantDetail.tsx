@@ -37,11 +37,10 @@ export default function DescendantDetail({ item }: { item: ExplorerDescendant })
       aria-label={`Detail for ${item.key}`}
       style={{ background: c.cardBg, borderRadius: 12, overflow: 'hidden', fontFamily: sans }}
     >
-      {/* Type-colored header — matches the hierarchy card's accent. */}
       <div
         style={{
           padding: '16px 18px',
-          background: `linear-gradient(135deg, ${ts.bg}, ${c.cardBg} 75%)`,
+          background: ts.bg,
           borderBottom: `1px solid ${c.cardBrd}`,
           borderLeft: `4px solid ${ts.accent}`,
           display: 'flex',

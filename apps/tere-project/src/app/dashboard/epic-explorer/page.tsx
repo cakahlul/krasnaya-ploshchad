@@ -109,40 +109,21 @@ function DetailArea() {
 }
 
 function ExplorerContent() {
-  const { titleCol, subCol, statusPurpleBg, statusPurpleBrd } = useThemeColors();
+  const { titleCol, subCol } = useThemeColors();
   const projects = useExplorerStore(s => s.projects);
   const epicKeys = useExplorerStore(s => s.epicKeys);
   useExplorerUrlSync();
 
   return (
-    <div className="p-6 tere-table tere-tabs tere-input">
+    <div className="tere-delivery-page tere-table tere-tabs tere-input">
       <div className="max-w-6xl mx-auto">
-        <div style={{ marginBottom: 18, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span
-            aria-hidden
-            style={{
-              width: 44,
-              height: 44,
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 12,
-              background: statusPurpleBg,
-              border: `1px solid ${statusPurpleBrd}`,
-              fontSize: 22,
-            }}
-          >
-            🧭
-          </span>
-          <div>
+        <div className="tere-delivery-page__intro" style={{ marginBottom: 18 }}>
             <h2 style={{ fontSize: 22, fontWeight: 700, color: titleCol, margin: 0, fontFamily: sans, letterSpacing: -0.3 }}>
               Epic Explorer
             </h2>
             <p style={{ color: subCol, margin: '4px 0 0', fontSize: 12.5, fontFamily: sans }}>
               Inspect an epic&apos;s child hierarchy and rolled-up metrics
             </p>
-          </div>
         </div>
 
         <div className="filter-bar">

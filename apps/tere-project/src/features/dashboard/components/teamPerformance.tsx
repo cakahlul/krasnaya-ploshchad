@@ -275,17 +275,17 @@ function EnhancedGradientCard({
 
 function buildGradients(T: ReturnType<typeof import('@src/hooks/useTheme').useThemeColors>) {
   return {
-    totalSP: `linear-gradient(135deg, ${T.statusPurple}, ${T.accent})`,
-    targetSP: `linear-gradient(135deg, ${T.statusInfo}, ${T.accent})`,
-    avgProductivity: `linear-gradient(135deg, ${T.statusPurple}, ${T.statusOrange})`,
-    avgWpHour: `linear-gradient(135deg, ${T.statusOrange}, ${T.statusDanger})`,
-    product: `linear-gradient(135deg, ${T.statusSuccess}, ${T.accent})`,
-    techDebt: `linear-gradient(135deg, ${T.statusWarning}, ${T.statusOrange})`,
-    totalWP: `linear-gradient(135deg, ${T.accent}, ${T.accentL})`,
-    selectedDays: 'linear-gradient(135deg, #64748b, #475569)',
-    totalDays: 'linear-gradient(135deg, #6b7280, #4b5563)',
-    totalLeave: `linear-gradient(135deg, ${T.statusInfo}, ${T.statusPurple})`,
-    totalSick: `linear-gradient(135deg, ${T.statusDanger}, ${T.statusOrange})`,
+    totalSP: T.statusPurple,
+    targetSP: T.statusInfo,
+    avgProductivity: T.statusOrange,
+    avgWpHour: T.statusDanger,
+    product: T.statusSuccess,
+    techDebt: T.statusWarning,
+    totalWP: T.accent,
+    selectedDays: T.subCol,
+    totalDays: T.rowCol,
+    totalLeave: T.statusInfo,
+    totalSick: T.statusDanger,
   };
 }
 
@@ -293,8 +293,9 @@ function buildGradients(T: ReturnType<typeof import('@src/hooks/useTheme').useTh
 
 export default function TeamPerformance() {
   const { data } = useTeamReportTransform();
-  const { titleCol, ...T } = useThemeColors();
-  const GRADIENTS = buildGradients(T as any);
+  const T = useThemeColors();
+  const { titleCol } = T;
+  const GRADIENTS = buildGradients(T);
   const dateSubtitle = formatDateRange(data?.sprintStartDate, data?.sprintEndDate);
 
   const wpTotal = (data?.totalWeightPointsProduct ?? 0) + (data?.totalWeightPointsTechDebt ?? 0);

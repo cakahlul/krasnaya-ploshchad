@@ -3,7 +3,6 @@
 import { LockOutlined, LogoutOutlined, MenuOutlined } from '@ant-design/icons';
 import { logout } from '@src/lib/auth';
 import { useTheme, useThemeColors } from '@src/hooks/useTheme';
-import type { Theme } from '@src/hooks/useTheme';
 import { Dropdown, message } from 'antd';
 import type { MenuProps } from 'antd';
 import useUser from '../hooks/useUser';
@@ -11,7 +10,7 @@ import { useIsFetching } from '@tanstack/react-query';
 import { useDashboardSummary } from '@src/features/dashboard/hooks/useDashboardSummary';
 import { useMemberProfile } from '@src/features/dashboard/hooks/useMemberProfile';
 import { useBoards } from '@src/features/dashboard/hooks/useBoards';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
@@ -25,11 +24,11 @@ const PAGE_TITLES: Record<string, string> = {
   'holiday-management': 'Holiday Management',
 };
 
-const THEME_SWATCHES: { key: Theme; color: string }[] = [
-  { key: 'light', color: '#1282a2' },
-  { key: 'void', color: '#22b8d4' },
-  { key: 'crimson', color: '#C21518' },
-];
+const THEME_SWATCHES = [
+  { key: 'light', color: '#087ea4' },
+  { key: 'dark', color: '#67d2ff' },
+  { key: 'system', color: '#8898a0' },
+] as const;
 
 function formatDate(): string {
   return new Date().toLocaleDateString('en-US', {
@@ -40,28 +39,10 @@ function formatDate(): string {
   });
 }
 
-function BellIcon({ stroke }: { stroke: string }) {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={stroke}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </svg>
-  );
-}
-
 export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   const { getDisplayName, setLoginPageMessage, getUserPhoto } = useUser();
   const { theme, setTheme } = useTheme();
-  const { isDark, isCrimson, accent, accentL, titleCol, subCol } = useThemeColors();
+  const { isDark, accent, titleCol, subCol } = useThemeColors();
   const isFetching = useIsFetching();
   const pathname = usePathname();
 
@@ -122,18 +103,14 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
   ];
 
   const firstName = member?.name || getDisplayName()?.split(' ')[0] || 'User';
-  const displayGreeting = isFetching > 0
-    ? 'Loading...'
-    : isCrimson
-      ? `Comrade ${firstName}!`
-      : `Hey, ${firstName}!`;
+  const displayGreeting = isFetching > 0 ? 'Loading…' : `Hello, ${firstName}`;
 
   const userInitial = (member?.name || getDisplayName() || 'U').charAt(0).toUpperCase();
   const photoUrl = getUserPhoto();
 
   return (
     <header
-      className="fixed top-[14px] left-[252px] right-[14px] h-[62px] rounded-[16px] z-50 flex items-center justify-between px-5 transition-colors duration-300"
+      className="fixed top-3 left-3 right-3 lg:top-[14px] lg:left-[252px] lg:right-[14px] h-[62px] rounded-[16px] z-50 flex items-center justify-between px-4 lg:px-5 transition-colors duration-300"
       style={{
         backgroundColor: isDark ? 'rgba(13,24,41,0.92)' : 'rgba(255,255,255,0.94)',
         backdropFilter: 'blur(16px)',
@@ -162,14 +139,6 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
           >
             {displayGreeting}
           </span>
-          <span className="animate-topbar-wave text-base leading-none">👋</span>
-          {theme === 'crimson' && (
-            <span style={{ marginLeft: 6, display: 'inline-flex', verticalAlign: 'middle' }} title="Socialist star" aria-hidden>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2l2.9 6.26L22 9.27l-5 4.87L18.8 22 12 18.77 5.2 22 7 14.14 2 9.27l7.1-1.01L12 2z" fill="#FFD700" stroke="#C21518" strokeWidth="0.5"/>
-              </svg>
-            </span>
-          )}
           <span
             className="text-[13px] font-medium whitespace-nowrap hidden sm:inline"
             style={{ color: subCol }}
@@ -230,7 +199,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
                   key={i}
                   className="flex items-center gap-2 rounded-full px-3 py-1.5 text-white text-[11px] font-bold tracking-wider uppercase"
                   style={{
-                    background: `linear-gradient(135deg, ${accent}, ${accentL})`,
+                    background: accent,
                     position: i === 0 ? 'relative' : 'absolute',
                     top: i === 0 ? 0 : i * 3,
                     left: i === 0 ? 0 : i * 3,
@@ -323,7 +292,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
             style={{
               background: photoUrl
                 ? undefined
-                : `linear-gradient(135deg, ${accent}, ${accentL})`,
+                : accent,
             }}
             title="Account options"
           >

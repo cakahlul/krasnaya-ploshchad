@@ -4,7 +4,6 @@ import type { BugStatistics } from '../types/bug-monitoring.types';
 import { Progress } from 'antd';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { motion } from 'framer-motion';
-import { BugOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useThemeColors } from '@src/hooks/useTheme';
 
 interface BugStatisticsProps {
@@ -28,7 +27,7 @@ const STATUS_COLORS: Record<string, string> = {
   'Reopened': '#DC2626',      // Dark Red
 };
 
-// When rendering, components should prefer using useThemeColors() tokens so crimson theme can override these.
+// Components use the shared theme tokens for consistent light and dark rendering.
 
 type ThemeColors = {
   statusInfo?: string;
@@ -108,42 +107,23 @@ export default function BugStatisticsView({ statistics }: BugStatisticsProps) {
     >
       {/* Total Bugs Card */}
       <motion.div variants={itemVariants}>
-        <div className="h-full bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden relative group">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-red-200 rounded-full blur-2xl opacity-50 group-hover:bg-red-300 transition-all duration-500"></div>
-          <div className="flex items-center justify-between relative z-10">
-            <div>
-              <p className="text-sm font-semibold text-red-600/80 mb-1 tracking-wide uppercase">Total Bugs</p>
-              <p className="text-5xl font-extrabold text-red-600 drop-shadow-sm">{statistics.totalCount}</p>
-            </div>
-            <div className="bg-white/60 p-4 rounded-full shadow-inner">
-              <BugOutlined className="text-4xl text-red-500" />
-            </div>
-          </div>
+        <div className="h-full rounded-xl p-6" style={{ background: T.statusDangerBg, border: `1px solid ${T.statusDangerBrd}` }}>
+          <p className="mb-1 text-sm font-semibold uppercase tracking-wide" style={{ color: T.statusDanger }}>Total Bugs</p>
+          <p className="m-0 text-5xl font-bold" style={{ color: T.statusDanger }}>{statistics.totalCount}</p>
         </div>
       </motion.div>
 
       {/* Average Days Open Card */}
       <motion.div variants={itemVariants}>
-        <div className="h-full bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden relative group">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-orange-200 rounded-full blur-2xl opacity-50 group-hover:bg-orange-300 transition-all duration-500"></div>
-          <div className="flex items-center justify-between relative z-10">
-            <div>
-              <p className="text-sm font-semibold text-orange-600/80 mb-1 tracking-wide uppercase">Avg Days Open</p>
-              <p className="text-5xl font-extrabold text-orange-600 drop-shadow-sm">
-                {statistics.averageDaysOpen.toFixed(1)}
-              </p>
-            </div>
-            <div className="bg-white/60 p-4 rounded-full shadow-inner">
-              <ClockCircleOutlined className="text-4xl text-orange-500" />
-            </div>
-          </div>
-          <div className="relative z-10 mt-4">
+        <div className="h-full rounded-xl p-6" style={{ background: T.statusWarningBg, border: `1px solid ${T.statusWarningBrd}` }}>
+          <p className="mb-1 text-sm font-semibold uppercase tracking-wide" style={{ color: T.statusWarning }}>Average Days Open</p>
+          <p className="m-0 text-5xl font-bold" style={{ color: T.statusWarning }}>{statistics.averageDaysOpen.toFixed(1)}</p>
+          <div className="mt-4">
             <Progress
               percent={Math.min((statistics.averageDaysOpen / 30) * 100, 100)}
               strokeColor={statistics.averageDaysOpen > 14 ? '#F97316' : '#10B981'}
               showInfo={false}
               size="small"
-              className="drop-shadow-sm"
             />
           </div>
         </div>

@@ -29,7 +29,7 @@ function ConfigurationHeader() {
         fontSize: 12.5,
         fontFamily: sans,
       }}>
-        Manage system-wide settings
+        Manage reporting rules, team settings, and audit history.
       </p>
     </div>
   );
