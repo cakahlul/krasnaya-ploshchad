@@ -127,6 +127,27 @@ test('clamps live report capacity to the member employment interval', () => {
   assert.equal(report[0].targetWeightPoints, 56);
 });
 
+test('keeps zero-ticket members for Jira fallback capacity', () => {
+  const report = processRawData(
+    [],
+    [{ fullName: 'No Ticket', jiraId: 'acc-1', level: 'senior', teams: ['TEAM'], joinDate: '2025-01-01', resignDate: null }] as never,
+    { startDate: '2026-01-05', endDate: '2026-01-09' },
+    new Map(),
+    [],
+    false,
+    undefined,
+    { senior: 8 },
+    undefined,
+    undefined,
+    true,
+  );
+
+  assert.equal(report.length, 1);
+  assert.equal(report[0].member, 'No Ticket');
+  assert.equal(report[0].workingDays, 5);
+  assert.deepEqual(report[0].issueKeys, []);
+});
+
 test('removes out-of-lifecycle members from stored report responses', async () => {
   mock.method(membersService, 'findAll', async () => [
     { fullName: 'Active', joinDate: '2025-01-01', resignDate: null },

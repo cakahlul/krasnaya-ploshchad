@@ -219,6 +219,7 @@ export function processRawData(
   dailyTargetWPByLevel: Record<string, number> = DEFAULT_DAILY_TARGET_WP,
   projectList?: string[],
   memberRuleVersions?: ReadonlyMap<string, RuleVersion | undefined>,
+  includeZeroTicketMembers = false,
 ): JiraIssueReportResponseDto[] {
   const isMultiProject = projectList && projectList.length > 1;
 
@@ -463,7 +464,9 @@ export function processRawData(
     });
   });
 
-  return Array.from(reports.values()).filter(r => r.issueKeys.length > 0);
+  return includeZeroTicketMembers
+    ? Array.from(reports.values())
+    : Array.from(reports.values()).filter(r => r.issueKeys.length > 0);
 }
 
 export function summarizeTeamReport(
@@ -797,6 +800,8 @@ export async function generateReport(
   rawDataOverride?: JiraIssueEntity[],
   plannedDataOverride?: ReadonlyMap<string, JiraIssueEntity[]>,
   sprintDetailsOverride?: { startDate: string; endDate: string },
+  includeZeroTicketMembers = false,
+  memberNames?: readonly string[],
 ): Promise<GetReportResponseDto> {
   const sprintDetails = sprintDetailsOverride ?? await getSprintDetails(sprint);
   const reportPeriod = sprintDetails
@@ -807,7 +812,7 @@ export async function generateReport(
     : undefined;
   const allMembers = await membersService.findAll();
   const members = filterMembersByProject(allMembers, project, reportPeriod).filter(
-    m => !m.isLead,
+    m => !m.isLead && (!memberNames || memberNames.includes(m.fullName)),
   );
   const assignees = members.map(m => m.jiraId!).filter(Boolean);
   const isSubtaskType = await boardsService.hasSubtaskType(project);
@@ -836,6 +841,7 @@ export async function generateReport(
       });
     } catch (error) {
       if (isBadRequestError(error)) {
+        if (memberNames) throw error;
         console.warn(
           `[generateReport] Jira returned 400 for project=${project} sprint=${sprint}, returning empty data`,
         );
@@ -885,6 +891,7 @@ export async function generateReport(
     dailyTargetWPByLevel,
     projectList,
     memberRuleVersions,
+    includeZeroTicketMembers,
   );
 
   const plannedWPShortNames = allBoards
@@ -924,6 +931,8 @@ export async function generateReportByDateRange(
   project: string,
   epicId?: string,
   rawDataOverride?: JiraIssueEntity[],
+  includeZeroTicketMembers = false,
+  memberNames?: readonly string[],
 ): Promise<GetReportResponseDto> {
   const step = async <T>(name: string, run: () => Promise<T>): Promise<T> => {
     const start = Date.now();
@@ -935,7 +944,7 @@ export async function generateReportByDateRange(
   };
   const allMembers = await step('members', () => membersService.findAll());
   const members = filterMembersByProject(allMembers, project, { startDate, endDate }).filter(
-    m => !m.isLead,
+    m => !m.isLead && (!memberNames || memberNames.includes(m.fullName)),
   );
   const memberGroups = resolveReportMemberGroups(members, await step('boards', () => boardsService.findAll()));
   const assignees = members.map(m => m.jiraId!).filter(Boolean);
@@ -982,6 +991,7 @@ export async function generateReportByDateRange(
     dailyTargetWPByLevel,
     dateRangeProjectList,
     memberRuleVersions,
+    includeZeroTicketMembers,
   );
   return summarizeTeamReport(
     teamReport,

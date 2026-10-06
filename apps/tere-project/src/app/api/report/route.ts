@@ -1,5 +1,5 @@
 import { withAuthOrApiKey } from '@server/auth/with-auth-or-api-key';
-import { filterReportForLifecycle, generateReport, generateReportByDateRange } from '@server/modules/reports/reports.service';
+import { filterReportForLifecycle, findReportMembers, generateReport, generateReportByDateRange } from '@server/modules/reports/reports.service';
 import { filterReportForMember } from '@server/modules/reports/report-filter';
 import { boardsService } from '@server/modules/boards/boards.service';
 import { sprintService } from '@server/modules/sprint/sprint.service';
@@ -64,6 +64,18 @@ export const GET = withAuthOrApiKey(async (req, { caller }) => {
       findSnapshotStatus: identity => teamReportingSnapshotRepository.findByLogicalIdentityStatus(identity),
       generateSprintReport: generateReport,
       generateDateRangeReport: generateReportByDateRange,
+      supplementSnapshot: async snapshot => {
+        const board = (await boardsService.findAll()).find(board => board.boardId === snapshot.boardId);
+        if (!board) throw new Error('SNAPSHOT_BOARD_UNAVAILABLE');
+        const stored = snapshot.calculatedOutput as import('@shared/types/report.types').GetReportResponseDto;
+        const members = await findReportMembers(board.shortName, snapshot.periodStartDate, snapshot.periodEndDate);
+        const missing = members.filter(member => member.jiraId && !stored.issues.some(issue => issue.member === member.fullName && issue.issueKeys.length > 0)).map(member => member.fullName);
+        if (!missing.length) return null;
+        const live = snapshot.periodKind === 'scrum'
+          ? await generateReport(snapshot.sprintId!, board.shortName, undefined, undefined, undefined, { startDate: snapshot.periodStartDate, endDate: snapshot.periodEndDate }, true, missing)
+          : await generateReportByDateRange(snapshot.periodStartDate, snapshot.periodEndDate, board.shortName, undefined, undefined, true, missing);
+        return live;
+      },
     },
   );
   const sourceMetadata = metadataFromResolution(resolved);

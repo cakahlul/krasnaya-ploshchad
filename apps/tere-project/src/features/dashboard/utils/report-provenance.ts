@@ -7,6 +7,7 @@ export function reportSourceLabel(metadata: ReportSourceMetadata): string {
   if (metadata.source === 'jira') return 'Live Jira';
   if (metadata.source === 'partial') return 'Partial data';
   if (metadata.source === 'unavailable') return 'Unavailable';
+  if (metadata.source === 'mixed' && metadata.attemptedSources.some(attempt => attempt.source === 'snapshot') && metadata.attemptedSources.some(attempt => attempt.source === 'jira')) return 'Captured Report Snapshot + Live Jira';
   return 'Mixed sources';
 }
 

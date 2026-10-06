@@ -54,7 +54,7 @@ export function metadataFromResolution<T>(resolution: ReportSourceResolution<T>)
     attempt.source !== selected && attempt.failureKind !== 'missing',
   );
   const selectedAttempt = selected === null
-    ? undefined
+    ? resolution.source === 'mixed' ? resolution.attempts.find(attempt => attempt.source === 'snapshot') : undefined
     : resolution.attempts.find(attempt => attempt.source === selected);
   return {
     source: resolution.source,

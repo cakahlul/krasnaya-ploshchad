@@ -24,6 +24,46 @@ const report = {
   averageProductivity: '0.00%',
 } satisfies GetReportResponseDto;
 
+for (const lateTickets of [false, true]) test(`fills a missing snapshot week from Jira (${lateTickets ? 'late tickets' : 'zero tickets'})`, async () => {
+  const issue = (member: string, points: number, keys: string[]) => ({
+    member, team: 'ALPHA', level: 'senior', issueKeys: keys,
+    workingDays: 5, targetWeightPoints: 40, totalWeightPoints: points,
+    weightPointsProduct: points, weightPointsTechDebt: 0, spProduct: points,
+    spTechDebt: 0, spMeeting: 0, spTotal: points, leaveDays: 0, sickDays: 0,
+    productivityRate: '0%', wpProductivity: '0%', devDefect: 0, devDefectRate: '100%',
+  });
+  const kanban = { ...board, isKanban: true };
+  const captured = [
+    { ...report, issues: [issue('Tommy', 8, ['ALPHA-1'])], totalWorkingDays: 5 },
+    { ...report, issues: [issue('Other', 16, ['ALPHA-2'])], totalWorkingDays: 5 },
+  ];
+  const checked: string[] = [];
+  const result = await resolveTeamReport(
+    { project: 'ALPHA', startDate: '2026-09-21', endDate: '2026-10-04', boardIds: [7] },
+    ports({
+      findBoards: async () => [kanban],
+      findSnapshot: async identity => ({
+        ...snapshot(captured[identity.periodStartDate === '2026-09-21' ? 0 : 1]),
+        periodKind: 'kanban', sprintId: null,
+        periodStartDate: identity.periodStartDate!, periodEndDate: identity.periodEndDate!,
+      }),
+      supplementSnapshot: async stored => {
+        if (stored.periodStartDate === '2026-09-21') return null;
+        checked.push(stored.periodStartDate);
+        return { ...report, totalWorkingDays: 5, issues: [issue('Tommy', lateTickets ? 4 : 0, lateTickets ? ['ALPHA-3'] : [])] };
+      },
+    }),
+  );
+  assert.equal(result.source, 'mixed');
+  const tommy = result.value?.issues.find(issue => issue.member === 'Tommy');
+  assert.equal(tommy?.workingDays, 10);
+  assert.equal(tommy?.spTotal, lateTickets ? 12 : 8);
+  assert.deepEqual(tommy?.issueKeys, lateTickets ? ['ALPHA-1', 'ALPHA-3'] : ['ALPHA-1']);
+  assert.equal(result.value?.issues.find(issue => issue.member === 'Other')?.spTotal, 16);
+  assert.deepEqual(checked, ['2026-09-28']);
+  assert.equal(metadataFromResolution(result).snapshotTimestamp, '2026-07-15T01:02:03.000Z');
+});
+
 function snapshot(output: unknown = report): TeamReportingSnapshot {
   return {
     id: 'snapshot-7-42',
@@ -358,6 +398,7 @@ test('combines multiple complete snapshots without live Jira or raw-data recalcu
   const result = await resolveTeamReport(
     { project: 'ALPHA', sprint: '42,43' },
     ports({
+      findSprints: async () => [42, 43].map(id => ({ id, state: 'closed', startDate: '2026-07-01', endDate: '2026-07-14' })),
       findSnapshot: async identity => ({ ...snapshot(), sprintId: identity.periodKind === 'scrum' ? identity.sprintId : null }),
       generateSprintReport: async (_sprint, _project, _epicId, rawDataOverride) => {
         if (rawDataOverride === undefined) liveCalls++;
@@ -378,6 +419,7 @@ test('uses normal live Jira when one requested period has no snapshot', async ()
   const result = await resolveTeamReport(
     { project: 'ALPHA', sprint: '42,43' },
     ports({
+      findSprints: async () => [42, 43].map(id => ({ id, state: 'closed', startDate: '2026-07-01', endDate: '2026-07-14' })),
       findSnapshot: async identity => identity.periodKind === 'scrum' && identity.sprintId === '43' ? null : snapshot(),
       generateSprintReport: async (_sprint, _project, _epicId, rawDataOverride) => {
         if (rawDataOverride === undefined) liveCalls++;
