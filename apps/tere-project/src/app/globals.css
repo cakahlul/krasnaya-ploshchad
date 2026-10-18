@@ -60,6 +60,16 @@
 }
 
 @layer components {
+  [data-login-theme] input::placeholder {
+    color: var(--login-placeholder);
+    opacity: 1;
+  }
+
+  [data-login-theme] select:focus-visible {
+    outline: 2px solid var(--login-focus-ring);
+    outline-offset: 2px;
+  }
+
   /* Dark mode styles for Ant Design components */
   .dark .ant-drawer-body {
     @apply bg-gray-800;

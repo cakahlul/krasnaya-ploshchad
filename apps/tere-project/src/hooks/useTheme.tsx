@@ -44,7 +44,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [socialistAnimationKey, setSocialistAnimationKey] = useState(0);
 
   useEffect(() => {
-    const stored = localStorage.getItem('theme') as Theme | null;
+    let stored: Theme | null = null;
+    try {
+      stored = window.localStorage.getItem('theme') as Theme | null;
+    } catch {
+      // Storage may be unavailable in privacy mode. Keep the default theme.
+    }
     if (stored && THEME_ORDER.includes(stored)) {
       setThemeState(stored);
     }
@@ -60,7 +65,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (theme === 'void' || theme === 'crimson') {
       el.classList.add('dark');
     }
-    localStorage.setItem('theme', theme);
+    try {
+      window.localStorage.setItem('theme', theme);
+    } catch {
+      // A failed preference write must not break dashboard interaction.
+    }
 
   }, [theme, mounted]);
 

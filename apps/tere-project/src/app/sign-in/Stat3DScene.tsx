@@ -12,6 +12,7 @@ import {
 } from '@react-three/drei';
 import { useSpring, animated, config } from '@react-spring/three';
 import * as THREE from 'three';
+import type { LoginThemeTokens } from './loginTheme';
 
 type BarConfig = {
   x: number;
@@ -60,7 +61,7 @@ const BARS: BarConfig[] = [
 
 const RIM = '#7fd8ee';
 
-function Bar({ config: cfg, index }: { config: BarConfig; index: number }) {
+function Bar({ config: cfg, index, tokens }: { config: BarConfig; index: number; tokens: LoginThemeTokens }) {
   const [hovered, setHovered] = useState(false);
 
   // Phase 1: drop from scattered position + spin
@@ -155,7 +156,7 @@ function Bar({ config: cfg, index }: { config: BarConfig; index: number }) {
                 ? 'translateY(0) scale(1)'
                 : 'translateY(10px) scale(0.92)',
               transition: 'opacity 0.22s ease-out, transform 0.22s ease-out',
-              background: 'rgba(6, 13, 26, 0.85)',
+              background: tokens.tooltipBackground,
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
               border: `1px solid ${cfg.colorBright}66`,
@@ -194,7 +195,7 @@ function Bar({ config: cfg, index }: { config: BarConfig; index: number }) {
             <div
               style={{
                 fontSize: '12.5px',
-                color: 'rgba(255,255,255,0.88)',
+                color: tokens.tooltipText,
                 lineHeight: 1.45,
               }}
             >
@@ -207,7 +208,7 @@ function Bar({ config: cfg, index }: { config: BarConfig; index: number }) {
   );
 }
 
-function BarsGroup() {
+function BarsGroup({ tokens }: { tokens: LoginThemeTokens }) {
   const groupRef = useRef<THREE.Group>(null);
   const { size } = useThree();
   const w = size.width;
@@ -250,7 +251,7 @@ function BarsGroup() {
     <group ref={groupRef} position={position} scale={scale}>
       <Float speed={0.9} rotationIntensity={0.04} floatIntensity={0.15}>
         {BARS.map((b, i) => (
-          <Bar key={i} config={b} index={i} />
+          <Bar key={i} config={b} index={i} tokens={tokens} />
         ))}
       </Float>
     </group>
@@ -273,7 +274,7 @@ function SparkleField() {
   );
 }
 
-export default function Stat3DScene() {
+export default function Stat3DScene({ tokens }: { tokens: LoginThemeTokens }) {
   return (
     <Canvas
       camera={{ position: [0, 0.5, 9], fov: 36 }}
@@ -305,12 +306,12 @@ export default function Stat3DScene() {
               subtle transmission through the bars reads as page-bg reflection */}
           <mesh scale={50}>
             <sphereGeometry args={[1, 32, 32]} />
-            <meshBasicMaterial color="#060d1a" side={THREE.BackSide} />
+            <meshBasicMaterial color={tokens.sceneBackdrop} side={THREE.BackSide} />
           </mesh>
         </Environment>
 
         <SparkleField />
-        <BarsGroup />
+        <BarsGroup tokens={tokens} />
 
       </Suspense>
     </Canvas>

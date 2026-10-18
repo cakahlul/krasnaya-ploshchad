@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useCallback } from 'react';
+import type { LoginThemeTokens } from '@src/app/sign-in/loginTheme';
 
 export type LegalModalType = 'terms' | 'privacy';
 
 interface LegalModalProps {
   type: LegalModalType;
   onClose: () => void;
+  tokens: LoginThemeTokens;
 }
 
 // --------------------------------------------------------------------------
@@ -71,7 +73,7 @@ const PRIVACY_CONTENT = {
 // Component
 // --------------------------------------------------------------------------
 
-export default function LegalModal({ type, onClose }: LegalModalProps) {
+export default function LegalModal({ type, onClose, tokens }: LegalModalProps) {
   const content = type === 'terms' ? TERMS_CONTENT : PRIVACY_CONTENT;
 
   // Close on Escape key
@@ -106,25 +108,25 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
       <div
         className="relative flex max-h-[85vh] w-full max-w-lg flex-col rounded-t-3xl sm:rounded-3xl"
         style={{
-          background: 'linear-gradient(160deg, #0b1a30 0%, #051025 100%)',
-          border: '1px solid rgba(255,255,255,0.08)',
+          background: tokens.modalBackground,
+          border: '1px solid ' + tokens.cardBorder,
           boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drag handle (mobile feel) */}
         <div className="flex justify-center pt-3 sm:hidden">
-          <div className="h-1 w-10 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
+          <div className="h-1 w-10 rounded-full" style={{ background: tokens.cardBorder }} />
         </div>
 
         {/* Header */}
         <div
           className="flex items-start justify-between gap-4 px-6 pb-4 pt-5"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+          style={{ borderBottom: '1px solid ' + tokens.cardBorder }}
         >
           <div>
-            <h2 className="text-lg font-bold text-white">{content.title}</h2>
-            <p className="mt-0.5 text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            <h2 className="text-lg font-bold" style={{ color: tokens.text }}>{content.title}</h2>
+            <p className="mt-0.5 text-xs" style={{ color: tokens.subtleText }}>
               {content.subtitle}
             </p>
           </div>
@@ -137,7 +139,7 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path
                 d="M1 1l12 12M13 1L1 13"
-                stroke="rgba(255,255,255,0.5)"
+                stroke={tokens.subtleText}
                 strokeWidth="1.75"
                 strokeLinecap="round"
               />
@@ -152,11 +154,11 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
               <div key={section.heading}>
                 <h3
                   className="mb-1.5 text-sm font-semibold"
-                  style={{ color: '#22b8d4' }}
+                  style={{ color: tokens.accent }}
                 >
                   {section.heading}
                 </h3>
-                <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                <p className="text-sm leading-relaxed" style={{ color: tokens.modalText }}>
                   {section.body}
                 </p>
               </div>
@@ -166,7 +168,7 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
           {/* Footer note */}
           <p
             className="mt-8 text-center text-xs italic"
-            style={{ color: 'rgba(255,255,255,0.2)' }}
+            style={{ color: tokens.subtleText }}
           >
             {type === 'terms'
               ? 'Last updated: whenever we had a good sprint.'
@@ -177,15 +179,15 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
         {/* CTA */}
         <div
           className="px-6 py-4"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
+          style={{ borderTop: '1px solid ' + tokens.cardBorder }}
         >
           <button
             type="button"
             onClick={onClose}
             className="w-full rounded-xl py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
             style={{
-              background: 'linear-gradient(135deg, #1282a2, #22b8d4)',
-              boxShadow: '0 4px 16px rgba(18,130,162,0.25)',
+              background: 'linear-gradient(135deg, ' + tokens.accentStrong + ', ' + tokens.accent + ')',
+              boxShadow: '0 4px 16px ' + tokens.accentStrong + '4d',
             }}
           >
             Got it
