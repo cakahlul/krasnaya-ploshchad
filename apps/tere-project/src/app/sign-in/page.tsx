@@ -214,7 +214,7 @@ export default function SignIn() {
               Your team&apos;s data,{' '}
               <span
                 style={{
-                  background: 'linear-gradient(135deg, ' + tokens.accentStrong + ', ' + tokens.accent + ', #fbb6ce)',
+                  background: 'linear-gradient(135deg, ' + tokens.accentStrong + ', ' + tokens.accent + ', ' + tokens.headingEnd + ')',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
@@ -363,8 +363,8 @@ export default function SignIn() {
                 className="group relative flex w-full items-center justify-center gap-2 sm:gap-3 rounded-xl px-3 py-3 sm:px-4 sm:py-3.5 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                 style={{
                   background: success
-                    ? 'linear-gradient(135deg, #059669, #10b981)'
-                    : 'linear-gradient(135deg, ' + tokens.accentStrong + ', ' + tokens.accent + ')',
+                    ? 'linear-gradient(135deg, ' + tokens.successButtonStart + ', ' + tokens.successButtonEnd + ')'
+                    : 'linear-gradient(135deg, ' + tokens.buttonStart + ', ' + tokens.buttonEnd + ')',
                   boxShadow: '0 4px 24px ' + tokens.accentStrong + '4d',
                 }}
               >
@@ -508,8 +508,8 @@ export default function SignIn() {
                     className="w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                     style={{
                       background: success
-                        ? 'linear-gradient(135deg, #059669, #10b981)'
-                        : 'linear-gradient(135deg, ' + tokens.accentStrong + ', ' + tokens.accent + ')',
+                        ? 'linear-gradient(135deg, ' + tokens.successButtonStart + ', ' + tokens.successButtonEnd + ')'
+                        : 'linear-gradient(135deg, ' + tokens.buttonStart + ', ' + tokens.buttonEnd + ')',
                       boxShadow: '0 4px 24px ' + tokens.accentStrong + '4d',
                     }}
                   >

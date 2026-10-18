@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { getSystemLoginTheme, isLoginThemePreference, readLoginThemePreference, resolveLoginTheme, writeLoginThemePreference } from './loginThemeCore';
-export { getSystemLoginTheme, isLoginThemePreference, readLoginThemePreference, resolveLoginTheme, writeLoginThemePreference } from './loginThemeCore';
+import { getSystemLoginTheme, isLoginThemePreference, readLoginThemePreference, resolveLoginTheme, subscribeToSystemLoginTheme, writeLoginThemePreference } from './loginThemeCore';
+export { getSystemLoginTheme, isLoginThemePreference, readLoginThemePreference, resolveLoginTheme, subscribeToSystemLoginTheme, writeLoginThemePreference } from './loginThemeCore';
 export type LoginThemePreference = 'system' | 'light' | 'dark';
 export type LoginResolvedTheme = 'light' | 'dark';
 export const LOGIN_THEME_STORAGE_KEY = 'tere-login-theme';
@@ -25,6 +25,11 @@ export type LoginThemeTokens = {
   tooltipBackground: string;
   tooltipText: string;
   sceneBackdrop: string;
+  buttonStart: string;
+  buttonEnd: string;
+  successButtonStart: string;
+  successButtonEnd: string;
+  headingEnd: string;
 };
 export const LOGIN_THEME_TOKENS: Record<LoginResolvedTheme, LoginThemeTokens> = {
   dark: {
@@ -47,6 +52,11 @@ export const LOGIN_THEME_TOKENS: Record<LoginResolvedTheme, LoginThemeTokens> = 
     tooltipBackground: 'rgba(6,13,26,0.95)',
     tooltipText: '#f8fafc',
     sceneBackdrop: '#060d1a',
+    buttonStart: '#0c4a6e',
+    buttonEnd: '#075985',
+    successButtonStart: '#065f46',
+    successButtonEnd: '#047857',
+    headingEnd: '#fbb6ce',
   },
   light: {
     pageBackground: 'linear-gradient(135deg, #eff6ff, #dbeafe, #c7d2fe)',
@@ -68,6 +78,11 @@ export const LOGIN_THEME_TOKENS: Record<LoginResolvedTheme, LoginThemeTokens> = 
     tooltipBackground: '#0f172a',
     tooltipText: '#f8fafc',
     sceneBackdrop: '#e0f2fe',
+    buttonStart: '#075985',
+    buttonEnd: '#0e7490',
+    successButtonStart: '#065f46',
+    successButtonEnd: '#047857',
+    headingEnd: '#4338ca',
   },
 };
 function getBrowserMatchMedia(): ((query: string) => MediaQueryList) | undefined {
@@ -101,31 +116,22 @@ export function useLoginTheme(): {
   }, []);
   useEffect(() => {
     if (!mounted) return;
+    let active = true;
     const updateResolvedTheme = (systemTheme = getSystemLoginTheme()) => {
+      if (!active) return;
       setResolvedTheme(resolveLoginTheme(preference, systemTheme));
     };
     updateResolvedTheme();
-    if (preference !== 'system') return;
-    let mediaQuery: MediaQueryList | undefined;
-    try {
-      const matchMedia = getBrowserMatchMedia();
-      mediaQuery = matchMedia?.('(prefers-color-scheme: dark)');
-      if (!mediaQuery) return;
-      const handleChange = (event: MediaQueryListEvent) => {
-        updateResolvedTheme(event.matches ? 'dark' : 'light');
-      };
-      if (typeof mediaQuery.addEventListener === 'function') {
-        mediaQuery.addEventListener('change', handleChange);
-        return () => mediaQuery?.removeEventListener('change', handleChange);
+    if (preference !== 'system') return () => { active = false; };
+    const unsubscribe = subscribeToSystemLoginTheme(getBrowserMatchMedia(), updateResolvedTheme);
+    return () => {
+      active = false;
+      try {
+        unsubscribe();
+      } catch {
+        // Cleanup remains best effort if browser APIs throw.
       }
-      if (typeof mediaQuery.addListener === 'function') {
-        mediaQuery.addListener(handleChange);
-        return () => mediaQuery?.removeListener(handleChange);
-      }
-    } catch {
-      // Missing or broken media-query APIs fall back to light.
-    }
-    return undefined;
+    };
   }, [mounted, preference]);
   const setPreference = (value: LoginThemePreference) => {
     if (!isLoginThemePreference(value)) return;

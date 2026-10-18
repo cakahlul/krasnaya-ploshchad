@@ -2,7 +2,10 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-export type Theme = 'light' | 'void' | 'crimson';
+import { readDashboardTheme, writeDashboardTheme } from './themeStorage';
+import type { Theme } from './themeStorage';
+
+export type { Theme } from './themeStorage';
 
 interface ThemeContextType {
   theme: Theme;
@@ -44,14 +47,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [socialistAnimationKey, setSocialistAnimationKey] = useState(0);
 
   useEffect(() => {
-    let stored: Theme | null = null;
     try {
-      stored = window.localStorage.getItem('theme') as Theme | null;
+      const stored = readDashboardTheme(window.localStorage);
+      if (stored) setThemeState(stored);
     } catch {
       // Storage may be unavailable in privacy mode. Keep the default theme.
-    }
-    if (stored && THEME_ORDER.includes(stored)) {
-      setThemeState(stored);
     }
     setMounted(true);
   }, []);
@@ -66,7 +66,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       el.classList.add('dark');
     }
     try {
-      window.localStorage.setItem('theme', theme);
+      writeDashboardTheme(window.localStorage, theme);
     } catch {
       // A failed preference write must not break dashboard interaction.
     }

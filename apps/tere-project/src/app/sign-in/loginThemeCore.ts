@@ -23,6 +23,54 @@ export function writeLoginThemePreference(storage: Storage | undefined, preferen
 export function resolveLoginTheme(preference: LoginThemePreference, systemTheme: LoginResolvedTheme): LoginResolvedTheme {
   return preference === 'system' ? systemTheme : preference;
 }
+export function subscribeToSystemLoginTheme(
+  matchMedia: ((query: string) => MediaQueryList) | undefined,
+  onChange: (theme: LoginResolvedTheme) => void,
+): () => void {
+  let active = true;
+  let removeListener: (() => void) | undefined;
+  try {
+    const mediaQuery = matchMedia?.('(prefers-color-scheme: dark)');
+    if (!mediaQuery) return () => { active = false; };
+    const handleChange = (event: MediaQueryListEvent) => {
+      if (!active) return;
+      try {
+        onChange(event.matches ? 'dark' : 'light');
+      } catch {
+        // A stale or broken media callback must not escape into the page.
+      }
+    };
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handleChange);
+      removeListener = () => {
+        try {
+          mediaQuery.removeEventListener?.('change', handleChange);
+        } catch {
+          // Browser cleanup can fail under restricted media-query APIs.
+        }
+      };
+    } else if (typeof mediaQuery.addListener === 'function') {
+      mediaQuery.addListener(handleChange);
+      removeListener = () => {
+        try {
+          mediaQuery.removeListener?.(handleChange);
+        } catch {
+          // Browser cleanup can fail under restricted media-query APIs.
+        }
+      };
+    }
+  } catch {
+    active = false;
+  }
+  return () => {
+    active = false;
+    try {
+      removeListener?.();
+    } catch {
+      // Cleanup remains best effort.
+    }
+  };
+}
 function getBrowserMatchMedia(): ((query: string) => MediaQueryList) | undefined {
   try {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;

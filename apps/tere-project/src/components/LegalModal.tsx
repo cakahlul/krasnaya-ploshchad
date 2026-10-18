@@ -186,7 +186,7 @@ export default function LegalModal({ type, onClose, tokens }: LegalModalProps) {
             onClick={onClose}
             className="w-full rounded-xl py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
             style={{
-              background: 'linear-gradient(135deg, ' + tokens.accentStrong + ', ' + tokens.accent + ')',
+              background: 'linear-gradient(135deg, ' + tokens.buttonStart + ', ' + tokens.buttonEnd + ')',
               boxShadow: '0 4px 16px ' + tokens.accentStrong + '4d',
             }}
           >

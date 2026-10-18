@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getSystemLoginTheme, isLoginThemePreference, readLoginThemePreference, resolveLoginTheme, writeLoginThemePreference } from './loginThemeCore';
+import { readDashboardTheme, writeDashboardTheme } from '../../hooks/themeStorage';
+import { getSystemLoginTheme, isLoginThemePreference, readLoginThemePreference, resolveLoginTheme, subscribeToSystemLoginTheme, writeLoginThemePreference } from './loginThemeCore';
 function makeStorage(initial: Record<string, string> = {}, onWrite?: (key: string, value: string) => void) {
   const values = new Map(Object.entries(initial));
   return {
@@ -46,4 +47,36 @@ test('system resolution handles media, missing API, and throws', () => {
   assert.equal(getSystemLoginTheme(() => ({ matches: false } as MediaQueryList)), 'light');
   assert.equal(getSystemLoginTheme(undefined), 'light');
   assert.equal(getSystemLoginTheme(() => { throw new Error('unsupported'); }), 'light');
+});
+
+test('dashboard provider read guard preserves allowed themes and ignores failures', () => {
+  assert.equal(readDashboardTheme(undefined), null);
+  assert.equal(readDashboardTheme(makeStorage({ theme: 'void' })), 'void');
+  const throwingStorage = { getItem: () => { throw new Error('denied'); } } as unknown as Storage;
+  assert.equal(readDashboardTheme(throwingStorage), null);
+});
+test('dashboard provider write guard ignores unavailable storage', () => {
+  const writes: string[] = [];
+  const storage = makeStorage({}, key => writes.push(key));
+  assert.doesNotThrow(() => writeDashboardTheme(storage, 'crimson'));
+  assert.deepEqual(writes, ['theme']);
+  const throwingStorage = { setItem: () => { throw new Error('denied'); } } as unknown as Storage;
+  assert.doesNotThrow(() => writeDashboardTheme(throwingStorage, 'light'));
+});
+test('system media subscription follows transitions and blocks stale callbacks after guarded cleanup', () => {
+  let listener: ((event: MediaQueryListEvent) => void) | undefined;
+  let cleanupCalls = 0;
+  const mediaQuery = {
+    matches: false,
+    addEventListener: (_type: string, callback: (event: MediaQueryListEvent) => void) => { listener = callback; },
+    removeEventListener: () => { cleanupCalls += 1; throw new Error('cleanup denied'); },
+  } as unknown as MediaQueryList;
+  const observed: string[] = [];
+  const unsubscribe = subscribeToSystemLoginTheme(() => mediaQuery, theme => observed.push(theme));
+  listener?.({ matches: true } as MediaQueryListEvent);
+  assert.deepEqual(observed, ['dark']);
+  unsubscribe();
+  listener?.({ matches: false } as MediaQueryListEvent);
+  assert.deepEqual(observed, ['dark']);
+  assert.equal(cleanupCalls, 1);
 });
