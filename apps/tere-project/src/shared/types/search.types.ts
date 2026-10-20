@@ -24,7 +24,7 @@ export interface SearchResultDto {
 export interface TicketDetailDto {
   key: string;
   summary: string;
-  description: string | null;
+  description: unknown;
   status: string;
   statusColor?: string;
   resolution?: string;

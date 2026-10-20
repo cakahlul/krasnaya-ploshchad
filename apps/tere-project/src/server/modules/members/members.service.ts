@@ -7,6 +7,7 @@ import type {
 } from '@shared/types/member.types';
 import type { TalentResponse } from '@shared/types/talent-leave.types';
 import { isMemberActiveDuring, type EmploymentPeriod } from '@shared/utils/member-lifecycle.util';
+import { todayInWib } from '@server/modules/wp-weight-config/wp-weight-config-date';
 import { MemoryCache } from '@server/lib/cache';
 
 const CACHE_KEY = 'all_members';
@@ -49,6 +50,14 @@ class MembersService {
       return entities.map((e) => this.entityToDto(e));
     });
     return period ? members.filter(member => isMemberActiveDuring(member, period)) : members;
+  }
+
+  async findActiveTeamMembers(teams: readonly string[], today = todayInWib()): Promise<MemberResponse[]> {
+    const assigned = new Set(teams.map(team => team.trim().toLowerCase()));
+    return (await this.findAll()).filter(member =>
+      isMemberActiveDuring(member, { startDate: today, endDate: today })
+      && member.teams.some(team => assigned.has(team.trim().toLowerCase())),
+    );
   }
 
   async findOne(id: string): Promise<MemberResponse> {

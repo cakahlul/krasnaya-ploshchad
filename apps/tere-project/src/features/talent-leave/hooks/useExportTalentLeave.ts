@@ -91,6 +91,14 @@ export function useExportTalentLeave() {
 
         // Listen for message from popup
         const handleMessage = (event: MessageEvent) => {
+          if (event.origin !== window.location.origin || event.source !== popup) return;
+          if (event.data?.type === 'GOOGLE_AUTH_ERROR') {
+            hasReceivedToken = true;
+            clearInterval(checkPopupClosed);
+            window.removeEventListener('message', handleMessage);
+            reject(new Error('Google authorization failed'));
+            return;
+          }
           // Verify message is from our callback
           if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
             const { accessToken } = event.data;

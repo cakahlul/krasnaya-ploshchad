@@ -15,9 +15,10 @@ function createOAuthClient(tokens?: Credentials) {
   return client;
 }
 
-function getAuthUrl(): string {
+function getAuthUrl(state: string): string {
   const client = createOAuthClient();
   return client.generateAuthUrl({
+    state,
     access_type: 'offline',
     scope: [
       'https://www.googleapis.com/auth/spreadsheets',

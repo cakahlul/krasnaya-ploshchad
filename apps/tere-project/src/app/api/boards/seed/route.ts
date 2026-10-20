@@ -1,4 +1,4 @@
-import { withAuth } from '@server/auth/with-auth';
+import { withDeveloper } from '@server/auth/with-developer';
 import { db } from '@server/lib/db';
 import { boards } from '@server/db/schema';
 import { sql } from 'drizzle-orm';
@@ -10,7 +10,7 @@ const INITIAL_BOARDS = [
   { boardId: 142, name: 'Lending - SLS Board', shortName: 'SLS' },
 ];
 
-export const POST = withAuth(async () => {
+export const POST = withDeveloper(async () => {
   await db
     .insert(boards)
     .values(INITIAL_BOARDS)

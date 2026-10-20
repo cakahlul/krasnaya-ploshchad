@@ -1,18 +1,10 @@
-import { db } from '@server/lib/db';
-import { userAccess } from '@server/db/schema';
-import { eq } from 'drizzle-orm';
+import { membersService } from '@server/modules/members/members.service';
+import { isAdmittedMember } from '@server/auth/access-policy';
 
 class UserAccessService {
   async getUserRole(email: string): Promise<'Lead' | 'Member'> {
-    try {
-      const [row] = await db
-        .select({ role: userAccess.role })
-        .from(userAccess)
-        .where(eq(userAccess.email, email));
-      return row?.role ?? 'Member';
-    } catch {
-      return 'Member';
-    }
+    const member = await membersService.findByEmail(email);
+    return member?.isLead && isAdmittedMember({ email, email_verified: true }, member) ? 'Lead' : 'Member';
   }
 }
 

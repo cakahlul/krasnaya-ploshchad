@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { withAuth } from '@server/auth/with-auth';
+import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,16 +20,6 @@ function isAdminUser(email: string | null | undefined): boolean {
   return adminList.includes(email.toLowerCase());
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams;
-    const email = searchParams.get('email');
-
-    const isAdmin = isAdminUser(email);
-
-    return NextResponse.json({ isAdmin });
-  } catch (error) {
-    console.error('Error checking admin status:', error);
-    return NextResponse.json({ isAdmin: false }, { status: 500 });
-  }
-}
+export const GET = withAuth(async (_request, { user }) => {
+  return NextResponse.json({ isAdmin: isAdminUser(user.email) });
+});

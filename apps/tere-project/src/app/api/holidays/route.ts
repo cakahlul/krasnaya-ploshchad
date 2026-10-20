@@ -1,5 +1,5 @@
 import { holidaysService } from '@server/modules/holidays/holidays.service';
-import { withHolidayAuth } from '@server/modules/holidays/holidays-http';
+import { withHolidayAuth, withLead } from '@server/modules/holidays/holidays-http';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +9,7 @@ export const GET = withHolidayAuth(async (req) => {
   return Response.json(holidays);
 });
 
-export const POST = withHolidayAuth(async (req, { user }) => {
+export const POST = withLead(async (req, { user }) => {
   const body = await req.json();
   const { date, name } = body;
   const holiday = await holidaysService.createHoliday(date, name, user.email!);

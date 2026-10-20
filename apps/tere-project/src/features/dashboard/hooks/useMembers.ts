@@ -6,7 +6,7 @@ import useUser from '@src/hooks/useUser';
 import type { MemberResponse } from '@shared/types/member.types';
 
 async function fetchMembers(): Promise<MemberResponse[]> {
-  const response = await axiosClient.get('/members');
+  const response = await axiosClient.get('/members?scope=dashboard');
   return response.data;
 }
 
@@ -14,7 +14,7 @@ export function useMembers() {
   const { user } = useUser();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['members'],
+    queryKey: ['members', 'dashboard', user?.email],
     queryFn: fetchMembers,
     enabled: !!user?.email,
     staleTime: 10 * 60 * 1000,

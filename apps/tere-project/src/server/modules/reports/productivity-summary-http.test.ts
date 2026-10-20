@@ -72,11 +72,13 @@ test('rejects requested WP when archive data forces SP', async () => {
   assert.deepEqual(await response.json(), { message: 'metricBasis WP is unavailable for archive or mixed ranges' });
 });
 
-test('aggregates before member filtering and exposes chart only to leads', async () => {
+test('scopes aggregates to the member and exposes chart only to leads', async () => {
   const deps = { generateLegacy: async () => ({}) as never, rangePorts: ports };
   const memberResponse = await handleProductivitySummaryGet(request('startMonth=2026-01&endMonth=2026-01&groups=Loan&metricBasis=SP'), { isLead: false, fullName: 'A' }, deps);
   const member = await memberResponse.json();
-  assert.equal(member.summary.activeMembers, 2);
+  assert.equal(member.summary.activeMembers, 1);
+  assert.equal(member.summary.productivityMetric, 8);
+  assert.equal(member.summary.bugsRaised, null);
   assert.deepEqual(member.details.map((item: { name: string }) => item.name), ['A']);
   assert.equal('chart' in member, false);
 
@@ -86,9 +88,9 @@ test('aggregates before member filtering and exposes chart only to leads', async
   assert.equal(lead.chart.length, 1);
 
   const unknownResponse = await handleProductivitySummaryGet(request('startMonth=2026-01&endMonth=2026-01&groups=Loan&metricBasis=SP'), undefined, deps);
-  const unknown = await unknownResponse.json();
-  assert.equal('chart' in unknown, false);
-  assert.deepEqual(unknown.details, []);
+  assert.equal(unknownResponse.status, 403);
+  const unmapped = await handleProductivitySummaryGet(request('month=1&year=2026'), { isLead: false }, deps);
+  assert.equal(unmapped.status, 403);
 });
 
 test('adds source metadata without changing the canonical envelope', async () => {
@@ -108,4 +110,19 @@ test('adds source metadata without changing the canonical envelope', async () =>
     snapshotTimestamp: null,
   });
   assert.equal(body.summary.activeMembers, 2);
+});
+
+
+test('legacy summaries contain only personal totals', async () => {
+  const response = await handleProductivitySummaryGet(request('month=1&year=2026'), { isLead: false, fullName: 'A' }, {
+    generateLegacy: async () => ({ summary: {}, details: [
+      { name: 'A', workingDays: 1, expectedAverageWp: 8, wpTotal: 4 },
+      { name: 'B', workingDays: 10, expectedAverageWp: 8, wpTotal: 70 },
+    ] }) as never,
+    rangePorts: ports,
+  });
+  const data = await response.json();
+  assert.equal(data.details.length, 1);
+  assert.equal(data.summary.totalWpProduced, 4);
+  assert.equal(data.summary.totalDaysOfWorks, 1);
 });

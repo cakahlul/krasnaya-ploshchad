@@ -1,3 +1,5 @@
+import { isIsoDate } from '@shared/utils/member-lifecycle.util';
+import { canAccessProject } from '@server/auth/access-policy';
 import { withAuthOrApiKey } from '@server/auth/with-auth-or-api-key';
 import { getEpics } from '@server/modules/reports/reports.service';
 import {
@@ -43,6 +45,12 @@ export const GET = withAuthOrApiKey(async (req, context) => {
       return Response.json({ message: 'Internal server error' }, { status: 502 });
     }
   }
+
+  if (!validProjectList(project) || !project.split(',').every(item => canAccessProject(context.caller, item.trim()))) {
+    return Response.json({ message: 'Forbidden' }, { status: 403 });
+  }
+
+  if ((startDate || endDate) ? !(startDate && endDate && isIsoDate(startDate) && isIsoDate(endDate) && startDate <= endDate) : !/^\d+(,\d+)*$/.test(sprint)) return Response.json({ message: 'Invalid report period' }, { status: 400 });
 
   // Team Reporting branch (existing, assignee-scoped): unchanged EpicDto[] shape.
   const epics = await getEpics(sprint, project, startDate, endDate);

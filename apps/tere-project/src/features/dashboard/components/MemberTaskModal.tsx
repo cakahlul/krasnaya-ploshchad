@@ -1,5 +1,6 @@
 'use client';
 
+import { AdfDescription } from '@src/features/epic-explorer/utils/adfToReact';
 import { useState } from 'react';
 import { Modal, Select } from 'antd';
 import {
@@ -323,14 +324,15 @@ function TicketItem({ ticket, index }: { ticket: TicketDetail; index: number }) 
           )}
 
           {/* Description */}
-          {ticket.description && (
+          {Boolean(ticket.description) && (
             <div className="mb-3">
               <p className="text-xs mb-1" style={{ color: subCol }}>Description</p>
               <div
                 className="jira-description rounded-xl p-3 text-xs max-h-60 overflow-y-auto"
                 style={{ background: cardBg, color: rowCol }}
-                dangerouslySetInnerHTML={{ __html: ticket.description }}
-              />
+              >
+                <AdfDescription value={ticket.description} />
+              </div>
             </div>
           )}
 

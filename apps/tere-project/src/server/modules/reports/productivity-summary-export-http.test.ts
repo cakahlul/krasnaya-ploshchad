@@ -24,6 +24,7 @@ const unusedPorts: RangeAggregationPorts = {
 
 async function verify() {
   const productionRoute = readFileSync(new URL('../../../app/api/report/productivity-summary/export/route.ts', import.meta.url), 'utf8');
+  assert.match(productionRoute, /withRole\('Lead',/);
   assert.match(productionRoute, /productivitySummaryRangePorts/);
   assert.match(productionRoute, /rangePorts:\s*productivitySummaryRangePorts/);
 

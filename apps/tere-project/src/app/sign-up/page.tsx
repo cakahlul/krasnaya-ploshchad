@@ -16,7 +16,8 @@ export default function SignUp() {
     setLoading(true);
     try {
       await signup(email, password);
-      router.push('/');
+      alert('Check your email to verify your account before signing in.');
+      router.push('/sign-in');
     } catch (error) {
       alert(error);
     }

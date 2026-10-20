@@ -1,5 +1,5 @@
 import type { CallerIdentity } from '@server/auth/with-auth-or-api-key';
-import type { ProductivitySummaryResponseDto } from './productivity-summary.service';
+import { summarizeProductivityMembers, type ProductivitySummaryResponseDto } from './productivity-summary.service';
 import { parseProductivitySummaryRange } from './productivity-summary-range';
 import {
   generateProductivitySummaryRange,
@@ -26,8 +26,8 @@ export const NDJSON_MEDIA_TYPE = 'application/x-ndjson';
 const BASIS_CONFLICT = 'metricBasis WP is unavailable for archive or mixed ranges';
 
 function legacyForCaller(data: ProductivitySummaryResponseDto, caller?: SummaryCaller) {
-  if (!caller || caller.isLead || !caller.fullName) return data;
-  return { ...data, details: data.details.filter(item => item.name === caller.fullName) };
+  if (caller?.isLead) return data;
+  return summarizeProductivityMembers(data.details.filter(item => item.name === caller?.fullName));
 }
 
 function canonicalGroups(value: string | null): ReportingGroup[] | null {
@@ -68,6 +68,21 @@ async function handleProductivitySummaryGetInner(
   caller: SummaryCaller | undefined,
   dependencies: ProductivitySummaryHttpDependencies,
 ): Promise<Response> {
+  if (!caller || (!caller.isLead && !caller.fullName)) {
+    return Response.json({ message: 'Forbidden' }, { status: 403 });
+  }
+  if (!caller.isLead) {
+    const ports = dependencies.rangePorts;
+    dependencies = {
+      ...dependencies,
+      rangePorts: {
+        async loadMonth(month, groups) {
+          const data = await ports.loadMonth(month, groups);
+          return { ...data, members: data.members.filter(member => member.name === caller.fullName) };
+        },
+      },
+    };
+  }
   const params = new URL(req.url).searchParams;
   const parsed = parseProductivitySummaryRange(params);
   if (!parsed.ok) return Response.json({ message: parsed.message }, { status: 400 });
@@ -121,6 +136,7 @@ function canonicalForCaller(data: CanonicalRange, caller?: SummaryCaller) {
   const { chart: _chart, ...memberData } = withProvenance;
   return {
     ...memberData,
+    summary: { ...memberData.summary, bugsRaised: null, bugsDone: null },
     provenance: metadataProvenance(data.sourceMetadata),
     details: caller?.fullName
       ? withProvenance.details.filter(item => item.name === caller.fullName)

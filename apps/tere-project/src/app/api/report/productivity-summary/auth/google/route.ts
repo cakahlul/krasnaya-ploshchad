@@ -1,9 +1,5 @@
-import { withAuth } from '@server/auth/with-auth';
-import { getAuthUrl } from '@server/lib/google-oauth.client';
+import { withRole } from '@server/auth/with-role';
+import { startGoogleOAuth } from '@server/lib/google-oauth-http';
 
 export const dynamic = 'force-dynamic';
-
-export const GET = withAuth(async () => {
-  const authUrl = getAuthUrl();
-  return Response.json({ authUrl });
-});
+export const GET = withRole('Lead', async req => startGoogleOAuth(req));

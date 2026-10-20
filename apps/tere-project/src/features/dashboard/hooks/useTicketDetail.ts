@@ -6,7 +6,7 @@ import axiosClient from '@src/lib/axiosClient';
 export interface TicketDetail {
   key: string;
   summary: string;
-  description: string | null;
+  description: unknown;
   status: string;
   statusColor?: string;
   resolution?: string; // To Do, In Progress, Done

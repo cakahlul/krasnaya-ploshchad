@@ -3,7 +3,7 @@ import { talentLeaveService } from '@server/modules/talent-leave/talent-leave.se
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withAuth(async (req, { params }) => {
+export const GET = withAuth(async (_req, { params }) => {
   const { id } = await params!;
   try {
     const record = await talentLeaveService.findOne(id);

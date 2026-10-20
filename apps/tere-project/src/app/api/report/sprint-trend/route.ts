@@ -4,7 +4,8 @@ import { metadataFromResolution, resolveJiraValue } from '@server/modules/report
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withAuthOrApiKey(async req => {
+export const GET = withAuthOrApiKey(async (req, { caller }) => {
+  if (!caller?.isLead) return Response.json({ message: 'Forbidden' }, { status: 403 });
   const { searchParams } = new URL(req.url);
   const project = searchParams.get('project') ?? '';
   const sprintsParam = searchParams.get('sprints') ?? '';
@@ -17,6 +18,7 @@ export const GET = withAuthOrApiKey(async req => {
   }
 
   const sprintIds = sprintsParam.split(',').map(s => s.trim()).filter(Boolean);
+  if (sprintIds.length > 24 || sprintIds.some(id => !/^\d+$/.test(id))) return Response.json({ message: 'Provide at most 24 valid sprint IDs' }, { status: 400 });
   const trend = await generateSprintTrend(sprintIds, project);
   const resolved = await resolveJiraValue(trend, sprintIds.length);
   const liveMetadata = metadataFromResolution(resolved);

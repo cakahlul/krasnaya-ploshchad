@@ -193,6 +193,10 @@ export async function generateProductivitySummary(month: number, year: number, t
   const details = teamReports.flatMap(report => report ?? []);
   details.sort((a, b) => a.name.localeCompare(b.name));
 
+  return summarizeProductivityMembers(details);
+}
+
+export function summarizeProductivityMembers(details: ProductivitySummaryMemberDto[]): ProductivitySummaryResponseDto {
   const totalDaysOfWorks = details.reduce((s, m) => s + m.workingDays, 0);
   const totalWpExpected = details.reduce((s, m) => s + m.expectedAverageWp * m.workingDays, 0);
   const averageWpExpected = totalDaysOfWorks > 0 ? totalWpExpected / totalDaysOfWorks : 0;
