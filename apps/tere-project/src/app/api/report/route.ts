@@ -1,3 +1,4 @@
+import { canAccessProject } from '@server/auth/access-policy';
 import { withAuthOrApiKey } from '@server/auth/with-auth-or-api-key';
 import { filterReportForLifecycle, findReportMembers, generateReport, generateReportByDateRange } from '@server/modules/reports/reports.service';
 import { filterReportForMember } from '@server/modules/reports/report-filter';
@@ -11,8 +12,10 @@ import { isIsoDate } from '@shared/utils/member-lifecycle.util';
 export const dynamic = 'force-dynamic';
 
 export const GET = withAuthOrApiKey(async (req, { caller }) => {
+  if (!caller || (!caller.isLead && !caller.fullName)) return Response.json({ message: 'Forbidden' }, { status: 403 });
   const { searchParams } = new URL(req.url);
   const project = searchParams.get('project') ?? '';
+  if (project && !project.split(',').every(key => canAccessProject(caller, key.trim()))) return Response.json({ message: 'Forbidden' }, { status: 403 });
   const sprint = searchParams.get('sprint') ?? '';
   const startDate = searchParams.get('startDate') ?? '';
   const endDate = searchParams.get('endDate') ?? '';
@@ -20,7 +23,8 @@ export const GET = withAuthOrApiKey(async (req, { caller }) => {
   const boardIdsParam = searchParams.get('boardIds');
   const boardIds = boardIdsParam === null ? undefined : parseBoardIds(boardIdsParam);
 
-  if (!project) return Response.json({ message: 'project is required' }, { status: 400 });
+  if (!project || !project.split(',').every(item => /^[A-Za-z][A-Za-z0-9_]*$/.test(item.trim()))) return Response.json({ message: 'Invalid project' }, { status: 400 });
+  if (sprint && !/^\d+(,\d+)*$/.test(sprint)) return Response.json({ message: 'Invalid sprint IDs' }, { status: 400 });
 
   if ((startDate || endDate) && !(startDate && endDate)) {
     return Response.json({ message: 'startDate and endDate are both required' }, { status: 400 });
@@ -93,7 +97,7 @@ export const GET = withAuthOrApiKey(async (req, { caller }) => {
   const lifecycleReport = period
     ? await filterReportForLifecycle(resolved.value, period)
     : resolved.value;
-  const report = caller ? filterReportForMember(lifecycleReport, caller) : lifecycleReport;
+  const report = filterReportForMember(lifecycleReport, caller);
   return Response.json({ ...report, sourceMetadata });
 });
 

@@ -13,6 +13,7 @@ function portsFor(sources: Record<string, MonthSource>): RangeAggregationPorts {
       failures: [],
       members: [
         { id: 'a', name: 'A', group: 'User', board: 'SLS', spTotal: 8, wpTotal: 5, spTarget: 16, workingDays: 2 },
+        { id: 'b', name: 'B', group: 'User', board: 'SLS', spTotal: 80, wpTotal: 50, spTarget: 160, workingDays: 20 },
       ],
     }),
   };
@@ -107,6 +108,10 @@ test('a non-lead gets progress without values and no chart in the payload', asyn
   const complete = events.at(-1);
   assert.equal(complete.type, 'complete');
   assert.equal('chart' in complete.data, false);
+  assert.equal(complete.data.summary.activeMembers, 1);
+  assert.equal(complete.data.summary.productivityMetric, 16);
+  assert.equal(complete.data.summary.bugsRaised, null);
+  assert.deepEqual(complete.data.details.map((member: { name: string }) => member.name), ['A']);
 });
 
 test('keeps Jira Fallback labels and warnings in JSON, progress, chart, and details', async () => {

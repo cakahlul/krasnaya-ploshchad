@@ -8,10 +8,11 @@ class SearchService {
     query: string,
     limit = 6,
     offset = 0,
-    nextPageToken?: string,
+    nextPageToken: string | undefined,
+    allowedProjects: readonly string[] | null,
   ): Promise<SearchResultDto> {
     const { tickets, total, nextPageToken: newToken } =
-      await this.repo.searchTickets(query, limit, offset, nextPageToken);
+      await this.repo.searchTickets(query, limit, offset, nextPageToken, allowedProjects);
 
     return {
       tickets,
@@ -21,11 +22,11 @@ class SearchService {
     };
   }
 
-  async getTicketDetail(key: string): Promise<TicketDetailDto | null> {
-    return this.repo.getTicketDetail(key);
+  async getTicketDetail(key: string, allowedProjects: readonly string[] | null): Promise<TicketDetailDto | null> {
+    return this.repo.getTicketDetail(key, allowedProjects);
   }
 
-  async getTicketDetailBatch(keys: string[]): Promise<TicketDetailDto[]> {
+  async getTicketDetailBatch(keys: string[], allowedProjects: readonly string[] | null): Promise<TicketDetailDto[]> {
     if (!keys.length) return [];
     const CONCURRENCY = 5;
     const results: TicketDetailDto[] = [];
@@ -33,7 +34,7 @@ class SearchService {
     for (let i = 0; i < keys.length; i += CONCURRENCY) {
       const batch = keys.slice(i, i + CONCURRENCY);
       const settled = await Promise.all(
-        batch.map((key) => this.repo.getTicketDetail(key).catch(() => null)),
+        batch.map((key) => this.repo.getTicketDetail(key, allowedProjects).catch(() => null)),
       );
       results.push(...(settled.filter((r): r is TicketDetailDto => r !== null)));
     }

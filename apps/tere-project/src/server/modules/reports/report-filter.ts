@@ -66,9 +66,9 @@ function recalculateSummary(
 
 export function filterReportForMember(
   report: GetReportResponseDto,
-  caller: CallerIdentity,
+  caller?: CallerIdentity,
 ): GetReportResponseDto {
-  if (caller.isLead || !caller.fullName) return report;
-  const myIssues = report.issues.filter(i => i.member === caller.fullName);
+  if (caller?.isLead) return report;
+  const myIssues = report.issues.filter(i => Boolean(caller?.fullName) && i.member === caller?.fullName);
   return recalculateSummary(myIssues, report);
 }

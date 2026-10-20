@@ -1,3 +1,5 @@
+import { membersService } from '@server/modules/members/members.service';
+import { isAdmittedMember } from '@server/auth/access-policy';
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth } from '@src/lib/firebaseAdmin';
 import { cookies } from 'next/headers';
@@ -16,6 +18,9 @@ const COOKIE_NAME = '__session';
  */
 export async function POST(request: NextRequest) {
   try {
+    if (request.headers.get('origin') && request.headers.get('origin') !== request.nextUrl.origin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const { idToken } = await request.json();
 
     if (!idToken) {
@@ -24,6 +29,10 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+
+    const user = await adminAuth.verifyIdToken(idToken, true);
+    const member = user.email ? await membersService.findByEmail(user.email) : null;
+    if (!isAdmittedMember(user, member)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     // Create session cookie via Firebase Admin
     const sessionCookie = await adminAuth.createSessionCookie(idToken, {

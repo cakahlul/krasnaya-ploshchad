@@ -804,12 +804,8 @@ function MemberDashboard({ teams, memberName, boardKanbanMap, summaryLoading, me
                     {[
                       { label: 'WP Total', value: `${me.totalWeightPoints} / ${me.targetWeightPoints.toFixed(0)}` },
                       { label: 'SP Total', value: me.spTotal.toFixed(2) },
-                      { label: 'My Rank', value: (() => {
-                        const sorted = [...(team.memberSummaries ?? [])].sort((a, b) => parseFloat(b.wpProductivity) - parseFloat(a.wpProductivity));
-                        const rank = sorted.findIndex(m => m.name === me.name) + 1;
-                        return `#${rank} of ${sorted.length}`;
-                      })() },
-                      { label: 'Team Avg', value: team.averageProductivity || '-' },
+                      { label: 'WP Productivity', value: me.wpProductivity },
+                      { label: 'SP Productivity', value: me.productivityRate },
                     ].map((stat, si) => (
                       <div key={si} style={{ background: T.isDark ? 'rgba(255,255,255,0.04)' : '#f5f6fb', borderRadius: 10, padding: '10px 12px' }}>
                         <div style={{ fontSize: 9.5, color: T.subCol, fontFamily: sans, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>{stat.label}</div>

@@ -63,11 +63,14 @@ export class SearchRepository {
     query: string,
     limit = 50,
     _offset = 0,
-    nextPageToken?: string,
+    nextPageToken: string | undefined,
+    allowedProjects: readonly string[] | null,
   ): Promise<{ tickets: SearchTicketDto[]; total?: number; nextPageToken?: string }> {
     if (!query?.trim()) return { tickets: [], total: 0 };
 
-    const { allowed, boardProjects } = await getAllowedProjects();
+    const { allowed: configured, boardProjects } = await getAllowedProjects();
+    const allowed = configured.filter(project => allowedProjects === null || allowedProjects.includes(project));
+    if (!allowed.length) return { tickets: [], total: 0 };
     const escaped = query.trim().replace(/["\\]/g, '\\$&');
     const projectFilter = `project IN (${allowed.join(', ')})`;
     const upper = escaped.toUpperCase();
@@ -96,8 +99,10 @@ export class SearchRepository {
     };
   }
 
-  async getTicketDetail(key: string): Promise<TicketDetailDto | null> {
+  async getTicketDetail(key: string, allowedProjects: readonly string[] | null): Promise<TicketDetailDto | null> {
+    if (!/^[A-Z][A-Z0-9_]*-\d+$/.test(key)) return null;
     const projectKey = key.split('-')[0];
+    if (allowedProjects !== null && !allowedProjects.includes(projectKey)) return null;
     const { allowed, boardProjects } = await getAllowedProjects();
     if (!allowed.includes(projectKey)) return null;
 
@@ -200,7 +205,7 @@ export class SearchRepository {
     return {
       key: issue.key,
       summary: issue.fields.summary,
-      description: this.extractText(issue.fields.description),
+      description: issue.fields.description ?? null,
       status: issue.fields.status?.name ?? 'Unknown',
       statusColor: issue.fields.status?.statusCategory?.colorName,
       resolution,
@@ -231,122 +236,4 @@ export class SearchRepository {
     };
   }
 
-  private extractText(description: unknown): string | null {
-    if (!description) return null;
-    if (typeof description === 'string') return description;
-    if (typeof description === 'object' && description !== null) {
-      const doc = description as { type?: string; content?: unknown[] };
-      if (doc.type === 'doc' && Array.isArray(doc.content)) {
-        return this.convertAdfNodesToHtml(doc.content);
-      }
-      if (Array.isArray(doc.content)) {
-        return this.convertAdfNodesToHtml(doc.content);
-      }
-    }
-    return null;
-  }
-
-  private convertAdfNodesToHtml(nodes: unknown[]): string {
-    return nodes.map((node) => this.convertAdfNodeToHtml(node)).join('');
-  }
-
-  private convertAdfNodeToHtml(node: unknown): string {
-    if (typeof node !== 'object' || node === null) return '';
-    const n = node as {
-      type?: string;
-      text?: string;
-      content?: unknown[];
-      attrs?: Record<string, unknown>;
-      marks?: Array<{ type: string; attrs?: Record<string, unknown> }>;
-    };
-
-    const children = Array.isArray(n.content) ? this.convertAdfNodesToHtml(n.content) : '';
-
-    switch (n.type) {
-      case 'text': {
-        let text = this.escapeHtml(n.text ?? '');
-        if (n.marks) {
-          for (const mark of n.marks) {
-            switch (mark.type) {
-              case 'strong':
-                text = `<strong>${text}</strong>`;
-                break;
-              case 'em':
-                text = `<em>${text}</em>`;
-                break;
-              case 'code':
-                text = `<code>${text}</code>`;
-                break;
-              case 'underline':
-                text = `<u>${text}</u>`;
-                break;
-              case 'strike':
-                text = `<s>${text}</s>`;
-                break;
-              case 'link':
-                text = `<a href="${this.escapeHtml(String(mark.attrs?.href ?? ''))}" target="_blank" rel="noopener noreferrer">${text}</a>`;
-                break;
-              case 'textColor':
-                text = `<span style="color:${this.escapeHtml(String(mark.attrs?.color ?? ''))}">${text}</span>`;
-                break;
-            }
-          }
-        }
-        return text;
-      }
-      case 'paragraph':
-        return `<p>${children}</p>`;
-      case 'heading': {
-        const level = Math.min(Math.max(Number(n.attrs?.level) || 1, 1), 6);
-        return `<h${level}>${children}</h${level}>`;
-      }
-      case 'bulletList':
-        return `<ul>${children}</ul>`;
-      case 'orderedList':
-        return `<ol>${children}</ol>`;
-      case 'listItem':
-        return `<li>${children}</li>`;
-      case 'blockquote':
-        return `<blockquote>${children}</blockquote>`;
-      case 'codeBlock':
-        return `<pre><code>${children}</code></pre>`;
-      case 'rule':
-        return '<hr />';
-      case 'hardBreak':
-        return '<br />';
-      case 'table':
-        return `<table>${children}</table>`;
-      case 'tableRow':
-        return `<tr>${children}</tr>`;
-      case 'tableHeader':
-        return `<th>${children}</th>`;
-      case 'tableCell':
-        return `<td>${children}</td>`;
-      case 'mediaSingle':
-      case 'mediaGroup':
-        return children;
-      case 'media':
-        return '';
-      case 'mention':
-        return `<span>@${this.escapeHtml(String(n.attrs?.text ?? ''))}</span>`;
-      case 'emoji':
-        return n.attrs?.text ? String(n.attrs.text) : '';
-      case 'inlineCard':
-        return `<a href="${this.escapeHtml(String(n.attrs?.url ?? ''))}" target="_blank" rel="noopener noreferrer">${this.escapeHtml(String(n.attrs?.url ?? ''))}</a>`;
-      case 'panel': {
-        const panelType = n.attrs?.panelType ?? 'info';
-        return `<div data-panel-type="${this.escapeHtml(String(panelType))}">${children}</div>`;
-      }
-      default:
-        return children;
-    }
-  }
-
-  private escapeHtml(str: string): string {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
 }

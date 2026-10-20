@@ -26,11 +26,12 @@ async function createSessionCookie() {
   if (!user) return;
 
   const idToken = await user.getIdToken();
-  await fetch('/api/auth/session', {
+  const response = await fetch('/api/auth/session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ idToken }),
   });
+  if (!response.ok) throw new Error('Your account is not authorized. Contact your administrator.');
 }
 
 const FEATURE_CHIPS = [

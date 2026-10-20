@@ -3,7 +3,8 @@ import { bugMonitoringService } from '@server/modules/bug-monitoring/bug-monitor
 
 export const dynamic = 'force-dynamic';
 
-export const GET = withAuthOrApiKey(async (req) => {
+export const GET = withAuthOrApiKey(async (req, { caller }) => {
+  if (!caller?.isLead) return Response.json({ message: 'Forbidden' }, { status: 403 });
   const boardId = new URL(req.url).searchParams.get('boardId');
   if (!boardId) {
     return Response.json({ message: 'boardId is required' }, { status: 400 });

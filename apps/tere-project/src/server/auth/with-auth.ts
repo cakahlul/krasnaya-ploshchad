@@ -1,4 +1,6 @@
 import type { DecodedIdToken } from 'firebase-admin/auth';
+import { membersService } from '@server/modules/members/members.service';
+import { isAdmittedMember } from './access-policy';
 import { auth } from '@server/lib/firebase-admin';
 
 export type AuthedHandler = (
@@ -20,7 +22,9 @@ export function withAuth(handler: AuthedHandler) {
     }
 
     try {
-      const user = await auth.verifyIdToken(token);
+      const user = await auth.verifyIdToken(token, true);
+      const member = user.email ? await membersService.findByEmail(user.email) : null;
+      if (!isAdmittedMember(user, member)) return Response.json({ message: 'Forbidden' }, { status: 403 });
       return handler(req, { user, params: context?.params });
     } catch {
       return Response.json({ message: 'Unauthorized' }, { status: 401 });

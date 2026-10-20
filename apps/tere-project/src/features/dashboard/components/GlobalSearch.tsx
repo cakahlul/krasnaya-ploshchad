@@ -1,4 +1,5 @@
 'use client';
+import { AdfDescription } from '@src/features/epic-explorer/utils/adfToReact';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { SearchOutlined, CloseCircleFilled, LoadingOutlined, TagOutlined, UserOutlined, ClockCircleOutlined, ExperimentOutlined, CheckCircleOutlined, SyncOutlined, LinkOutlined } from '@ant-design/icons';
@@ -745,7 +746,7 @@ function TicketDetailCard({
         )}
 
         {/* Description */}
-        {ticket.description && (
+        {Boolean(ticket.description) && (
           <div className="mb-4">
             <p className="text-xs mb-2" style={{ color: subCol }}>Description</p>
             <div
@@ -756,7 +757,7 @@ function TicketDetailCard({
                 color: rowCol,
               }}
             >
-              {ticket.description}
+              <AdfDescription value={ticket.description} />
             </div>
           </div>
         )}

@@ -1,3 +1,6 @@
+import { canAccessBoard } from '@server/auth/access-policy';
+import type { CallerIdentity } from '@server/auth/with-auth-or-api-key';
+import { filterReportForMember } from '@server/modules/reports/report-filter';
 import { serverCache } from '@server/cache/server-cache';
 import { filterReportMembersForProject, generateOpenSprintReport, generateReportByDateRange, getSprintWorkItemStats } from '@server/modules/reports/reports.service';
 import { boardsService } from '@server/modules/boards/boards.service';
@@ -40,24 +43,30 @@ export function toDashboardMemberSummary(issue: {
 }
 
 export async function getDashboardSummary(
+  caller: CallerIdentity,
   requestedStartDate?: string,
   requestedEndDate?: string,
   allowedBoardIds?: readonly number[],
+  sources = { generateOpenSprintReport, generateReportByDateRange, getSprintWorkItemStats },
 ): Promise<DashboardSummaryResponseDto> {
+  if (!caller || (!caller.isLead && !caller.fullName)) throw new Error('Forbidden');
   const defaultRange = getKanbanDateRange();
   const startDate = requestedStartDate ?? defaultRange.startDate;
   const endDate = requestedEndDate ?? defaultRange.endDate;
   const scopeKey = allowedBoardIds === undefined
     ? 'all'
     : [...allowedBoardIds].sort((a, b) => a - b).join(',');
-  const cacheKey = `${CACHE_KEY}_${startDate}_${endDate}_${scopeKey}`;
+  const activeMembers = caller.isLead ? await membersService.findActiveTeamMembers(caller.teams ?? []) : [];
+  const activeNames = new Set(activeMembers.map(member => member.fullName));
+  const identityKey = JSON.stringify([caller.email, caller.isLead, caller.fullName, [...(caller.teams ?? [])].sort(), [...activeNames].sort()]);
+  const cacheKey = `${CACHE_KEY}_v2_${startDate}_${endDate}_${scopeKey}_${identityKey}`;
   const cached = serverCache.get<DashboardSummaryResponseDto>(cacheKey);
   if (cached) return cached;
 
   const allBoards = await boardsService.findAll();
   const allowed = allowedBoardIds === undefined ? undefined : new Set(allowedBoardIds);
   const boards = allBoards.filter(
-    b => !b.isBugMonitoring && (allowed === undefined || allowed.has(b.boardId)),
+    b => !b.isBugMonitoring && canAccessBoard({ ...caller, isLead: false }, b) && (allowed === undefined || allowed.has(b.boardId)),
   );
 
   const teams = await Promise.all(
@@ -66,8 +75,9 @@ export async function getDashboardSummary(
         const boardRange = requestedStartDate && requestedEndDate
           ? { startDate, endDate }
           : getKanbanDateRange(undefined, board.kanbanCycleStartDate ?? undefined);
-        const report = await generateReportByDateRange(boardRange.startDate, boardRange.endDate, board.shortName).catch(() => null);
-        const issues = report?.issues ?? [];
+        const unfilteredReport = await sources.generateReportByDateRange(boardRange.startDate, boardRange.endDate, board.shortName).catch(() => null);
+        const report = unfilteredReport ? filterReportForMember(unfilteredReport, caller) : null;
+        const issues = (report?.issues ?? []).filter(issue => !caller.isLead || activeNames.has(issue.member));
         const uniqueParents = new Set(
           issues.flatMap(issue => issue.epicKeys?.filter(key => key !== 'null') ?? []),
         );
@@ -94,17 +104,18 @@ export async function getDashboardSummary(
         };
       }
 
-      const [report, workItems] = await Promise.all([
-        generateOpenSprintReport(board.shortName).catch(() => null),
-        getSprintWorkItemStats(board.shortName).catch(() => ({ totalWorkItems: 0, closedWorkItems: 0, averageHoursOpen: null })),
+      const [unfilteredReport, workItems] = await Promise.all([
+        sources.generateOpenSprintReport(board.shortName).catch(() => null),
+        !caller.isLead ? Promise.resolve(null) : sources.getSprintWorkItemStats(board.shortName).catch(() => ({ totalWorkItems: 0, closedWorkItems: 0, averageHoursOpen: null })),
       ]);
 
-      const issues = report?.issues ?? [];
+      const report = unfilteredReport ? filterReportForMember(unfilteredReport, caller) : null;
+      const issues = (report?.issues ?? []).filter(issue => !caller.isLead || activeNames.has(issue.member));
       const memberSummaries = issues.map(toDashboardMemberSummary);
 
-      let epicCount = 0;
+      let epicCount = caller.isLead ? 0 : new Set(issues.flatMap(issue => issue.epicKeys?.filter(key => key !== 'null') ?? [])).size;
       const sprintId = report?.sprintId;
-      if (sprintId) {
+      if (sprintId && caller.isLead) {
         try {
           const allMembers = await membersService.findAll();
           const teamMembers = filterReportMembersForProject(
@@ -139,8 +150,8 @@ export async function getDashboardSummary(
         productPercentage: report?.productPercentage || null,
         techDebtPercentage: report?.techDebtPercentage || null,
         totalWorkingDays: report?.totalWorkingDays || null,
-        totalWorkItems: workItems?.totalWorkItems || 0,
-        closedWorkItems: workItems?.closedWorkItems || 0,
+        totalWorkItems: workItems?.totalWorkItems ?? issues.reduce((sum, issue) => sum + issue.issueKeys.length, 0),
+        closedWorkItems: workItems?.closedWorkItems ?? issues.reduce((sum, issue) => sum + issue.issueKeys.length, 0),
         averageHoursOpen: workItems?.averageHoursOpen || null,
       };
     }),

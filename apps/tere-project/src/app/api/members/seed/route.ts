@@ -1,4 +1,4 @@
-import { withAuth } from '@server/auth/with-auth';
+import { withDeveloper } from '@server/auth/with-developer';
 import { membersService } from '@server/modules/members/members.service';
 import { teamMembers } from '@shared/constants/team-members';
 
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
  * One-time seed: writes hardcoded teamMembers, storing the legacy ID as `jiraId`
  * so talent-leave records keyed by Jira accountId continue to resolve.
  */
-export const POST = withAuth(async () => {
+export const POST = withDeveloper(async () => {
   const results = await Promise.allSettled(
     teamMembers.map((member) =>
       membersService.create({
