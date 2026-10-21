@@ -76,6 +76,18 @@ test('stored login theme accepts only system, light, and dark', () => {
   assert.equal(readStoredLoginTheme(createStorage()), 'system');
 });
 
+test('unreadable storage falls back to System', () => {
+  const unreadableStorage: LoginThemeStorage = {
+    getItem: () => {
+      throw new Error('unavailable');
+    },
+    setItem: () => undefined,
+  };
+
+  assert.equal(readStoredLoginTheme(unreadableStorage), 'system');
+  assert.equal(createLoginThemeSelection(unreadableStorage).getSelectedTheme(), 'system');
+});
+
 test('selection persists valid choice and reload restores it', () => {
   const storage = createStorage();
   const selection = createLoginThemeSelection(storage);
@@ -133,10 +145,11 @@ test('selection accesses only the login storage key', () => {
   };
   const selection = createLoginThemeSelection(storage);
 
+  assert.equal(LOGIN_THEME_STORAGE_KEY, 'tere-login-theme');
   assert.equal(selection.setSelectedTheme('dark'), 'dark');
   assert.deepEqual(accesses, [
-    `get:${LOGIN_THEME_STORAGE_KEY}`,
-    `set:${LOGIN_THEME_STORAGE_KEY}:dark`,
+    'get:tere-login-theme',
+    'set:tere-login-theme:dark',
   ]);
   assert.equal(accesses.some((access) => access.endsWith(':theme')), false);
 });
