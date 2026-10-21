@@ -43,6 +43,51 @@ function getSystemTheme(): LoginEffectiveTheme {
   }
 }
 
+export function getEffectiveLoginTheme(
+  selectedTheme: LoginTheme,
+  systemTheme: LoginEffectiveTheme,
+): LoginEffectiveTheme {
+  return selectedTheme === 'system' ? systemTheme : selectedTheme;
+}
+
+export function createLoginThemeMediaController(mediaQuery: MediaQueryList) {
+  const getCurrentTheme = (): LoginEffectiveTheme => {
+    try {
+      return mediaQuery.matches ? 'dark' : 'light';
+    } catch {
+      return 'dark';
+    }
+  };
+
+  const subscribe = (onChange: () => void) => {
+    const handleChange = () => onChange();
+
+    try {
+      if (typeof mediaQuery.addEventListener === 'function') {
+        mediaQuery.addEventListener('change', handleChange);
+      } else if (typeof mediaQuery.addListener === 'function') {
+        mediaQuery.addListener(handleChange);
+      }
+    } catch {
+      return () => undefined;
+    }
+
+    return () => {
+      try {
+        if (typeof mediaQuery.removeEventListener === 'function') {
+          mediaQuery.removeEventListener('change', handleChange);
+        } else if (typeof mediaQuery.removeListener === 'function') {
+          mediaQuery.removeListener(handleChange);
+        }
+      } catch {
+        // A denied listener cleanup must not break unmount.
+      }
+    };
+  };
+
+  return { getCurrentTheme, subscribe };
+}
+
 export function useLoginTheme() {
   const { isReady: providerReady } = useTheme();
   const [selectedTheme, setSelectedThemeState] = useState<LoginTheme>(() => readStoredLoginTheme());
@@ -62,23 +107,11 @@ export function useLoginTheme() {
       return;
     }
 
-    const handleChange = (event?: MediaQueryListEvent) => {
-      setSystemTheme((event ?? mediaQuery).matches ? 'dark' : 'light');
-    };
+    const mediaController = createLoginThemeMediaController(mediaQuery);
+    const handleChange = () => setSystemTheme(mediaController.getCurrentTheme());
 
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleChange);
-    } else {
-      mediaQuery.addListener?.(handleChange);
-    }
-
-    return () => {
-      if (mediaQuery.removeEventListener) {
-        mediaQuery.removeEventListener('change', handleChange);
-      } else {
-        mediaQuery.removeListener?.(handleChange);
-      }
-    };
+    handleChange();
+    return mediaController.subscribe(handleChange);
   }, [providerReady, selectedTheme]);
 
   const setSelectedTheme = (theme: LoginTheme) => {
@@ -87,8 +120,9 @@ export function useLoginTheme() {
     writeStoredLoginTheme(theme);
   };
 
-  const effectiveTheme: LoginEffectiveTheme =
-    !isReady ? 'dark' : selectedTheme === 'system' ? systemTheme : selectedTheme;
+  const effectiveTheme: LoginEffectiveTheme = !isReady
+    ? 'dark'
+    : getEffectiveLoginTheme(selectedTheme, systemTheme);
 
   return { selectedTheme, setSelectedTheme, effectiveTheme, isReady };
 }

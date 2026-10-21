@@ -72,6 +72,7 @@ type ScenePalette = {
   rim: string;
   sparkleA: string;
   sparkleB: string;
+  lightformerB: string;
   ambient: string;
   background: string;
 };
@@ -82,6 +83,7 @@ const SCENE_PALETTES: Record<LoginEffectiveTheme, ScenePalette> = {
     rim: RIM,
     sparkleA: '#c4b5fd',
     sparkleB: '#fbb6ce',
+    lightformerB: '#f472b6',
     ambient: '#c8dce8',
     background: '#060d1a',
   },
@@ -90,6 +92,7 @@ const SCENE_PALETTES: Record<LoginEffectiveTheme, ScenePalette> = {
     rim: '#0e7490',
     sparkleA: '#6d4fd1',
     sparkleB: '#be185d',
+    lightformerB: '#be185d',
     ambient: '#d2e8ef',
     background: '#e7f4f8',
   },
@@ -337,7 +340,7 @@ export default function Stat3DScene({ theme = 'dark' }: { theme?: LoginEffective
           {/* Soft accent fills from below */}
           <Lightformer intensity={0.7} color="#22b8d4" position={[0, -2, 3]} scale={[4, 1.5, 1]} />
           <Lightformer intensity={0.6} color={palette.sparkleA} position={[-3, 0, -3]} scale={[2, 3, 1]} />
-          <Lightformer intensity={0.6} color={palette.sparkleB} position={[3, 0, -3]} scale={[2, 3, 1]} />
+          <Lightformer intensity={0.6} color={palette.lightformerB} position={[3, 0, -3]} scale={[2, 3, 1]} />
           {/* Dark navy backdrop — exact match to page bg darkest tone, so the
               subtle transmission through the bars reads as page-bg reflection */}
           <mesh scale={50}>

@@ -114,7 +114,7 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
       >
         {/* Drag handle (mobile feel) */}
         <div className="flex justify-center pt-3 sm:hidden">
-          <div className="h-1 w-10 rounded-full" style={{ background: 'var(--login-modal-divider, rgba(255,255,255,0.15))' }} />
+          <div className="h-1 w-10 rounded-full" style={{ background: 'var(--login-modal-handle, rgba(255,255,255,0.15))' }} />
         </div>
 
         {/* Header */}
@@ -185,7 +185,7 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
             className="login-button w-full rounded-xl py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
             style={{
               background: 'var(--login-button-background, linear-gradient(135deg, #1282a2, #22b8d4))',
-              boxShadow: 'var(--login-button-shadow, 0 4px 16px rgba(18,130,162,0.25))',
+              boxShadow: 'var(--login-modal-button-shadow, 0 4px 16px rgba(18,130,162,0.25))',
             }}
           >
             Got it

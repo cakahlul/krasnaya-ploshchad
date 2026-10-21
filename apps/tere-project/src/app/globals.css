@@ -404,6 +404,8 @@
     --login-modal-muted: rgba(255, 255, 255, 0.45);
     --login-modal-faint: rgba(255, 255, 255, 0.2);
     --login-modal-divider: rgba(255, 255, 255, 0.07);
+    --login-modal-handle: rgba(255, 255, 255, 0.15);
+    --login-modal-button-shadow: 0 4px 16px rgba(18, 130, 162, 0.25);
   }
 
   .login-page[data-login-theme='light'] {
@@ -451,6 +453,8 @@
     --login-modal-muted: rgba(1, 29, 77, 0.58);
     --login-modal-faint: rgba(1, 29, 77, 0.42);
     --login-modal-divider: rgba(1, 29, 77, 0.12);
+    --login-modal-handle: rgba(1, 29, 77, 0.14);
+    --login-modal-button-shadow: 0 4px 16px rgba(18, 130, 162, 0.2);
   }
 
   .login-page .login-text-primary {
