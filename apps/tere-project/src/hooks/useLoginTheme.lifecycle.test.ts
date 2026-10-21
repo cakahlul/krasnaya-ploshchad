@@ -45,8 +45,8 @@ class FakeNode {
   readonly namespaceURI = 'http://www.w3.org/1999/xhtml';
   readonly childNodes: FakeNode[] = [];
   readonly classList = {
-    add: (..._tokens: string[]) => undefined,
-    remove: (..._tokens: string[]) => undefined,
+    add: () => undefined,
+    remove: () => undefined,
   };
   readonly ownerDocument: FakeDocument;
 
@@ -135,7 +135,7 @@ function installBrowserHarness(options: {
       : () => mediaQuery as unknown as MediaQueryList,
   });
 
-  const globals = globalThis as typeof globalThis & {
+  const globals = globalThis as unknown as {
     document: FakeDocument;
     window: FakeWindow;
     IS_REACT_ACT_ENVIRONMENT: boolean;
@@ -211,7 +211,7 @@ test('successful subscription guards throwing cleanup', () => {
   let subscribed = false;
   const mediaQuery = {
     matches: false,
-    addEventListener(_type: 'change', _listener: () => void) {
+    addEventListener() {
       subscribed = true;
     },
     removeEventListener() {
