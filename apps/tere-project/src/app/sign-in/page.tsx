@@ -63,14 +63,16 @@ type LoginThemeTokens = {
   mutedText: string;
   buttonBackground: string;
   buttonShadow: string;
+  submitButtonShadow: string;
   subtleText: string;
+  dividerText: string;
   divider: string;
   labelText: string;
   controlText: string;
   controlBorder: string;
+  inputBorder: string;
   controlBackground: string;
   inputText: string;
-  iconText: string;
   accent: string;
   accentBright: string;
   focusRing: string;
@@ -126,14 +128,16 @@ const DARK_LOGIN_THEME: LoginThemeTokens = {
   mutedText: 'rgba(255,255,255,0.45)',
   buttonBackground: 'linear-gradient(135deg, #1282a2, #22b8d4)',
   buttonShadow: '0 4px 24px rgba(18,130,162,0.3)',
+  submitButtonShadow: '0 4px 24px rgba(18,130,162,0.25)',
   subtleText: 'rgba(255,255,255,0.35)',
+  dividerText: 'rgba(255,255,255,0.3)',
   divider: 'rgba(255,255,255,0.1)',
   labelText: 'rgba(255,255,255,0.5)',
   controlText: 'rgba(255,255,255,0.6)',
   controlBorder: 'rgba(255,255,255,0.15)',
+  inputBorder: 'rgba(255,255,255,0.1)',
   controlBackground: 'rgba(255,255,255,0.05)',
   inputText: '#ffffff',
-  iconText: 'rgba(255,255,255,0.3)',
   accent: '#1282a2',
   accentBright: '#22b8d4',
   focusRing: '0 0 0 2px rgba(18,130,162,0.25)',
@@ -187,14 +191,16 @@ const LIGHT_LOGIN_THEME: LoginThemeTokens = {
   mutedText: '#426779',
   buttonBackground: 'linear-gradient(135deg, #0e7490, #22b8d4)',
   buttonShadow: '0 4px 24px rgba(14,116,144,0.3)',
+  submitButtonShadow: '0 4px 24px rgba(14,116,144,0.3)',
   subtleText: '#577787',
+  dividerText: '#577787',
   divider: 'rgba(14,116,144,0.22)',
   labelText: '#426779',
   controlText: '#426779',
   controlBorder: 'rgba(14,116,144,0.28)',
+  inputBorder: 'rgba(14,116,144,0.28)',
   controlBackground: 'rgba(255,255,255,0.76)',
   inputText: '#102a43',
-  iconText: '#426779',
   accent: '#0e7490',
   accentBright: '#0e7490',
   focusRing: '0 0 0 2px rgba(14,116,144,0.3)',
@@ -698,7 +704,7 @@ export default function SignIn() {
               {/* Divider */}
               <div className="my-5 sm:my-7 flex items-center gap-3 sm:gap-4">
                 <div className="h-px flex-1" style={{ background: theme.divider }} />
-                <span className="text-[10px] sm:text-xs" style={{ color: theme.subtleText }}>
+                <span className="text-[10px] sm:text-xs" style={{ color: theme.dividerText }}>
                   or
                 </span>
                 <div className="h-px flex-1" style={{ background: theme.divider }} />
@@ -737,7 +743,7 @@ export default function SignIn() {
                       style={{
                         color: theme.inputText,
                         background: theme.controlBackground,
-                        border: `1px solid ${theme.controlBorder}`,
+                        border: `1px solid ${theme.inputBorder}`,
                         // focus ring handled via onFocus/onBlur
                       }}
                       onFocus={(e) => {
@@ -745,7 +751,7 @@ export default function SignIn() {
                         e.currentTarget.style.boxShadow = theme.focusRing;
                       }}
                       onBlur={(e) => {
-                        e.currentTarget.style.borderColor = theme.controlBorder;
+                        e.currentTarget.style.borderColor = theme.inputBorder;
                         e.currentTarget.style.boxShadow = 'none';
                       }}
                     />
@@ -779,14 +785,14 @@ export default function SignIn() {
                         style={{
                           color: theme.inputText,
                           background: theme.controlBackground,
-                          border: `1px solid ${theme.controlBorder}`,
+                          border: `1px solid ${theme.inputBorder}`,
                         }}
                         onFocus={(e) => {
                           e.currentTarget.style.borderColor = theme.accent;
                           e.currentTarget.style.boxShadow = theme.focusRing;
                         }}
                         onBlur={(e) => {
-                          e.currentTarget.style.borderColor = theme.controlBorder;
+                          e.currentTarget.style.borderColor = theme.inputBorder;
                           e.currentTarget.style.boxShadow = 'none';
                         }}
                       />
@@ -794,9 +800,8 @@ export default function SignIn() {
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${
-                          resolvedTheme === 'light' ? 'hover:text-slate-700' : 'hover:text-white/60'
+                          resolvedTheme === 'light' ? 'text-[#426779] hover:text-slate-700' : 'text-white/30 hover:text-white/60'
                         }`}
-                        style={{ color: theme.iconText }}
                       >
                         {showPassword ? (
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -828,7 +833,7 @@ export default function SignIn() {
                     className="w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                     style={{
                       background: success ? 'linear-gradient(135deg, #059669, #10b981)' : theme.buttonBackground,
-                      boxShadow: theme.buttonShadow,
+                      boxShadow: theme.submitButtonShadow,
                     }}
                   >
                     {success ? 'Redirecting...' : loading ? 'Signing in...' : 'Sign in'}
@@ -851,7 +856,7 @@ export default function SignIn() {
                 <button
                   type="button"
                   onClick={() => setLegalModal('terms')}
-                  className={`transition-colors hover:underline ${resolvedTheme === 'light' ? 'hover:text-slate-700' : 'hover:text-white/50'}`}
+                  className={`transition-colors ${resolvedTheme === 'light' ? 'hover:text-slate-700' : 'hover:text-white/50'}`}
                 >
                   Terms
                 </button>
@@ -859,7 +864,7 @@ export default function SignIn() {
                 <button
                   type="button"
                   onClick={() => setLegalModal('privacy')}
-                  className={`transition-colors hover:underline ${resolvedTheme === 'light' ? 'hover:text-slate-700' : 'hover:text-white/50'}`}
+                  className={`transition-colors ${resolvedTheme === 'light' ? 'hover:text-slate-700' : 'hover:text-white/50'}`}
                 >
                   Privacy
                 </button>
