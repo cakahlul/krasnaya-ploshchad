@@ -1,21 +1,15 @@
-"use client";
+'use client';
 
-import { useEffect, useState, type FormEvent } from "react";
-import dynamic from "next/dynamic";
-import {
-  motion,
-  useMotionTemplate,
-  useMotionValue,
-  useSpring,
-  useTransform,
-} from "framer-motion";
-import { login, signInWithGoogle } from "@src/lib/auth";
-import { getAuth } from "firebase/auth";
-import useUser from "@src/hooks/useUser";
-import { useRouter } from "next/navigation";
-import LegalModal, { type LegalModalType } from "@src/components/LegalModal";
+import { useEffect, useState, type FormEvent } from 'react';
+import dynamic from 'next/dynamic';
+import { motion, useMotionTemplate, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { login, signInWithGoogle } from '@src/lib/auth';
+import { getAuth } from 'firebase/auth';
+import useUser from '@src/hooks/useUser';
+import { useRouter } from 'next/navigation';
+import LegalModal, { type LegalModalType } from '@src/components/LegalModal';
 
-const Stat3DScene = dynamic(() => import("./Stat3DScene"), {
+const Stat3DScene = dynamic(() => import('./Stat3DScene'), {
   ssr: false,
   loading: () => null,
 });
@@ -26,26 +20,23 @@ async function createSessionCookie() {
   if (!user) return;
 
   const idToken = await user.getIdToken();
-  const response = await fetch("/api/auth/session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  const response = await fetch('/api/auth/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ idToken }),
   });
-  if (!response.ok)
-    throw new Error(
-      "Your account is not authorized. Contact your administrator.",
-    );
+  if (!response.ok) throw new Error('Your account is not authorized. Contact your administrator.');
 }
 
 const FEATURE_CHIPS = [
-  { label: "Sprint WP tracking", icon: "📊" },
-  { label: "Productivity analytics", icon: "⚡" },
-  { label: "Bug monitoring", icon: "🐛" },
-  { label: "Leave & holidays", icon: "🗓️" },
+  { label: 'Sprint WP tracking', icon: '📊' },
+  { label: 'Productivity analytics', icon: '⚡' },
+  { label: 'Bug monitoring', icon: '🐛' },
+  { label: 'Leave & holidays', icon: '🗓️' },
 ];
 
-type LoginTheme = "system" | "light" | "dark";
-type ResolvedLoginTheme = Exclude<LoginTheme, "system">;
+type LoginTheme = 'system' | 'light' | 'dark';
+type ResolvedLoginTheme = Exclude<LoginTheme, 'system'>;
 
 type LoginThemeTokens = {
   pageBackground: string;
@@ -111,128 +102,126 @@ type LoginThemeTokens = {
 };
 
 const DARK_LOGIN_THEME: LoginThemeTokens = {
-  pageBackground: "linear-gradient(135deg, #060d1a, #011d4d, #034078)",
-  gridLine: "rgba(255,255,255,0.03)",
-  accentGlow:
-    "radial-gradient(circle, rgba(18,130,162,0.15) 0%, transparent 70%)",
-  brandMuted: "rgba(255,255,255,0.4)",
-  badgeBackground: "rgba(34,184,212,0.08)",
-  badgeBorder: "rgba(34,184,212,0.18)",
-  badgeText: "#7fd8ee",
-  headingText: "#ffffff",
-  headingShadow: "0 2px 14px rgba(0,0,0,0.5)",
-  headingGradient: "linear-gradient(135deg, #a78bfa, #7fd8ee, #fbb6ce)",
-  bodyText: "rgba(255,255,255,0.75)",
-  bodyShadow: "0 1px 8px rgba(0,0,0,0.45)",
-  chipBackground: "rgba(255,255,255,0.04)",
-  chipBorder: "rgba(255,255,255,0.08)",
-  chipText: "rgba(255,255,255,0.75)",
-  cardBackground: "rgba(255,255,255,0.04)",
-  cardBorder: "rgba(255,255,255,0.08)",
-  cardShadow: "0 8px 48px rgba(0,0,0,0.4)",
-  messageBackground: "rgba(18,130,162,0.1)",
-  messageText: "#22b8d4",
-  primaryText: "#ffffff",
-  mutedText: "rgba(255,255,255,0.45)",
-  buttonBackground: "linear-gradient(135deg, #1282a2, #22b8d4)",
-  buttonShadow: "0 4px 24px rgba(18,130,162,0.3)",
-  subtleText: "rgba(255,255,255,0.35)",
-  divider: "rgba(255,255,255,0.1)",
-  labelText: "rgba(255,255,255,0.5)",
-  controlText: "rgba(255,255,255,0.6)",
-  controlBorder: "rgba(255,255,255,0.15)",
-  controlBackground: "rgba(255,255,255,0.05)",
-  inputText: "#ffffff",
-  iconText: "rgba(255,255,255,0.3)",
-  accent: "#1282a2",
-  accentBright: "#22b8d4",
-  focusRing: "0 0 0 2px rgba(18,130,162,0.25)",
-  secondaryText: "rgba(255,255,255,0.4)",
-  footerText: "rgba(255,255,255,0.25)",
-  copyFaint: "rgba(255,255,255,0.2)",
+  pageBackground: 'linear-gradient(135deg, #060d1a, #011d4d, #034078)',
+  gridLine: 'rgba(255,255,255,0.03)',
+  accentGlow: 'radial-gradient(circle, rgba(18,130,162,0.15) 0%, transparent 70%)',
+  brandMuted: 'rgba(255,255,255,0.4)',
+  badgeBackground: 'rgba(34,184,212,0.08)',
+  badgeBorder: 'rgba(34,184,212,0.18)',
+  badgeText: '#7fd8ee',
+  headingText: '#ffffff',
+  headingShadow: '0 2px 14px rgba(0,0,0,0.5)',
+  headingGradient: 'linear-gradient(135deg, #a78bfa, #7fd8ee, #fbb6ce)',
+  bodyText: 'rgba(255,255,255,0.75)',
+  bodyShadow: '0 1px 8px rgba(0,0,0,0.45)',
+  chipBackground: 'rgba(255,255,255,0.04)',
+  chipBorder: 'rgba(255,255,255,0.08)',
+  chipText: 'rgba(255,255,255,0.75)',
+  cardBackground: 'rgba(255,255,255,0.04)',
+  cardBorder: 'rgba(255,255,255,0.08)',
+  cardShadow: '0 8px 48px rgba(0,0,0,0.4)',
+  messageBackground: 'rgba(18,130,162,0.1)',
+  messageText: '#22b8d4',
+  primaryText: '#ffffff',
+  mutedText: 'rgba(255,255,255,0.45)',
+  buttonBackground: 'linear-gradient(135deg, #1282a2, #22b8d4)',
+  buttonShadow: '0 4px 24px rgba(18,130,162,0.3)',
+  subtleText: 'rgba(255,255,255,0.35)',
+  divider: 'rgba(255,255,255,0.1)',
+  labelText: 'rgba(255,255,255,0.5)',
+  controlText: 'rgba(255,255,255,0.6)',
+  controlBorder: 'rgba(255,255,255,0.15)',
+  controlBackground: 'rgba(255,255,255,0.05)',
+  inputText: '#ffffff',
+  iconText: 'rgba(255,255,255,0.3)',
+  accent: '#1282a2',
+  accentBright: '#22b8d4',
+  focusRing: '0 0 0 2px rgba(18,130,162,0.25)',
+  secondaryText: 'rgba(255,255,255,0.4)',
+  footerText: 'rgba(255,255,255,0.25)',
+  copyFaint: 'rgba(255,255,255,0.2)',
   modal: {
-    backdrop: "rgba(0,0,0,0.65)",
-    panel: "linear-gradient(160deg, #0b1a30 0%, #051025 100%)",
-    border: "rgba(255,255,255,0.08)",
-    shadow: "0 24px 80px rgba(0,0,0,0.6)",
-    handle: "rgba(255,255,255,0.15)",
-    divider: "rgba(255,255,255,0.07)",
-    title: "#ffffff",
-    muted: "rgba(255,255,255,0.45)",
-    close: "rgba(255,255,255,0.5)",
-    heading: "#22b8d4",
-    body: "rgba(255,255,255,0.6)",
-    footer: "rgba(255,255,255,0.2)",
-    buttonBackground: "linear-gradient(135deg, #1282a2, #22b8d4)",
-    buttonShadow: "0 4px 16px rgba(18,130,162,0.25)",
+    backdrop: 'rgba(0,0,0,0.65)',
+    panel: 'linear-gradient(160deg, #0b1a30 0%, #051025 100%)',
+    border: 'rgba(255,255,255,0.08)',
+    shadow: '0 24px 80px rgba(0,0,0,0.6)',
+    handle: 'rgba(255,255,255,0.15)',
+    divider: 'rgba(255,255,255,0.07)',
+    title: '#ffffff',
+    muted: 'rgba(255,255,255,0.45)',
+    close: 'rgba(255,255,255,0.5)',
+    heading: '#22b8d4',
+    body: 'rgba(255,255,255,0.6)',
+    footer: 'rgba(255,255,255,0.2)',
+    buttonBackground: 'linear-gradient(135deg, #1282a2, #22b8d4)',
+    buttonShadow: '0 4px 16px rgba(18,130,162,0.25)',
   },
   sceneTooltip: {
-    background: "rgba(6, 13, 26, 0.85)",
-    text: "rgba(255,255,255,0.88)",
+    background: 'rgba(6, 13, 26, 0.85)',
+    text: 'rgba(255,255,255,0.88)',
   },
 };
 
 const LIGHT_LOGIN_THEME: LoginThemeTokens = {
-  pageBackground: "linear-gradient(135deg, #f5fbfd, #e1f1f5, #cfe8ef)",
-  gridLine: "rgba(14,116,144,0.1)",
-  accentGlow:
-    "radial-gradient(circle, rgba(18,130,162,0.18) 0%, transparent 70%)",
-  brandMuted: "rgba(19,59,76,0.68)",
-  badgeBackground: "rgba(14,116,144,0.12)",
-  badgeBorder: "rgba(14,116,144,0.28)",
-  badgeText: "#0e7490",
-  headingText: "#133b4c",
-  headingShadow: "0 2px 14px rgba(255,255,255,0.55)",
-  headingGradient: "linear-gradient(135deg, #5b3fb7, #0e7490, #b83264)",
-  bodyText: "#244b5d",
-  bodyShadow: "0 1px 8px rgba(255,255,255,0.55)",
-  chipBackground: "rgba(255,255,255,0.5)",
-  chipBorder: "rgba(14,116,144,0.22)",
-  chipText: "#245267",
-  cardBackground: "rgba(255,255,255,0.72)",
-  cardBorder: "rgba(14,116,144,0.22)",
-  cardShadow: "0 8px 48px rgba(19,59,76,0.18)",
-  messageBackground: "rgba(14,116,144,0.1)",
-  messageText: "#0e7490",
-  primaryText: "#102a43",
-  mutedText: "#426779",
-  buttonBackground: "linear-gradient(135deg, #0e7490, #22b8d4)",
-  buttonShadow: "0 4px 24px rgba(14,116,144,0.3)",
-  subtleText: "#577787",
-  divider: "rgba(14,116,144,0.22)",
-  labelText: "#426779",
-  controlText: "#426779",
-  controlBorder: "rgba(14,116,144,0.28)",
-  controlBackground: "rgba(255,255,255,0.76)",
-  inputText: "#102a43",
-  iconText: "#426779",
-  accent: "#0e7490",
-  accentBright: "#0e7490",
-  focusRing: "0 0 0 2px rgba(14,116,144,0.3)",
-  secondaryText: "#426779",
-  footerText: "#577787",
-  copyFaint: "#6f8f9d",
+  pageBackground: 'linear-gradient(135deg, #f5fbfd, #e1f1f5, #cfe8ef)',
+  gridLine: 'rgba(14,116,144,0.1)',
+  accentGlow: 'radial-gradient(circle, rgba(18,130,162,0.18) 0%, transparent 70%)',
+  brandMuted: 'rgba(19,59,76,0.68)',
+  badgeBackground: 'rgba(14,116,144,0.12)',
+  badgeBorder: 'rgba(14,116,144,0.28)',
+  badgeText: '#0e7490',
+  headingText: '#133b4c',
+  headingShadow: '0 2px 14px rgba(255,255,255,0.55)',
+  headingGradient: 'linear-gradient(135deg, #5b3fb7, #0e7490, #b83264)',
+  bodyText: '#244b5d',
+  bodyShadow: '0 1px 8px rgba(255,255,255,0.55)',
+  chipBackground: 'rgba(255,255,255,0.5)',
+  chipBorder: 'rgba(14,116,144,0.22)',
+  chipText: '#245267',
+  cardBackground: 'rgba(255,255,255,0.72)',
+  cardBorder: 'rgba(14,116,144,0.22)',
+  cardShadow: '0 8px 48px rgba(19,59,76,0.18)',
+  messageBackground: 'rgba(14,116,144,0.1)',
+  messageText: '#0e7490',
+  primaryText: '#102a43',
+  mutedText: '#426779',
+  buttonBackground: 'linear-gradient(135deg, #0e7490, #22b8d4)',
+  buttonShadow: '0 4px 24px rgba(14,116,144,0.3)',
+  subtleText: '#577787',
+  divider: 'rgba(14,116,144,0.22)',
+  labelText: '#426779',
+  controlText: '#426779',
+  controlBorder: 'rgba(14,116,144,0.28)',
+  controlBackground: 'rgba(255,255,255,0.76)',
+  inputText: '#102a43',
+  iconText: '#426779',
+  accent: '#0e7490',
+  accentBright: '#0e7490',
+  focusRing: '0 0 0 2px rgba(14,116,144,0.3)',
+  secondaryText: '#426779',
+  footerText: '#577787',
+  copyFaint: '#6f8f9d',
   modal: {
-    backdrop: "rgba(9,44,58,0.45)",
-    panel: "linear-gradient(160deg, #ffffff 0%, #e8f4f7 100%)",
-    border: "rgba(14,116,144,0.22)",
-    shadow: "0 24px 80px rgba(19,59,76,0.28)",
-    handle: "rgba(14,116,144,0.25)",
-    divider: "rgba(14,116,144,0.18)",
-    title: "#102a43",
-    muted: "#557887",
-    close: "#426779",
-    heading: "#0e7490",
-    body: "#2d5667",
-    footer: "#6f8f9d",
-    buttonBackground: "linear-gradient(135deg, #0e7490, #22b8d4)",
-    buttonShadow: "0 4px 16px rgba(14,116,144,0.25)",
+    backdrop: 'rgba(9,44,58,0.45)',
+    panel: 'linear-gradient(160deg, #ffffff 0%, #e8f4f7 100%)',
+    border: 'rgba(14,116,144,0.22)',
+    shadow: '0 24px 80px rgba(19,59,76,0.28)',
+    handle: 'rgba(14,116,144,0.25)',
+    divider: 'rgba(14,116,144,0.18)',
+    title: '#102a43',
+    muted: '#557887',
+    close: '#426779',
+    heading: '#0e7490',
+    body: '#2d5667',
+    footer: '#6f8f9d',
+    buttonBackground: 'linear-gradient(135deg, #0e7490, #22b8d4)',
+    buttonShadow: '0 4px 16px rgba(14,116,144,0.25)',
   },
   sceneTooltip: {
-    background: "rgba(255,255,255,0.96)",
-    border: "rgba(14,116,144,0.32)",
-    accent: "#0e7490",
-    text: "#102a43",
+    background: 'rgba(255,255,255,0.96)',
+    border: 'rgba(14,116,144,0.32)',
+    accent: '#0e7490',
+    text: '#102a43',
   },
 };
 
@@ -241,24 +230,24 @@ const LOGIN_THEME_TOKENS: Record<ResolvedLoginTheme, LoginThemeTokens> = {
   light: LIGHT_LOGIN_THEME,
 };
 
-const LOGIN_THEME_STORAGE_KEY = "tere-login-theme";
+const LOGIN_THEME_STORAGE_KEY = 'tere-login-theme';
 
 function isLoginTheme(value: string | null): value is LoginTheme {
-  return value === "system" || value === "light" || value === "dark";
+  return value === 'system' || value === 'light' || value === 'dark';
 }
 
 function readStoredLoginTheme(): LoginTheme {
   try {
     const storedTheme = window.localStorage.getItem(LOGIN_THEME_STORAGE_KEY);
-    return isLoginTheme(storedTheme) ? storedTheme : "system";
+    return isLoginTheme(storedTheme) ? storedTheme : 'system';
   } catch {
-    return "system";
+    return 'system';
   }
 }
 
 function useLoginTheme() {
-  const [selectedTheme, setSelectedTheme] = useState<LoginTheme>("system");
-  const [systemTheme, setSystemTheme] = useState<ResolvedLoginTheme>("dark");
+  const [selectedTheme, setSelectedTheme] = useState<LoginTheme>('system');
+  const [systemTheme, setSystemTheme] = useState<ResolvedLoginTheme>('dark');
 
   useEffect(() => {
     let active = true;
@@ -278,44 +267,44 @@ function useLoginTheme() {
       });
     };
 
-    if (selectedTheme !== "system") {
+    if (selectedTheme !== 'system') {
       return () => {
         active = false;
       };
     }
 
     try {
-      if (typeof window.matchMedia !== "function") {
-        scheduleSystemTheme("dark");
+      if (typeof window.matchMedia !== 'function') {
+        scheduleSystemTheme('dark');
         return () => {
           active = false;
         };
       }
 
-      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const updateSystemTheme = () => {
         try {
-          scheduleSystemTheme(mediaQuery.matches ? "dark" : "light");
+          scheduleSystemTheme(mediaQuery.matches ? 'dark' : 'light');
         } catch {
-          scheduleSystemTheme("dark");
+          scheduleSystemTheme('dark');
         }
       };
 
       updateSystemTheme();
 
-      if (typeof mediaQuery.addEventListener === "function") {
-        mediaQuery.addEventListener("change", updateSystemTheme);
+      if (typeof mediaQuery.addEventListener === 'function') {
+        mediaQuery.addEventListener('change', updateSystemTheme);
         return () => {
           active = false;
           try {
-            mediaQuery.removeEventListener("change", updateSystemTheme);
+            mediaQuery.removeEventListener('change', updateSystemTheme);
           } catch {
             // Browser media APIs can throw during teardown.
           }
         };
       }
 
-      if (typeof mediaQuery.addListener === "function") {
+      if (typeof mediaQuery.addListener === 'function') {
         mediaQuery.addListener(updateSystemTheme);
         return () => {
           active = false;
@@ -327,7 +316,7 @@ function useLoginTheme() {
         };
       }
     } catch {
-      scheduleSystemTheme("dark");
+      scheduleSystemTheme('dark');
     }
 
     return () => {
@@ -346,7 +335,7 @@ function useLoginTheme() {
 
   return {
     selectedTheme,
-    resolvedTheme: selectedTheme === "system" ? systemTheme : selectedTheme,
+    resolvedTheme: selectedTheme === 'system' ? systemTheme : selectedTheme,
     changeTheme,
   };
 }
@@ -354,8 +343,8 @@ function useLoginTheme() {
 export default function SignIn() {
   const { selectedTheme, resolvedTheme, changeTheme } = useLoginTheme();
   const theme = LOGIN_THEME_TOKENS[resolvedTheme];
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -376,8 +365,8 @@ export default function SignIn() {
   const cardRotateY = useTransform(cardSpringX, [-200, 200], [-9, 9]);
   const cardRotateX = useTransform(cardSpringY, [-200, 200], [7, -7]);
   // Cursor-following highlight position (% within the card)
-  const glareX = useTransform(cardMouseX, [-220, 220], ["10%", "90%"]);
-  const glareY = useTransform(cardMouseY, [-280, 280], ["10%", "90%"]);
+  const glareX = useTransform(cardMouseX, [-220, 220], ['10%', '90%']);
+  const glareY = useTransform(cardMouseY, [-280, 280], ['10%', '90%']);
   const glareBackground = useMotionTemplate`radial-gradient(circle at ${glareX} ${glareY}, rgba(127,216,238,0.13) 0%, rgba(167,139,250,0.06) 30%, transparent 55%)`;
 
   const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -409,7 +398,7 @@ export default function SignIn() {
       await createSessionCookie();
       setSuccess(true);
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push('/dashboard');
       }, 1000);
     } catch (error) {
       alert(String(error));
@@ -424,19 +413,16 @@ export default function SignIn() {
       await createSessionCookie();
       setSuccess(true);
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push('/dashboard');
       }, 1000);
     } catch (error) {
-      alert(String(error) || "Google login failed");
+      alert(String(error) || 'Google login failed');
       setGoogleLoading(false);
     }
   };
 
   return (
-    <div
-      className="relative min-h-screen w-full overflow-x-hidden overflow-y-auto font-sans"
-      style={{ background: theme.pageBackground }}
-    >
+    <div className="relative min-h-screen w-full overflow-x-hidden overflow-y-auto font-sans" style={{ background: theme.pageBackground }}>
       {/* Grid overlay — denser on mobile, looser on desktop */}
       <div
         className="pointer-events-none absolute inset-0 bg-[length:40px_40px] sm:bg-[length:60px_60px]"
@@ -471,48 +457,20 @@ export default function SignIn() {
             <div
               className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg"
               style={{
-                background: "linear-gradient(135deg, #1282a2, #22b8d4)",
+                background: 'linear-gradient(135deg, #1282a2, #22b8d4)',
               }}
             >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 18 18"
-                fill="none"
-                className="h-4 w-4 sm:h-[18px] sm:w-[18px]"
-              >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="h-4 w-4 sm:h-[18px] sm:w-[18px]">
                 <rect x="1" y="9" width="3.5" height="8" rx="1" fill="white" />
-                <rect
-                  x="6.5"
-                  y="5"
-                  width="3.5"
-                  height="12"
-                  rx="1"
-                  fill="white"
-                  opacity="0.85"
-                />
-                <rect
-                  x="12"
-                  y="1"
-                  width="3.5"
-                  height="16"
-                  rx="1"
-                  fill="white"
-                  opacity="0.7"
-                />
+                <rect x="6.5" y="5" width="3.5" height="12" rx="1" fill="white" opacity="0.85" />
+                <rect x="12" y="1" width="3.5" height="16" rx="1" fill="white" opacity="0.7" />
               </svg>
             </div>
             <div className="flex items-baseline gap-2">
-              <span
-                className="text-base sm:text-lg font-bold tracking-wide"
-                style={{ color: theme.headingText }}
-              >
+              <span className="text-base sm:text-lg font-bold tracking-wide" style={{ color: theme.headingText }}>
                 TERE
               </span>
-              <span
-                className="hidden md:inline text-[10px] uppercase tracking-[0.18em]"
-                style={{ color: theme.brandMuted }}
-              >
+              <span className="hidden md:inline text-[10px] uppercase tracking-[0.18em]" style={{ color: theme.brandMuted }}>
                 Team Reporting Engine
               </span>
             </div>
@@ -526,17 +484,11 @@ export default function SignIn() {
               style={{
                 background: theme.badgeBackground,
                 border: `1px solid ${theme.badgeBorder}`,
-                backdropFilter: "blur(8px)",
+                backdropFilter: 'blur(8px)',
               }}
             >
-              <span
-                className="h-1.5 w-1.5 rounded-full"
-                style={{ background: "#22b8d4", boxShadow: "0 0 8px #22b8d4" }}
-              />
-              <span
-                className="text-[10px] sm:text-[11px] font-medium uppercase tracking-[0.16em]"
-                style={{ color: theme.badgeText }}
-              >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#22b8d4', boxShadow: '0 0 8px #22b8d4' }} />
+              <span className="text-[10px] sm:text-[11px] font-medium uppercase tracking-[0.16em]" style={{ color: theme.badgeText }}>
                 v2.0 · Now Live
               </span>
             </div>
@@ -548,13 +500,13 @@ export default function SignIn() {
                 textShadow: theme.headingShadow,
               }}
             >
-              Your team&apos;s data,{" "}
+              Your team&apos;s data,{' '}
               <span
                 style={{
                   background: theme.headingGradient,
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
                 }}
               >
                 finally fun to look at.
@@ -568,8 +520,7 @@ export default function SignIn() {
                 textShadow: theme.bodyShadow,
               }}
             >
-              Sprint tracking, productivity, bug monitoring & leave — one
-              dashboard your team will actually enjoy opening.
+              Sprint tracking, productivity, bug monitoring & leave — one dashboard your team will actually enjoy opening.
             </p>
 
             <div className="hidden md:flex flex-wrap justify-center lg:justify-start gap-1.5 sm:gap-2">
@@ -581,7 +532,7 @@ export default function SignIn() {
                     background: theme.chipBackground,
                     border: `1px solid ${theme.chipBorder}`,
                     color: theme.chipText,
-                    backdropFilter: "blur(8px)",
+                    backdropFilter: 'blur(8px)',
                   }}
                 >
                   <span className="text-sm leading-none">{f.icon}</span>
@@ -595,15 +546,15 @@ export default function SignIn() {
         {/* Right panel - Sign-in card */}
         <div
           className="flex w-full items-center justify-center overflow-x-hidden px-4 py-4 sm:px-6 sm:py-8 md:px-10 lg:w-1/2 lg:px-16 lg:py-12"
-          style={{ perspective: "1400px" }}
+          style={{ perspective: '1400px' }}
         >
           <div className="w-full max-w-sm sm:max-w-md">
             {/* Glassmorphic card — smooth blur-in fade. Card materializes from
                 blurred to sharp with subtle lift, then becomes interactively
                 tiltable on cursor + glare highlight follows the pointer. */}
             <motion.div
-              initial={{ opacity: 0, y: 12, scale: 0.98, filter: "blur(12px)" }}
-              animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+              initial={{ opacity: 0, y: 12, scale: 0.98, filter: 'blur(12px)' }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
               transition={{
                 duration: 1.1,
                 ease: [0.22, 1, 0.36, 1],
@@ -618,15 +569,13 @@ export default function SignIn() {
               className="relative overflow-hidden rounded-2xl sm:rounded-[24px] p-5 sm:p-7 lg:p-10"
               style={{
                 background: theme.cardBackground,
-                backdropFilter: "blur(24px)",
-                WebkitBackdropFilter: "blur(24px)",
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
                 border: `1px solid ${theme.cardBorder}`,
                 boxShadow: theme.cardShadow,
-                transformStyle: "preserve-3d",
-                willChange: "transform",
-                ...(cardInteractive
-                  ? { rotateY: cardRotateY, rotateX: cardRotateX }
-                  : {}),
+                transformStyle: 'preserve-3d',
+                willChange: 'transform',
+                ...(cardInteractive ? { rotateY: cardRotateY, rotateX: cardRotateX } : {}),
               }}
             >
               {/* Cursor-following highlight overlay — adds the "glass card has
@@ -634,12 +583,12 @@ export default function SignIn() {
               {cardInteractive && (
                 <motion.div
                   style={{
-                    position: "absolute",
+                    position: 'absolute',
                     inset: 0,
                     background: glareBackground,
-                    borderRadius: "inherit",
-                    pointerEvents: "none",
-                    mixBlendMode: "plus-lighter",
+                    borderRadius: 'inherit',
+                    pointerEvents: 'none',
+                    mixBlendMode: 'plus-lighter',
                   }}
                 />
               )}
@@ -651,21 +600,14 @@ export default function SignIn() {
                     background: theme.messageBackground,
                   }}
                 >
-                  <p
-                    className="text-xs sm:text-sm font-medium"
-                    style={{ color: theme.messageText }}
-                  >
+                  <p className="text-xs sm:text-sm font-medium" style={{ color: theme.messageText }}>
                     {loginPageMessage}
                   </p>
                 </div>
               )}
 
               <div className="mb-5 flex items-center justify-between gap-3">
-                <label
-                  className="text-[10px] sm:text-xs font-medium"
-                  htmlFor="login-theme"
-                  style={{ color: theme.labelText }}
-                >
+                <label className="text-[10px] sm:text-xs font-medium" htmlFor="login-theme" style={{ color: theme.labelText }}>
                   Login theme
                 </label>
                 <select
@@ -687,7 +629,7 @@ export default function SignIn() {
                   }}
                   onBlur={(event) => {
                     event.currentTarget.style.borderColor = theme.controlBorder;
-                    event.currentTarget.style.boxShadow = "none";
+                    event.currentTarget.style.boxShadow = 'none';
                   }}
                 >
                   <option value="system">System</option>
@@ -696,16 +638,10 @@ export default function SignIn() {
                 </select>
               </div>
 
-              <h2
-                className="mb-2 text-xl sm:text-2xl font-bold"
-                style={{ color: theme.primaryText }}
-              >
+              <h2 className="mb-2 text-xl sm:text-2xl font-bold" style={{ color: theme.primaryText }}>
                 Welcome back <span className="inline-block">&#x1F44B;</span>
               </h2>
-              <p
-                className="mb-6 sm:mb-8 text-xs sm:text-sm"
-                style={{ color: theme.mutedText }}
-              >
+              <p className="mb-6 sm:mb-8 text-xs sm:text-sm" style={{ color: theme.mutedText }}>
                 Sign in to access your team dashboard
               </p>
 
@@ -716,34 +652,16 @@ export default function SignIn() {
                 disabled={loading || googleLoading || success}
                 className="group relative flex w-full items-center justify-center gap-2 sm:gap-3 rounded-xl px-3 py-3 sm:px-4 sm:py-3.5 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                 style={{
-                  background: success
-                    ? "linear-gradient(135deg, #059669, #10b981)"
-                    : theme.buttonBackground,
+                  background: success ? 'linear-gradient(135deg, #059669, #10b981)' : theme.buttonBackground,
                   boxShadow: theme.buttonShadow,
                 }}
               >
                 {googleLoading ? (
-                  <svg
-                    className="h-4 w-4 sm:h-5 sm:w-5 animate-spin"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeDasharray="31.4 31.4"
-                      strokeLinecap="round"
-                    />
+                  <svg className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4 31.4" strokeLinecap="round" />
                   </svg>
                 ) : success ? (
-                  <svg
-                    className="h-4 w-4 sm:h-5 sm:w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
+                  <svg className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path
                       fillRule="evenodd"
                       d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -770,34 +688,20 @@ export default function SignIn() {
                     />
                   </svg>
                 )}
-                {success
-                  ? "Redirecting to dashboard..."
-                  : "Continue with Google"}
+                {success ? 'Redirecting to dashboard...' : 'Continue with Google'}
               </button>
 
-              <p
-                className="mt-2 sm:mt-3 text-center text-[10px] sm:text-xs"
-                style={{ color: theme.subtleText }}
-              >
+              <p className="mt-2 sm:mt-3 text-center text-[10px] sm:text-xs" style={{ color: theme.subtleText }}>
                 Recommended &mdash; use your company Google account
               </p>
 
               {/* Divider */}
               <div className="my-5 sm:my-7 flex items-center gap-3 sm:gap-4">
-                <div
-                  className="h-px flex-1"
-                  style={{ background: theme.divider }}
-                />
-                <span
-                  className="text-[10px] sm:text-xs"
-                  style={{ color: theme.subtleText }}
-                >
+                <div className="h-px flex-1" style={{ background: theme.divider }} />
+                <span className="text-[10px] sm:text-xs" style={{ color: theme.subtleText }}>
                   or
                 </span>
-                <div
-                  className="h-px flex-1"
-                  style={{ background: theme.divider }}
-                />
+                <div className="h-px flex-1" style={{ background: theme.divider }} />
               </div>
 
               {!showEmailForm ? (
@@ -808,7 +712,7 @@ export default function SignIn() {
                   style={{
                     color: theme.controlText,
                     border: `1px dashed ${theme.controlBorder}`,
-                    background: "transparent",
+                    background: 'transparent',
                   }}
                 >
                   Sign in with email instead
@@ -817,11 +721,7 @@ export default function SignIn() {
                 <form className="space-y-3 sm:space-y-4" onSubmit={handleLogin}>
                   {/* Email input */}
                   <div>
-                    <label
-                      className="mb-1 sm:mb-1.5 block text-[10px] sm:text-xs font-medium"
-                      htmlFor="email"
-                      style={{ color: theme.labelText }}
-                    >
+                    <label className="mb-1 sm:mb-1.5 block text-[10px] sm:text-xs font-medium" htmlFor="email" style={{ color: theme.labelText }}>
                       Email
                     </label>
                     <input
@@ -832,9 +732,7 @@ export default function SignIn() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className={`w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm outline-none transition-all duration-200 focus:ring-2 ${
-                        resolvedTheme === "light"
-                          ? "placeholder-slate-500"
-                          : "placeholder-white/25"
+                        resolvedTheme === 'light' ? 'placeholder-slate-500' : 'placeholder-white/25'
                       }`}
                       style={{
                         color: theme.inputText,
@@ -848,7 +746,7 @@ export default function SignIn() {
                       }}
                       onBlur={(e) => {
                         e.currentTarget.style.borderColor = theme.controlBorder;
-                        e.currentTarget.style.boxShadow = "none";
+                        e.currentTarget.style.boxShadow = 'none';
                       }}
                     />
                   </div>
@@ -856,11 +754,7 @@ export default function SignIn() {
                   {/* Password input */}
                   <div>
                     <div className="mb-1 sm:mb-1.5 flex items-center justify-between">
-                      <label
-                        className="text-[10px] sm:text-xs font-medium"
-                        htmlFor="password"
-                        style={{ color: theme.labelText }}
-                      >
+                      <label className="text-[10px] sm:text-xs font-medium" htmlFor="password" style={{ color: theme.labelText }}>
                         Password
                       </label>
                       <a
@@ -874,15 +768,13 @@ export default function SignIn() {
                     <div className="relative">
                       <input
                         id="password"
-                        type={showPassword ? "text" : "password"}
+                        type={showPassword ? 'text' : 'password'}
                         placeholder="Enter your password"
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className={`w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 pr-9 sm:pr-10 text-xs sm:text-sm outline-none transition-all duration-200 ${
-                          resolvedTheme === "light"
-                            ? "placeholder-slate-500"
-                            : "placeholder-white/25"
+                          resolvedTheme === 'light' ? 'placeholder-slate-500' : 'placeholder-white/25'
                         }`}
                         style={{
                           color: theme.inputText,
@@ -894,28 +786,20 @@ export default function SignIn() {
                           e.currentTarget.style.boxShadow = theme.focusRing;
                         }}
                         onBlur={(e) => {
-                          e.currentTarget.style.borderColor =
-                            theme.controlBorder;
-                          e.currentTarget.style.boxShadow = "none";
+                          e.currentTarget.style.borderColor = theme.controlBorder;
+                          e.currentTarget.style.boxShadow = 'none';
                         }}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${
-                          resolvedTheme === "light"
-                            ? "hover:text-slate-700"
-                            : "hover:text-white/60"
+                          resolvedTheme === 'light' ? 'hover:text-slate-700' : 'hover:text-white/60'
                         }`}
                         style={{ color: theme.iconText }}
                       >
                         {showPassword ? (
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                             <path
                               fillRule="evenodd"
                               d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z"
@@ -924,12 +808,7 @@ export default function SignIn() {
                             <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
                           </svg>
                         ) : (
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                             <path
                               fillRule="evenodd"
@@ -948,17 +827,11 @@ export default function SignIn() {
                     disabled={loading || success}
                     className="w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                     style={{
-                      background: success
-                        ? "linear-gradient(135deg, #059669, #10b981)"
-                        : theme.buttonBackground,
+                      background: success ? 'linear-gradient(135deg, #059669, #10b981)' : theme.buttonBackground,
                       boxShadow: theme.buttonShadow,
                     }}
                   >
-                    {success
-                      ? "Redirecting..."
-                      : loading
-                        ? "Signing in..."
-                        : "Sign in"}
+                    {success ? 'Redirecting...' : loading ? 'Signing in...' : 'Sign in'}
                   </button>
 
                   {/* Back link */}
@@ -974,30 +847,19 @@ export default function SignIn() {
               )}
 
               {/* Footer */}
-              <div
-                className="mt-6 sm:mt-8 flex items-center justify-center gap-3 sm:gap-4 text-[10px] sm:text-xs"
-                style={{ color: theme.footerText }}
-              >
+              <div className="mt-6 sm:mt-8 flex items-center justify-center gap-3 sm:gap-4 text-[10px] sm:text-xs" style={{ color: theme.footerText }}>
                 <button
                   type="button"
-                  onClick={() => setLegalModal("terms")}
-                  className={`transition-colors hover:underline ${
-                    resolvedTheme === "light"
-                      ? "hover:text-slate-700"
-                      : "hover:text-white/50"
-                  }`}
+                  onClick={() => setLegalModal('terms')}
+                  className={`transition-colors hover:underline ${resolvedTheme === 'light' ? 'hover:text-slate-700' : 'hover:text-white/50'}`}
                 >
                   Terms
                 </button>
                 <span>|</span>
                 <button
                   type="button"
-                  onClick={() => setLegalModal("privacy")}
-                  className={`transition-colors hover:underline ${
-                    resolvedTheme === "light"
-                      ? "hover:text-slate-700"
-                      : "hover:text-white/50"
-                  }`}
+                  onClick={() => setLegalModal('privacy')}
+                  className={`transition-colors hover:underline ${resolvedTheme === 'light' ? 'hover:text-slate-700' : 'hover:text-white/50'}`}
                 >
                   Privacy
                 </button>
@@ -1005,10 +867,7 @@ export default function SignIn() {
             </motion.div>
 
             {/* Below card note */}
-            <p
-              className="mt-4 sm:mt-6 text-center text-[10px] sm:text-xs italic px-2"
-              style={{ color: theme.copyFaint }}
-            >
+            <p className="mt-4 sm:mt-6 text-center text-[10px] sm:text-xs italic px-2" style={{ color: theme.copyFaint }}>
               Your data is safe. Unlike your WP score on a bad sprint.
             </p>
           </div>
@@ -1016,13 +875,7 @@ export default function SignIn() {
       </div>
 
       {/* Legal modals */}
-      {legalModal && (
-        <LegalModal
-          type={legalModal}
-          onClose={() => setLegalModal(null)}
-          theme={theme.modal}
-        />
-      )}
+      {legalModal && <LegalModal type={legalModal} onClose={() => setLegalModal(null)} theme={theme.modal} />}
     </div>
   );
 }
