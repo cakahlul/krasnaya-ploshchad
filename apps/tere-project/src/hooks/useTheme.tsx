@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useSyncExternalStore, ReactNode } from 'react';
 
 export type Theme = 'light' | 'void' | 'crimson';
 
@@ -8,11 +8,61 @@ interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
   setTheme: (theme: Theme) => void;
+  isReady: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const THEME_ORDER: Theme[] = ['light', 'void', 'crimson'];
+let providerMounted = false;
+const providerMountListeners = new Set<() => void>();
+
+function subscribeToProviderMount(listener: () => void) {
+  providerMountListeners.add(listener);
+  return () => providerMountListeners.delete(listener);
+}
+
+function getProviderMountSnapshot() {
+  return providerMounted;
+}
+
+function getServerProviderMountSnapshot() {
+  return false;
+}
+
+function useProviderMounted() {
+  const mounted = useSyncExternalStore(
+    subscribeToProviderMount,
+    getProviderMountSnapshot,
+    getServerProviderMountSnapshot,
+  );
+
+  useEffect(() => {
+    if (providerMounted) return;
+    providerMounted = true;
+    providerMountListeners.forEach((listener) => listener());
+  }, []);
+
+  return mounted;
+}
+
+function readStoredTheme(): Theme | null {
+  try {
+    if (typeof window === 'undefined') return null;
+    const stored = window.localStorage.getItem('theme');
+    return stored && THEME_ORDER.includes(stored as Theme) ? (stored as Theme) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredTheme(theme: Theme) {
+  try {
+    if (typeof window !== 'undefined') window.localStorage.setItem('theme', theme);
+  } catch {
+    // Storage denial must not block global theme usage.
+  }
+}
 
 function SocialistSwitchAnimation({ show }: { show: boolean }) {
   if (!show) return null;
@@ -38,18 +88,10 @@ function SocialistSwitchAnimation({ show }: { show: boolean }) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('light');
-  const [mounted, setMounted] = useState(false);
+  const [theme, setThemeState] = useState<Theme>(() => readStoredTheme() ?? 'light');
+  const mounted = useProviderMounted();
   const [showSocialistAnimation, setShowSocialistAnimation] = useState(false);
   const [socialistAnimationKey, setSocialistAnimationKey] = useState(0);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('theme') as Theme | null;
-    if (stored && THEME_ORDER.includes(stored)) {
-      setThemeState(stored);
-    }
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!mounted) return;
@@ -60,8 +102,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (theme === 'void' || theme === 'crimson') {
       el.classList.add('dark');
     }
-    localStorage.setItem('theme', theme);
-
+    writeStoredTheme(theme);
   }, [theme, mounted]);
 
   const toggleTheme = () => {
@@ -83,7 +124,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   if (!mounted) return null;
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme, isReady: mounted }}>
       {children}
       <SocialistSwitchAnimation key={socialistAnimationKey} show={showSocialistAnimation} />
     </ThemeContext.Provider>
