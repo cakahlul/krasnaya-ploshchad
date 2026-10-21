@@ -104,8 +104,8 @@ type LoginThemeTokens = {
   };
   sceneTooltip: {
     background: string;
-    border: string;
-    accent: string;
+    border?: string;
+    accent?: string;
     text: string;
   };
 };
@@ -168,8 +168,6 @@ const DARK_LOGIN_THEME: LoginThemeTokens = {
   },
   sceneTooltip: {
     background: "rgba(6, 13, 26, 0.85)",
-    border: "rgba(127,216,238,0.4)",
-    accent: "#7fd8ee",
     text: "rgba(255,255,255,0.88)",
   },
 };

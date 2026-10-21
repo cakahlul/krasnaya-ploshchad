@@ -67,8 +67,8 @@ const RIM = "#7fd8ee";
 
 type LoginTooltipTheme = {
   background: string;
-  border: string;
-  accent: string;
+  border?: string;
+  accent?: string;
   text: string;
 };
 
@@ -82,6 +82,8 @@ function Bar({
   tooltipTheme: LoginTooltipTheme;
 }) {
   const [hovered, setHovered] = useState(false);
+  const tooltipAccent = tooltipTheme.accent ?? cfg.colorBright;
+  const tooltipBorder = tooltipTheme.border ?? `${cfg.colorBright}66`;
 
   // Phase 1: drop from scattered position + spin
   const drop = useSpring({
@@ -178,7 +180,7 @@ function Bar({
               background: tooltipTheme.background,
               backdropFilter: "blur(16px)",
               WebkitBackdropFilter: "blur(16px)",
-              border: `1px solid ${tooltipTheme.border}`,
+              border: `1px solid ${tooltipBorder}`,
               borderRadius: "14px",
               padding: "11px 16px",
               width: "max-content",
@@ -193,10 +195,10 @@ function Bar({
               style={{
                 width: "28px",
                 height: "2px",
-                background: tooltipTheme.accent,
+                background: tooltipAccent,
                 borderRadius: "2px",
                 marginBottom: "8px",
-                boxShadow: `0 0 8px ${tooltipTheme.accent}`,
+                boxShadow: `0 0 8px ${tooltipAccent}`,
               }}
             />
             <div
@@ -205,7 +207,7 @@ function Bar({
                 textTransform: "uppercase",
                 letterSpacing: "0.2em",
                 fontWeight: 700,
-                color: tooltipTheme.accent,
+                color: tooltipAccent,
                 marginBottom: "5px",
               }}
             >
