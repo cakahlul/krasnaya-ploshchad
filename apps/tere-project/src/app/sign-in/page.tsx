@@ -399,7 +399,7 @@ export default function SignIn() {
               {/* Divider */}
               <div className="my-5 sm:my-7 flex items-center gap-3 sm:gap-4">
                 <div className="h-px flex-1" style={{ background: 'var(--login-divider)' }} />
-                <span className="text-[10px] sm:text-xs" style={{ color: 'var(--login-copy-subtle)' }}>or</span>
+                <span className="text-[10px] sm:text-xs" style={{ color: 'var(--login-copy-quiet)' }}>or</span>
                 <div className="h-px flex-1" style={{ background: 'var(--login-divider)' }} />
               </div>
 
@@ -410,7 +410,7 @@ export default function SignIn() {
                   className="login-email-toggle w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-medium transition-all duration-200"
                   style={{
                     color: 'var(--login-control-muted)',
-                    border: '1px dashed var(--login-control-border)',
+                    border: '1px dashed var(--login-toggle-border)',
                     background: 'transparent',
                   }}
                 >
@@ -507,12 +507,12 @@ export default function SignIn() {
                   <button
                     type="submit"
                     disabled={loading || success}
-                    className="login-button group relative w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="login-button w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                     style={{
                       background: success
                         ? 'linear-gradient(135deg, #059669, #10b981)'
                         : 'var(--login-button-background)',
-                      boxShadow: 'var(--login-button-shadow)',
+                      boxShadow: 'var(--login-submit-shadow)',
                     }}
                   >
                     {success ? 'Redirecting...' : loading ? 'Signing in...' : 'Sign in'}

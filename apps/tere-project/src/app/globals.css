@@ -379,16 +379,26 @@
     --login-message-text: #22b8d4;
     --login-copy-muted: rgba(255, 255, 255, 0.45);
     --login-copy-subtle: rgba(255, 255, 255, 0.35);
+    --login-copy-quiet: rgba(255, 255, 255, 0.3);
     --login-copy-faint: rgba(255, 255, 255, 0.2);
+    --login-label-text: rgba(255, 255, 255, 0.5);
+    --login-icon-text: rgba(255, 255, 255, 0.3);
+    --login-icon-hover: rgba(255, 255, 255, 0.6);
+    --login-secondary-text: rgba(255, 255, 255, 0.4);
+    --login-footer-text: rgba(255, 255, 255, 0.25);
+    --login-footer-hover: rgba(255, 255, 255, 0.5);
     --login-divider: rgba(255, 255, 255, 0.1);
     --login-control-background: rgba(255, 255, 255, 0.05);
     --login-control-border: rgba(255, 255, 255, 0.1);
+    --login-toggle-border: rgba(255, 255, 255, 0.15);
+    --login-toggle-hover-border: rgba(255, 255, 255, 0.2);
     --login-control-text: #ffffff;
     --login-control-muted: rgba(255, 255, 255, 0.6);
     --login-control-placeholder: rgba(255, 255, 255, 0.25);
     --login-control-focus-ring: 0 0 0 2px rgba(18, 130, 162, 0.25);
     --login-button-background: linear-gradient(135deg, #1282a2, #22b8d4);
     --login-button-shadow: 0 4px 24px rgba(18, 130, 162, 0.3);
+    --login-submit-shadow: 0 4px 24px rgba(18, 130, 162, 0.25);
     --login-selector-background: rgba(255, 255, 255, 0.04);
     --login-selector-border: rgba(255, 255, 255, 0.12);
     --login-selector-text: rgba(255, 255, 255, 0.7);
@@ -402,6 +412,8 @@
     --login-modal-title: #ffffff;
     --login-modal-copy: rgba(255, 255, 255, 0.6);
     --login-modal-muted: rgba(255, 255, 255, 0.45);
+    --login-modal-close: rgba(255, 255, 255, 0.5);
+    --login-modal-close-hover: rgba(255, 255, 255, 0.1);
     --login-modal-faint: rgba(255, 255, 255, 0.2);
     --login-modal-divider: rgba(255, 255, 255, 0.07);
     --login-modal-handle: rgba(255, 255, 255, 0.15);
@@ -435,16 +447,26 @@
     --login-message-text: #0b7285;
     --login-copy-muted: #40566b;
     --login-copy-subtle: #536b80;
+    --login-copy-quiet: #536b80;
     --login-copy-faint: #536b80;
+    --login-label-text: #40566b;
+    --login-icon-text: #536b80;
+    --login-icon-hover: #40566b;
+    --login-secondary-text: #40566b;
+    --login-footer-text: #536b80;
+    --login-footer-hover: #40566b;
     --login-divider: rgba(7, 89, 133, 0.18);
     --login-control-background: #f6fafd;
     --login-control-border: #55788f;
+    --login-toggle-border: #55788f;
+    --login-toggle-hover-border: #0b7285;
     --login-control-text: #0b1f33;
     --login-control-muted: #40566b;
     --login-control-placeholder: #536b80;
     --login-control-focus-ring: 0 0 0 2px rgba(7, 89, 133, 0.35);
     --login-button-background: linear-gradient(135deg, #0b7285, #075985);
     --login-button-shadow: 0 4px 24px rgba(7, 89, 133, 0.25);
+    --login-submit-shadow: 0 4px 24px rgba(7, 89, 133, 0.25);
     --login-selector-background: #f6fafd;
     --login-selector-border: #55788f;
     --login-selector-text: #40566b;
@@ -458,6 +480,8 @@
     --login-modal-title: #0b1f33;
     --login-modal-copy: #40566b;
     --login-modal-muted: #536b80;
+    --login-modal-close: #536b80;
+    --login-modal-close-hover: rgba(11, 114, 133, 0.1);
     --login-modal-faint: #536b80;
     --login-modal-divider: rgba(7, 89, 133, 0.18);
     --login-modal-handle: #55788f;
@@ -536,7 +560,7 @@
   }
 
   .login-page .login-label {
-    color: var(--login-copy-muted);
+    color: var(--login-label-text);
   }
 
   .login-page .login-input {
@@ -548,26 +572,27 @@
   }
 
   .login-page .login-icon-button {
-    color: var(--login-copy-subtle);
+    color: var(--login-icon-text);
   }
 
   .login-page .login-icon-button:hover {
-    color: var(--login-copy-muted);
+    color: var(--login-icon-hover);
   }
 
   .login-page .login-email-toggle:hover {
-    border-color: var(--login-accent) !important;
-    color: var(--login-control-text) !important;
+    border-color: var(--login-toggle-hover-border) !important;
   }
 
-  .login-page .login-secondary-link,
+  .login-page .login-secondary-link {
+    color: var(--login-secondary-text);
+  }
+
   .login-page .login-footer {
-    color: var(--login-copy-muted);
+    color: var(--login-footer-text);
   }
 
-  .login-page .login-footer-link:hover,
-  .login-page .login-secondary-link:hover {
-    color: var(--login-text-primary);
+  .login-page .login-footer-link:hover {
+    color: var(--login-footer-hover);
   }
 
   .login-page .login-button {
@@ -583,11 +608,11 @@
   }
 
   .login-page .login-modal-close {
-    color: var(--login-modal-muted);
+    color: var(--login-modal-close);
   }
 
   .login-page .login-modal-close:hover {
-    background: var(--login-selector-background);
+    background: var(--login-modal-close-hover);
   }
 
   .glass-effect {

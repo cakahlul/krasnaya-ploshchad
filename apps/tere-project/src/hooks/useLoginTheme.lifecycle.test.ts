@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  createLoginThemeSelection,
   createLoginThemeMediaController,
   getEffectiveLoginTheme,
   getSystemLoginTheme,
@@ -9,7 +10,6 @@ import {
   LOGIN_THEME_MEDIA_QUERY,
   LOGIN_THEME_STORAGE_KEY,
   readStoredLoginTheme,
-  writeStoredLoginTheme,
   type LoginThemeStorage,
 } from './useLoginTheme';
 
@@ -76,21 +76,69 @@ test('stored login theme accepts only system, light, and dark', () => {
   assert.equal(readStoredLoginTheme(createStorage()), 'system');
 });
 
-test('storage read and write failures fall back without blocking selection', () => {
+test('selection persists valid choice and reload restores it', () => {
+  const storage = createStorage();
+  const selection = createLoginThemeSelection(storage);
+
+  assert.equal(selection.getSelectedTheme(), 'system');
+  assert.equal(selection.setSelectedTheme('light'), 'light');
+  assert.equal(selection.getSelectedTheme(), 'light');
+  assert.equal(readStoredLoginTheme(storage), 'light');
+  assert.equal(selection.reload(), 'light');
+});
+
+test('failed write keeps current choice but reload restores prior valid value', () => {
+  const stored: string | null = 'light';
   const deniedStorage: LoginThemeStorage = {
-    getItem: () => {
-      throw new Error('denied');
-    },
+    getItem: () => stored,
     setItem: () => {
       throw new Error('denied');
     },
   };
-  assert.equal(readStoredLoginTheme(deniedStorage), 'system');
+  const selection = createLoginThemeSelection(deniedStorage);
 
-  let selectedTheme = 'system';
-  selectedTheme = 'light';
-  assert.equal(writeStoredLoginTheme(selectedTheme, deniedStorage), false);
-  assert.equal(selectedTheme, 'light');
+  assert.equal(selection.getSelectedTheme(), 'light');
+  assert.equal(selection.setSelectedTheme('dark'), 'dark');
+  assert.equal(selection.getSelectedTheme(), 'dark');
+  assert.equal(selection.reload(), 'light');
+});
+
+test('invalid or absent persisted choice reloads as System', () => {
+  let stored: string | null = 'void';
+  const storage: LoginThemeStorage = {
+    getItem: () => stored,
+    setItem: (_key, value) => { stored = value; },
+  };
+  const selection = createLoginThemeSelection(storage);
+
+  assert.equal(selection.getSelectedTheme(), 'system');
+  stored = 'dark';
+  assert.equal(selection.reload(), 'dark');
+  stored = 'void';
+  assert.equal(selection.reload(), 'system');
+  stored = null;
+  assert.equal(selection.reload(), 'system');
+});
+
+test('selection accesses only the login storage key', () => {
+  const accesses: string[] = [];
+  const storage: LoginThemeStorage = {
+    getItem: (key) => {
+      accesses.push(`get:${key}`);
+      return null;
+    },
+    setItem: (key, value) => {
+      accesses.push(`set:${key}:${value}`);
+    },
+  };
+  const selection = createLoginThemeSelection(storage);
+
+  assert.equal(selection.setSelectedTheme('dark'), 'dark');
+  assert.deepEqual(accesses, [
+    `get:${LOGIN_THEME_STORAGE_KEY}`,
+    `set:${LOGIN_THEME_STORAGE_KEY}:dark`,
+  ]);
+  assert.equal(accesses.some((access) => access.endsWith(':theme')), false);
 });
 
 test('system theme resolves through requested media query and falls back dark', () => {

@@ -1,11 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export type LoginTheme = 'system' | 'light' | 'dark';
 export type LoginEffectiveTheme = Exclude<LoginTheme, 'system'>;
 export type LoginThemeStorage = Pick<Storage, 'getItem' | 'setItem'>;
 export type LoginMatchMedia = (query: string) => MediaQueryList;
+export type LoginThemeSelection = {
+  getSelectedTheme: () => LoginTheme;
+  setSelectedTheme: (theme: LoginTheme) => LoginTheme;
+  reload: () => LoginTheme;
+};
 
 export const LOGIN_THEME_STORAGE_KEY = 'tere-login-theme';
 export const LOGIN_THEME_MEDIA_QUERY = '(prefers-color-scheme: dark)';
@@ -55,6 +60,24 @@ export function writeStoredLoginTheme(
   } catch {
     return false;
   }
+}
+
+export function createLoginThemeSelection(storage: LoginThemeStorage | undefined): LoginThemeSelection {
+  let selectedTheme = readStoredLoginTheme(storage);
+
+  return {
+    getSelectedTheme: () => selectedTheme,
+    setSelectedTheme: (theme) => {
+      if (!isLoginTheme(theme)) return selectedTheme;
+      selectedTheme = theme;
+      writeStoredLoginTheme(theme, storage);
+      return selectedTheme;
+    },
+    reload: () => {
+      selectedTheme = readStoredLoginTheme(storage);
+      return selectedTheme;
+    },
+  };
 }
 
 function getBrowserMatchMedia(): LoginMatchMedia | undefined {
@@ -134,11 +157,29 @@ function getLoginThemeMediaQuery(): MediaQueryList | undefined {
 }
 
 export function useLoginTheme() {
-  const [selectedTheme, setSelectedThemeState] = useState<LoginTheme>(() => readStoredLoginTheme());
-  const [systemTheme, setSystemTheme] = useState<LoginEffectiveTheme>(() => getSystemLoginTheme());
+  const selectionRef = useRef<LoginThemeSelection | null>(null);
+  if (selectionRef.current === null) {
+    selectionRef.current = createLoginThemeSelection({
+      getItem: () => null,
+      setItem: () => undefined,
+    });
+  }
+
+  const [selectedTheme, setSelectedThemeState] = useState<LoginTheme>('system');
+  const [systemTheme, setSystemTheme] = useState<LoginEffectiveTheme>('dark');
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    if (selectedTheme !== 'system') return;
+    const selection = createLoginThemeSelection(getBrowserStorage());
+    selectionRef.current = selection;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedThemeState(selection.getSelectedTheme());
+    setSystemTheme(getSystemLoginTheme());
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated || selectedTheme !== 'system') return;
 
     const mediaQuery = getLoginThemeMediaQuery();
     if (!mediaQuery) return;
@@ -148,17 +189,18 @@ export function useLoginTheme() {
 
     handleChange();
     return mediaController.subscribe(handleChange);
-  }, [selectedTheme]);
+  }, [isHydrated, selectedTheme]);
 
   const setSelectedTheme = (theme: LoginTheme) => {
     if (!isLoginTheme(theme)) return;
     setSelectedThemeState(theme);
-    writeStoredLoginTheme(theme);
+    selectionRef.current?.setSelectedTheme(theme);
+    if (theme === 'system') setSystemTheme(getSystemLoginTheme());
   };
 
   return {
     selectedTheme,
     setSelectedTheme,
-    effectiveTheme: getEffectiveLoginTheme(selectedTheme, systemTheme),
+    effectiveTheme: isHydrated ? getEffectiveLoginTheme(selectedTheme, systemTheme) : 'dark',
   };
 }

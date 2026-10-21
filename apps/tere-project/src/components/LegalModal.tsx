@@ -137,7 +137,7 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path
                 d="M1 1l12 12M13 1L1 13"
-                stroke="var(--login-modal-muted, rgba(255,255,255,0.5))"
+                stroke="var(--login-modal-close, rgba(255,255,255,0.5))"
                 strokeWidth="1.75"
                 strokeLinecap="round"
               />
