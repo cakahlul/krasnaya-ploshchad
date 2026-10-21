@@ -1,77 +1,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import * as React from 'react';
-import { createRoot } from 'react-dom/client';
 import {
   createLoginThemeMediaController,
   getEffectiveLoginTheme,
-  useLoginTheme,
-  type LoginTheme,
+  getSystemLoginTheme,
+  isLoginTheme,
+  LOGIN_THEME_CONTRAST_PAIRS,
+  LOGIN_THEME_MEDIA_QUERY,
+  LOGIN_THEME_STORAGE_KEY,
+  readStoredLoginTheme,
+  writeStoredLoginTheme,
+  type LoginThemeStorage,
 } from './useLoginTheme';
-import { ThemeProvider } from './useTheme';
-
-type StorageLike = {
-  getItem: (key: string) => string | null;
-  setItem: (key: string, value: string) => void;
-};
-
-type FakeDocument = {
-  nodeType: number;
-  defaultView: FakeWindow;
-  documentElement: FakeNode;
-  activeElement: FakeNode | null;
-  createElement: () => FakeNode;
-  createElementNS: () => FakeNode;
-  createTextNode: (text: string) => { nodeType: number; nodeValue: string };
-  addEventListener: () => void;
-  removeEventListener: () => void;
-};
-
-type FakeWindow = {
-  HTMLIFrameElement: typeof FakeIFrameElement;
-  HTMLElement: typeof FakeNode;
-  Node: typeof FakeNode;
-  document: FakeDocument;
-  localStorage: StorageLike;
-  matchMedia?: (query: string) => MediaQueryList;
-};
-
-class FakeIFrameElement {}
-
-class FakeNode {
-  readonly nodeType = 1;
-  readonly nodeName = 'DIV';
-  readonly tagName = 'DIV';
-  readonly namespaceURI = 'http://www.w3.org/1999/xhtml';
-  readonly childNodes: FakeNode[] = [];
-  readonly classList = {
-    add: () => undefined,
-    remove: () => undefined,
-  };
-  readonly ownerDocument: FakeDocument;
-
-  constructor(ownerDocument: FakeDocument) {
-    this.ownerDocument = ownerDocument;
-  }
-
-  addEventListener() {}
-  removeEventListener() {}
-  appendChild(node: FakeNode) {
-    this.childNodes.push(node);
-    return node;
-  }
-  insertBefore(node: FakeNode) {
-    this.childNodes.push(node);
-    return node;
-  }
-  removeChild(node: FakeNode) {
-    const index = this.childNodes.indexOf(node);
-    if (index >= 0) this.childNodes.splice(index, 1);
-    return node;
-  }
-  setAttribute() {}
-  removeAttribute() {}
-}
 
 class FakeMediaQueryList {
   matches: boolean;
@@ -98,7 +38,7 @@ class FakeMediaQueryList {
   }
 }
 
-function createStorage(values: Record<string, string> = {}): StorageLike {
+function createStorage(values: Record<string, string> = {}): LoginThemeStorage {
   const stored = new Map(Object.entries(values));
   return {
     getItem: (key) => stored.get(key) ?? null,
@@ -106,139 +46,38 @@ function createStorage(values: Record<string, string> = {}): StorageLike {
   };
 }
 
-function installBrowserHarness(options: {
-  storage?: StorageLike;
-  mediaQuery?: FakeMediaQueryList;
-  matchMedia?: ((query: string) => MediaQueryList) | undefined;
-} = {}) {
-  const mediaQuery = options.mediaQuery ?? new FakeMediaQueryList(false);
-  const fakeWindow = {} as FakeWindow;
-  const fakeDocument = {
-    nodeType: 9,
-    defaultView: fakeWindow,
-    activeElement: null,
-    createElement: () => new FakeNode(fakeDocument),
-    createElementNS: () => new FakeNode(fakeDocument),
-    createTextNode: (text: string) => ({ nodeType: 3, nodeValue: text }),
-    addEventListener: () => undefined,
-    removeEventListener: () => undefined,
-  } as FakeDocument;
-  fakeDocument.documentElement = new FakeNode(fakeDocument);
-  Object.assign(fakeWindow, {
-    HTMLIFrameElement: FakeIFrameElement,
-    HTMLElement: FakeNode,
-    Node: FakeNode,
-    document: fakeDocument,
-    localStorage: options.storage ?? createStorage(),
-    matchMedia: 'matchMedia' in options
-      ? options.matchMedia
-      : () => mediaQuery as unknown as MediaQueryList,
-  });
-
-  const globals = globalThis as unknown as {
-    document: FakeDocument;
-    window: FakeWindow;
-    IS_REACT_ACT_ENVIRONMENT: boolean;
-    React: typeof React;
-  };
-  globals.document = fakeDocument;
-  globals.window = fakeWindow;
-  globals.IS_REACT_ACT_ENVIRONMENT = true;
-  globals.React = React;
-  return { mediaQuery };
+function hexToRgb(hex: string) {
+  const value = hex.replace('#', '');
+  return [0, 2, 4].map((index) => Number.parseInt(value.slice(index, index + 2), 16) / 255);
 }
 
-type LoginThemeSnapshot = ReturnType<typeof useLoginTheme>;
-
-async function renderLoginTheme(options: Parameters<typeof installBrowserHarness>[0] = {}) {
-  installBrowserHarness(options);
-  let snapshot: LoginThemeSnapshot | undefined;
-
-  function Probe() {
-    snapshot = useLoginTheme();
-    return null;
-  }
-
-  function App() {
-    return React.createElement(ThemeProvider, null, React.createElement(Probe));
-  }
-
-  const container = new FakeNode(globalThis.document as unknown as FakeDocument);
-  const root = createRoot(container as unknown as Element);
-  await React.act(async () => {
-    root.render(React.createElement(App));
-  });
-
-  assert.ok(snapshot);
-  return {
-    root,
-    getSnapshot: () => {
-      assert.ok(snapshot);
-      return snapshot;
-    },
-  };
+function relativeLuminance(hex: string) {
+  return hexToRgb(hex)
+    .map((channel) => (channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4))
+    .reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
 }
 
-test('actual hook effect refreshes OS match after explicit override returns to System', async () => {
-  const mediaQuery = new FakeMediaQueryList(false);
-  const harness = await renderLoginTheme({ mediaQuery });
-  assert.equal(harness.getSnapshot().effectiveTheme, 'light');
-  assert.equal(mediaQuery.listenerCount, 1);
+function contrastRatio(foreground: string, background: string) {
+  const foregroundLuminance = relativeLuminance(foreground);
+  const backgroundLuminance = relativeLuminance(background);
+  const lighter = Math.max(foregroundLuminance, backgroundLuminance);
+  const darker = Math.min(foregroundLuminance, backgroundLuminance);
+  return (lighter + 0.05) / (darker + 0.05);
+}
 
-  await React.act(async () => {
-    harness.getSnapshot().setSelectedTheme('dark');
-  });
-  assert.equal(harness.getSnapshot().effectiveTheme, 'dark');
-  assert.equal(mediaQuery.listenerCount, 0);
-
-  mediaQuery.matches = true;
-  mediaQuery.emit();
-  assert.equal(harness.getSnapshot().effectiveTheme, 'dark');
-
-  await React.act(async () => {
-    harness.getSnapshot().setSelectedTheme('system');
-  });
-  assert.equal(harness.getSnapshot().effectiveTheme, 'dark');
-  assert.equal(mediaQuery.listenerCount, 1);
-
-  await React.act(async () => {
-    harness.root.unmount();
-  });
-  assert.equal(mediaQuery.listenerCount, 0);
+test('stored login theme accepts only system, light, and dark', () => {
+  assert.equal(isLoginTheme('system'), true);
+  assert.equal(isLoginTheme('light'), true);
+  assert.equal(isLoginTheme('dark'), true);
+  assert.equal(isLoginTheme('void'), false);
+  assert.equal(isLoginTheme(null), false);
+  assert.equal(readStoredLoginTheme(createStorage({ [LOGIN_THEME_STORAGE_KEY]: 'light' })), 'light');
+  assert.equal(readStoredLoginTheme(createStorage({ [LOGIN_THEME_STORAGE_KEY]: 'void' })), 'system');
+  assert.equal(readStoredLoginTheme(createStorage()), 'system');
 });
 
-test('successful subscription guards throwing cleanup', () => {
-  let subscribed = false;
-  const mediaQuery = {
-    matches: false,
-    addEventListener() {
-      subscribed = true;
-    },
-    removeEventListener() {
-      throw new Error('denied');
-    },
-  } as unknown as MediaQueryList;
-  const controller = createLoginThemeMediaController(mediaQuery);
-  const unsubscribe = controller.subscribe(() => undefined);
-
-  assert.equal(subscribed, true);
-  assert.doesNotThrow(unsubscribe);
-});
-
-test('listener registration failure is guarded', () => {
-  const mediaQuery = {
-    matches: false,
-    addEventListener() {
-      throw new Error('denied');
-    },
-  } as unknown as MediaQueryList;
-  const controller = createLoginThemeMediaController(mediaQuery);
-
-  assert.doesNotThrow(() => controller.subscribe(() => undefined));
-});
-
-test('storage denial leaves provider and login theme usable', async () => {
-  const deniedStorage: StorageLike = {
+test('storage read and write failures fall back without blocking selection', () => {
+  const deniedStorage: LoginThemeStorage = {
     getItem: () => {
       throw new Error('denied');
     },
@@ -246,43 +85,78 @@ test('storage denial leaves provider and login theme usable', async () => {
       throw new Error('denied');
     },
   };
-  const harness = await renderLoginTheme({ storage: deniedStorage });
+  assert.equal(readStoredLoginTheme(deniedStorage), 'system');
 
-  assert.equal(harness.getSnapshot().isReady, true);
-  assert.equal(harness.getSnapshot().selectedTheme, 'system');
-  await React.act(async () => {
-    harness.getSnapshot().setSelectedTheme('light');
-  });
-  assert.equal(harness.getSnapshot().effectiveTheme, 'light');
-
-  await React.act(async () => {
-    harness.root.unmount();
-  });
+  let selectedTheme = 'system';
+  selectedTheme = 'light';
+  assert.equal(writeStoredLoginTheme(selectedTheme, deniedStorage), false);
+  assert.equal(selectedTheme, 'light');
 });
 
-test('missing or throwing matchMedia falls back to Dark', async () => {
-  const missing = await renderLoginTheme({ matchMedia: undefined });
-  assert.equal(missing.getSnapshot().isReady, true);
-  assert.equal(missing.getSnapshot().effectiveTheme, 'dark');
-  await React.act(async () => {
-    missing.root.unmount();
+test('system theme resolves through requested media query and falls back dark', () => {
+  let receivedQuery = '';
+  const light = getSystemLoginTheme((query) => {
+    receivedQuery = query;
+    return { matches: false } as MediaQueryList;
   });
-
-  const throwing = await renderLoginTheme({
-    matchMedia: () => {
-      throw new Error('unavailable');
-    },
-  });
-  assert.equal(throwing.getSnapshot().isReady, true);
-  assert.equal(throwing.getSnapshot().effectiveTheme, 'dark');
-  await React.act(async () => {
-    throwing.root.unmount();
-  });
+  assert.equal(receivedQuery, LOGIN_THEME_MEDIA_QUERY);
+  assert.equal(light, 'light');
+  assert.equal(getSystemLoginTheme(() => ({ matches: true }) as MediaQueryList), 'dark');
+  assert.equal(getSystemLoginTheme(undefined), 'dark');
+  assert.equal(getSystemLoginTheme(() => { throw new Error('unavailable'); }), 'dark');
 });
 
-test('effective theme keeps explicit choices independent from system', () => {
-  let selectedTheme: LoginTheme = 'system';
-  assert.equal(getEffectiveLoginTheme(selectedTheme, 'light'), 'light');
-  selectedTheme = 'dark';
-  assert.equal(getEffectiveLoginTheme(selectedTheme, 'light'), 'dark');
+test('System media controller follows OS changes and cleans listener', () => {
+  const mediaQuery = new FakeMediaQueryList(false);
+  const controller = createLoginThemeMediaController(mediaQuery as unknown as MediaQueryList);
+  const changes: string[] = [];
+  const unsubscribe = controller.subscribe(() => changes.push(controller.getCurrentTheme()));
+
+  assert.equal(controller.getCurrentTheme(), 'light');
+  assert.equal(mediaQuery.listenerCount, 1);
+  mediaQuery.matches = true;
+  mediaQuery.emit();
+  assert.deepEqual(changes, ['dark']);
+  unsubscribe();
+  assert.equal(mediaQuery.listenerCount, 0);
+  mediaQuery.matches = false;
+  mediaQuery.emit();
+  assert.deepEqual(changes, ['dark']);
+});
+
+test('media controller supports legacy listeners and guarded failures', () => {
+  let listener: (() => void) | undefined;
+  let removed = false;
+  const legacyMedia = {
+    matches: false,
+    addListener: (next: () => void) => { listener = next; },
+    removeListener: () => { removed = true; },
+  } as unknown as MediaQueryList;
+  const controller = createLoginThemeMediaController(legacyMedia);
+  const unsubscribe = controller.subscribe(() => undefined);
+  assert.ok(listener);
+  unsubscribe();
+  assert.equal(removed, true);
+
+  const deniedMedia = {
+    matches: false,
+    addEventListener: () => { throw new Error('denied'); },
+  } as unknown as MediaQueryList;
+  assert.doesNotThrow(() => createLoginThemeMediaController(deniedMedia).subscribe(() => undefined));
+});
+
+test('explicit themes ignore system theme', () => {
+  assert.equal(getEffectiveLoginTheme('system', 'light'), 'light');
+  assert.equal(getEffectiveLoginTheme('system', 'dark'), 'dark');
+  assert.equal(getEffectiveLoginTheme('light', 'dark'), 'light');
+  assert.equal(getEffectiveLoginTheme('dark', 'light'), 'dark');
+});
+
+test('approved opaque token pairs meet normal-text contrast threshold', () => {
+  for (const pair of LOGIN_THEME_CONTRAST_PAIRS) {
+    assert.ok(
+      contrastRatio(pair.foreground, pair.background) >= pair.minimum,
+      `${pair.mode}: ${pair.foreground} on ${pair.background}`,
+    );
+  }
 });

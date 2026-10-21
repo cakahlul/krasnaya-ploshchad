@@ -1,43 +1,77 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTheme } from './useTheme';
 
 export type LoginTheme = 'system' | 'light' | 'dark';
 export type LoginEffectiveTheme = Exclude<LoginTheme, 'system'>;
+export type LoginThemeStorage = Pick<Storage, 'getItem' | 'setItem'>;
+export type LoginMatchMedia = (query: string) => MediaQueryList;
 
 export const LOGIN_THEME_STORAGE_KEY = 'tere-login-theme';
-const SYSTEM_THEME_QUERY = '(prefers-color-scheme: dark)';
+export const LOGIN_THEME_MEDIA_QUERY = '(prefers-color-scheme: dark)';
 const LOGIN_THEMES: LoginTheme[] = ['system', 'light', 'dark'];
 
-export function isLoginTheme(value: string | null): value is LoginTheme {
-  return value !== null && LOGIN_THEMES.includes(value as LoginTheme);
+export const LOGIN_THEME_CONTRAST_PAIRS = [
+  { mode: 'light', foreground: '#0b1f33', background: '#ffffff', minimum: 4.5 },
+  { mode: 'light', foreground: '#40566b', background: '#ffffff', minimum: 4.5 },
+  { mode: 'light', foreground: '#536b80', background: '#f6fafd', minimum: 4.5 },
+  { mode: 'light', foreground: '#0b7285', background: '#ffffff', minimum: 4.5 },
+  { mode: 'light', foreground: '#075985', background: '#ffffff', minimum: 4.5 },
+  { mode: 'light', foreground: '#18794e', background: '#ffffff', minimum: 4.5 },
+  { mode: 'light', foreground: '#55788f', background: '#ffffff', minimum: 4.5 },
+  { mode: 'dark', foreground: '#ffffff', background: '#060d1a', minimum: 4.5 },
+  { mode: 'dark', foreground: '#7fd8ee', background: '#060d1a', minimum: 4.5 },
+  { mode: 'dark', foreground: '#22b8d4', background: '#060d1a', minimum: 4.5 },
+] as const;
+
+export function isLoginTheme(value: string | null | undefined): value is LoginTheme {
+  return value !== null && value !== undefined && LOGIN_THEMES.includes(value as LoginTheme);
 }
 
-function readStoredLoginTheme(): LoginTheme {
+function getBrowserStorage(): LoginThemeStorage | undefined {
   try {
-    if (typeof window === 'undefined') return 'system';
-    const stored = window.localStorage.getItem(LOGIN_THEME_STORAGE_KEY);
+    return typeof window === 'undefined' ? undefined : window.localStorage;
+  } catch {
+    return undefined;
+  }
+}
+
+export function readStoredLoginTheme(storage: LoginThemeStorage | undefined = getBrowserStorage()): LoginTheme {
+  try {
+    const stored = storage?.getItem(LOGIN_THEME_STORAGE_KEY) ?? null;
     return isLoginTheme(stored) ? stored : 'system';
   } catch {
     return 'system';
   }
 }
 
-function writeStoredLoginTheme(theme: LoginTheme) {
+export function writeStoredLoginTheme(
+  theme: LoginTheme,
+  storage: LoginThemeStorage | undefined = getBrowserStorage(),
+): boolean {
   try {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(LOGIN_THEME_STORAGE_KEY, theme);
-    }
+    storage?.setItem(LOGIN_THEME_STORAGE_KEY, theme);
+    return storage !== undefined;
   } catch {
-    // A denied write only disables persistence; current page remains usable.
+    return false;
   }
 }
 
-function getSystemTheme(): LoginEffectiveTheme {
+function getBrowserMatchMedia(): LoginMatchMedia | undefined {
   try {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'dark';
-    return window.matchMedia(SYSTEM_THEME_QUERY).matches ? 'dark' : 'light';
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return undefined;
+    return window.matchMedia.bind(window);
+  } catch {
+    return undefined;
+  }
+}
+
+export function getSystemLoginTheme(
+  matchMedia: LoginMatchMedia | undefined = getBrowserMatchMedia(),
+): LoginEffectiveTheme {
+  try {
+    if (!matchMedia) return 'dark';
+    return matchMedia(LOGIN_THEME_MEDIA_QUERY).matches ? 'dark' : 'light';
   } catch {
     return 'dark';
   }
@@ -67,6 +101,8 @@ export function createLoginThemeMediaController(mediaQuery: MediaQueryList) {
         mediaQuery.addEventListener('change', handleChange);
       } else if (typeof mediaQuery.addListener === 'function') {
         mediaQuery.addListener(handleChange);
+      } else {
+        return () => undefined;
       }
     } catch {
       return () => undefined;
@@ -88,31 +124,31 @@ export function createLoginThemeMediaController(mediaQuery: MediaQueryList) {
   return { getCurrentTheme, subscribe };
 }
 
+function getLoginThemeMediaQuery(): MediaQueryList | undefined {
+  const matchMedia = getBrowserMatchMedia();
+  try {
+    return matchMedia?.(LOGIN_THEME_MEDIA_QUERY);
+  } catch {
+    return undefined;
+  }
+}
+
 export function useLoginTheme() {
-  const { isReady: providerReady } = useTheme();
   const [selectedTheme, setSelectedThemeState] = useState<LoginTheme>(() => readStoredLoginTheme());
-  const [systemTheme, setSystemTheme] = useState<LoginEffectiveTheme>(() => getSystemTheme());
-  const isReady = providerReady;
+  const [systemTheme, setSystemTheme] = useState<LoginEffectiveTheme>(() => getSystemLoginTheme());
 
   useEffect(() => {
-    if (!providerReady || selectedTheme !== 'system') return;
+    if (selectedTheme !== 'system') return;
 
-    let mediaQuery: MediaQueryList;
-    try {
-      if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-        return;
-      }
-      mediaQuery = window.matchMedia(SYSTEM_THEME_QUERY);
-    } catch {
-      return;
-    }
+    const mediaQuery = getLoginThemeMediaQuery();
+    if (!mediaQuery) return;
 
     const mediaController = createLoginThemeMediaController(mediaQuery);
     const handleChange = () => setSystemTheme(mediaController.getCurrentTheme());
 
     handleChange();
     return mediaController.subscribe(handleChange);
-  }, [providerReady, selectedTheme]);
+  }, [selectedTheme]);
 
   const setSelectedTheme = (theme: LoginTheme) => {
     if (!isLoginTheme(theme)) return;
@@ -120,9 +156,9 @@ export function useLoginTheme() {
     writeStoredLoginTheme(theme);
   };
 
-  const effectiveTheme: LoginEffectiveTheme = !isReady
-    ? 'dark'
-    : getEffectiveLoginTheme(selectedTheme, systemTheme);
-
-  return { selectedTheme, setSelectedTheme, effectiveTheme, isReady };
+  return {
+    selectedTheme,
+    setSelectedTheme,
+    effectiveTheme: getEffectiveLoginTheme(selectedTheme, systemTheme),
+  };
 }

@@ -184,7 +184,7 @@ export default function SignIn() {
           still raycast hover/click correctly when cursor is over them. Visible on
           all screen sizes — the scene auto-repositions for mobile vs desktop. */}
       <div className="pointer-events-none fixed inset-0 z-[5]">
-        <Stat3DScene theme={effectiveTheme} />
+        <Stat3DScene />
       </div>
 
       {/* Two-column layout */}
