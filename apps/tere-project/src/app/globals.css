@@ -352,6 +352,237 @@
   }
 
   /* Login Page Custom CSS */
+  .login-page {
+    --login-page-background: linear-gradient(135deg, #060d1a, #011d4d, #034078);
+    --login-grid-line: rgba(255, 255, 255, 0.03);
+    --login-glow: radial-gradient(circle, rgba(18, 130, 162, 0.15) 0%, transparent 70%);
+    --login-logo-background: linear-gradient(135deg, #1282a2, #22b8d4);
+    --login-accent: #1282a2;
+    --login-accent-bright: #22b8d4;
+    --login-accent-soft: #7fd8ee;
+    --login-text-primary: #ffffff;
+    --login-hero-muted: rgba(255, 255, 255, 0.4);
+    --login-hero-copy: rgba(255, 255, 255, 0.75);
+    --login-hero-shadow: 0 2px 14px rgba(0, 0, 0, 0.5);
+    --login-hero-copy-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+    --login-hero-gradient: linear-gradient(135deg, #a78bfa, #7fd8ee, #fbb6ce);
+    --login-badge-background: rgba(34, 184, 212, 0.08);
+    --login-badge-border: rgba(34, 184, 212, 0.18);
+    --login-chip-background: rgba(255, 255, 255, 0.04);
+    --login-chip-border: rgba(255, 255, 255, 0.08);
+    --login-chip-text: rgba(255, 255, 255, 0.75);
+    --login-chip-hover: rgba(255, 255, 255, 0.1);
+    --login-card-background: rgba(255, 255, 255, 0.04);
+    --login-card-border: rgba(255, 255, 255, 0.08);
+    --login-card-shadow: 0 8px 48px rgba(0, 0, 0, 0.4);
+    --login-message-background: rgba(18, 130, 162, 0.1);
+    --login-message-text: #22b8d4;
+    --login-copy-muted: rgba(255, 255, 255, 0.45);
+    --login-copy-subtle: rgba(255, 255, 255, 0.35);
+    --login-copy-faint: rgba(255, 255, 255, 0.2);
+    --login-divider: rgba(255, 255, 255, 0.1);
+    --login-control-background: rgba(255, 255, 255, 0.05);
+    --login-control-border: rgba(255, 255, 255, 0.1);
+    --login-control-text: #ffffff;
+    --login-control-muted: rgba(255, 255, 255, 0.6);
+    --login-control-placeholder: rgba(255, 255, 255, 0.25);
+    --login-control-focus-ring: 0 0 0 2px rgba(18, 130, 162, 0.25);
+    --login-button-background: linear-gradient(135deg, #1282a2, #22b8d4);
+    --login-button-shadow: 0 4px 24px rgba(18, 130, 162, 0.3);
+    --login-selector-background: rgba(255, 255, 255, 0.04);
+    --login-selector-border: rgba(255, 255, 255, 0.12);
+    --login-selector-text: rgba(255, 255, 255, 0.7);
+    --login-selector-active-background: rgba(34, 184, 212, 0.14);
+    --login-selector-active-border: rgba(34, 184, 212, 0.65);
+    --login-selector-active-text: #7fd8ee;
+    --login-modal-backdrop: rgba(0, 0, 0, 0.65);
+    --login-modal-panel: linear-gradient(160deg, #0b1a30 0%, #051025 100%);
+    --login-modal-border: rgba(255, 255, 255, 0.08);
+    --login-modal-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+    --login-modal-title: #ffffff;
+    --login-modal-copy: rgba(255, 255, 255, 0.6);
+    --login-modal-muted: rgba(255, 255, 255, 0.45);
+    --login-modal-faint: rgba(255, 255, 255, 0.2);
+    --login-modal-divider: rgba(255, 255, 255, 0.07);
+    --login-modal-handle: rgba(255, 255, 255, 0.15);
+    --login-modal-button-shadow: 0 4px 16px rgba(18, 130, 162, 0.25);
+  }
+
+  .login-page[data-login-theme='light'] {
+    --login-page-background: linear-gradient(135deg, #eef8fb, #f8fafc, #dceeff);
+    --login-grid-line: rgba(1, 29, 77, 0.07);
+    --login-glow: radial-gradient(circle, rgba(18, 130, 162, 0.12) 0%, transparent 70%);
+    --login-text-primary: #011d4d;
+    --login-hero-muted: rgba(1, 29, 77, 0.48);
+    --login-hero-copy: rgba(1, 29, 77, 0.72);
+    --login-hero-shadow: 0 2px 14px rgba(1, 29, 77, 0.16);
+    --login-hero-copy-shadow: 0 1px 8px rgba(1, 29, 77, 0.12);
+    --login-badge-background: rgba(18, 130, 162, 0.08);
+    --login-badge-border: rgba(18, 130, 162, 0.2);
+    --login-chip-background: rgba(255, 255, 255, 0.62);
+    --login-chip-border: rgba(1, 29, 77, 0.12);
+    --login-chip-text: rgba(1, 29, 77, 0.75);
+    --login-chip-hover: rgba(18, 130, 162, 0.1);
+    --login-card-background: rgba(255, 255, 255, 0.78);
+    --login-card-border: rgba(1, 29, 77, 0.12);
+    --login-card-shadow: 0 8px 48px rgba(1, 29, 77, 0.16);
+    --login-message-background: rgba(18, 130, 162, 0.08);
+    --login-message-text: #0e7490;
+    --login-copy-muted: rgba(1, 29, 77, 0.58);
+    --login-copy-subtle: rgba(1, 29, 77, 0.5);
+    --login-copy-faint: rgba(1, 29, 77, 0.42);
+    --login-divider: rgba(1, 29, 77, 0.14);
+    --login-control-background: rgba(255, 255, 255, 0.7);
+    --login-control-border: rgba(1, 29, 77, 0.16);
+    --login-control-text: #011d4d;
+    --login-control-muted: rgba(1, 29, 77, 0.68);
+    --login-control-placeholder: rgba(1, 29, 77, 0.4);
+    --login-control-focus-ring: 0 0 0 2px rgba(18, 130, 162, 0.2);
+    --login-selector-background: rgba(255, 255, 255, 0.65);
+    --login-selector-border: rgba(1, 29, 77, 0.14);
+    --login-selector-text: rgba(1, 29, 77, 0.68);
+    --login-selector-active-background: rgba(18, 130, 162, 0.1);
+    --login-selector-active-border: rgba(18, 130, 162, 0.55);
+    --login-selector-active-text: #0e7490;
+    --login-modal-backdrop: rgba(1, 29, 77, 0.28);
+    --login-modal-panel: linear-gradient(160deg, #ffffff 0%, #eaf4f8 100%);
+    --login-modal-border: rgba(1, 29, 77, 0.14);
+    --login-modal-shadow: 0 24px 80px rgba(1, 29, 77, 0.22);
+    --login-modal-title: #011d4d;
+    --login-modal-copy: rgba(1, 29, 77, 0.72);
+    --login-modal-muted: rgba(1, 29, 77, 0.58);
+    --login-modal-faint: rgba(1, 29, 77, 0.42);
+    --login-modal-divider: rgba(1, 29, 77, 0.12);
+    --login-modal-handle: rgba(1, 29, 77, 0.14);
+    --login-modal-button-shadow: 0 4px 16px rgba(18, 130, 162, 0.2);
+  }
+
+  .login-page .login-text-primary {
+    color: var(--login-text-primary);
+  }
+
+  .login-page .login-theme-selector {
+    min-width: 0;
+    margin: 0 0 1.25rem;
+    padding: 0;
+    border: 0;
+  }
+
+  .login-page .login-theme-legend {
+    margin-bottom: 0.4rem;
+    color: var(--login-copy-muted);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .login-page .login-theme-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  .login-page .login-theme-option {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--login-selector-border);
+    border-radius: 0.7rem;
+    background: var(--login-selector-background);
+    color: var(--login-selector-text);
+    font-size: 0.7rem;
+    line-height: 1;
+    transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+  }
+
+  .login-page .login-theme-option:focus-within {
+    outline: 2px solid var(--login-accent-bright);
+    outline-offset: 2px;
+  }
+
+  .login-page .login-theme-option input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+
+  .login-page .login-theme-option span {
+    width: 100%;
+    padding: 0.55rem 0.35rem;
+    text-align: center;
+  }
+
+  .login-page .login-theme-option:has(input:checked) {
+    border-color: var(--login-selector-active-border);
+    background: var(--login-selector-active-background);
+    color: var(--login-selector-active-text);
+    font-weight: 600;
+  }
+
+  .login-page .login-chip:hover {
+    background: var(--login-chip-hover) !important;
+  }
+
+  .login-page .login-label {
+    color: var(--login-copy-muted);
+  }
+
+  .login-page .login-input {
+    color: var(--login-control-text);
+  }
+
+  .login-page .login-input::placeholder {
+    color: var(--login-control-placeholder);
+  }
+
+  .login-page .login-icon-button {
+    color: var(--login-copy-subtle);
+  }
+
+  .login-page .login-icon-button:hover {
+    color: var(--login-copy-muted);
+  }
+
+  .login-page .login-email-toggle:hover {
+    border-color: var(--login-accent) !important;
+    color: var(--login-control-text) !important;
+  }
+
+  .login-page .login-secondary-link,
+  .login-page .login-footer {
+    color: var(--login-copy-muted);
+  }
+
+  .login-page .login-footer-link:hover,
+  .login-page .login-secondary-link:hover {
+    color: var(--login-text-primary);
+  }
+
+  .login-page .login-button {
+    color: #ffffff;
+  }
+
+  .login-page .login-modal-title {
+    color: var(--login-modal-title);
+  }
+
+  .login-page .login-modal-copy {
+    color: var(--login-modal-copy);
+  }
+
+  .login-page .login-modal-close {
+    color: var(--login-modal-muted);
+  }
+
+  .login-page .login-modal-close:hover {
+    background: var(--login-selector-background);
+  }
+
   .glass-effect {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);

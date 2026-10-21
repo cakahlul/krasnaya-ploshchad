@@ -8,11 +8,30 @@ interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
   setTheme: (theme: Theme) => void;
+  isReady: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const THEME_ORDER: Theme[] = ['light', 'void', 'crimson'];
+
+function readStoredTheme(): Theme | null {
+  try {
+    if (typeof window === 'undefined') return null;
+    const stored = window.localStorage.getItem('theme');
+    return stored && THEME_ORDER.includes(stored as Theme) ? (stored as Theme) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredTheme(theme: Theme) {
+  try {
+    if (typeof window !== 'undefined') window.localStorage.setItem('theme', theme);
+  } catch {
+    // Storage denial must not block global theme usage.
+  }
+}
 
 function SocialistSwitchAnimation({ show }: { show: boolean }) {
   if (!show) return null;
@@ -38,16 +57,14 @@ function SocialistSwitchAnimation({ show }: { show: boolean }) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('light');
+  const [theme, setThemeState] = useState<Theme>(() => readStoredTheme() ?? 'light');
   const [mounted, setMounted] = useState(false);
   const [showSocialistAnimation, setShowSocialistAnimation] = useState(false);
   const [socialistAnimationKey, setSocialistAnimationKey] = useState(0);
 
   useEffect(() => {
-    const stored = localStorage.getItem('theme') as Theme | null;
-    if (stored && THEME_ORDER.includes(stored)) {
-      setThemeState(stored);
-    }
+    // Keep readiness local to this provider instance.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -60,8 +77,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (theme === 'void' || theme === 'crimson') {
       el.classList.add('dark');
     }
-    localStorage.setItem('theme', theme);
-
+    writeStoredTheme(theme);
   }, [theme, mounted]);
 
   const toggleTheme = () => {
@@ -83,7 +99,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   if (!mounted) return null;
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme, isReady: mounted }}>
       {children}
       <SocialistSwitchAnimation key={socialistAnimationKey} show={showSocialistAnimation} />
     </ThemeContext.Provider>

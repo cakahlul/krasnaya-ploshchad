@@ -12,6 +12,7 @@ import {
 } from '@react-three/drei';
 import { useSpring, animated, config } from '@react-spring/three';
 import * as THREE from 'three';
+import type { LoginEffectiveTheme } from '@src/hooks/useLoginTheme';
 
 type BarConfig = {
   x: number;
@@ -59,6 +60,43 @@ const BARS: BarConfig[] = [
 ];
 
 const RIM = '#7fd8ee';
+
+const LIGHT_BARS: BarConfig[] = BARS.map((bar, index) => ({
+  ...bar,
+  colorBody: ['#3d2a78', '#14566b', '#70264e'][index],
+  colorBright: ['#6d4fd1', '#0e7490', '#be185d'][index],
+}));
+
+type ScenePalette = {
+  bars: BarConfig[];
+  rim: string;
+  sparkleA: string;
+  sparkleB: string;
+  lightformerB: string;
+  ambient: string;
+  background: string;
+};
+
+const SCENE_PALETTES: Record<LoginEffectiveTheme, ScenePalette> = {
+  dark: {
+    bars: BARS,
+    rim: RIM,
+    sparkleA: '#c4b5fd',
+    sparkleB: '#fbb6ce',
+    lightformerB: '#f472b6',
+    ambient: '#c8dce8',
+    background: '#060d1a',
+  },
+  light: {
+    bars: LIGHT_BARS,
+    rim: '#0e7490',
+    sparkleA: '#6d4fd1',
+    sparkleB: '#be185d',
+    lightformerB: '#be185d',
+    ambient: '#d2e8ef',
+    background: '#e7f4f8',
+  },
+};
 
 function Bar({ config: cfg, index }: { config: BarConfig; index: number }) {
   const [hovered, setHovered] = useState(false);
@@ -207,7 +245,7 @@ function Bar({ config: cfg, index }: { config: BarConfig; index: number }) {
   );
 }
 
-function BarsGroup() {
+function BarsGroup({ palette }: { palette: ScenePalette }) {
   const groupRef = useRef<THREE.Group>(null);
   const { size } = useThree();
   const w = size.width;
@@ -249,7 +287,7 @@ function BarsGroup() {
   return (
     <group ref={groupRef} position={position} scale={scale}>
       <Float speed={0.9} rotationIntensity={0.04} floatIntensity={0.15}>
-        {BARS.map((b, i) => (
+        {palette.bars.map((b, i) => (
           <Bar key={i} config={b} index={i} />
         ))}
       </Float>
@@ -257,7 +295,7 @@ function BarsGroup() {
   );
 }
 
-function SparkleField() {
+function SparkleField({ palette }: { palette: ScenePalette }) {
   const { size } = useThree();
   const isMobile = size.width < 768;
   const baseCount = isMobile ? 30 : 70;
@@ -266,14 +304,16 @@ function SparkleField() {
   const accentScaleA: [number, number, number] = isMobile ? [12, 18, 6] : [20, 12, 6];
   return (
     <>
-      <Sparkles count={baseCount} scale={fieldScale} position={[0, 1, -1]} size={2.2} speed={0.3} opacity={0.55} color={RIM} />
-      <Sparkles count={accentCount} scale={accentScaleA} position={[2, 0.5, -0.5]} size={2.4} speed={0.25} opacity={0.45} color="#c4b5fd" />
-      <Sparkles count={accentCount} scale={accentScaleA} position={[-2, -0.5, 0]} size={2.4} speed={0.28} opacity={0.45} color="#fbb6ce" />
+      <Sparkles count={baseCount} scale={fieldScale} position={[0, 1, -1]} size={2.2} speed={0.3} opacity={0.55} color={palette.rim} />
+      <Sparkles count={accentCount} scale={accentScaleA} position={[2, 0.5, -0.5]} size={2.4} speed={0.25} opacity={0.45} color={palette.sparkleA} />
+      <Sparkles count={accentCount} scale={accentScaleA} position={[-2, -0.5, 0]} size={2.4} speed={0.28} opacity={0.45} color={palette.sparkleB} />
     </>
   );
 }
 
-export default function Stat3DScene() {
+export default function Stat3DScene({ theme = 'dark' }: { theme?: LoginEffectiveTheme }) {
+  const palette = SCENE_PALETTES[theme];
+
   return (
     <Canvas
       camera={{ position: [0, 0.5, 9], fov: 36 }}
@@ -283,9 +323,9 @@ export default function Stat3DScene() {
       gl={{ antialias: true, alpha: true }}
       style={{ width: '100%', height: '100%' }}
     >
-      <ambientLight intensity={1.0} color="#c8dce8" />
+      <ambientLight intensity={1.0} color={palette.ambient} />
       <directionalLight position={[4, 6, 5]} intensity={1.4} color="#ffffff" />
-      <directionalLight position={[-5, 3, -2]} intensity={0.8} color={RIM} />
+      <directionalLight position={[-5, 3, -2]} intensity={0.8} color={palette.rim} />
       <directionalLight position={[0, -3, 4]} intensity={0.4} color="#ffffff" />
 
       <Suspense fallback={null}>
@@ -295,22 +335,22 @@ export default function Stat3DScene() {
           {/* Iridescent colored panels — these create the vivid colored
               streaks visible on the dark bars' clearcoat (Mainframe look) */}
           <Lightformer intensity={1.5} color="#a78bfa" position={[-4, 2, 2]} scale={[2.5, 4.5, 1]} />
-          <Lightformer intensity={1.5} color={RIM} position={[0, 1.5, -3]} scale={[3, 4, 1]} />
-          <Lightformer intensity={1.5} color="#fbb6ce" position={[4, 2, 2]} scale={[2.5, 4.5, 1]} />
+          <Lightformer intensity={1.5} color={palette.rim} position={[0, 1.5, -3]} scale={[3, 4, 1]} />
+          <Lightformer intensity={1.5} color={palette.sparkleB} position={[4, 2, 2]} scale={[2.5, 4.5, 1]} />
           {/* Soft accent fills from below */}
           <Lightformer intensity={0.7} color="#22b8d4" position={[0, -2, 3]} scale={[4, 1.5, 1]} />
-          <Lightformer intensity={0.6} color="#c4b5fd" position={[-3, 0, -3]} scale={[2, 3, 1]} />
-          <Lightformer intensity={0.6} color="#f472b6" position={[3, 0, -3]} scale={[2, 3, 1]} />
+          <Lightformer intensity={0.6} color={palette.sparkleA} position={[-3, 0, -3]} scale={[2, 3, 1]} />
+          <Lightformer intensity={0.6} color={palette.lightformerB} position={[3, 0, -3]} scale={[2, 3, 1]} />
           {/* Dark navy backdrop — exact match to page bg darkest tone, so the
               subtle transmission through the bars reads as page-bg reflection */}
           <mesh scale={50}>
             <sphereGeometry args={[1, 32, 32]} />
-            <meshBasicMaterial color="#060d1a" side={THREE.BackSide} />
+            <meshBasicMaterial color={palette.background} side={THREE.BackSide} />
           </mesh>
         </Environment>
 
-        <SparkleField />
-        <BarsGroup />
+        <SparkleField palette={palette} />
+        <BarsGroup palette={palette} />
 
       </Suspense>
     </Canvas>
