@@ -14,6 +14,7 @@ import { getAuth } from 'firebase/auth';
 import useUser from '@src/hooks/useUser';
 import { useRouter } from 'next/navigation';
 import LegalModal, { type LegalModalType } from '@src/components/LegalModal';
+import { useLoginTheme, type LoginTheme } from '@src/hooks/useLoginTheme';
 
 const Stat3DScene = dynamic(() => import('./Stat3DScene'), {
   ssr: false,
@@ -41,6 +42,40 @@ const FEATURE_CHIPS = [
   { label: 'Leave & holidays', icon: '🗓️' },
 ];
 
+const LOGIN_THEME_OPTIONS: Array<{ value: LoginTheme; label: string }> = [
+  { value: 'system', label: 'System' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+];
+
+function LoginThemeSelector({
+  value,
+  onChange,
+}: {
+  value: LoginTheme;
+  onChange: (value: LoginTheme) => void;
+}) {
+  return (
+    <fieldset className="login-theme-selector">
+      <legend className="login-theme-legend">Login theme</legend>
+      <div className="login-theme-options">
+        {LOGIN_THEME_OPTIONS.map((option) => (
+          <label className="login-theme-option" key={option.value}>
+            <input
+              type="radio"
+              name="login-theme"
+              value={option.value}
+              checked={value === option.value}
+              onChange={() => onChange(option.value)}
+            />
+            <span>{option.label}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -50,6 +85,7 @@ export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [legalModal, setLegalModal] = useState<LegalModalType | null>(null);
+  const { selectedTheme, setSelectedTheme, effectiveTheme } = useLoginTheme();
   const { loginPageMessage } = useUser();
   const router = useRouter();
 
@@ -122,15 +158,16 @@ export default function SignIn() {
 
   return (
     <div
-      className="relative min-h-screen w-full overflow-x-hidden overflow-y-auto font-sans"
-      style={{ background: 'linear-gradient(135deg, #060d1a, #011d4d, #034078)' }}
+      className="login-page relative min-h-screen w-full overflow-x-hidden overflow-y-auto font-sans"
+      data-login-theme={effectiveTheme}
+      style={{ background: 'var(--login-page-background)' }}
     >
       {/* Grid overlay — denser on mobile, looser on desktop */}
       <div
         className="pointer-events-none absolute inset-0 bg-[length:40px_40px] sm:bg-[length:60px_60px]"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+            'linear-gradient(var(--login-grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--login-grid-line) 1px, transparent 1px)',
         }}
       />
 
@@ -138,7 +175,7 @@ export default function SignIn() {
       <div
         className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[280px] w-[280px] sm:h-[420px] sm:w-[420px] lg:h-[600px] lg:w-[600px] rounded-full"
         style={{
-          background: 'radial-gradient(circle, rgba(18,130,162,0.15) 0%, transparent 70%)',
+          background: 'var(--login-glow)',
         }}
       />
 
@@ -159,7 +196,7 @@ export default function SignIn() {
           <div className="flex items-center justify-center lg:justify-start gap-2.5 sm:gap-3">
             <div
               className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg"
-              style={{ background: 'linear-gradient(135deg, #1282a2, #22b8d4)' }}
+              style={{ background: 'var(--login-logo-background)' }}
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="h-4 w-4 sm:h-[18px] sm:w-[18px]">
                 <rect x="1" y="9" width="3.5" height="8" rx="1" fill="white" />
@@ -168,10 +205,10 @@ export default function SignIn() {
               </svg>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-base sm:text-lg font-bold tracking-wide text-white">TERE</span>
+              <span className="login-text-primary text-base sm:text-lg font-bold tracking-wide">TERE</span>
               <span
                 className="hidden md:inline text-[10px] uppercase tracking-[0.18em]"
-                style={{ color: 'rgba(255,255,255,0.4)' }}
+                style={{ color: 'var(--login-hero-muted)' }}
               >
                 Team Reporting Engine
               </span>
@@ -184,31 +221,31 @@ export default function SignIn() {
             <div
               className="inline-flex w-fit items-center gap-2 rounded-full px-2.5 py-0.5 sm:px-3 sm:py-1"
               style={{
-                background: 'rgba(34,184,212,0.08)',
-                border: '1px solid rgba(34,184,212,0.18)',
+                background: 'var(--login-badge-background)',
+                border: '1px solid var(--login-badge-border)',
                 backdropFilter: 'blur(8px)',
               }}
             >
               <span
                 className="h-1.5 w-1.5 rounded-full"
-                style={{ background: '#22b8d4', boxShadow: '0 0 8px #22b8d4' }}
+                style={{ background: 'var(--login-accent-bright)', boxShadow: '0 0 8px var(--login-accent-bright)' }}
               />
               <span
                 className="text-[10px] sm:text-[11px] font-medium uppercase tracking-[0.16em]"
-                style={{ color: '#7fd8ee' }}
+                style={{ color: 'var(--login-accent-soft)' }}
               >
                 v2.0 · Now Live
               </span>
             </div>
 
             <h1
-              className="max-w-xl text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold leading-tight text-white"
-              style={{ textShadow: '0 2px 14px rgba(0,0,0,0.5)' }}
+              className="login-text-primary max-w-xl text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold leading-tight"
+              style={{ textShadow: 'var(--login-hero-shadow)' }}
             >
               Your team&apos;s data,{' '}
               <span
                 style={{
-                  background: 'linear-gradient(135deg, #a78bfa, #7fd8ee, #fbb6ce)',
+                  background: 'var(--login-hero-gradient)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
@@ -221,8 +258,8 @@ export default function SignIn() {
             <p
               className="hidden sm:block max-w-md text-xs md:text-sm leading-relaxed"
               style={{
-                color: 'rgba(255,255,255,0.75)',
-                textShadow: '0 1px 8px rgba(0,0,0,0.45)',
+                color: 'var(--login-hero-copy)',
+                textShadow: 'var(--login-hero-copy-shadow)',
               }}
             >
               Sprint tracking, productivity, bug monitoring & leave — one dashboard your team will actually
@@ -233,11 +270,11 @@ export default function SignIn() {
               {FEATURE_CHIPS.map((f) => (
                 <div
                   key={f.label}
-                  className="flex items-center gap-1.5 rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs transition-colors duration-200 hover:bg-white/10"
+                  className="login-chip flex items-center gap-1.5 rounded-full px-2.5 py-1 sm:px-3 sm:py-1.5 text-xs transition-colors duration-200"
                   style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'rgba(255,255,255,0.75)',
+                    background: 'var(--login-chip-background)',
+                    border: '1px solid var(--login-chip-border)',
+                    color: 'var(--login-chip-text)',
                     backdropFilter: 'blur(8px)',
                   }}
                 >
@@ -274,11 +311,11 @@ export default function SignIn() {
               onTouchCancel={handleCardMouseLeave}
               className="relative overflow-hidden rounded-2xl sm:rounded-[24px] p-5 sm:p-7 lg:p-10"
               style={{
-                background: 'rgba(255,255,255,0.04)',
+                background: 'var(--login-card-background)',
                 backdropFilter: 'blur(24px)',
                 WebkitBackdropFilter: 'blur(24px)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                boxShadow: '0 8px 48px rgba(0,0,0,0.4)',
+                border: '1px solid var(--login-card-border)',
+                boxShadow: 'var(--login-card-shadow)',
                 transformStyle: 'preserve-3d',
                 willChange: 'transform',
                 ...(cardInteractive
@@ -304,34 +341,36 @@ export default function SignIn() {
                 <div
                   className="mb-4 sm:mb-6 rounded-lg border-l-4 p-3 sm:p-4"
                   style={{
-                    borderColor: '#1282a2',
-                    background: 'rgba(18,130,162,0.1)',
+                    borderColor: 'var(--login-accent)',
+                    background: 'var(--login-message-background)',
                   }}
                 >
-                  <p className="text-xs sm:text-sm font-medium" style={{ color: '#22b8d4' }}>
+                  <p className="text-xs sm:text-sm font-medium" style={{ color: 'var(--login-message-text)' }}>
                     {loginPageMessage}
                   </p>
                 </div>
               )}
 
-              <h2 className="mb-2 text-xl sm:text-2xl font-bold text-white">
+              <h2 className="login-text-primary mb-2 text-xl sm:text-2xl font-bold">
                 Welcome back <span className="inline-block">&#x1F44B;</span>
               </h2>
-              <p className="mb-6 sm:mb-8 text-xs sm:text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              <p className="mb-6 sm:mb-8 text-xs sm:text-sm" style={{ color: 'var(--login-copy-muted)' }}>
                 Sign in to access your team dashboard
               </p>
+
+              <LoginThemeSelector value={selectedTheme} onChange={setSelectedTheme} />
 
               {/* Google SSO - Primary */}
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={loading || googleLoading || success}
-                className="group relative flex w-full items-center justify-center gap-2 sm:gap-3 rounded-xl px-3 py-3 sm:px-4 sm:py-3.5 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                className="login-button group relative flex w-full items-center justify-center gap-2 sm:gap-3 rounded-xl px-3 py-3 sm:px-4 sm:py-3.5 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                 style={{
                   background: success
                     ? 'linear-gradient(135deg, #059669, #10b981)'
-                    : 'linear-gradient(135deg, #1282a2, #22b8d4)',
-                  boxShadow: '0 4px 24px rgba(18,130,162,0.3)',
+                    : 'var(--login-button-background)',
+                  boxShadow: 'var(--login-button-shadow)',
                 }}
               >
                 {googleLoading ? (
@@ -353,25 +392,25 @@ export default function SignIn() {
                 {success ? 'Redirecting to dashboard...' : 'Continue with Google'}
               </button>
 
-              <p className="mt-2 sm:mt-3 text-center text-[10px] sm:text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              <p className="mt-2 sm:mt-3 text-center text-[10px] sm:text-xs" style={{ color: 'var(--login-copy-subtle)' }}>
                 Recommended &mdash; use your company Google account
               </p>
 
               {/* Divider */}
               <div className="my-5 sm:my-7 flex items-center gap-3 sm:gap-4">
-                <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.1)' }} />
-                <span className="text-[10px] sm:text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>or</span>
-                <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.1)' }} />
+                <div className="h-px flex-1" style={{ background: 'var(--login-divider)' }} />
+                <span className="text-[10px] sm:text-xs" style={{ color: 'var(--login-copy-quiet)' }}>or</span>
+                <div className="h-px flex-1" style={{ background: 'var(--login-divider)' }} />
               </div>
 
               {!showEmailForm ? (
                 <button
                   type="button"
                   onClick={() => setShowEmailForm(true)}
-                  className="w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-medium transition-all duration-200 hover:border-white/20"
+                  className="login-email-toggle w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-medium transition-all duration-200"
                   style={{
-                    color: 'rgba(255,255,255,0.6)',
-                    border: '1px dashed rgba(255,255,255,0.15)',
+                    color: 'var(--login-control-muted)',
+                    border: '1px dashed var(--login-toggle-border)',
                     background: 'transparent',
                   }}
                 >
@@ -381,7 +420,7 @@ export default function SignIn() {
                 <form className="space-y-3 sm:space-y-4" onSubmit={handleLogin}>
                   {/* Email input */}
                   <div>
-                    <label className="mb-1 sm:mb-1.5 block text-[10px] sm:text-xs font-medium text-white/50" htmlFor="email">
+                    <label className="login-label mb-1 sm:mb-1.5 block text-[10px] sm:text-xs font-medium" htmlFor="email">
                       Email
                     </label>
                     <input
@@ -391,18 +430,18 @@ export default function SignIn() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm text-white placeholder-white/25 outline-none transition-all duration-200 focus:ring-2"
+                      className="login-input w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm outline-none transition-all duration-200 focus:ring-2"
                       style={{
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
+                        background: 'var(--login-control-background)',
+                        border: '1px solid var(--login-control-border)',
                         // focus ring handled via onFocus/onBlur
                       }}
                       onFocus={(e) => {
-                        e.currentTarget.style.borderColor = '#1282a2';
-                        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(18,130,162,0.25)';
+                        e.currentTarget.style.borderColor = 'var(--login-accent)';
+                        e.currentTarget.style.boxShadow = 'var(--login-control-focus-ring)';
                       }}
                       onBlur={(e) => {
-                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                        e.currentTarget.style.borderColor = 'var(--login-control-border)';
                         e.currentTarget.style.boxShadow = 'none';
                       }}
                     />
@@ -411,13 +450,13 @@ export default function SignIn() {
                   {/* Password input */}
                   <div>
                     <div className="mb-1 sm:mb-1.5 flex items-center justify-between">
-                      <label className="text-[10px] sm:text-xs font-medium text-white/50" htmlFor="password">
+                      <label className="login-label text-[10px] sm:text-xs font-medium" htmlFor="password">
                         Password
                       </label>
                       <a
                         href="#"
                         className="text-[10px] sm:text-xs font-medium transition-colors duration-200 hover:underline"
-                        style={{ color: '#22b8d4' }}
+                        style={{ color: 'var(--login-accent-bright)' }}
                       >
                         Forgot?
                       </a>
@@ -430,24 +469,24 @@ export default function SignIn() {
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 pr-9 sm:pr-10 text-xs sm:text-sm text-white placeholder-white/25 outline-none transition-all duration-200"
+                        className="login-input w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 pr-9 sm:pr-10 text-xs sm:text-sm outline-none transition-all duration-200"
                         style={{
-                          background: 'rgba(255,255,255,0.05)',
-                          border: '1px solid rgba(255,255,255,0.1)',
+                          background: 'var(--login-control-background)',
+                          border: '1px solid var(--login-control-border)',
                         }}
                         onFocus={(e) => {
-                          e.currentTarget.style.borderColor = '#1282a2';
-                          e.currentTarget.style.boxShadow = '0 0 0 2px rgba(18,130,162,0.25)';
+                          e.currentTarget.style.borderColor = 'var(--login-accent)';
+                          e.currentTarget.style.boxShadow = 'var(--login-control-focus-ring)';
                         }}
                         onBlur={(e) => {
-                          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                          e.currentTarget.style.borderColor = 'var(--login-control-border)';
                           e.currentTarget.style.boxShadow = 'none';
                         }}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 transition-colors hover:text-white/60"
+                        className="login-icon-button absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
                       >
                         {showPassword ? (
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -468,12 +507,12 @@ export default function SignIn() {
                   <button
                     type="submit"
                     disabled={loading || success}
-                    className="w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="login-button w-full rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
                     style={{
                       background: success
                         ? 'linear-gradient(135deg, #059669, #10b981)'
-                        : 'linear-gradient(135deg, #1282a2, #22b8d4)',
-                      boxShadow: '0 4px 24px rgba(18,130,162,0.25)',
+                        : 'var(--login-button-background)',
+                      boxShadow: 'var(--login-submit-shadow)',
                     }}
                   >
                     {success ? 'Redirecting...' : loading ? 'Signing in...' : 'Sign in'}
@@ -483,8 +522,7 @@ export default function SignIn() {
                   <button
                     type="button"
                     onClick={() => setShowEmailForm(false)}
-                    className="w-full text-center text-[10px] sm:text-xs transition-colors duration-200 hover:underline"
-                    style={{ color: 'rgba(255,255,255,0.4)' }}
+                    className="login-secondary-link w-full text-center text-[10px] sm:text-xs transition-colors duration-200 hover:underline"
                   >
                     Back to Google sign in
                   </button>
@@ -492,11 +530,11 @@ export default function SignIn() {
               )}
 
               {/* Footer */}
-              <div className="mt-6 sm:mt-8 flex items-center justify-center gap-3 sm:gap-4 text-[10px] sm:text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
+              <div className="login-footer mt-6 sm:mt-8 flex items-center justify-center gap-3 sm:gap-4 text-[10px] sm:text-xs">
                 <button
                   type="button"
                   onClick={() => setLegalModal('terms')}
-                  className="transition-colors hover:text-white/50"
+                  className="login-footer-link transition-colors"
                 >
                   Terms
                 </button>
@@ -504,7 +542,7 @@ export default function SignIn() {
                 <button
                   type="button"
                   onClick={() => setLegalModal('privacy')}
-                  className="transition-colors hover:text-white/50"
+                  className="login-footer-link transition-colors"
                 >
                   Privacy
                 </button>
@@ -514,7 +552,7 @@ export default function SignIn() {
             {/* Below card note */}
             <p
               className="mt-4 sm:mt-6 text-center text-[10px] sm:text-xs italic px-2"
-              style={{ color: 'rgba(255,255,255,0.2)' }}
+              style={{ color: 'var(--login-copy-faint)' }}
             >
               Your data is safe. Unlike your WP score on a bad sprint.
             </p>

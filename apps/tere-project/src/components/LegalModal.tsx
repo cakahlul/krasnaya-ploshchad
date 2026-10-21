@@ -96,7 +96,7 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
     /* Backdrop */
     <div
       className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
-      style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
+      style={{ background: 'var(--login-modal-backdrop, rgba(0,0,0,0.65))', backdropFilter: 'blur(4px)' }}
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -106,38 +106,38 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
       <div
         className="relative flex max-h-[85vh] w-full max-w-lg flex-col rounded-t-3xl sm:rounded-3xl"
         style={{
-          background: 'linear-gradient(160deg, #0b1a30 0%, #051025 100%)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
+          background: 'var(--login-modal-panel, linear-gradient(160deg, #0b1a30 0%, #051025 100%))',
+          border: '1px solid var(--login-modal-border, rgba(255,255,255,0.08))',
+          boxShadow: 'var(--login-modal-shadow, 0 24px 80px rgba(0,0,0,0.6))',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drag handle (mobile feel) */}
         <div className="flex justify-center pt-3 sm:hidden">
-          <div className="h-1 w-10 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
+          <div className="h-1 w-10 rounded-full" style={{ background: 'var(--login-modal-handle, rgba(255,255,255,0.15))' }} />
         </div>
 
         {/* Header */}
         <div
           className="flex items-start justify-between gap-4 px-6 pb-4 pt-5"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
+          style={{ borderBottom: '1px solid var(--login-modal-divider, rgba(255,255,255,0.07))' }}
         >
           <div>
-            <h2 className="text-lg font-bold text-white">{content.title}</h2>
-            <p className="mt-0.5 text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            <h2 className="login-modal-title text-lg font-bold">{content.title}</h2>
+            <p className="mt-0.5 text-xs" style={{ color: 'var(--login-modal-muted, rgba(255,255,255,0.45))' }}>
               {content.subtitle}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-150 hover:bg-white/10"
+            className="login-modal-close mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-150"
             aria-label="Close modal"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path
                 d="M1 1l12 12M13 1L1 13"
-                stroke="rgba(255,255,255,0.5)"
+                stroke="var(--login-modal-close, rgba(255,255,255,0.5))"
                 strokeWidth="1.75"
                 strokeLinecap="round"
               />
@@ -152,11 +152,11 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
               <div key={section.heading}>
                 <h3
                   className="mb-1.5 text-sm font-semibold"
-                  style={{ color: '#22b8d4' }}
+                  style={{ color: 'var(--login-accent-bright, #22b8d4)' }}
                 >
                   {section.heading}
                 </h3>
-                <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                <p className="login-modal-copy text-sm leading-relaxed">
                   {section.body}
                 </p>
               </div>
@@ -166,7 +166,7 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
           {/* Footer note */}
           <p
             className="mt-8 text-center text-xs italic"
-            style={{ color: 'rgba(255,255,255,0.2)' }}
+            style={{ color: 'var(--login-modal-faint, rgba(255,255,255,0.2))' }}
           >
             {type === 'terms'
               ? 'Last updated: whenever we had a good sprint.'
@@ -177,15 +177,15 @@ export default function LegalModal({ type, onClose }: LegalModalProps) {
         {/* CTA */}
         <div
           className="px-6 py-4"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
+          style={{ borderTop: '1px solid var(--login-modal-divider, rgba(255,255,255,0.07))' }}
         >
           <button
             type="button"
             onClick={onClose}
-            className="w-full rounded-xl py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
+            className="login-button w-full rounded-xl py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.01] active:scale-[0.99]"
             style={{
-              background: 'linear-gradient(135deg, #1282a2, #22b8d4)',
-              boxShadow: '0 4px 16px rgba(18,130,162,0.25)',
+              background: 'var(--login-button-background, linear-gradient(135deg, #1282a2, #22b8d4))',
+              boxShadow: 'var(--login-modal-button-shadow, 0 4px 16px rgba(18,130,162,0.25))',
             }}
           >
             Got it
